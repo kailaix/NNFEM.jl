@@ -48,8 +48,9 @@ for i = 1:size(elem,1)
     x2, y2 = nodes[elem[i,2],:]
     x3, y3 = nodes[elem[i,3],:]
     A = inv([x1 y1 1;x2 y2 1;x3 y3 1])
+    Area = det([x1 y1 1;x2 y2 1;x3 y3 1])/2
     N = [A[1,1] 0 A[1,2] 0 A[1,3] 0;0 A[2,1] 0 A[2,2] 0 A[2,3];A[2,1] A[1,1] A[2,2] A[1,2] A[2,3] A[1,3]]
-    B = N'*C*N    # stiffness matrix
+    B = N'*C*N*Area    # stiffness matrix
     ind = [elem[i,1];elem[i,1]+n^2;elem[i,2];elem[i,2]+n^2;elem[i,3];elem[i,3]+n^2] # index, (u1,u2,u3,v1,v2,v3)
     M[ind,ind] += B 
 end
