@@ -1,7 +1,7 @@
 using PyPlot
 using LinearAlgebra
 
-t = 1000
+t = 10
 
 
 # Domain: [0,1]^2
