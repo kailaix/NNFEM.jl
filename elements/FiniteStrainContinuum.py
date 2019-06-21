@@ -23,9 +23,7 @@
 #  event caused by the use of the program.                                 #
 ############################################################################
 
-from .Element import Element
-from pyfem.util.shapeFunctions  import getElemShapeData
-from pyfem.util.kinematics      import Kinematics
+from Element import Element
 
 from numpy import zeros, dot, outer, ones, eye, sqrt
 from scipy.linalg import eigvals

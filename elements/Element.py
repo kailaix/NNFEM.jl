@@ -24,7 +24,9 @@
 ############################################################################
 
 from numpy import outer, ones, zeros
-
+import sys
+sys.path.insert(0, '../materials')
+from MaterialManager import MaterialManager
 
 #------------------------------------------------------------------------------
 #
@@ -44,12 +46,8 @@ class Element ( list ):
     self.history = {}
     self.current = {}
 
-    for name,val in props:
-      if name is "material":
-        self.matProps = val
-        self.mat = MaterialManager( self.matProps )
-      else:
-        setattr( self, name, val )
+
+    self.mat = MaterialManager( props )
 
 #------------------------------------------------------------------------------
 #
