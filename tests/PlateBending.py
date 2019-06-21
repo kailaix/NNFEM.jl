@@ -23,69 +23,43 @@
 #  event caused by the use of the program.                                 #
 ############################################################################
 
-from pyfem.util.BaseModule import BaseModule
-from time import time
 
-from numpy import zeros, array, dot
-from pyfem.fem.Assembly import assembleInternalForce, assembleMassMatrix
-
+from numpy import linspace, meshgrid, empty
 import sys
+sys.path.insert(0, '../fem')
+sys.path.insert(0, '../elements')
 
-#------------------------------------------------------------------------------
-#
-#------------------------------------------------------------------------------
-
-class ExplicitSolver:
-
-  def __init__( self , globdat, domain ):
-    
-    self.maxCycle = sys.maxint
-    
-    M,self.Mlumped = assembleMassMatrix( globdat, domain )
+from FiniteStrainContinuum import FiniteStrainContinuum
+from Domain import Domain
+from DataStructures import GlobalData
 
 
-  def run( self , globdat, domain ):
+nx, ny =  10, 5
+nnodes, neles = (nx + 1)*(ny + 1), nx*ny
+x = linspace(0.0, 1.0, nx + 1)
+y = linspace(0.0, 0.2, ny + 1)
+X, Y = meshgrid(x, y)
+nodes = empty((nnodes,2))
+nodes[:,0], nodes[:,1] = X.flatten(), Y.flatten()
 
-    globdat.cycle += 1
-    globdat.time  += self.dtime
+prop = {'type': 'PlaneStrain', 'E': 1000.0, 'nu': 0.4}
 
-    lam  = self.loadfunc( globdat.time )
-    
-    disp = globdat.state
-    velo = globdat.velo
-    acce = globdat.acce
+elements = []
+for i in range(nx):
+  for j in range(ny):
+    n = (nx+1)*j + i
+    elnodes = [n, n + 1, n + 1 + (nx + 1), n + (nx + 1)]
 
-    fint = globdat.fint
-    fhat = globdat.fhat
-    
-    velo += 0.5*self.dtime * acce
-    disp += self.dtime * velo
-    
-    fint  = assembleInternalForce( globdat, domain )
+    FiniteStrainContinuum(elnodes, prop)
 
-    acce = globdat.dofs.solve( self.Mlumped , fhat-fint )
-       
-    velo += 0.5 * self.dtime * acce
+    elements.append(FiniteStrainContinuum(elnodes, prop))
 
-    globdat.acce[:] = acce[:]
-  
-    globdat.elements.commitHistory()
 
-    self.printStep( globdat )
-    
-    if globdat.cycle == self.maxCycle:
-      globdat.active = False
 
-#------------------------------------------------------------------------------
-#
-#------------------------------------------------------------------------------
+dofs = 2*nnodes
 
-  def printStep( self , globdat ):
- 
-    if globdat.cycle%20 == 0 or globdat.cycle == 1:
-      print("  Cycle     Time         Kin.Energy")
-      print("  ---------------------------------------")
-  
-    print(' %5i ' % globdat.cycle,)
-    print(' %10.3e ' % globdat.time,)
-    print(' %10.3e ' % float(0.5*dot(globdat.velo,(self.Mlumped*globdat.velo))))
+plate = Domain(nodes, elements, dofs)
+globdat = GlobalData(plate.neqs)
+
+#solver = Solver        ( props , globdat )
+#solver.run( props , globdat )

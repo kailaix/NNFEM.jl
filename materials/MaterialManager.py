@@ -22,20 +22,20 @@
 #  free from errors. Furthermore, the authors shall not be liable in any   #
 #  event caused by the use of the program.                                 #
 ############################################################################
-
-from pyfem.util.dataStructures import Properties
-
+from PlaneStrain import PlaneStrain
+from HookesLaw import  HookesLaw
 class MaterialManager ( list ):
 
-  def __init__ ( self, matProps ):
+  def __init__ ( self, props ):
 
-    matType = matProps.type
+    matType = props['type']
 
-    cmdStr = 'from pyfem.materials.' + matType + ' import ' + matType + ' as material'
+    if matType == 'HookesLaw':
+      self.mat = HookesLaw( props )
+    elif matType == 'PlaneStrain':
+      self.mat = PlaneStrain(props)
 
-    exec cmdStr
-    
-    self.mat = material( matProps )
+    #todo
     self.iIter = -1
 
   def reset( self ):

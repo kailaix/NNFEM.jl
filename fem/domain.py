@@ -31,138 +31,70 @@ class Domain:
   Class represents a structure and contains all auxiliary data-structure
   '''
   
-  def __init__ ( self, nodes, elements, dofs ):
+  def __init__ (self, nodes, elements, dofs):
+    '''
+
+    :param nodes: n by nDim array, node coordinates
+    :param elements: elements array
+    :param dofs: total number of freedoms
+    '''
 
     self.nnodes = len(nodes)
     self.nodes = nodes  #coordinates
     self.neles = len(elements)
     self.elements = elements  #element set
 
-    self.dofs = dofs  #number of equations
+    self.dofs = dofs  #number of total freedoms
+
+    self.disp = zeros(dofs)
+
+    self.vel = zeros(dofs)
+
+  def setBoundary(self, ebc, g, nbc, ):
+    '''
+
+    :param ebc:
+    :param g:
+    :param nbc:
+    :return:
+    '''
+
+    node_to_eqn
+    eqn_to_node
+
+  def updateSates(self, disp, vel, time):
+    '''
+    :param disp: neqs array
+    :param vel : neqs array
+
+    update Dirichlet boundary
+    :return:
+    '''
+
+  def getDofs(self, el_nodes):
+    '''
+
+    :param el_nodes: 1d array
+    :return: the corresponding equation ids, u0,u1, .., v0, v1, ..
+    '''
 
 
+  def getDisp(self, el_nodes):
+    '''
 
+    :param el_nodes: 1d array
+    :return: the displacement at these nodes ux0 ux1 .. uy0 uy1 ..
+    '''
 
-  def readFromFile( self , fname ):
+    return self.disp[el_nodes]
 
-    fin = open( fname )
-  
-    while True:
-      line = fin.readline()  
-  
-      if line.startswith('<ExternalForces>') == True:
-        while True:
-          line = fin.readline()  
+  def getVel(self, el_nodes):
+    '''
 
-          if line.startswith('</ExternalForces>') == True:
-            return
-        
-          a = line.strip().split(';')
-          
-          if len(a) == 2:
-            b = a[0].split('=')
-        
-            if len(b) == 2:
-              c = b[0].split('[')
-              
-              dofType = c[0]
-              nodeID  = eval(c[1].split(']')[0])
-              
-              self.fhat[self.dofs.getForType(nodeID,dofType)] = eval(b[1])
-
-#---------------------------------------------------------------------------------
-#
-#---------------------------------------------------------------------------------
-
-  def printNodes( self , inodes=None ):
-
-    if inodes is None:
-      inodes = self.nodes.keys() 
-	
-    print '   Node | ',
-    
-    for dofType in self.dofs.dofTypes:
-      print "  '%s'        " % dofType,
-
-    if hasattr( self , 'fint' ):
-      for dofType in self.dofs.dofTypes:
-        print " fint'%s'   " % dofType,
-
-    for name in self.outputNames:
-      print "       '%s'             " % name,
-
-    print 
-    print '-------------------------------------------------------',
-    print '-------------------------------------------------------'
-
-    for nodeID in inodes:
-      print '  %4i  | ' % (nodeID+1),
-      for dofType in self.dofs.dofTypes:
-        print ' %10.3e ' % self.state[self.dofs.getForType(nodeID,dofType)],
-      for dofType in self.dofs.dofTypes:
-        print ' %10.3e ' % self.fint[self.dofs.getForType(nodeID,dofType)],
-
-      for name in self.outputNames:
-        data = self.getData( name , nodeID )
-      
-        for a in data:
-          print ' %10.3e ' % a,
-      print
-    print
-
-#------------------------------------------------------------------------------
-#
-#------------------------------------------------------------------------------
-      
-  def getData( self , outputName , inodes ):
-
-    data    = getattr( self, outputName )
-    weights = getattr( self, outputName + 'Weights' )
-
-    if type(inodes) is int:
-      i = self.nodes.keys().index(inodes)
-      return data[i,:] / weights[i]
-    else:
-      outdata=[]
-
-      for row,w in zip(data[inodes,:],weights[inodes]):
-        if w != 0:
-          outdata.append(row/w)
-        else:
-          outdata.append(row)
-
-      return outdata
-
-#---------------	------------------------------------------------------
-
-  def resetNodalOutput ( self ):
-
-    for outputName in self.outputNames:
-      delattr( self , outputName )
-      delattr( self , outputName + 'Weights' )
-
-    self.outputNames=[]
-
-#-----------------------------------------------------
-
-class elementData():
-
-  def __init__( self , elstate , elDstate ):
-
-    nDof        = len(elstate)
-
-    self.state  = elstate
-    self.Dstate = elDstate
-    self.stiff  = zeros( shape=( nDof,nDof ) )
-    self.fint   = zeros( shape=(nDof) )
-    self.mass   = zeros( shape=( nDof,nDof ) )
-    self.lumped = zeros( shape=(nDof) )
-
-    self.outlabel = []
-   
-  def __str__( self ):
-
-    return self.state
+    :param el_nodes: 1d array
+    :return: the displacement at these nodes vx0 vx1 .. vx0 vx1 ..
+    '''
+    return self.vel[el_nodes]
      
 
 

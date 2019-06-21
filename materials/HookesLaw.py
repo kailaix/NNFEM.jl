@@ -23,7 +23,7 @@
 #  event caused by the use of the program.                                 #
 ############################################################################
 
-from pyfem.materials.BaseMaterial import BaseMaterial
+from BaseMaterial import BaseMaterial
 
 class HookesLaw( BaseMaterial ):
 
@@ -35,7 +35,7 @@ class HookesLaw( BaseMaterial ):
     #Create the tangent matrix
     self.H = zeros( (1,1) )
 
-    self.H(0,0) = self.E
+    self.H[0,0] = self.E
 
   def getStress( self, deformation ):
 

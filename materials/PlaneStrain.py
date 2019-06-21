@@ -23,7 +23,7 @@
 #  event caused by the use of the program.                                 #
 ############################################################################
 
-from pyfem.materials.BaseMaterial import BaseMaterial
+from BaseMaterial import BaseMaterial
 from numpy import zeros, dot
 
 class PlaneStrain( BaseMaterial ):
