@@ -1,6 +1,6 @@
 function gradtest(f, x0, n=nothing)
     v0 = rand(Float64,size(x0))
-    γs = 1 ./10 .^(1:5)
+    γs = 1000 ./10 .^(1:5)
     err1 = []
     err2 = []
     f0, J = f(x0)
@@ -20,4 +20,5 @@ function gradtest(f, x0, n=nothing)
     loglog(γs, γs.^2 * 0.5*abs(err2[1])/γs[1]^2, "--",label="\$\\mathcal{O}(\\gamma^2)\$")
     loglog(γs, γs * 0.5*abs(err1[1])/γs[1], "--",label="\$\\mathcal{O}(\\gamma)\$")
     plt.gca().invert_xaxis()
+    legend()
 end

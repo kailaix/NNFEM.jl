@@ -1,12 +1,13 @@
 using PyPlot
 using LinearAlgebra
 using PyCall
+using SparseArrays
 using DelimitedFiles
 include("testsuit.jl")
 
 
 # * viscoplasticity or elasticity
-type = :elasticity 
+type = :viscoplasticity 
 
 # * parameters for Newmark algorithm 
 # Newmark Algorithm: http://solidmechanics.org/text/Chapter8_2/Chapter8_2.htm
@@ -14,6 +15,7 @@ type = :elasticity
 β2 = 0.5
 NT = 100
 Δt = 0.4/NT
+n = 10
 
 
 function remove_bd!(K)
@@ -37,7 +39,6 @@ end
 # Data Structure
 # nodes : nv x 2, coordinates per row
 # elem : ne x 3, vertex index per row
-n = 10
 nv = n^2; ne = 2(n-1)^2
 nodes = zeros(nv,2)
 elem = zeros(Int64, ne, 3)
@@ -82,6 +83,8 @@ Dir = zeros(Bool, 2n^2)
 Dir[dirichlet] .= true
 Dir[dirichlet .+ n^2] .= true
 
+@info "Finished constructing geometry"
+
 # Constitutive law: σ=Cε
 ν,E = 0.3, 2000
 E = E/(1-ν^2)*[1 ν 0.0;ν 1 0.0;0.0 0.0 (1-ν)/2]
@@ -98,13 +101,14 @@ for i = 1:ne
     M[ind,ind] += D
 end
 remove_bd!(K)
-remove_bd!(M)
+remove_bd!(M); M = sparse(M)
 
 # * hardening and plastic flow
 fα = zeros(ne)
-fY = 10
-fK = 1.0
+fY = 100
+fK = 10.0
 function f(σ, α)
+    # @show sqrt(σ[1]^2-σ[1]*σ[2]+σ[2]^2+3*σ[3]^2)
     return sqrt(σ[1]^2-σ[1]*σ[2]+σ[2]^2+3*σ[3]^2)-fY-fK*α
 end
 
@@ -147,7 +151,7 @@ end
 # * return mapping algorithm: for each element, computing the corresponding constitutive law 
 function _rtm(σA, Δε)
     Ielastic = zeros(Bool, ne) # * Ielastic is very important
-    tol = 1e-12
+    tol = 1e-10
     local e0
     err = 0.0
     Δσ = zeros(3ne); Δγ = zeros(ne)
@@ -175,8 +179,6 @@ function _rtm(σA, Δε)
                     error("Newton iteration fails, err=$(e/e0), input norm=$(norm(Δε[3(i-1)+1:3i]))")
                 end
                 if e/e0<tol
-                    # println("$q2")
-                    # printstyled("[Outer$i]$iter, $(e/e0)\n", color=:green)
                     break
                 end
                 J = [UniformScaling(1.0)+Δγ[i]*E*fσσ(σtrial) E*fσ(σtrial);
@@ -216,7 +218,7 @@ end
         
 # * compute M+∂K/∂u''
 function dKd∂∂u(∂∂u, F, ∂u, ∂∂uk, σA)
-    Δu = Δt * ∂u + (1-2β2)/2*Δt^2*∂∂uk + β2*Δt^2*∂∂u
+    Δu = Δt * ∂u + (1-β2)/2*Δt^2*∂∂uk + β2/2*Δt^2*∂∂u
     Δε = zeros(3ne)
     for j = 1:ne 
         B = Ns[j]
@@ -227,10 +229,11 @@ function dKd∂∂u(∂∂u, F, ∂u, ∂∂uk, σA)
     Kt = zeros(2nv, 2nv)
     for i = 1:ne
         B = Ns[i]; ind = Vs[i]
-        loc = B'*dσdε[i]*B* Areas[i]* β2*Δt^2
+        loc = B'*dσdε[i]*B* Areas[i]* β2/2*Δt^2
         Kt[ind, ind] += loc
         r[ind] += B'*σB[3(i-1)+1:3i] * Areas[i]
     end
+    Kt = sparse(Kt)
     -r, M+Kt, σB, Δγ
 end
 
@@ -256,11 +259,19 @@ function lnl(∂u, ∂∂uk, F, σA)
     # @show norm(∂∂uk), norm(∂u), norm(σA)
     for i = 1:10000
         q, J, σB, Δγ = dKd∂∂u(∂∂u, F, ∂u, ∂∂uk, σA)
+        # # ! finite difference test
+        # function _f(d)
+        #     q, J, _, _ = dKd∂∂u(d, F, ∂u, ∂∂uk, σA)
+        #     return -q, J
+        # end
+        # gradtest(_f, ∂∂u)
+        # error()
+
         if i==1
             e0 = norm(q)
         end
-        # @show i, norm(q)/e0
-        if norm(q)/e0<tol
+        # @show i, norm(q)/e0, e0
+        if e0≈0 || (norm(q)/e0<tol)
             printstyled("lnl converged, iter = $i, err = $(norm(q)/e0)\n", color=:green)
             break 
         end
@@ -268,7 +279,9 @@ function lnl(∂u, ∂∂uk, F, σA)
             error("Newton iteration fails")
         end
         δ = J\q 
-        ∂∂u += δ
+        # @show norm(δ), norm(∂∂u)
+        ∂∂u += 0.1*δ # todo line search or not?
+        # println(norm(Δγ))
     end
     fα += Δγ
     ∂∂u,σB
@@ -279,6 +292,10 @@ end
 
 # imposing neumann boundary condition
 F = zeros(2n^2)
+# F[n+n^2] = 10.0
+F[div(n,2)*n] = -50
+# F[(2:n).+n^2] .= -1
+
 # for i = 1:size(neumann,1)
 #     ind = [neumann[i,1]; neumann[i,2]]
 #     F[ind] += ones(2)*t
@@ -291,14 +308,14 @@ U = zeros(2nv,NT+1)
 ∂∂U = zeros(2nv,NT+1)
 ∂∂U[:,1] = M\(F-K*U[:,1])
 Σ = zeros(3ne, NT+1)
-∂U[n^2 .+ (1:n^2),1] .= 1.0; ∂U[Dir,1] .= 0.0
-L = M + β2*Δt^2*K
+# ∂U[n^2 .+ (1:n^2),1] .= 1.0; ∂U[Dir,1] .= 0.0
+L = M + β2/2*Δt^2*K; L = sparse(L)
 for k = 2:NT+1
     println("time step: $k")
     if type==:viscoplasticity
         ∂∂U[:,k],Σ[:,k] = lnl(∂U[:,k-1], ∂∂U[:,k-1], F, Σ[:,k-1])
     elseif type==:elasticity
-        g = -K*(U[:,k-1]+Δt*∂U[:,k-1]+Δt^2/2*(1-β2)*∂∂U[:,k-1])+F
+        g = -K*(U[:,k-1]+Δt*∂U[:,k-1]+Δt^2*(1-β2)/2*∂∂U[:,k-1])+F
         ∂∂U[:,k] = L\g 
     else
         error("not implemented yet")
@@ -321,7 +338,7 @@ writer = Writer(fps=15, bitrate=1800)
 close("all")
 fig = figure()
 # visualization
-scat0 = scatter(nodes[:,1], nodes[:,2], color="k")
+scat0 = scatter(nodes[:,1], nodes[:,2], color="grey")
 grid(true)
 ims = Any[(scat0,)]
 
@@ -330,9 +347,10 @@ for k = 1:NT+1
     u2 = U[n^2+1:end,k] + nodes[:,2]
 
     scat = scatter(u1, u2, color="orange")
-    grid("on")
+    grid(true)
     tt = gca().text(.5, 1.05,"t = $(round((k-1)*Δt,digits=3))")
-    push!(ims, (scat,scat0,tt))
+    s2 = scatter(nodes[div(n,2)*n,1], nodes[div(n,2)*n,2], marker="x", color="red")
+    push!(ims, (scat0,scat,s2,tt))
 end
 
 im_ani = animation.ArtistAnimation(fig, ims, interval=50, repeat_delay=3000,

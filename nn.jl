@@ -4,8 +4,6 @@ using PyCall
 using ADCME
 using DelimitedFiles
 reset_default_graph()
-include("testsuit.jl")
-
 
 # * viscoplasticity or elasticity
 type = :elasticity 
@@ -16,6 +14,7 @@ type = :elasticity
 β2 = 0.5
 NT = 100
 Δt = 0.4/NT
+n = 50
 
 
 function remove_bd!(K)
@@ -39,7 +38,6 @@ end
 # Data Structure
 # nodes : nv x 2, coordinates per row
 # elem : ne x 3, vertex index per row
-n = 10
 nv = n^2; ne = 2(n-1)^2
 nodes = zeros(nv,2)
 elem = zeros(Int64, ne, 3)
@@ -109,22 +107,46 @@ function constitutive_law(Δε, ε)
     # * neural network constitutive law
     if type==:elasticity
         σ = Δε*tfE 
-        σ = vec(σ')
+        # σ = vec(σ')
     else
         σ = ae([Δε ε],[20,20,20,3],"nn")
-        σ = vec(σ')
+        # σ = vec(σ')
     end
     return σ
 end
 
+tfNs_ = zeros(ne, 3, 6)
+tfVs_ = zeros(Int32, ne, 6)
+for i = 1:ne 
+    tfNs_[i,:,:] = Ns[i]
+    tfVs_[i,:] = Vs[i]
+end
+const tfNs = constant(tfNs_); const tfVs = constant(tfVs_); const tfAreas = constant(Areas)
 function residual(∂∂u, F, ∂u, ∂∂uk, Δε, ε) 
     r = M*∂∂u - F
     σB = constitutive_law(Δε, ε)
-    for i = 1:ne
-        B = Ns[i]; ind = Vs[i]
-        r = scatter_add(r, ind, Array(B')*σB[3(i-1)+1:3i] * Areas[i])
+    # for i = 1:ne
+    #     @show i
+    #     B = Ns[i]; ind = Vs[i]
+    #     r = scatter_add(r, ind, B'*σB[i] * Areas[i])
+    # end
+    # sum(r[findall(.!Dir)]^2)
+    function cond0(i, ta)
+        return i<=ne 
     end
-    sum(r[.!Dir]^2)
+    function body(i, ta)
+        B = tfNs[i]; ind = tfVs[i]       
+        r = read(ta, i)
+        r = scatter_add(r, ind, B'*σB[i] * tfAreas[i])
+        ta = write(ta, i+1, r)
+        i+1, ta
+    end
+    i = constant(1,dtype=Int32)
+    ta = TensorArray(ne+1)
+    ta = write(ta, 1, r)
+    _, out = while_loop(cond0, body, [i, ta], parallel_iterations=50)
+    out = stack(out)
+    sum(out[ne+1][findall(.!Dir)]^2)
 end
 
 # imposing neumann boundary condition
@@ -165,6 +187,8 @@ function cond0(i, ta)
 end
 function body(k, ta)
     l = residual(∂∂U[k], F, ∂U[k-1], ∂∂U[k-1], Δε[k], ε[k])
+    # op = tf.print(k)
+    # l = bind(l, op)
     ta = write(ta, k, l)
     k+1, ta
 end
@@ -172,7 +196,7 @@ end
 i = constant(2, dtype=Int32)
 ta = TensorArray(NT+1)
 ta = write(ta,1,constant(0.0))
-_, out = while_loop(cond0, body, [i, ta])
+_, out = while_loop(cond0, body, [i, ta], parallel_iterations=50)
 loss = sum(stack(out))
 sess = Session(); init(sess)
 l0 = run(sess, loss)
