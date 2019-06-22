@@ -22,8 +22,12 @@
 #  free from errors. Furthermore, the authors shall not be liable in any   #
 #  event caused by the use of the program.                                 #
 ############################################################################
-
+import sys
+sys.path.insert(0, '../util')
+from shapeFunctions import getElemShapeData
+from kinematics import Kinematics
 from Element import Element
+
 
 from numpy import zeros, dot, outer, ones, eye, sqrt
 from scipy.linalg import eigvals
@@ -47,7 +51,7 @@ class FiniteStrainContinuum( Element ):
 #
 #------------------------------------------------------------------------------
 
-  def getTangentStiffness ( self, elemdat ):
+  def getTangentStiffness ( self, coords, state, Dstate ):
 
     n = self.dofCount()
 
@@ -79,42 +83,51 @@ class FiniteStrainContinuum( Element ):
 #
 #------------------------------------------------------------------------------
 
-  def getInternalForce ( self, elemdat ):
+  def getInternalForce ( self, coords, state, Dstate ):
    
     n = self.dofCount()
    
-    sData = getElemShapeData( elemdat.coords )
+    sData = getElemShapeData( coords )
 
-    elemdat.outlabel.append("stresses")
-    elemdat.outdata  = zeros( shape=(len(elemdat.nodes),3) )
+    outdata  = zeros( shape=(len(coords),3))
+    fint = zeros(n)
 
     for iData in sData:
             
-      kin = self.getKinematics( iData.dhdx , elemdat.state ) 
+      kin = self.getKinematics( iData.dhdx , state )
       B   = self.getBmatrix   ( iData.dhdx , kin.F )
       
       sigma,tang = self.mat.getStress( kin )
        
-      elemdat.fint    += dot ( B.transpose() , sigma ) * iData.weight
-      elemdat.outdata += outer( ones(len(elemdat.nodes)), sigma )
+      fint    += dot ( B.transpose() , sigma ) * iData.weight
+      outdata += outer( ones(len(coords)), sigma )
       
-    elemdat.outdata *= 1.0 / len(sData)  
+    outdata *= 1.0 / len(sData)
+
+    return fint
 
 #------------------------------------------------------------------------------
 #
 #------------------------------------------------------------------------------
 
-  def getMassMatrix ( self, elemdat ):
-      
-    sData = getElemShapeData( elemdat.coords )
+  def getMassMatrix ( self, coords ):
 
-    rho = elemdat.matprops.rho
+    n = self.dofCount()
+      
+    sData = getElemShapeData( coords )
+
+    rho = self.mat.mat.rho
+
+    mass = zeros((n,n))
+
 
     for iData in sData:
       N  = self.getNmatrix( iData.h )
-      elemdat.mass += dot ( N.transpose() , N ) * rho * iData.weight
+      mass += dot ( N.transpose() , N ) * rho * iData.weight
      
-    elemdat.lumped = sum(elemdat.mass)
+    lumped = sum(mass)
+
+    return mass, lumped
             
 #------------------------------------------------------------------------------
 #
