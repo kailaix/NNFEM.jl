@@ -1,12 +1,12 @@
 using PyPlot
 using LinearAlgebra
 using PyCall
+using DelimitedFiles
 include("testsuit.jl")
 
 
 # * viscoplasticity or elasticity
 type = :elasticity 
-t = 0.0 
 
 # * parameters for Newmark algorithm 
 # Newmark Algorithm: http://solidmechanics.org/text/Chapter8_2/Chapter8_2.htm
@@ -100,6 +100,7 @@ end
 remove_bd!(K)
 remove_bd!(M)
 
+# * hardening and plastic flow
 fα = zeros(ne)
 fY = 10
 fK = 1.0
@@ -307,6 +308,11 @@ for k = 2:NT+1
     ∂U[:,k] = ∂U[:,k-1] + Δt*((1-β1)*∂∂U[:,k-1]+β1*∂∂U[:,k])
 end
 
+# * save Data
+writedlm("Data/∂U$type.txt",∂U'|>Array)
+writedlm("Data/∂∂U$type.txt",∂∂U'|>Array)
+
+
 # Set up formatting for the movie files
 animation = pyimport("matplotlib.animation")
 Writer = animation.writers.avail["html"]
@@ -322,13 +328,9 @@ ims = Any[(scat0,)]
 for k = 1:NT+1
     u1 = U[1:n^2,k] + nodes[:,1]
     u2 = U[n^2+1:end,k] + nodes[:,2]
-    # scat.set_offsets([u1 u2])
-    # title("Δt = $(round((k-1)*Δt, digits=2))")
-    # pause(0.1)
 
     scat = scatter(u1, u2, color="orange")
     grid("on")
-    # title("Δt = $((k-1)*Δt)")
     tt = gca().text(.5, 1.05,"t = $(round((k-1)*Δt,digits=3))")
     push!(ims, (scat,scat0,tt))
 end
