@@ -1,6 +1,6 @@
 function gradtest(f, x0, n=nothing)
     v0 = rand(Float64,size(x0))
-    γs = 0.001 ./10 .^(1:5)
+    γs = 1 ./10 .^(1:5)
     err1 = []
     err2 = []
     f0, J = f(x0)

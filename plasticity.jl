@@ -1,15 +1,19 @@
 using PyPlot
 using LinearAlgebra
 using PyCall
-include("test.jl")
+include("testsuit.jl")
 
+
+# * viscoplasticity or elasticity
+type = :elasticity 
 t = 0.0 
 
 # * parameters for Newmark algorithm 
 # Newmark Algorithm: http://solidmechanics.org/text/Chapter8_2/Chapter8_2.htm
 β1 = 0.5
 β2 = 0.5
-
+NT = 100
+Δt = 0.4/NT
 
 
 function remove_bd!(K)
@@ -119,30 +123,14 @@ function fσσ(σ)
 
 end
 
-
-# function f(σ, α)
-#     return sum(σ)
-# end
-
-# function fσ(σ)
-#     return [1;1;1]
-# end
-
-# function fσσ(σ)
-#     return zeros(3,3)
-# end
-
-
-
 # * computing dΔσdΔε based on the constitutive law of the element:
 # * 1. elastic: E
 # * 2. plastic: E + (plastic term)
-function dΔσdΔε(Δσ,Δγ,σA,Δε)
+function dΔσdΔε(Δσ,Δγ,σA,Δε,Ielastic)
     dσdε = Array{Float64}[]
     for i = 1:ne 
         σ = Δσ[3(i-1)+1:3i]+σA[3(i-1)+1:3i]
-        temp = f(σ, fα[i])
-        if temp<0
+        if Ielastic[i]
             push!(dσdε, E)
         else
             A = [UniformScaling(1.0)+Δγ[i]*E*fσσ(σ) E*fσ(σ);
@@ -155,19 +143,19 @@ function dΔσdΔε(Δσ,Δγ,σA,Δε)
     dσdε
 end
 
-
 # * return mapping algorithm: for each element, computing the corresponding constitutive law 
 function _rtm(σA, Δε)
+    Ielastic = zeros(Bool, ne) # * Ielastic is very important
     tol = 1e-12
     local e0
     err = 0.0
     Δσ = zeros(3ne); Δγ = zeros(ne)
     for i = 1:ne 
-        
         σtrial = σA[3(i-1)+1:3i] + E*Δε[3(i-1)+1:3i]
         if f(σtrial, fα[i])<=0 
             Δσ[3(i-1)+1:3i] = E*Δε[3(i-1)+1:3i]
             Δγ[i] = 0.0
+            Ielastic[i] = true
         else
             # using Newton 
             Δσtrial = E*Δε[3(i-1)+1:3i]
@@ -186,6 +174,7 @@ function _rtm(σA, Δε)
                     error("Newton iteration fails, err=$(e/e0), input norm=$(norm(Δε[3(i-1)+1:3i]))")
                 end
                 if e/e0<tol
+                    # println("$q2")
                     # printstyled("[Outer$i]$iter, $(e/e0)\n", color=:green)
                     break
                 end
@@ -199,31 +188,30 @@ function _rtm(σA, Δε)
             Δσ[3(i-1)+1:3i] = Δσtrial
         end
     end
-    return Δσ, Δγ
+    return Δσ, Δγ, Ielastic
 end
 
 
 
 # * return mapping algorithm: given Δε, find the admissible Δσ and at the same time return the sensitivity 
 function rtm(Δε, σA)
-    Δσ, Δγ = _rtm(σA, Δε)
-    # update the internal variables
-    dσdε = dΔσdΔε(Δσ,Δγ,σA,Δε)
+    Δσ, Δγ, Ielastic = _rtm(σA, Δε)
+    dσdε = dΔσdΔε(Δσ,Δγ,σA,Δε,Ielastic)
     σA+Δσ, dσdε, Δγ
 end
 
-# ! check gradients of dΔσdΔε, PASS
-σA = rand(3ne)
-function _f(Δε)
-    σB, dσdε, _ = rtm(Δε, σA)
-    J = zeros(3ne, 3ne)
-    for e = 1:ne 
-        J[3(e-1)+1:3e, 3(e-1)+1:3e] = dσdε[e]
-    end
-    σB, J
-end
-gradtest(_f, rand(Float64,3ne))
-error()
+# # ! check gradients of dΔσdΔε, PASS
+# σA = rand(3ne)
+# function _f(Δε)
+#     σB, dσdε, _ = rtm(Δε, σA)
+#     J = zeros(3ne, 3ne)
+#     for e = 1:ne 
+#         J[3(e-1)+1:3e, 3(e-1)+1:3e] = dσdε[e]
+#     end
+#     σB, J
+# end
+# gradtest(_f, rand(Float64,3ne))
+# error()
         
 # * compute M+∂K/∂u''
 function dKd∂∂u(∂∂u, F, ∂u, ∂∂uk, σA)
@@ -241,26 +229,21 @@ function dKd∂∂u(∂∂u, F, ∂u, ∂∂uk, σA)
         loc = B'*dσdε[i]*B* Areas[i]* β2*Δt^2
         Kt[ind, ind] += loc
         r[ind] += B'*σB[3(i-1)+1:3i] * Areas[i]
-
-        # Kt[ind, ind] += B'*B*Areas[i]* β2*Δt^2
-        # r[ind] += B'*Δε[3(i-1)+1:3i]*Areas[i]
     end
-    # remove_bd!(Kt)
-    # remove_bd!(r)
     -r, M+Kt, σB, Δγ
 end
 
-# ! for gradient test. FAILED: not second order convergence but small
-F = rand(2nv)
-∂u = rand(2nv)
-∂∂uk = rand(2nv)
-σA = rand(3ne)
-function __f1(∂∂u)
-    q, J,_,_ = dKd∂∂u(∂∂u, F, ∂u, ∂∂uk, σA)
-    -q, J
-end
-gradtest(__f1, rand(Float64,2nv))
-error()
+# # ! for gradient test. PASS
+# F = rand(2nv)
+# ∂u = rand(2nv)
+# ∂∂uk = rand(2nv)
+# σA = rand(3ne)
+# function __f1(∂∂u)
+#     q, J,_,_ = dKd∂∂u(∂∂u, F, ∂u, ∂∂uk, σA)
+#     -q, J
+# end
+# gradtest(__f1, rand(Float64,2nv))
+# error()
 
 
 # * newton step 
@@ -269,12 +252,13 @@ function lnl(∂u, ∂∂uk, F, σA)
     local σB, e0, Δγ
     tol = 1e-8
     ∂∂u = copy(∂∂uk)
+    # @show norm(∂∂uk), norm(∂u), norm(σA)
     for i = 1:10000
         q, J, σB, Δγ = dKd∂∂u(∂∂u, F, ∂u, ∂∂uk, σA)
         if i==1
             e0 = norm(q)
         end
-        @show i, norm(q)/e0
+        # @show i, norm(q)/e0
         if norm(q)/e0<tol
             printstyled("lnl converged, iter = $i, err = $(norm(q)/e0)\n", color=:green)
             break 
@@ -285,7 +269,7 @@ function lnl(∂u, ∂∂uk, F, σA)
         δ = J\q 
         ∂∂u += δ
     end
-    fα +=Δγ
+    fα += Δγ
     ∂∂u,σB
 end
 
@@ -301,32 +285,38 @@ F = zeros(2n^2)
 # F[Dir] .= 0.0
 
 # NOTE Newmark Algorithm 
-NT = 100
-Δt = 1/NT
 U = zeros(2nv,NT+1)
 ∂U = zeros(2nv,NT+1)
 ∂∂U = zeros(2nv,NT+1)
 ∂∂U[:,1] = M\(F-K*U[:,1])
 Σ = zeros(3ne, NT+1)
-∂U[n^2 .+ (1:n^2),1] .= 5.0; ∂U[Dir,1] .= 0.0
+∂U[n^2 .+ (1:n^2),1] .= 1.0; ∂U[Dir,1] .= 0.0
+L = M + β2*Δt^2*K
 for k = 2:NT+1
     println("time step: $k")
-    ∂∂U[:,k],Σ[:,k] = lnl(∂U[:,k-1], ∂∂U[:,k-1], F, Σ[:,k-1])
+    if type==:viscoplasticity
+        ∂∂U[:,k],Σ[:,k] = lnl(∂U[:,k-1], ∂∂U[:,k-1], F, Σ[:,k-1])
+    elseif type==:elasticity
+        g = -K*(U[:,k-1]+Δt*∂U[:,k-1]+Δt^2/2*(1-β2)*∂∂U[:,k-1])+F
+        ∂∂U[:,k] = L\g 
+    else
+        error("not implemented yet")
+    end
+    ∂∂U[Dir,k] .= 0.0
     U[:,k] = U[:,k-1] + Δt*∂U[:,k-1] + Δt^2/2*((1-β2)*∂∂U[:,k-1]+β2*∂∂U[:,k])
     ∂U[:,k] = ∂U[:,k-1] + Δt*((1-β1)*∂∂U[:,k-1]+β1*∂∂U[:,k])
 end
 
-
-
 # Set up formatting for the movie files
 animation = pyimport("matplotlib.animation")
-Writer = animation.writers.avail["ffmpeg"]
+Writer = animation.writers.avail["html"]
 writer = Writer(fps=15, bitrate=1800)
 
+close("all")
 fig = figure()
 # visualization
 scat0 = scatter(nodes[:,1], nodes[:,2], color="k")
-grid("on")
+grid(true)
 ims = Any[(scat0,)]
 
 for k = 1:NT+1
@@ -338,10 +328,11 @@ for k = 1:NT+1
 
     scat = scatter(u1, u2, color="orange")
     grid("on")
-    title("Δt = $(round((k-1)*Δt, digits=2))")
-    push!(ims, (scat,scat0))
+    # title("Δt = $((k-1)*Δt)")
+    tt = gca().text(.5, 1.05,"t = $(round((k-1)*Δt,digits=3))")
+    push!(ims, (scat,scat0,tt))
 end
 
 im_ani = animation.ArtistAnimation(fig, ims, interval=50, repeat_delay=3000,
                                    blit=true)
-im_ani.save("im.mp4", writer=writer)
+im_ani.save("im$type.html", writer=writer)
