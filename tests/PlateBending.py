@@ -24,25 +24,35 @@
 ############################################################################
 
 
-from numpy import linspace, meshgrid, empty
+from numpy import linspace, meshgrid, empty, zeros
 import sys
 sys.path.insert(0, '../fem')
 sys.path.insert(0, '../elements')
+sys.path.insert(0, '../solvers')
 
 from FiniteStrainContinuum import FiniteStrainContinuum
 from Domain import Domain
 from DataStructures import GlobalData
+from Assembly import assembleInternalForce
+from ExplicitSolver import ExplicitSolver
 
-
-nx, ny =  10, 5
+nx, ny =  2, 2
 nnodes, neles = (nx + 1)*(ny + 1), nx*ny
 x = linspace(0.0, 1.0, nx + 1)
-y = linspace(0.0, 0.2, ny + 1)
+y = linspace(0.0, 1.0, ny + 1)
 X, Y = meshgrid(x, y)
 nodes = empty((nnodes,2))
 nodes[:,0], nodes[:,1] = X.flatten(), Y.flatten()
 
-prop = {'type': 'PlaneStrain', 'E': 1000.0, 'nu': 0.4}
+
+
+ndofs = 2
+
+EBC, g = zeros((nnodes, ndofs)), zeros((nnodes, ndofs))
+EBC[0 :(nx+1)*(ny+1): nx+1, :] = -1
+
+
+prop = {'type': 'PlaneStrain', 'rho': 1.0, 'E': 1000.0, 'nu': 0.4}
 
 elements = []
 for i in range(nx):
@@ -50,16 +60,13 @@ for i in range(nx):
     n = (nx+1)*j + i
     elnodes = [n, n + 1, n + 1 + (nx + 1), n + (nx + 1)]
 
-    FiniteStrainContinuum(elnodes, prop)
-
     elements.append(FiniteStrainContinuum(elnodes, prop))
 
 
+domain = Domain(nodes, elements, ndofs, EBC, g)
+globdat = GlobalData(domain.neqs)
 
-dofs = 2*nnodes
 
-plate = Domain(nodes, elements, dofs)
-globdat = GlobalData(plate.neqs)
-
-#solver = Solver        ( props , globdat )
+F = assembleInternalForce(globdat, domain)
+solver = ExplicitSolver  (globdat, domain )
 #solver.run( props , globdat )

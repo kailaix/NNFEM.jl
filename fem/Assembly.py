@@ -24,8 +24,6 @@
 ############################################################################
 
 from numpy import zeros, ones, ix_
-from pyfem.util.dataStructures import Properties
-from pyfem.util.dataStructures import elementData
 
 
 #######################################
@@ -45,7 +43,7 @@ def assembleInternalForce(globdat, domain):
   # Initialize the global array A with rank 2
 
 
-  Fint = zeros(len(globdat.dofs) * ones(1, dtype=int))
+  Fint = zeros(domain.neqs * ones(1, dtype=int))
 
   neles = domain.neles
 
@@ -56,19 +54,23 @@ def assembleInternalForce(globdat, domain):
     # Get the element nodes
     el_nodes = element.getNodes()
 
+    el_coords = domain.getCoords(el_nodes)
+
     # Get the element nodes
-    el_dofs = domain.getDofs(el_nodes)
+    el_eqns = domain.getEqns(iele)
 
-    el_disp  = domain.getDisp(el_nodes)
+    el_dofs = domain.getDofs(iele)
 
-    el_Ddisp = domain.getVel(el_nodes)
+    el_state  = domain.getState(el_dofs)
+
+    el_Dstate = domain.getDstate(el_dofs)
 
     # Get the element contribution by calling the specified action
-    fint = element.getInternalForce(el_disp, el_Ddisp)
+    fint = element.getInternalForce(el_coords, el_state, el_Dstate)
 
     # Assemble in the global array
-
-    Fint[el_dofs] += fint
+    el_eqns_active = el_eqns >= 0
+    Fint[el_eqns[el_eqns_active]] += fint[el_eqns_active]
 
     return Fint
 
@@ -109,36 +111,39 @@ def assembleInternalForce(globdat, domain):
 #
 #     return Fint, K
 #
-# #############################################
-# # Mass matrix assembly routine              #
-# #############################################
-#
-# def assembleMassMatrix ( globdat, domain ):
-#   # Initialize the global array A with rank 2
-#
-#   Mlumped = zeros(len(globdat.dofs) * ones(1, dtype=int))
-#   M = zeros(len(globdat.dofs) * ones(1, dtype=int))
-#
-#   neles = domain.neles
-#
-#   # Loop over the elements in the elementGroup
-#   for iele in range(neles):
-#     element = domain.elements[iele]
-#
-#     # Get the element nodes
-#
-#     el_dofs = element.get_dofs()
-#
-#     el_disp = globdat.state[el_dofs]
-#
-#     el_Ddisp = globdat.Dstate[el_dofs]
-#
-#     # Get the element contribution by calling the specified action
-#     lM, lMlumped = element.getMassMatrix()
-#
-#     # Assemble in the global array
-#
-#     M[ix_(el_dofs, el_dofs)] += lM
-#     Mlumped[el_dofs] += lMlumped
-#
-#     return M, Mlumped
+#############################################
+# Mass matrix assembly routine              #
+#############################################
+
+def assembleMassMatrix ( globdat, domain ):
+  # Initialize the global array A with rank 2
+
+  Mlumped = zeros(domain.neqs * ones(1, dtype=int))
+  M = zeros(domain.neqs * ones(2, dtype=int))
+
+  neles = domain.neles
+
+  # Loop over the elements in the elementGroup
+  for iele in range(neles):
+    element = domain.elements[iele]
+
+    # Get the element nodes
+    el_nodes = element.getNodes()
+
+    el_coords = domain.getCoords(el_nodes)
+
+    # Get the element nodes
+    el_eqns = domain.getEqns(iele)
+
+    # Get the element contribution by calling the specified action
+    lM, lMlumped = element.getMassMatrix( el_coords)
+
+
+    # Assemble in the global array
+    el_eqns_active = el_eqns >= 0
+
+    M[ix_(el_eqns[el_eqns_active], el_eqns[el_eqns_active])] += lM[ix_(el_eqns_active, el_eqns_active)]
+
+    Mlumped[el_eqns[el_eqns_active]] += lMlumped[el_eqns_active]
+
+    return M, Mlumped

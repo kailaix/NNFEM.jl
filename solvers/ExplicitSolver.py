@@ -23,11 +23,8 @@
 #  event caused by the use of the program.                                 #
 ############################################################################
 
-from pyfem.util.BaseModule import BaseModule
-from time import time
-
 from numpy import zeros, array, dot
-from pyfem.fem.Assembly import assembleInternalForce, assembleMassMatrix
+from Assembly import assembleInternalForce, assembleMassMatrix
 
 import sys
 
@@ -37,9 +34,9 @@ import sys
 
 class ExplicitSolver:
 
-  def __init__( self , globdat, domain ):
+  def __init__( self , globdat, domain , maxint = 10000):
     
-    self.maxCycle = sys.maxint
+    self.maxCycle = maxint
     
     M,self.Mlumped = assembleMassMatrix( globdat, domain )
 
