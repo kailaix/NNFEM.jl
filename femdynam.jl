@@ -1,10 +1,14 @@
 using PyPlot
 using LinearAlgebra
 
+
+
 t = 0.0
+
+# * parameters for Newmark algorithm 
+# Newmark Algorithm: http://solidmechanics.org/text/Chapter8_2/Chapter8_2.htm
 β1 = 0.5
 β2 = 0.5
-# Newmark Algorithm: http://solidmechanics.org/text/Chapter8_2/Chapter8_2.htm
 
 # Domain: [0,1]^2
 # Dirichlet boundary (u=0) : {0}x[0,1]
