@@ -14,8 +14,8 @@ type = :viscoplasticity
 β1 = 0.5
 β2 = 0.5
 NT = 100
-Δt = 0.4/NT
-n = 10
+Δt = 0.1/NT
+n = 11
 
 
 function remove_bd!(K)
@@ -106,7 +106,7 @@ remove_bd!(M); M = sparse(M)
 # * hardening and plastic flow
 fα = zeros(ne)
 fY = 100
-fK = 10.0
+fK = 500.0
 function f(σ, α)
     # @show sqrt(σ[1]^2-σ[1]*σ[2]+σ[2]^2+3*σ[3]^2)
     return sqrt(σ[1]^2-σ[1]*σ[2]+σ[2]^2+3*σ[3]^2)-fY-fK*α
@@ -234,7 +234,10 @@ function dKd∂∂u(∂∂u, F, ∂u, ∂∂uk, σA)
         r[ind] += B'*σB[3(i-1)+1:3i] * Areas[i]
     end
     Kt = sparse(Kt)
-    -r, M+Kt, σB, Δγ
+    T = M+Kt
+    # remove_bd!(T)
+    # remove_bd!(r)
+    r[.!Dir], T[.!Dir,:], σB, Δγ
 end
 
 # # ! for gradient test. PASS
@@ -262,7 +265,7 @@ function lnl(∂u, ∂∂uk, F, σA)
         # # ! finite difference test
         # function _f(d)
         #     q, J, _, _ = dKd∂∂u(d, F, ∂u, ∂∂uk, σA)
-        #     return -q, J
+        #     return q, J
         # end
         # gradtest(_f, ∂∂u)
         # error()
@@ -270,7 +273,7 @@ function lnl(∂u, ∂∂uk, F, σA)
         if i==1
             e0 = norm(q)
         end
-        # @show i, norm(q)/e0, e0
+        # @show i, norm(q)/e0
         if e0≈0 || (norm(q)/e0<tol)
             printstyled("lnl converged, iter = $i, err = $(norm(q)/e0)\n", color=:green)
             break 
@@ -278,9 +281,24 @@ function lnl(∂u, ∂∂uk, F, σA)
         if i==10000
             error("Newton iteration fails")
         end
-        δ = J\q 
+        δ = zeros(2nv)
+        δ[.!Dir] = -J[:,.!Dir]\q
         # @show norm(δ), norm(∂∂u)
-        ∂∂u += 0.1*δ # todo line search or not?
+        α0 = 1.0
+        for k = 1:100
+            q0, _,_,_ = dKd∂∂u(∂∂u+α0*δ, F, ∂u, ∂∂uk, σA)
+            # @show k, norm(q0)
+            if norm(q0)<norm(q)
+                break
+            end
+            α0 /= 2
+            if k==0
+                error("linesearch failed")
+            end
+        end
+        # @show α0
+        ∂∂u += α0*δ # todo: do we need linesearch or not?
+        # ∂∂u[.!Dir] += δ
         # println(norm(Δγ))
     end
     fα += Δγ
@@ -291,9 +309,9 @@ end
 
 
 # imposing neumann boundary condition
-F = zeros(2n^2)
+F = zeros(2nv)
 # F[n+n^2] = 10.0
-F[div(n,2)*n] = -50
+F[div(n+1,2)*n] = -50
 # F[(2:n).+n^2] .= -1
 
 # for i = 1:size(neumann,1)
@@ -313,9 +331,9 @@ L = M + β2/2*Δt^2*K; L = sparse(L)
 for k = 2:NT+1
     println("time step: $k")
     if type==:viscoplasticity
-        ∂∂U[:,k],Σ[:,k] = lnl(∂U[:,k-1], ∂∂U[:,k-1], F, Σ[:,k-1])
+        ∂∂U[:,k],Σ[:,k] = lnl(∂U[:,k-1], ∂∂U[:,k-1], ((k-1)/(NT/2)>1 ? zeros(2nv) : F*(k-1)/(NT/2)), Σ[:,k-1])
     elseif type==:elasticity
-        g = -K*(U[:,k-1]+Δt*∂U[:,k-1]+Δt^2*(1-β2)/2*∂∂U[:,k-1])+F
+        g = -K*(U[:,k-1]+Δt*∂U[:,k-1]+Δt^2*(1-β2)/2*∂∂U[:,k-1])+((k-1)/(NT/5)>1 ? zeros(2nv) : F*(k-1)/(NT/5))
         ∂∂U[:,k] = L\g 
     else
         error("not implemented yet")
@@ -349,8 +367,9 @@ for k = 1:NT+1
     scat = scatter(u1, u2, color="orange")
     grid(true)
     tt = gca().text(.5, 1.05,"t = $(round((k-1)*Δt,digits=3))")
-    s2 = scatter(nodes[div(n,2)*n,1], nodes[div(n,2)*n,2], marker="x", color="red")
-    push!(ims, (scat0,scat,s2,tt))
+    s2 = scatter(nodes[div(n+1,2)*n,1], nodes[div(n+1,2)*n,2], marker="x", color="red")
+    s3 = scatter(u1[div(n+1,2)*n], u2[div(n+1,2)*n], marker="*", color="red")
+    push!(ims, (scat0,scat,s2,s3,tt))
 end
 
 im_ani = animation.ArtistAnimation(fig, ims, interval=50, repeat_delay=3000,
