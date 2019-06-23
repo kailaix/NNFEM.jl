@@ -6,7 +6,7 @@ using DelimitedFiles
 reset_default_graph()
 
 # * viscoplasticity or elasticity
-type = :elasticity 
+type = :viscoplasticity 
 
 # * parameters for Newmark algorithm 
 # Newmark Algorithm: http://solidmechanics.org/text/Chapter8_2/Chapter8_2.htm
@@ -167,7 +167,6 @@ using Random; Random.seed!(233)
 ∂U = readdlm("Data/∂U$type.txt"); @assert size(∂U)==(NT+1,2nv)
 ∂∂U = readdlm("Data/∂∂U$type.txt"); @assert size(∂∂U)==(NT+1,2nv)
 
-
 Δε = zeros(NT+1, 3ne)
 ε = zeros(NT+1,3ne)
 
@@ -199,9 +198,18 @@ ta = TensorArray(NT+1)
 ta = write(ta,1,constant(0.0))
 _, out = while_loop(cond0, body, [i, ta], parallel_iterations=50)
 loss = sum(stack(out))
+
+# lr = placeholder(0.1, shape=())
+# opt = AdamOptimizer(lr).minimize(loss)
 sess = Session(); init(sess)
 l0 = run(sess, loss)
 println("Initial loss = $l0")
+# error()
+
+# for i = 1:10000
+#     _, l_ = run(sess, [opt, loss], feed_dict=Dict(lr=>0.05))
+#     @show i, l_
+# end
 # error()
 
 __cnt = 0
@@ -222,8 +230,10 @@ function step_callback(rk)
 end
 opt = ScipyOptimizerInterface(loss, method="L-BFGS-B",options=Dict("maxiter"=> 30000, "ftol"=>1e-12, "gtol"=>1e-12))
 @info "Optimization starts..."
-ScipyOptimizerMinimize(sess, opt, loss_callback=print_loss, step_callback=step_callback, fetches=[loss])
-
+for j = 1:5
+    ScipyOptimizerMinimize(sess, opt, loss_callback=print_loss, step_callback=step_callback, fetches=[loss])
+    save(sess, "$type$j.txt")
+end
 
 #=
 # Set up formatting for the movie files
