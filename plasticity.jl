@@ -14,8 +14,9 @@ type = :viscoplasticity
 β1 = 0.5
 β2 = 0.5
 NT = 100
-Δt = 0.1/NT
+Δt = 0.4/NT
 n = 11
+tol = 1e-3
 
 
 function remove_bd!(K)
@@ -151,7 +152,6 @@ end
 # * return mapping algorithm: for each element, computing the corresponding constitutive law 
 function _rtm(σA, Δε)
     Ielastic = zeros(Bool, ne) # * Ielastic is very important
-    tol = 1e-10
     local e0
     err = 0.0
     Δσ = zeros(3ne); Δγ = zeros(ne)
@@ -257,7 +257,6 @@ end
 function lnl(∂u, ∂∂uk, F, σA)
     global fα
     local σB, e0, Δγ
-    tol = 1e-8
     ∂∂u = copy(∂∂uk)
     # @show norm(∂∂uk), norm(∂u), norm(σA)
     for i = 1:10000
@@ -311,7 +310,7 @@ end
 # imposing neumann boundary condition
 F = zeros(2nv)
 # F[n+n^2] = 10.0
-F[div(n+1,2)*n] = -50
+# F[div(n+1,2)*n] = -50
 # F[(2:n).+n^2] .= -1
 
 # for i = 1:size(neumann,1)
@@ -326,7 +325,7 @@ U = zeros(2nv,NT+1)
 ∂∂U = zeros(2nv,NT+1)
 ∂∂U[:,1] = M\(F-K*U[:,1])
 Σ = zeros(3ne, NT+1)
-# ∂U[n^2 .+ (1:n^2),1] .= 1.0; ∂U[Dir,1] .= 0.0
+∂U[n^2 .+ (1:n^2),1] .= 5.0; ∂U[Dir,1] .= 0.0
 L = M + β2/2*Δt^2*K; L = sparse(L)
 for k = 2:NT+1
     println("time step: $k")

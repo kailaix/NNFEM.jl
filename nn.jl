@@ -14,7 +14,8 @@ type = :elasticity
 β2 = 0.5
 NT = 100
 Δt = 0.4/NT
-n = 50
+n = 11
+tol = 1e-3
 
 
 function remove_bd!(K)
@@ -100,13 +101,13 @@ end
 remove_bd!(K)
 remove_bd!(M)
 
-tfE = Variable(E)
+tfE = Variable(diagm(0=>ones(3)))
 function constitutive_law(Δε, ε)
     local σ
     Δε = tf.reshape(Δε,(ne,3)); ε = tf.reshape(ε,(ne,3))
     # * neural network constitutive law
     if type==:elasticity
-        σ = Δε*tfE 
+        σ = (ε+Δε)*tfE 
         # σ = vec(σ')
     else
         σ = ae([Δε ε],[20,20,20,3],"nn")
@@ -125,28 +126,28 @@ const tfNs = constant(tfNs_); const tfVs = constant(tfVs_); const tfAreas = cons
 function residual(∂∂u, F, ∂u, ∂∂uk, Δε, ε) 
     r = M*∂∂u - F
     σB = constitutive_law(Δε, ε)
-    # for i = 1:ne
-    #     @show i
-    #     B = Ns[i]; ind = Vs[i]
-    #     r = scatter_add(r, ind, B'*σB[i] * Areas[i])
+    for i = 1:ne
+        @show i
+        B = Ns[i]; ind = Vs[i]
+        r = scatter_add(r, ind, B'*σB[i] * Areas[i])
+    end
+    sum(r[findall(.!Dir)]^2)
+    # function cond0(i, ta)
+    #     return i<=ne 
     # end
-    # sum(r[findall(.!Dir)]^2)
-    function cond0(i, ta)
-        return i<=ne 
-    end
-    function body(i, ta)
-        B = tfNs[i]; ind = tfVs[i]       
-        r = read(ta, i)
-        r = scatter_add(r, ind, B'*σB[i] * tfAreas[i])
-        ta = write(ta, i+1, r)
-        i+1, ta
-    end
-    i = constant(1,dtype=Int32)
-    ta = TensorArray(ne+1)
-    ta = write(ta, 1, r)
-    _, out = while_loop(cond0, body, [i, ta], parallel_iterations=50)
-    out = stack(out)
-    sum(out[ne+1][findall(.!Dir)]^2)
+    # function body(i, ta)
+    #     B = tfNs[i]; ind = tfVs[i]       
+    #     r = read(ta, i)
+    #     r = scatter_add(r, ind, B'*σB[i] * tfAreas[i])
+    #     ta = write(ta, i+1, r)
+    #     i+1, ta
+    # end
+    # i = constant(1,dtype=Int32)
+    # ta = TensorArray(ne+1)
+    # ta = write(ta, 1, r)
+    # _, out = while_loop(cond0, body, [i, ta], parallel_iterations=50)
+    # out = stack(out)
+    # sum(out[ne+1][findall(.!Dir)]^2)
 end
 
 # imposing neumann boundary condition
@@ -172,7 +173,7 @@ using Random; Random.seed!(233)
 
 # * precompute Δε and ε
 for k=2:NT+1
-    Δu = Δt * ∂U[k-1,:] + (1-2β2)/2*Δt^2*∂∂U[k-1,:] + β2*Δt^2*∂∂U[k,:]
+    Δu = Δt * ∂U[k-1,:] + (1-β2)/2*Δt^2*∂∂U[k-1,:] + β2/2*Δt^2*∂∂U[k,:]
     for j = 1:ne 
         B = Ns[j]
         Δε[k, 3(j-1)+1:3j] = B*Δu[Vs[j]]
@@ -186,7 +187,7 @@ function cond0(i, ta)
     i <= NT+1
 end
 function body(k, ta)
-    l = residual(∂∂U[k], F, ∂U[k-1], ∂∂U[k-1], Δε[k], ε[k])
+    l = residual(∂∂U[k], F, ∂U[k-1], ∂∂U[k-1], Δε[k], ε[k-1]) # ε[k-1] stress at last step
     # op = tf.print(k)
     # l = bind(l, op)
     ta = write(ta, k, l)
@@ -201,6 +202,7 @@ loss = sum(stack(out))
 sess = Session(); init(sess)
 l0 = run(sess, loss)
 println("Initial loss = $l0")
+# error()
 
 __cnt = 0
 function print_loss(l)
