@@ -1,4 +1,4 @@
-export Domain,GlobalData
+export Domain,GlobalData,updateStates
 mutable struct Domain
     nnodes::Int64
     nodes::Array{Float64}
@@ -23,8 +23,8 @@ end
 function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array{Int64}, g::Array{Float64})
     nnodes = size(nodes,1)
     neles = size(elements,1)
-    state = zeros(nnodes, ndims)
-    Dstate = zeros(nnodes, ndims)
+    state = zeros(nnodes * ndims)
+    Dstate = zeros(nnodes * ndims)
     LM = Array{Int64}[]
     DOF = Array{Int64}[]
     ID = Int64[]

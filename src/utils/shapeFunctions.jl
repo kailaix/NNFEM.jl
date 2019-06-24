@@ -2,11 +2,15 @@
 using LinearAlgebra
 export getShapeQuad4
 function getShapeQuad4( ξ::Array{Float64,1} )
-
+    #   gaussian point ordering:
+    #   4 ---- 3
+    #
+    #   1 ---- 2
     #Check the dimension of physical space
     if length(ξ) != 2
         error("2D only")
     end
+
 
     sData       = zeros(4,3)
 
@@ -15,17 +19,23 @@ function getShapeQuad4( ξ::Array{Float64,1} )
     sData[2,1] = 0.25*(1.0+ξ[1])*(1.0-ξ[2])
     sData[3,1] = 0.25*(1.0+ξ[1])*(1.0+ξ[2])
     sData[4,1] = 0.25*(1.0-ξ[1])*(1.0+ξ[2])
+    
+    
+    
+    
 
     #Calculate derivatives of shape functions
     sData[1,2] = -0.25*(1.0-ξ[2])
     sData[2,2] =  0.25*(1.0-ξ[2])
     sData[3,2] =  0.25*(1.0+ξ[2])
     sData[4,2] = -0.25*(1.0+ξ[2])
-
+    
     sData[1,3] = -0.25*(1.0-ξ[1])
     sData[2,3] = -0.25*(1.0+ξ[1])
     sData[3,3] =  0.25*(1.0+ξ[1])
     sData[4,3] =  0.25*(1.0-ξ[1])
+    
+    
     
     return sData
 end
@@ -81,10 +91,19 @@ function getElemShapeData( elemCoords::Array{Float64} , nPoints::Int64 = 0 )
     weight = intWghts[k]
     # println(ξ)
     sData = getShapeQuad4(ξ)
+    
     jac = elemCoords' * sData[:,2:end]
     push!(dhdx, sData[:,2:end] * inv( jac ))
+
+    @info "k", k, "xi", ξ, "sData", sData, "jac", jac, "elemCoords", elemCoords, "weight", abs(det(jac)) * weight
+
     push!(weights, abs(det(jac)) * weight)
     push!(hs, sData[:,1])
   end
+  
+  @info "dhdx", dhdx
+  @info "weights", weights
+  @info "hs", hs
+
   return dhdx, weights, hs
 end

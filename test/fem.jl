@@ -9,8 +9,9 @@ np = pyimport("numpy")
     x = np.linspace(0.0, 1.0, nx + 1)
     y = np.linspace(0.0, 1.0, ny + 1)
     X, Y = np.meshgrid(x, y)
+    @info "X", X, "Y", Y
     nodes = zeros(nnodes,2)
-    nodes[:,1], nodes[:,2] = X[:], Y[:]
+    nodes[:,1], nodes[:,2] = X'[:], Y'[:]
     ndofs = 2
     Δt = 0.01
 
@@ -32,11 +33,15 @@ np = pyimport("numpy")
 
 
     domain = Domain(nodes, elements, ndofs, EBC, g)
-    globdat = GlobalData(zeros(domain.neqs),zeros(domain.neqs),
+    state = [1.0;2.0;3.0;4.0;5.0;6.0;7.0;8.0;9.0;10.0;11.0;12.0]
+    globdat = GlobalData(state,zeros(domain.neqs),
                         zeros(domain.neqs),zeros(domain.neqs), domain.neqs)
     assembleMassMatrix!(globdat, domain)
 
+    updateStates(domain, globdat.state, globdat.Dstate, globdat.time)
+
     F = assembleInternalForce(globdat, domain)
+    @info "F" F
     solver = ExplicitSolver(Δt, globdat, domain )
     #solver.run( props , globdat )
 end

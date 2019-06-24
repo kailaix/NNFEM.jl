@@ -1,6 +1,6 @@
 export assembleInternalForce,assembleStiffAndForce,assembleMassMatrix!
 function assembleInternalForce(globdat::GlobalData, domain::Domain)
-    Fint = zeros(Int64, domain.neqs)
+    Fint = zeros(Float64, domain.neqs)
     neles = domain.neles
   
     # Loop over the elements in the elementGroup
@@ -10,14 +10,13 @@ function assembleInternalForce(globdat::GlobalData, domain::Domain)
       # Get the element nodes
       el_nodes = getNodes(element)
   
-      el_coords = getCoords(domain,el_nodes)
-  
       # Get the element nodes
       el_eqns = getEqns(domain,iele)
   
       el_dofs = getDofs(domain,iele)
   
       el_state  = getState(domain,el_dofs)
+      @info "el_state", el_state
   
       el_Dstate = getDstate(domain,el_dofs)
   
@@ -26,6 +25,7 @@ function assembleInternalForce(globdat::GlobalData, domain::Domain)
   
       # Assemble in the global array
       el_eqns_active = (el_eqns .>= 1)
+      @info "fint", fint
       Fint[el_eqns[el_eqns_active]] += fint[el_eqns_active]
     end
   
@@ -43,8 +43,6 @@ function assembleStiffAndForce(globdat::GlobalData, domain::Domain)
   
       # Get the element nodes
       el_nodes = getNodes(element)
-  
-      el_coords = getCoords(domain,el_nodes)
   
       # Get the element nodes
       el_eqns = getEqns(domain,iele)
@@ -78,8 +76,6 @@ function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
 
         # Get the element nodes
         el_nodes = getNodes(element)
-    
-        el_coords = getCoords(domain,el_nodes)
     
         # Get the element nodes
         el_eqns = getEqns(domain,iele)
