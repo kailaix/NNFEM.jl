@@ -40,6 +40,8 @@ np = pyimport("numpy")
 
     updateStates(domain, globdat.state, globdat.Dstate, globdat.time)
 
+    F,K = assembleStiffAndForce(globdat, domain)
+
     F = assembleInternalForce(globdat, domain)
     @info "F" F
     solver = ExplicitSolver(Δt, globdat, domain )

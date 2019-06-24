@@ -1,4 +1,4 @@
-export assembleInternalForce,assembleStiffAndForce,assembleMassMatrix!
+export assembleStiffAndForce,assembleInternalForce,assembleMassMatrix!
 function assembleInternalForce(globdat::GlobalData, domain::Domain)
     Fint = zeros(Float64, domain.neqs)
     neles = domain.neles
@@ -33,8 +33,8 @@ function assembleInternalForce(globdat::GlobalData, domain::Domain)
 end
 
 function assembleStiffAndForce(globdat::GlobalData, domain::Domain)
-    Fint = zeros(Int64, domain.neqs)
-    K = zeros(Int64, domain.neqs, domain.neqs)
+    Fint = zeros(Float64, domain.neqs)
+    K = zeros(Float64, domain.neqs, domain.neqs)
     neles = domain.neles
   
     # Loop over the elements in the elementGroup
@@ -54,14 +54,16 @@ function assembleStiffAndForce(globdat::GlobalData, domain::Domain)
       el_Dstate = getDstate(domain,el_dofs)
   
       # Get the element contribution by calling the specified action
-      fint, stiff  = getInternalForce(element, el_state, el_Dstate)
+      fint, stiff  = getStiffAndForce(element, el_state, el_Dstate)
+      @info "fint", fint
+      @info, "stiff", stiff
 
       # Assemble in the global array
       el_eqns_active = el_eqns .>= 1
       K[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += stiff[el_eqns_active,el_eqns_active]
       Fint[el_eqns[el_eqns_active]] += fint[el_eqns_active]
     end
-    return Fint,K
+    return Fint, K
 end
 
 function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
