@@ -44,7 +44,7 @@ np = pyimport("numpy")
     F = assembleInternalForce(globdat, domain)
 
     @info "F - F1", F - F1
-    @info "F", K
+    @info "F", F
     @info "K", K
     @info "M", globdat.M
 
