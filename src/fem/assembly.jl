@@ -69,7 +69,7 @@ end
 function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
     Mlumped = zeros(Float64, domain.neqs)
     M = zeros(Float64, domain.neqs, domain.neqs)
-
+    Mlumped = zeros(Float64, domain.neqs)
     neles = domain.neles
 
     # Loop over the elements in the elementGroup
@@ -85,18 +85,16 @@ function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
         el_eqns = getEqns(domain,iele)
 
         # Get the element contribution by calling the specified action
-        lM = getMassMatrix(element)
-
+        lM, lumped = getMassMatrix(element)
 
         # Assemble in the global array
         
         el_eqns_active = (el_eqns .>= 1)
         M[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += lM[el_eqns_active, el_eqns_active]
+        Mlumped[el_eqns[el_eqns_active]] += lumped[el_eqns_active]
 
         
     end
-
-    Mlumped = sum(M, dims=2) 
 
     globaldat.M = M
     globaldat.Mlumped = Mlumped

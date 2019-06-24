@@ -69,7 +69,8 @@ function getMassMatrix(self::FiniteStrainContinuum)
         mass += [self.hs[k]*self.hs[k]' zeros(nnodes, nnodes)
                  zeros(nnodes, nnodes)  self.hs[k]*self.hs[k]']  * rho * self.weights[k]
     end
-    return mass
+    lumped = sum(mass, dims=2)
+    mass, lumped
 end
 
 

@@ -55,12 +55,12 @@ function setBoundary!(self::Domain, EBC::Array{Int64}, g::Array{Float64})
     ID = zeros(Int64, nnodes, ndims) .- 1
 
     eq_to_dof = Int64[]
-    neqs = 1
+    neqs = 0
     for idof = 1:ndims
       for inode = 1:nnodes
           if (EBC[inode, idof] == 0)
-              ID[inode, idof] = neqs
               neqs += 1
+              ID[inode, idof] = neqs
               push!(eq_to_dof,inode + (idof-1)*nnodes)
           end
         end
@@ -68,15 +68,12 @@ function setBoundary!(self::Domain, EBC::Array{Int64}, g::Array{Float64})
 
     self.ID, self.neqs, self.eq_to_dof = ID, neqs, eq_to_dof
 
-    @info "ID" , ID
 
     # LM(e,d) is the global equation number of element e's d th freedom
     LM = Array{Array{Int64}}(undef, neles)
     for iele = 1:neles
       el_nodes = getNodes(elements[iele])
       ieqns = ID[el_nodes, :][:]
-      @info "el_nodes" , el_nodes
-      @info "ieqns" , ieqns
       LM[iele] = ieqns
     end
     self.LM = LM
@@ -86,7 +83,7 @@ function setBoundary!(self::Domain, EBC::Array{Int64}, g::Array{Float64})
     DOF = Array{Array{Int64}}(undef, neles)
     for iele = 1:neles
       el_nodes = getNodes(elements[iele])
-      DOF[iele] = [el_nodes;[idof + nnodes for idof = 1:length(el_nodes)]]
+      DOF[iele] = [el_nodes;[idof + nnodes for idof in el_nodes]]
     end
     self.DOF = DOF
     

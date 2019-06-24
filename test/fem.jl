@@ -21,9 +21,9 @@ np = pyimport("numpy")
     prop = Dict("name"=> "PlaneStrain", "rho"=> 1.0, "E"=> 1000.0, "nu"=> 0.4)
 
     elements = []
-    for i = 1:nx
-        for j = 1:ny
-            n = nx*(j-1) + i
+    for j = 1:ny
+        for i = 1:nx 
+            n = (nx+1)*(j-1) + i
             elnodes = [n, n + 1, n + 1 + (nx + 1), n + (nx + 1)]
             coords = nodes[elnodes,:]
             push!(elements,FiniteStrainContinuum(coords,elnodes, prop))
