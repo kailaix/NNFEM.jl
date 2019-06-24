@@ -61,19 +61,15 @@ function getInternalForce(self::FiniteStrainContinuum, state::Array{Float64}, Ds
 end
 
 function getMassMatrix(self::FiniteStrainContinuum)
-    n = dofCount(self)
+    ndofs = dofCount(self)
+    nnodes = length(self.elnodes)
     rho = self.mat.ρ
-    mass = zeros(n,n)
+    mass = zeros(ndofs,ndofs)
     for k = 1:length(self.weights)
-        N = zeros(2, 2length(self.hs[k]))
-        for (i,a) in enumerate(self.hs[k])
-            N[1,2(i-1)+1] = a; N[2,2i] = a
-        end
-        mass += N' * N  * rho * self.weights[k]
+        mass += [self.hs[k]*self.hs[k]' zeros(nnodes, nnodes)
+                 zeros(nnodes, nnodes)  self.hs[k]*self.hs[k]']  * rho * self.weights[k]
     end
-    lumped = sum(mass, dims=2)
-
-    return mass, lumped
+    return mass
 end
 
 

@@ -68,11 +68,15 @@ function setBoundary!(self::Domain, EBC::Array{Int64}, g::Array{Float64})
 
     self.ID, self.neqs, self.eq_to_dof = ID, neqs, eq_to_dof
 
+    @info "ID" , ID
+
     # LM(e,d) is the global equation number of element e's d th freedom
     LM = Array{Array{Int64}}(undef, neles)
     for iele = 1:neles
       el_nodes = getNodes(elements[iele])
       ieqns = ID[el_nodes, :][:]
+      @info "el_nodes" , el_nodes
+      @info "ieqns" , ieqns
       LM[iele] = ieqns
     end
     self.LM = LM

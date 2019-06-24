@@ -1,5 +1,9 @@
 @testset "workflow" begin
-    
+using Revise
+using Test 
+using NNFEM
+using PyCall
+np = pyimport("numpy")
     nx, ny =  2, 2
     nnodes, neles = (nx + 1)*(ny + 1), nx*ny
     x = np.linspace(0.0, 1.0, nx + 1)
