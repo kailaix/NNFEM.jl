@@ -22,14 +22,14 @@ Central Difference Explicit solver for Ma + fint = fext
     a_0 = M^{-1}(-Cv_0 - R(u_0) + P_0)
 """->
 function ExplicitSolver(Δt, globdat, domain)
-    disp = globdat.state
+    state = globdat.state
     velo = globdat.velo
     acce = globdat.acce
 
     fext = domain.fext
     
     velo += 0.5*Δt * acce
-    disp += Δt * velo
+    state += Δt * velo
     
     fint  = assembleInternalForce( globdat, domain )
 
@@ -63,7 +63,7 @@ function NewmarkSolver(Δt, globdat, domain, β = 0.25, γ = 0.5, ε = 1e-8, max
 
     M = domain.M
     acce_n = globdat.acce; acce_np = globdat.acce
-    disp_n = globdat.disp
+    state_n = globdat.state
     vel_n  = globdat.vel
 
     fext = domain.fext
@@ -77,7 +77,7 @@ function NewmarkSolver(Δt, globdat, domain, β = 0.25, γ = 0.5, ε = 1e-8, max
 
         acce_nh = 0.5*(acce_n + acce_np)
         vel_nh = vel_n + 0.5*Δt*((1 - γ)*acce_n + γ*acce_np)
-        disp_nh = disp_n + 0.5*Δt*vel_n + 0.25*Δt*Δt*((1 - 2*β)*acce_n + 2*β*acce_np)
+        state_nh = state_n + 0.5*Δt*vel_n + 0.25*Δt*Δt*((1 - 2*β)*acce_n + 2*β*acce_np)
 
         t_nh = t_n + Δt/2.0
 
@@ -87,7 +87,7 @@ function NewmarkSolver(Δt, globdat, domain, β = 0.25, γ = 0.5, ε = 1e-8, max
 
         A = 0.5*M/2.0 + 0.5*Δt*Δt*β * stiff
 
-        Δacce_np = np.linalg.solve(A, res)
+        Δacce_np = A\ res
 
         acce_np -= Δacce_np
 
@@ -100,7 +100,7 @@ function NewmarkSolver(Δt, globdat, domain, β = 0.25, γ = 0.5, ε = 1e-8, max
     end
 
     globdat.acce[:] = acce_np[:] 
-    globdat.disp[:] += Δt * vel_n + Δt * Δt / 2.0 * ((1 - 2β) * acce_n + 2 * β * acce_np)
+    globdat.state[:] += Δt * vel_n + Δt * Δt / 2.0 * ((1 - 2β) * acce_n + 2 * β * acce_np)
     globdat.vel[:] += Δt * ((1 - γ) * acce_n + γ * acce_np)
 
     # todo update historic parameters
@@ -130,18 +130,18 @@ function StaticSolver(globdat, domain, loaditerstep = 10, ε = 1.e-8, maxiterste
 
         while  !Newtonconverge
 
-            NewtonIterstep += 1
+            Newtoniterstep += 1
 
             fint, stiff = assembleStiffAndForce( globdat, domain )
 
             res = fint - iterstep/loaditerstep * fext
 
-            Δdisp = stiff\res
+            Δstate = stiff\res
 
-            globdat.disp[:] -= Δdisp[:]
+            globdat.state[:] -= Δstate[:]
 
 
-            if (np.linalg.norm(RHS) < ε  || Newtoniterstep > maxiterstep)
+            if (norm(res) < ε  || Newtoniterstep > maxiterstep)
                 if Newtoniterstep > maxiterstep
                     @info "Newton iteration cannot converge"
                 end

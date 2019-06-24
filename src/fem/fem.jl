@@ -41,7 +41,7 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array
     ID = Int64[]
     neqs = 0
     eq_to_dof = Int64[]
-    fext = Array{Float64}
+    fext = Float64[]
     
     domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, LM, DOF, ID, neqs, eq_to_dof, EBC, g, NBC, fext)
     setDirichletBoundary!(domain, EBC, g)
@@ -182,5 +182,5 @@ function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Flo
     time = 0.0
     M = Float64[]
     Mlumped = Float64[]
-    GlobalData(state, Dstate, velo, acce, fint, fext, time, M, Mlumped)
+    GlobalData(state, Dstate, velo, acce, time, M, Mlumped)
 end
