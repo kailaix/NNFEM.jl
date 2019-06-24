@@ -56,7 +56,7 @@ function assembleStiffAndForce(globdat::GlobalData, domain::Domain)
       # Get the element contribution by calling the specified action
       fint, stiff  = getStiffAndForce(element, el_state, el_Dstate)
       @info "fint", fint
-      @info, "stiff", stiff
+      @info "stiff", stiff
 
       # Assemble in the global array
       el_eqns_active = el_eqns .>= 1
