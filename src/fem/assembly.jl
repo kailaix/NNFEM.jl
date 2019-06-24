@@ -1,4 +1,4 @@
-export assembleInternalForce,assembleStiffAndForce,assembleMassMatrix
+export assembleInternalForce,assembleStiffAndForce,assembleMassMatrix!
 function assembleInternalForce(globdat::GlobalData, domain::Domain)
     Fint = zeros(Int64, domain.neqs)
     neles = domain.neles
@@ -22,10 +22,10 @@ function assembleInternalForce(globdat::GlobalData, domain::Domain)
       el_Dstate = getDstate(domain,el_dofs)
   
       # Get the element contribution by calling the specified action
-      fint = getInternalForce(element, el_coords, el_state, el_Dstate)
+      fint = getInternalForce(element, el_state, el_Dstate)
   
       # Assemble in the global array
-      el_eqns_active = (el_eqns .>= 0)
+      el_eqns_active = (el_eqns .>= 1)
       Fint[el_eqns[el_eqns_active]] += fint[el_eqns_active]
     end
   
@@ -59,16 +59,16 @@ function assembleStiffAndForce(globdat::GlobalData, domain::Domain)
       fint, stiff  = getInternalForce(element, el_state, el_Dstate)
 
       # Assemble in the global array
-      el_eqns_active = el_eqns .>= 0
+      el_eqns_active = el_eqns .>= 1
       K[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += stiff[el_eqns_active,el_eqns_active]
       Fint[el_eqns[el_eqns_active]] += fint[el_eqns_active]
     end
     return Fint,K
 end
 
-function assembleMassMatrix(globdat::GlobalData, domain::Domain)
-    Mlumped = zeros(Int64, domain.neqs)
-    M = zeros(Int64, domain.neqs, domain.neqs)
+function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
+    Mlumped = zeros(Float64, domain.neqs)
+    M = zeros(Float64, domain.neqs, domain.neqs)
 
     neles = domain.neles
 
@@ -85,18 +85,18 @@ function assembleMassMatrix(globdat::GlobalData, domain::Domain)
         el_eqns = getEqns(domain,iele)
 
         # Get the element contribution by calling the specified action
-        lM, lMlumped = getMassMatrix(element, el_coords)
+        lM, lMlumped = getMassMatrix(element)
 
 
         # Assemble in the global array
-        el_eqns_active = (el_eqns .>= 0)
-
+        el_eqns_active = (el_eqns .>= 1)
         M[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += lM[el_eqns_active, el_eqns_active]
 
         Mlumped[el_eqns[el_eqns_active]] += lMlumped[el_eqns_active]
     end
 
-    return M, Mlumped
+    globaldat.M = M
+    globaldat.Mlumped = Mlumped
   
 end
 

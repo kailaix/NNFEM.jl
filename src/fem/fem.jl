@@ -14,12 +14,13 @@ mutable struct Domain
     EBC::Array{Int64}  # Dirichlet boundary condition
     g::Array{Float64}  # Value for EBC
     eq_to_dof::Array{Int64}
+    elements::Array
 end
 
 @doc """
     Creating a finite element domain 
 """->
-function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array{Int64}, g::Float64)
+function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array{Int64}, g::Array{Float64})
     nnodes = size(nodes,1)
     neles = size(elements,1)
     state = zeros(nnodes, ndims)
@@ -28,10 +29,11 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array
     DOF = Array{Int64}[]
     ID = Int64[]
     neqs = 0
-    EBC = Int64[]
-    g = Float64[]
     eq_to_dof = Int64[]
-    Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, LM, DOF, ID, neqs, EBC, g, eq_to_dof)
+    
+    domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, LM, DOF, ID, neqs, EBC, g, eq_to_dof,elements)
+    setBoundary!(domain, EBC, g)
+    domain
 end
 
 @doc """
@@ -44,7 +46,7 @@ end
     :param nbc:
     :return:
 """ -> 
-function setBoundary(self::Domain, EBC::Array{Int64}, g::Array{Float64})
+function setBoundary!(self::Domain, EBC::Array{Int64}, g::Array{Float64})
 
     self.EBC, self.g = EBC, g
     # ID(n,d) is the global equation number of node n's dth freedom, -1 means no freedom
@@ -53,10 +55,10 @@ function setBoundary(self::Domain, EBC::Array{Int64}, g::Array{Float64})
     ID = zeros(Int64, nnodes, ndims) .- 1
 
     eq_to_dof = Int64[]
-    neqs = 0
+    neqs = 1
     for idof = 1:ndims
       for inode = 1:nnodes
-          if (EBC[inode, idof] == 0):
+          if (EBC[inode, idof] == 0)
               ID[inode, idof] = neqs
               neqs += 1
               push!(eq_to_dof,inode + (idof-1)*nnodes)
@@ -69,7 +71,7 @@ function setBoundary(self::Domain, EBC::Array{Int64}, g::Array{Float64})
     # LM(e,d) is the global equation number of element e's d th freedom
     LM = Array{Array{Int64}}(undef, neles)
     for iele = 1:neles
-      el_nodes = getNodes(elements,iele)
+      el_nodes = getNodes(elements[iele])
       ieqns = ID[el_nodes, :][:]
       LM[iele] = ieqns
     end
@@ -79,7 +81,7 @@ function setBoundary(self::Domain, EBC::Array{Int64}, g::Array{Float64})
 
     DOF = Array{Array{Int64}}(undef, neles)
     for iele = 1:neles
-      el_nodes = getNodes(elements,iele)
+      el_nodes = getNodes(elements[iele])
       DOF[iele] = [el_nodes;[idof + nnodes for idof = 1:length(el_nodes)]]
     end
     self.DOF = DOF
@@ -112,7 +114,7 @@ function getDofs(self::Domain, iele::Int64)
     return self.DOF[iele]
 end
 
-function getEqns(self::Domain, iele::Array{Int64})
+function getEqns(self::Domain, iele::Int64)
     return self.LM[iele]
 end
 
@@ -129,18 +131,18 @@ mutable struct GlobalData
     Dstate::Array{Float64}
     velo::Array{Float64}
     acce::Array{Float64}
-    finit::Array{Float64}
+    fint::Array{Float64}
     fext::Array{Float64}
     time::Float64
+    M::Array{Float64}
+    Mlumped::Array{Float64}
 end
 
-function GlobalData()
-    state = Float64[]
-    Dstate = Float64[]
-    velo = Float64[]
-    acce = Float64[]
-    finit = Float64[]
-    fext = Float64[]
+function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Float64},acce::Array{Float64}, neqs::Int64)
+    fint = Float64[]
+    fext = zeros(neqs)
     time = 0.0
-    GlobalData(state, Dstate, velo, acce, finit, fext, time)
+    M = Float64[]
+    Mlumped = Float64[]
+    GlobalData(state, Dstate, velo, acce, fint, fext, time, M, Mlumped)
 end

@@ -1,4 +1,5 @@
 module NNFEM
+include("utils/shapeFunctions.jl")
 include("materials/PlaneStrain.jl")
 include("solvers/Solvers.jl")
 include("elements/FiniteStrainContinuum.jl")

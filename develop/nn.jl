@@ -6,7 +6,7 @@ using DelimitedFiles
 reset_default_graph()
 
 # * viscoplasticity or elasticity
-type = :viscoplasticity 
+type = :elasticity 
 
 # * parameters for Newmark algorithm 
 # Newmark Algorithm: http://solidmechanics.org/text/Chapter8_2/Chapter8_2.htm
