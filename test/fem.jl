@@ -17,6 +17,10 @@ np = pyimport("numpy")
     EBC, g = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
     EBC[collect(1:nx+1:(nx+1)*(ny+1)), :] .= -1
 
+    NBC, f = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
+    NBC[nx+1, :] .= -1
+    f[nx+1, :] = -1, -2
+
 
     prop = Dict("name"=> "PlaneStrain", "rho"=> 1.0, "E"=> 1000.0, "nu"=> 0.4)
 
@@ -26,12 +30,12 @@ np = pyimport("numpy")
             n = (nx+1)*(j-1) + i
             elnodes = [n, n + 1, n + 1 + (nx + 1), n + (nx + 1)]
             coords = nodes[elnodes,:]
-            push!(elements,FiniteStrainContinuum(coords,elnodes, prop))
+            push!(elements,SmallStrainContinuum(coords,elnodes, prop))
         end
     end
 
 
-    domain = Domain(nodes, elements, ndofs, EBC, g)
+    domain = Domain(nodes, elements, ndofs, EBC, g, NBC, f)
     state = [1.0;2.0;3.0;4.0;5.0;6.0;7.0;8.0;9.0;10.0;11.0;12.0]
     globdat = GlobalData(state,zeros(domain.neqs),
                         zeros(domain.neqs),zeros(domain.neqs), domain.neqs)
@@ -49,6 +53,8 @@ np = pyimport("numpy")
     @info "M", globdat.M
 
 
-    solver = ExplicitSolver(Δt, globdat, domain )
+    #solver = ExplicitSolver(Δt, globdat, domain )
+    #solver = NewmarkSolver(Δt, globdat, domain )
+    solver = StaticSolver(globdat, domain )
     #solver.run( props , globdat )
 end

@@ -3,7 +3,7 @@ mutable struct Domain
     nnodes::Int64
     nodes::Array{Float64}
     neles::Int64
-    elem::Array
+    elements::Array
     ndims::Int64
     state::Array{Float64}
     Dstate::Array{Float64}
@@ -11,16 +11,27 @@ mutable struct Domain
     DOF::Array{Array{Int64}}
     ID::Array{Int64}
     neqs::Int64
-    EBC::Array{Int64}  # Dirichlet boundary condition
-    g::Array{Float64}  # Value for EBC
     eq_to_dof::Array{Int64}
-    elements::Array
+    EBC::Array{Int64}  # Dirichlet boundary condition
+    g::Array{Float64}  # Value for Dirichlet boundary condition
+    NBC::Array{Int64}  # Nodal force boundary condition
+    fext::Array{Float64}  # Value for Nodal force boundary condition
+    
+    
 end
 
 @doc """
-    Creating a finite element domain 
+    Creating a finite element domain
+    nodes: n by 2 float 64, node coordinates
+    elements: element list
+    ndims: 2
+    EBC: n by 2 Int64, nodal Dirichlet boundary condition, -1 time-independent, -2 time-dependent
+    g: n by 2 Float64, values for nodal time-independent Dirichlet boundary condition
+    NBC: n by 2 Int64, nodal force boundary condition, -1 time-independent, -2 time-dependent
+    f: n by 2 Float64, values for nodal force time independent force boundary condition
+
 """->
-function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array{Int64}, g::Array{Float64})
+function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array{Int64}, g::Array{Float64}, NBC::Array{Int64}, f::Array{Float64})
     nnodes = size(nodes,1)
     neles = size(elements,1)
     state = zeros(nnodes * ndims)
@@ -30,9 +41,11 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array
     ID = Int64[]
     neqs = 0
     eq_to_dof = Int64[]
+    fext = Array{Float64}
     
-    domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, LM, DOF, ID, neqs, EBC, g, eq_to_dof,elements)
-    setBoundary!(domain, EBC, g)
+    domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, LM, DOF, ID, neqs, eq_to_dof, EBC, g, NBC, fext)
+    setDirichletBoundary!(domain, EBC, g)
+    setNeumannBoundary!(domain, NBC, f)
     domain
 end
 
@@ -46,9 +59,8 @@ end
     :param nbc:
     :return:
 """ -> 
-function setBoundary!(self::Domain, EBC::Array{Int64}, g::Array{Float64})
+function setDirichletBoundary!(self::Domain, EBC::Array{Int64}, g::Array{Float64})
 
-    self.EBC, self.g = EBC, g
     # ID(n,d) is the global equation number of node n's dth freedom, -1 means no freedom
     nnodes, ndims = self.nnodes, self.ndims
     neles, elements = self.neles, self.elements
@@ -89,6 +101,35 @@ function setBoundary!(self::Domain, EBC::Array{Int64}, g::Array{Float64})
     
 end
 
+
+@doc """
+
+    :param EBC[n, d] is the boundary condition of of node n's dth freedom,
+        -1 means fixed Dirichlet boundary nodes
+        -2 means time dependent Dirichlet boundary nodes
+    :param g[n, d] is the fixed Dirichlet boundary value
+
+    :param nbc:
+    :return:
+""" -> 
+function setNeumannBoundary!(self::Domain, NBC::Array{Int64}, f::Array{Float64})
+
+    fext = zeros(Float64, self.neqs)
+    # ID(n,d) is the global equation number of node n's dth freedom, -1 means no freedom
+
+    nnodes, ndims, ID = self.nnodes, self.ndims, self.ID
+    for idof = 1:ndims
+      for inode = 1:nnodes
+          if (NBC[inode, idof] == -1)
+              @assert ID[inode, idof] > 0
+              fext[ID[inode, idof]] += f[inode, idof]
+          end
+        end
+    end
+    self.fext = fext
+end
+
+
 @doc """
     :param disp: neqs array
     :param vel : neqs array
@@ -100,7 +141,7 @@ function updateStates(self::Domain, state::Array{Float64}, Dstate::Array{Float64
     self.state[self.eq_to_dof] = state
     self.Dstate[self.eq_to_dof] = Dstate
 
-    #todo also update time-dependent Dirichlet boundary
+    #todo also update time-dependent Dirichlet boundary/force load boundary
 end
 
 function getCoords(self::Domain, el_nodes::Array{Int64})
@@ -132,16 +173,12 @@ mutable struct GlobalData
     Dstate::Array{Float64}
     velo::Array{Float64}
     acce::Array{Float64}
-    fint::Array{Float64}
-    fext::Array{Float64}
     time::Float64
     M::Array{Float64}
     Mlumped::Array{Float64}
 end
 
 function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Float64},acce::Array{Float64}, neqs::Int64)
-    fint = Float64[]
-    fext = zeros(neqs)
     time = 0.0
     M = Float64[]
     Mlumped = Float64[]
