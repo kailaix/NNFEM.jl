@@ -57,16 +57,13 @@ function getInternalForce(self::FiniteStrainContinuum, state::Array{Float64}, Ds
     for k = 1:length(self.weights)
         g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
         ux = u'*g1; uy = u'*g2; vx = v'*g1; vy = v'*g2 
-        @info "dudx", ux, uy, vx, vy
         # compute  ∂E∂u.T, 8 by 3 array
         ∂E∂u = [g1+ux*g1 uy*g2    g2 + g2*ux+g1*uy;
                 vx*g1    g2+vy*g2 g1 + g1*vy+g2*vx;] 
 
         E = [ux+0.5*(ux*ux+vx*vx); vy+0.5*(uy*uy+vy*vy); uy+vx+ux*uy+vx*vy]
         S,_ = getStress(self.mat,E)
-        @info "ε", E, "σ", S
         fint += ∂E∂u * S * self.weights[k] # 1x8
-        @info "fint_l", ∂E∂u * S * self.weights[k], self.weights[k]
     end
     return fint
 end

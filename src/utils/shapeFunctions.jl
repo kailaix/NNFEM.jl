@@ -95,15 +95,10 @@ function getElemShapeData( elemCoords::Array{Float64} , nPoints::Int64 = 0 )
     jac = elemCoords' * sData[:,2:end]
     push!(dhdx, sData[:,2:end] * inv( jac ))
 
-    @info "k", k, "xi", ξ, "sData", sData, "jac", jac, "elemCoords", elemCoords, "weight", abs(det(jac)) * weight
-
     push!(weights, abs(det(jac)) * weight)
     push!(hs, sData[:,1])
   end
   
-  @info "dhdx", dhdx
-  @info "weights", weights
-  @info "hs", hs
 
   return dhdx, weights, hs
 end

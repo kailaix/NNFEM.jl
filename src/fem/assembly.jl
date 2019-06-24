@@ -16,7 +16,6 @@ function assembleInternalForce(globdat::GlobalData, domain::Domain)
       el_dofs = getDofs(domain,iele)
   
       el_state  = getState(domain,el_dofs)
-      @info "el_state", el_state
   
       el_Dstate = getDstate(domain,el_dofs)
   
@@ -25,7 +24,6 @@ function assembleInternalForce(globdat::GlobalData, domain::Domain)
   
       # Assemble in the global array
       el_eqns_active = (el_eqns .>= 1)
-      @info "fint", fint
       Fint[el_eqns[el_eqns_active]] += fint[el_eqns_active]
     end
   
@@ -55,8 +53,6 @@ function assembleStiffAndForce(globdat::GlobalData, domain::Domain)
   
       # Get the element contribution by calling the specified action
       fint, stiff  = getStiffAndForce(element, el_state, el_Dstate)
-      @info "fint", fint
-      @info "stiff", stiff
 
       # Assemble in the global array
       el_eqns_active = el_eqns .>= 1

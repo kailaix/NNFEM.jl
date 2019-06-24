@@ -9,7 +9,6 @@ np = pyimport("numpy")
     x = np.linspace(0.0, 1.0, nx + 1)
     y = np.linspace(0.0, 1.0, ny + 1)
     X, Y = np.meshgrid(x, y)
-    @info "X", X, "Y", Y
     nodes = zeros(nnodes,2)
     nodes[:,1], nodes[:,2] = X'[:], Y'[:]
     ndofs = 2
@@ -40,10 +39,16 @@ np = pyimport("numpy")
 
     updateStates(domain, globdat.state, globdat.Dstate, globdat.time)
 
-    F,K = assembleStiffAndForce(globdat, domain)
+    F1,K = assembleStiffAndForce(globdat, domain)
 
     F = assembleInternalForce(globdat, domain)
-    @info "F" F
+
+    @info "F - F1", F - F1
+    @info "F", K
+    @info "K", K
+    @info "M", globdat.M
+
+
     solver = ExplicitSolver(Δt, globdat, domain )
     #solver.run( props , globdat )
 end
