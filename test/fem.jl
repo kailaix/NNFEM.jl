@@ -19,7 +19,7 @@ np = pyimport("numpy")
 
     NBC, f = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
     NBC[nx+1, :] .= -1
-    f[nx+1, :] = -1, -2
+    f[nx+1, 1],  f[nx+1, 2] = -1, -2
 
 
     prop = Dict("name"=> "PlaneStrain", "rho"=> 1.0, "E"=> 1000.0, "nu"=> 0.4)
