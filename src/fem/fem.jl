@@ -1,4 +1,24 @@
 export Domain,GlobalData,updateStates
+
+
+mutable struct GlobalData
+    state::Array{Float64}
+    Dstate::Array{Float64}
+    velo::Array{Float64}
+    acce::Array{Float64}
+    time::Float64
+    M::Array{Float64}
+    Mlumped::Array{Float64}
+end
+
+function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Float64},acce::Array{Float64}, neqs::Int64)
+    time = 0.0
+    M = Float64[]
+    Mlumped = Float64[]
+    GlobalData(state, Dstate, velo, acce, time, M, Mlumped)
+end
+
+
 mutable struct Domain
     nnodes::Int64
     nodes::Array{Float64}
@@ -16,7 +36,7 @@ mutable struct Domain
     g::Array{Float64}  # Value for Dirichlet boundary condition
     NBC::Array{Int64}  # Nodal force boundary condition
     fext::Array{Float64}  # Value for Nodal force boundary condition
-    
+    time::Float64
     
 end
 
@@ -43,10 +63,16 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array
     eq_to_dof = Int64[]
     fext = Float64[]
     
-    domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, LM, DOF, ID, neqs, eq_to_dof, EBC, g, NBC, fext)
+    domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, LM, DOF, ID, neqs, eq_to_dof, EBC, g, NBC, fext, 0.0)
     setDirichletBoundary!(domain, EBC, g)
     setNeumannBoundary!(domain, NBC, f)
     domain
+end
+
+function commitHistory(domain::Domain)
+    for e in domain.elements
+        commitHistory(e.mat)
+    end
 end
 
 @doc """
@@ -137,10 +163,10 @@ end
     update Dirichlet boundary
     :return:
 """ ->
-function updateStates(self::Domain, state::Array{Float64}, Dstate::Array{Float64}, time::Float64)
-    self.state[self.eq_to_dof] = state
-    self.Dstate[self.eq_to_dof] = Dstate
-
+function updateStates(self::Domain, globaldat::GlobalData)
+    self.state[self.eq_to_dof] = globaldat.state
+    self.Dstate[self.eq_to_dof] = globaldat.Dstate
+    self.time = globaldat.time
     #todo also update time-dependent Dirichlet boundary/force load boundary
 end
 
@@ -166,21 +192,4 @@ end
 
 function getDstate(self::Domain, el_dofs::Array{Int64})
     return self.Dstate[el_dofs]
-end
-
-mutable struct GlobalData
-    state::Array{Float64}
-    Dstate::Array{Float64}
-    velo::Array{Float64}
-    acce::Array{Float64}
-    time::Float64
-    M::Array{Float64}
-    Mlumped::Array{Float64}
-end
-
-function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Float64},acce::Array{Float64}, neqs::Int64)
-    time = 0.0
-    M = Float64[]
-    Mlumped = Float64[]
-    GlobalData(state, Dstate, velo, acce, time, M, Mlumped)
 end

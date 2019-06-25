@@ -17,7 +17,7 @@ function PlaneStrain(prop::Dict{String, Any})
     PlaneStrain(H, E, ν, ρ)
 end
 
-function getStress(self::PlaneStrain, strain::Array{Float64})
+function getStress(self::PlaneStrain, strain::Array{Float64}, Dstrain::Array{Float64})
     sigma = self.H * strain
 
     return sigma, self.H
@@ -25,4 +25,7 @@ end
 
 function getTangent(self::PlaneStrain)
     self.H
+end
+
+function commitHistory(self::PlaneStrain)
 end

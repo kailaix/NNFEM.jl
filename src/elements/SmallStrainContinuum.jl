@@ -13,6 +13,8 @@ function SmallStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, pro
     name = props["name"]
     if name=="PlaneStrain"
         mat = PlaneStrain(props)
+    elseif name=="Plasticity"
+        mat = Plasticity(props)
     else
         error("Not implemented yet: $name")
     end
@@ -27,17 +29,20 @@ function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64}, Dst
     stiff = zeros(Float64, ndofs,ndofs)
     out = Array{Float64}[]
     u = state[1:nnodes]; v = state[nnodes+1:2*nnodes]
+    Du = Dstate[1:nnodes]; Dv = Dstate[nnodes+1:2*nnodes]
     for k = 1:length(self.weights)
         g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
         
         ux = u'*g1; uy = u'*g2; vx = v'*g1; vy = v'*g2
+        Dux = Du'*g1; Duy = Du'*g2; Dvx = Dv'*g1; Dvy = Dv'*g2
         # compute  ∂E∂u.T, 8 by 3 array 
         ∂E∂u = [g1   zeros(nnodes)    g2;
                 zeros(nnodes)    g2   g1;] 
         
         E = [ux; vy; uy+vx]
+        DE = [Dux; Dvy; Duy+Dvx]
 
-        S, dS_dE = getStress(self.mat, E)
+        S, dS_dE = getStress(self.mat, E, DE)
 
         fint += ∂E∂u * S * self.weights[k] # 1x8
         
@@ -51,17 +56,20 @@ function getInternalForce(self::SmallStrainContinuum, state::Array{Float64}, Dst
     fint = zeros(Float64,n)
     out = Array{Float64}[]
     u = state[1:4]; v = state[5:8]
+    Du = Dstate[1:4]; Dv = Dstate[5:8]
     for k = 1:length(self.weights)
         g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
         
         ux = u'*g1; uy = u'*g2; vx = v'*g1; vy = v'*g2
+        Dux = Du'*g1; Duy = Du'*g2; Dvx = Dv'*g1; Dvy = Dv'*g2
         # compute  ∂E∂u.T, 8 by 3 array 
         ∂E∂u = [g1   zeros(4)    g2;
                 zeros(4)    g2   g1;] 
         
         E = [ux; vy; uy+vx]
+        DE = [Dux; Dvy; Duy+Dvx]
 
-        S, dS_dE = getStress(self.mat, E)
+        S, dS_dE = getStress(self.mat, E, DE)
 
         fint += ∂E∂u * S * self.weights[k] # 1x8
     end
@@ -89,5 +97,3 @@ end
 function dofCount(self::SmallStrainContinuum)
     return 2length(self.elnodes)
 end
-
-

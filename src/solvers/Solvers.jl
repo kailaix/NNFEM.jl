@@ -98,10 +98,10 @@ function NewmarkSolver(Δt, globdat, domain, β = 0.25, γ = 0.5, ε = 1e-8, max
             Newtonconverge = true
         end
     end
-
-    globdat.acce[:] = acce_np[:] 
-    globdat.state[:] += Δt * vel_n + Δt * Δt / 2.0 * ((1 - 2β) * acce_n + 2 * β * acce_np)
-    globdat.vel[:] += Δt * ((1 - γ) * acce_n + γ * acce_np)
+    globaldat.Dstate = state_n
+    globdat.acce = acce_np[:] 
+    globdat.state += Δt * vel_n + Δt * Δt / 2.0 * ((1 - 2β) * acce_n + 2 * β * acce_np)
+    globdat.vel += Δt * ((1 - γ) * acce_n + γ * acce_np)
 
     # todo update historic parameters
     # globdat.elements.commitHistory()
@@ -122,31 +122,34 @@ end
 function StaticSolver(globdat, domain, loaditerstep = 10, ε = 1.e-8, maxiterstep=100)
     
     fext = domain.fext
-
+    globdat.Dstate = copy(globdat.state)
     for iterstep = 1:loaditerstep
 
         # Newton's method
         Newtoniterstep, Newtonconverge = 0, false
-
+        
         while  !Newtonconverge
 
             Newtoniterstep += 1
-
+            
             fint, stiff = assembleStiffAndForce( globdat, domain )
-
+            # @info "fint", fint, "stiff", stiff
+            # @info "fext", fext
+       
             res = fint - iterstep/loaditerstep * fext
 
             Δstate = stiff\res
 
-            globdat.state[:] -= Δstate[:]
-
-
+            globdat.state -= Δstate
             if (norm(res) < ε  || Newtoniterstep > maxiterstep)
                 if Newtoniterstep > maxiterstep
-                    @info "Newton iteration cannot converge"
+                    @error "$Newtoniterstep Newton iteration cannot converge"
                 end
-                NewtonConverge = true
+                Newtonconverge = true
             end
+            updateStates(domain, globdat)
         end
+        commitHistory(domain)
+        globdat.Dstate = copy(globdat.state)
     end
 end

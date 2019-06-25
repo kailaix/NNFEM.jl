@@ -1,9 +1,11 @@
 @testset "workflow" begin
-using Revise
-using Test 
-using NNFEM
-using PyCall
-np = pyimport("numpy")
+    using Revise
+    using Test 
+    using NNFEM
+    using PyCall
+
+    testtype = "Plasticity"
+    np = pyimport("numpy")
     nx, ny =  2, 2
     nnodes, neles = (nx + 1)*(ny + 1), nx*ny
     x = np.linspace(0.0, 1.0, nx + 1)
@@ -19,10 +21,11 @@ np = pyimport("numpy")
 
     NBC, f = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
     NBC[nx+1, :] .= -1
-    f[nx+1, 1],  f[nx+1, 2] = -1, -2
+    f[nx+1, 1],  f[nx+1, 2] = -10, -20
 
 
-    prop = Dict("name"=> "PlaneStrain", "rho"=> 1.0, "E"=> 1000.0, "nu"=> 0.4)
+    prop = Dict("name"=> testtype, "rho"=> 1.0, "E"=> 1000.0, "nu"=> 0.4,
+                "sigmaY"=>1000, "K"=>100)
 
     elements = []
     for j = 1:ny
@@ -36,12 +39,12 @@ np = pyimport("numpy")
 
 
     domain = Domain(nodes, elements, ndofs, EBC, g, NBC, f)
-    state = [1.0;2.0;3.0;4.0;5.0;6.0;7.0;8.0;9.0;10.0;11.0;12.0]
+    state = zeros(domain.neqs)
     globdat = GlobalData(state,zeros(domain.neqs),
                         zeros(domain.neqs),zeros(domain.neqs), domain.neqs)
     assembleMassMatrix!(globdat, domain)
 
-    updateStates(domain, globdat.state, globdat.Dstate, globdat.time)
+    updateStates(domain, globdat)
 
     F1,K = assembleStiffAndForce(globdat, domain)
 
@@ -53,8 +56,9 @@ np = pyimport("numpy")
     @info "M", globdat.M
 
 
-    #solver = ExplicitSolver(Δt, globdat, domain )
+    # solver = ExplicitSolver(Δt, globdat, domain )
     #solver = NewmarkSolver(Δt, globdat, domain )
     solver = StaticSolver(globdat, domain )
     #solver.run( props , globdat )
+    # visualize(domain)
 end
