@@ -57,17 +57,19 @@ end
 
     M a_{n+0.5} + C v_{n+0.5} + R(u_{n+0.5}) = P_{n+0.5}
 """->
-function NewmarkSolver(Δt, globdat, domain, β = 0.25, γ = 0.5, ε = 1e-8, maxiterstep=100)
+function NewmarkSolver(Δt, globdat, domain, β2 = 0.5, γ = 0.5, ε = 1e-8, maxiterstep=100)
     
     globdat.time  += Δt
 
-    M = domain.M
-    acce_n = globdat.acce; acce_np = globdat.acce
-    state_n = globdat.state
-    vel_n  = globdat.vel
+    M = globdat.M
+    ∂∂uk = copy(globdat.acce)
+    u = copy(globdat.state)
+    ∂u  = copy(globdat.velo)
 
     fext = domain.fext
     #Newton solve for a_{n+1}
+
+    ∂∂u = copy(∂∂uk)
     Newtoniterstep, Newtonconverge = 0, false
     while !Newtonconverge
 
@@ -75,36 +77,33 @@ function NewmarkSolver(Δt, globdat, domain, β = 0.25, γ = 0.5, ε = 1e-8, max
         #app.check_derivative(u_n)
         Newtoniterstep += 1
 
-        acce_nh = 0.5*(acce_n + acce_np)
-        vel_nh = vel_n + 0.5*Δt*((1 - γ)*acce_n + γ*acce_np)
-        state_nh = state_n + 0.5*Δt*vel_n + 0.25*Δt*Δt*((1 - 2*β)*acce_n + 2*β*acce_np)
-
-        t_nh = t_n + Δt/2.0
-
+        domain.state[domain.eq_to_dof] = u + Δt * ∂u + (1-β2)/2*Δt^2*∂∂uk + β2/2*Δt^2*∂∂u
+        # t_nh = t_n + Δt/2.0
         fint, stiff = assembleStiffAndForce( globdat, domain )
+        
+        res = M * ∂∂u + fint - fext
 
-        res = M * acce_nh + fint - fext
+        A = M + β2/2 * Δt^2 * stiff
 
-        A = 0.5*M/2.0 + 0.5*Δt*Δt*β * stiff
+        Δ∂∂u = A\res
+        ∂∂u -= Δ∂∂u
 
-        Δacce_np = A\ res
-
-        acce_np -= Δacce_np
-
+        println("$Newtoniterstep, $(norm(res))")
         if (norm(res) < ε || Newtoniterstep > maxiterstep)
             if Newtoniterstep > maxiterstep
-                @info "Newton iteration cannot converge"
+                error("Newton iteration cannot converge $(norm(res))")
             end
             Newtonconverge = true
+            printstyled("Newton converged $Newtoniterstep\n", color=:green)
         end
     end
-    globaldat.Dstate = state_n
-    globdat.acce = acce_np[:] 
-    globdat.state += Δt * vel_n + Δt * Δt / 2.0 * ((1 - 2β) * acce_n + 2 * β * acce_np)
-    globdat.vel += Δt * ((1 - γ) * acce_n + γ * acce_np)
+    globdat.Dstate = copy(globdat.state)
+    globdat.state += Δt * ∂u + 0.5 *Δt * Δt * ((1 - β2) * ∂∂uk + β2 * ∂∂u)
+    globdat.velo += Δt * ((1 - γ) * ∂∂uk + γ * ∂∂u)
 
     # todo update historic parameters
-    # globdat.elements.commitHistory()
+    commitHistory(domain)
+    updateStates(domain, globdat)
 end
 
 

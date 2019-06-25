@@ -1,12 +1,12 @@
-@testset "workflow" begin
+# @testset "workflow" begin
     using Revise
     using Test 
     using NNFEM
     using PyCall
 
-    testtype = "Plasticity"
+    testtype = "PlaneStrain"
     np = pyimport("numpy")
-    nx, ny =  2, 2
+    nx, ny =  10, 10
     nnodes, neles = (nx + 1)*(ny + 1), nx*ny
     x = np.linspace(0.0, 1.0, nx + 1)
     y = np.linspace(0.0, 1.0, ny + 1)
@@ -14,18 +14,18 @@
     nodes = zeros(nnodes,2)
     nodes[:,1], nodes[:,2] = X'[:], Y'[:]
     ndofs = 2
-    Δt = 0.01
+    Δt = 0.1
 
     EBC, g = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
     EBC[collect(1:nx+1:(nx+1)*(ny+1)), :] .= -1
 
     NBC, f = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
     NBC[nx+1, :] .= -1
-    f[nx+1, 1],  f[nx+1, 2] = -10, -20
+    f[nx+1, 1],  f[nx+1, 2] = -10.0/10, -10.0/10
 
 
     prop = Dict("name"=> testtype, "rho"=> 1.0, "E"=> 1000.0, "nu"=> 0.4,
-                "sigmaY"=>1000, "K"=>100)
+                "sigmaY"=>1000, "K"=>1000)
 
     elements = []
     for j = 1:ny
@@ -40,8 +40,9 @@
 
     domain = Domain(nodes, elements, ndofs, EBC, g, NBC, f)
     state = zeros(domain.neqs)
+    ∂u = zeros(domain.neqs)
     globdat = GlobalData(state,zeros(domain.neqs),
-                        zeros(domain.neqs),zeros(domain.neqs), domain.neqs)
+                        zeros(domain.neqs),∂u, domain.neqs)
     assembleMassMatrix!(globdat, domain)
 
     updateStates(domain, globdat)
@@ -50,15 +51,18 @@
 
     F = assembleInternalForce(globdat, domain)
 
-    @info "F - F1", F - F1
-    @info "F", F
-    @info "K", K
-    @info "M", globdat.M
+    # @info "F - F1", F - F1
+    # @info "F", F
+    # @info "K", K
+    # @info "M", globdat.M
 
 
     # solver = ExplicitSolver(Δt, globdat, domain )
-    #solver = NewmarkSolver(Δt, globdat, domain )
-    solver = StaticSolver(globdat, domain )
+    for i = 1:50
+        solver = NewmarkSolver(Δt, globdat, domain, 0.5, 0.5, 1e-8, 500)
+    end
+    visdynamic(domain,"dym")
+    # solver = StaticSolver(globdat, domain )
     #solver.run( props , globdat )
     # visualize(domain)
-end
+# end

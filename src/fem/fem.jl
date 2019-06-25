@@ -1,13 +1,14 @@
+using SparseArrays
 export Domain,GlobalData,updateStates
 
 
 mutable struct GlobalData
-    state::Array{Float64}
-    Dstate::Array{Float64}
-    velo::Array{Float64}
-    acce::Array{Float64}
+    state::Array{Float64}    #u
+    Dstate::Array{Float64}   #uk
+    velo::Array{Float64}     #∂u
+    acce::Array{Float64}     #∂∂u
     time::Float64
-    M::Array{Float64}
+    M::Union{SparseMatrixCSC{Float64,Int64},Array{Float64}}
     Mlumped::Array{Float64}
 end
 
@@ -37,7 +38,7 @@ mutable struct Domain
     NBC::Array{Int64}  # Nodal force boundary condition
     fext::Array{Float64}  # Value for Nodal force boundary condition
     time::Float64
-    
+    state_history::Array{Array{Float64}}
 end
 
 @doc """
@@ -63,7 +64,8 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array
     eq_to_dof = Int64[]
     fext = Float64[]
     
-    domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, LM, DOF, ID, neqs, eq_to_dof, EBC, g, NBC, fext, 0.0)
+    his = [state]
+    domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, LM, DOF, ID, neqs, eq_to_dof, EBC, g, NBC, fext, 0.0, his)
     setDirichletBoundary!(domain, EBC, g)
     setNeumannBoundary!(domain, NBC, f)
     domain
@@ -167,6 +169,7 @@ function updateStates(self::Domain, globaldat::GlobalData)
     self.state[self.eq_to_dof] = globaldat.state
     self.Dstate[self.eq_to_dof] = globaldat.Dstate
     self.time = globaldat.time
+    push!(self.state_history, copy(self.state))
     #todo also update time-dependent Dirichlet boundary/force load boundary
 end
 

@@ -1,3 +1,4 @@
+using SparseArrays
 export assembleStiffAndForce,assembleInternalForce,assembleMassMatrix!
 function assembleInternalForce(globdat::GlobalData, domain::Domain)
     Fint = zeros(Float64, domain.neqs)
@@ -59,7 +60,7 @@ function assembleStiffAndForce(globdat::GlobalData, domain::Domain)
       K[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += stiff[el_eqns_active,el_eqns_active]
       Fint[el_eqns[el_eqns_active]] += fint[el_eqns_active]
     end
-    return Fint, K
+    return Fint, sparse(K)
 end
 
 function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
@@ -90,8 +91,8 @@ function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
         
     end
 
-    globaldat.M = M
-    globaldat.Mlumped = Mlumped
+    globaldat.M = sparse(M)
+    globaldat.Mlumped = sparse(Mlumped)
   
 end
 
