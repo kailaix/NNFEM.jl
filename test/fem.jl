@@ -4,9 +4,9 @@
     using NNFEM
     using PyCall
 
-    testtype = "PlaneStrain"
+    testtype = "PlaneStressPlasticity"
     np = pyimport("numpy")
-    nx, ny =  10, 10
+    nx, ny =  20, 20
     nnodes, neles = (nx + 1)*(ny + 1), nx*ny
     x = np.linspace(0.0, 1.0, nx + 1)
     y = np.linspace(0.0, 1.0, ny + 1)
@@ -21,7 +21,7 @@
 
     NBC, f = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
     NBC[nx+1, :] .= -1
-    f[nx+1, 1],  f[nx+1, 2] = -10.0/10, -10.0/10
+    f[nx+1, 1],  f[nx+1, 2] = -10.0/20, -10.0/20
 
 
     prop = Dict("name"=> testtype, "rho"=> 1.0, "E"=> 1000.0, "nu"=> 0.4,
@@ -58,7 +58,7 @@
 
 
     # solver = ExplicitSolver(Δt, globdat, domain )
-    for i = 1:50
+    for i = 1:10
         solver = NewmarkSolver(Δt, globdat, domain, 0.5, 0.5, 1e-8, 500)
     end
     visdynamic(domain,"dym")

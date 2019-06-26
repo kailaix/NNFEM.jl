@@ -10,7 +10,7 @@ function PlaneStress(prop::Dict{String, Any})
     E = prop["E"]; ν = prop["nu"]; ρ = prop["rho"]
     H = zeros(3,3)
 
-    H[1,1] = E/(1.-ν*ν)
+    H[1,1] = E/(1. -ν*ν)
     H[1,2] = H[1,1]*ν
     H[2,1] = H[1,2]
     H[2,2] = H[1,1]

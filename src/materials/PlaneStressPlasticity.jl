@@ -38,11 +38,11 @@ function PlaneStressPlasticity(prop::Dict{String, Any})
     E = prop["E"]; ν = prop["nu"]; ρ = prop["rho"];
     K = prop["K"]; σY = prop["sigmaY"]
     H = zeros(3,3)
-    H[1,1] = E*(1. -ν)/((1+ν)*(1. -2. *ν));
-    H[1,2] = H[1,1]*ν/(1-ν);
-    H[2,1] = H[1,2];
-    H[2,2] = H[1,1];
-    H[3,3] = H[1,1]*0.5*(1. -2. *ν)/(1. -ν);
+    H[1,1] = E/(1. -ν*ν)
+    H[1,2] = H[1,1]*ν
+    H[2,1] = H[1,2]
+    H[2,2] = H[1,1]
+    H[3,3] = E/(2.0*(1.0+ν))
     σ0 = zeros(3)
     f = 0.0
     fσ = zeros(3)
@@ -56,11 +56,16 @@ function getStress(self::PlaneStressPlasticity,  strain::Array{Float64},  Dstrai
     σtrial = σA + E*Δε
     Δσ = zeros(3); Δγ = 0.0
     dΔσdΔε = zeros(3,3)
+    # http://homes.civil.aau.dk/lda/continuum/plast.pdf
     if f(σtrial, self.α, self.σY, self.K)<=0 
         Δσ = E*Δε
         Δγ = 0.0
         dΔσdΔε = self.H
     else
+        # Newton Raphson iteration
+        # Equation 1: Δσ - HΔε + HΔλ∇f(σA+Δσ) = 0
+        # Equation 2: f(σA + Δσ) = 0
+        # (Δσ, Δλ)
         Δσtrial = E*Δε
         for iter = 1:100
             σtrial = σA + Δσtrial

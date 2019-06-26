@@ -7,19 +7,23 @@ mutable struct SmallStrainContinuum
     dhdx::Array{Array{Float64}}  # 4nPointsx2 matrix
     weights::Array{Float64} 
     hs::Array{Array{Float64}}
+    strain::Array{Array{Float64}}
 end
 
 function SmallStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, props::Dict{String, Any})
     name = props["name"]
     if name=="PlaneStrain"
         mat = PlaneStrain(props)
-    elseif name=="Plasticity"
-        mat = Plasticity(props)
+    elseif name=="PlaneStress"
+        mat = PlaneStress(props)
+    elseif name=="PlaneStressPlasticity"
+        mat = PlaneStressPlasticity(props)
     else
         error("Not implemented yet: $name")
     end
     dhdx, weights, hs = getElemShapeData( coords, 2 )
-    SmallStrainContinuum(mat, elnodes, props, coords, dhdx, weights, hs)
+    strain = Array{Array{Float64}}(undef, length(weights))
+    SmallStrainContinuum(mat, elnodes, props, coords, dhdx, weights, hs, strain)
 end
 
 function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64}, Dstate::Array{Float64})
@@ -43,6 +47,7 @@ function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64}, Dst
         DE = [Dux; Dvy; Duy+Dvx]
 
         S, dS_dE = getStress(self.mat, E, DE)
+        self.strain[k] = S
 
         fint += ∂E∂u * S * self.weights[k] # 1x8
         

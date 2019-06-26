@@ -7,19 +7,23 @@ mutable struct FiniteStrainContinuum
     dhdx::Array{Array{Float64}}  # 4nPointsx2 matrix
     weights::Array{Float64} 
     hs::Array{Array{Float64}}
+    strain::Array{Array{Float64}}
 end
 
 function FiniteStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, props::Dict{String, Any})
     name = props["name"]
     if name=="PlaneStrain"
         mat = PlaneStrain(props)
-    elseif name=="Plasticity"
-        mat = Plasticity(props)
+    elseif name=="PlaneStress"
+        mat = PlaneStress(props)
+    elseif name=="PlaneStressPlasticity"
+        mat = PlaneStressPlasticity(props)
     else
         error("Not implemented yet: $name")
     end
     dhdx, weights, hs = getElemShapeData( coords, 2 )
-    FiniteStrainContinuum(mat, elnodes, props, coords, dhdx, weights, hs)
+    strain = Array{Array{Float64}}(undef, length(weights))
+    FiniteStrainContinuum(mat, elnodes, props, coords, dhdx, weights, hs, strain)
 end
 
 function getStiffAndForce(self::FiniteStrainContinuum, state::Array{Float64}, Dstate::Array{Float64})
@@ -43,6 +47,7 @@ function getStiffAndForce(self::FiniteStrainContinuum, state::Array{Float64}, Ds
         DE = [Dux+0.5*(Dux*Dux+Dvx*Dvx); Dvy+0.5*(Duy*Duy+Dvy*Dvy); Duy+Dvx+Dux*Duy+Dvx*Dvy]
 
         S, dS_dE = getStress(self.mat, E, DE)
+        self.strain[k] = S
 
         fint += ∂E∂u * S * self.weights[k] # 1x8
         
