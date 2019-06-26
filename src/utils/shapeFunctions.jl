@@ -1,5 +1,4 @@
 
-using LinearAlgebra
 export getShapeQuad4
 function getShapeQuad4( ξ::Array{Float64,1} )
     #   gaussian point ordering:

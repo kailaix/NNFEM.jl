@@ -1,4 +1,3 @@
-using LinearAlgebra
 export ExplicitSolver, NewmarkSolver, StaticSolver
 
 @doc """

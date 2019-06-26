@@ -1,12 +1,3 @@
-using PyPlot
-using PyCall
-using Statistics
-animation = pyimport("matplotlib.animation")
-colors = pyimport("matplotlib.colors")
-cmx = pyimport("matplotlib.cm")
-jet = plt.get_cmap("jet")
-clb = pyimport("matplotlib.colorbar")
-
 export visstatic, visdynamic
 function visstatic(domain::Domain)
     u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
