@@ -1,5 +1,5 @@
-export  Plasticity
-mutable struct Plasticity
+export  PlaneStressPlasticity
+mutable struct PlaneStressPlasticity
     H::Array{Float64}
     E::Float64
     ν::Float64
@@ -34,7 +34,7 @@ function fσσ(σ)
 3*σ3*(-σ1 + σ2/2)/(σ1^2 - σ1*σ2 + σ2^2 + 3*σ3^2)^(3/2)                                                        3*σ3*(σ1/2 - σ2)/(σ1^2 - σ1*σ2 + σ2^2 + 3*σ3^2)^(3/2) -9*σ3^2/(σ1^2 - σ1*σ2 + σ2^2 + 3*σ3^2)^(3/2) + 3/sqrt(σ1^2 - σ1*σ2 + σ2^2 + 3*σ3^2)]
 end
 
-function Plasticity(prop::Dict{String, Any})
+function PlaneStressPlasticity(prop::Dict{String, Any})
     E = prop["E"]; ν = prop["nu"]; ρ = prop["rho"];
     K = prop["K"]; σY = prop["sigmaY"]
     H = zeros(3,3)
@@ -47,10 +47,10 @@ function Plasticity(prop::Dict{String, Any})
     f = 0.0
     fσ = zeros(3)
     fσσ = zeros(3,3)
-    Plasticity(H, E, ν, ρ, 0.0, K, σY, σ0, f, fσ, fσσ, 0.0)
+    PlaneStressPlasticity(H, E, ν, ρ, 0.0, K, σY, σ0, f, fσ, fσσ, 0.0)
 end
 
-function getStress(self::Plasticity,  strain::Array{Float64},  Dstrain::Array{Float64})
+function getStress(self::PlaneStressPlasticity,  strain::Array{Float64},  Dstrain::Array{Float64})
     local e0
     σA = self.σ0; E = self.H; Δε = strain - Dstrain
     σtrial = σA + E*Δε
@@ -98,10 +98,10 @@ function getStress(self::Plasticity,  strain::Array{Float64},  Dstrain::Array{Fl
     return σ, dΔσdΔε
 end
 
-function getTangent(self::Plasticity)
+function getTangent(self::PlaneStressPlasticity)
     error("Not implemented")
 end
 
-function commitHistory(self::Plasticity)
+function commitHistory(self::PlaneStressPlasticity)
     self.α = self.α_
 end
