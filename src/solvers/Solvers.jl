@@ -58,31 +58,29 @@ end
 """->
 function NewmarkSolver(Δt, globdat, domain, β2 = 0.5, γ = 0.5, ε = 1e-8, maxiterstep=100)
     
-    globdat.time  += Δt
+    globdat.time  += 0.5*Δt
 
     M = globdat.M
-    ∂∂uk = copy(globdat.acce)
+    ∂∂u = copy(globdat.acce)
     u = copy(globdat.state)
     ∂u  = copy(globdat.velo)
 
     fext = domain.fext
     #Newton solve for a_{n+1}
+    ∂∂up = ∂∂u[:]
 
-    ∂∂u = copy(∂∂uk)
     Newtoniterstep, Newtonconverge = 0, false
     while !Newtonconverge
 
-        #validate gradient
-        #app.check_derivative(u_n)
         Newtoniterstep += 1
-
-        domain.state[domain.eq_to_dof] = u + Δt * ∂u + (1-β2)/2*Δt^2*∂∂uk + β2/2*Δt^2*∂∂u
+        # update displacement to half step
+        domain.state[domain.eq_to_dof] = u + 0.5*Δt*∂u + 0.25*(1-β2)*Δt^2*∂∂u + 0.25*β2*Δt^2*∂∂up
         # t_nh = t_n + Δt/2.0
         fint, stiff = assembleStiffAndForce( globdat, domain )
         
-        res = M * ∂∂u + fint - fext
+        res = M * (∂∂u + ∂∂up)/2.0 + fint - fext
 
-        A = M + β2/2 * Δt^2 * stiff
+        A = M/2.0 + 0.25*β2*Δt^2 * stiff
 
         Δ∂∂u = A\res
         ∂∂u -= Δ∂∂u
@@ -96,9 +94,10 @@ function NewmarkSolver(Δt, globdat, domain, β2 = 0.5, γ = 0.5, ε = 1e-8, max
             printstyled("Newton converged $Newtoniterstep\n", color=:green)
         end
     end
-    globdat.Dstate = copy(globdat.state)
-    globdat.state += Δt * ∂u + 0.5 *Δt * Δt * ((1 - β2) * ∂∂uk + β2 * ∂∂u)
-    globdat.velo += Δt * ((1 - γ) * ∂∂uk + γ * ∂∂u)
+    globdat.Dstate = globdat.state[:]
+    globdat.state += Δt * ∂u + 0.5 *Δt * Δt * ((1 - β2) * ∂∂u + β2 * ∂∂up)
+    globdat.velo += Δt * ((1 - γ) * ∂∂u + γ * ∂∂up)
+    globdat.time  += 0.5*Δt
 
     # todo update historic parameters
     commitHistory(domain)

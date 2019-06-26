@@ -3,7 +3,7 @@ using Test
 using NNFEM
 using PyCall
 
-elements_, nodes, boundaries = readMesh("$(@__DIR__)/../deps/plate.msh")
+elements_, nodes, boundaries = readMesh("$(@__DIR__)/deps/plate.msh")
 # Dirichlet_1 : bottom
 # Dirichlet_2 : right
 # Dirichlet_3 : top 
@@ -47,7 +47,7 @@ end
 
 
 
-testtype = "PlaneStress"
+testtype = "PlaneStressPlasticity"
 ndofs = 2
 
 nnodes = size(nodes,1)
