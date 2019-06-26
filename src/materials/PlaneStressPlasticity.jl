@@ -62,6 +62,7 @@ function getStress(self::PlaneStressPlasticity,  strain::Array{Float64},  Dstrai
         Δγ = 0.0
         dΔσdΔε = self.H
     else
+        
         # Newton Raphson iteration
         # Equation 1: Δσ - HΔε + HΔλ∇f(σA+Δσ) = 0
         # Equation 2: f(σA + Δσ) = 0

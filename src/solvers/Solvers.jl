@@ -139,6 +139,7 @@ function StaticSolver(globdat, domain, loaditerstep = 10, ε = 1.e-8, maxiterste
             Δstate = stiff\res
 
             globdat.state -= Δstate
+            @show Newtoniterstep, norm(res)
             if (norm(res) < ε  || Newtoniterstep > maxiterstep)
                 if Newtoniterstep > maxiterstep
                     @error "$Newtoniterstep Newton iteration cannot converge"

@@ -10,13 +10,15 @@ mutable struct GlobalData
     time::Float64
     M::Union{SparseMatrixCSC{Float64,Int64},Array{Float64}}
     Mlumped::Array{Float64}
+    gt::Union{Function,Nothing}
 end
 
-function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Float64},acce::Array{Float64}, neqs::Int64)
+function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Float64},acce::Array{Float64}, neqs::Int64,
+        gt::Union{Function, Nothing}=nothing)
     time = 0.0
     M = Float64[]
     Mlumped = Float64[]
-    GlobalData(state, Dstate, velo, acce, time, M, Mlumped)
+    GlobalData(state, Dstate, velo, acce, time, M, Mlumped, gt)
 end
 
 
@@ -102,8 +104,10 @@ function setDirichletBoundary!(self::Domain, EBC::Array{Int64}, g::Array{Float64
               neqs += 1
               ID[inode, idof] = neqs
               push!(eq_to_dof,inode + (idof-1)*nnodes)
+          elseif (EBC[inode, idof] == -1)
+              self.state[inode + (idof-1)*nnodes] = g[inode, idof]
           end
-        end
+      end
     end
 
     self.ID, self.neqs, self.eq_to_dof = ID, neqs, eq_to_dof
@@ -171,6 +175,18 @@ function updateStates(self::Domain, globaldat::GlobalData)
     self.time = globaldat.time
     push!(self.state_history, copy(self.state))
     #todo also update time-dependent Dirichlet boundary/force load boundary
+
+    g = globaldat.gt(globaldat.time) # user defined time-dependent boundary
+    println(g)
+    gtdof_id = 0
+    for idof = 1:self.ndims
+        for inode = 1:self.nnodes
+            if (self.EBC[inode, idof] == -2)
+                gtdof_id += 1
+                self.state[inode + (idof-1)*self.nnodes] = g[gtdof_id]
+            end
+        end
+    end
 end
 
 function getCoords(self::Domain, el_nodes::Array{Int64})

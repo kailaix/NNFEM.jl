@@ -1,6 +1,7 @@
 __precompile__(true)
 module NNFEM
 using PyPlot
+using JLD2
 using PyCall
 using Statistics
 using LinearAlgebra
@@ -28,4 +29,4 @@ include("fem/fem.jl")
 include("fem/assembly.jl")
 include("utils/visualize.jl")
 include("utils/io.jl")
-end 
+end
