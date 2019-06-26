@@ -1,24 +1,36 @@
 using PyPlot
 using PyCall
+using Statistics
 animation = pyimport("matplotlib.animation")
+colors = pyimport("matplotlib.colors")
+cmx = pyimport("matplotlib.cm")
+jet = plt.get_cmap("jet")
+clb = pyimport("matplotlib.colorbar")
 
 export visstatic, visdynamic
 function visstatic(domain::Domain)
     u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
     nodes = domain.nodes
-    fig, ax = subplots()
+    fig,ax = subplots()
     temp = nodes + [u v]
     x1, x2 = minimum(temp[:,1]), maximum(temp[:,1])
     y1, y2 = minimum(temp[:,2]), maximum(temp[:,2])
+    σ =[]
     for e in domain.elements
-        # sqrt(σ[1]^2-σ[1]*σ[2]+σ[2]^2+3*σ[3]^2)
+        σs = e.strain
+        push!(σ,mean([sqrt(σ[1]^2-σ[1]*σ[2]+σ[2]^2+3*σ[3]^2) for σ in σs]))
+    end
+    cNorm  = colors.Normalize(
+            vmin=minimum(σ),
+            vmax=maximum(σ))
+    scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
+    for (k,e) in enumerate(domain.elements)
         n_ = nodes[getNodes(e),:] + [u[getNodes(e),:] v[getNodes(e),:]]
-        p = plt.Polygon(n_, fill=false)
+        p = plt.Polygon(n_, facecolor = scalarMap.to_rgba(σ[k]), fill=true, alpha=0.5)
         ax.add_patch(p)
     end
     xlim(x1 .-0.1,x2 .+0.1)
     ylim(y1 .-0.1,y2 .+0.1)
-    
 end
 
 function visdynamic(domain::Domain, name::String)

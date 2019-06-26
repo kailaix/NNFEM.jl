@@ -6,7 +6,7 @@
 
     testtype = "PlaneStressPlasticity"
     np = pyimport("numpy")
-    nx, ny =  20, 20
+    nx, ny =  50, 50
     nnodes, neles = (nx + 1)*(ny + 1), nx*ny
     x = np.linspace(0.0, 1.0, nx + 1)
     y = np.linspace(0.0, 1.0, ny + 1)
