@@ -86,23 +86,38 @@ function NewmarkSolver(Δt, globdat, domain, β2 = 0.5, γ = 0.5, ε = 1e-8, max
         # t_nh = t_n + Δt/2.0
         fint, stiff = assembleStiffAndForce( globdat, domain )
 
-        # # ! testing Newton
-        # if globdat.time>0.99999
-            
-        # end
+        
         
         res = M * ∂∂up + fint - fext
 
         A = M + 0.5*β2*Δt^2 * stiff
+        # println(cond(Array(A)))
+        # println(norm(res))
+        # println(M)
+        # error()
         # printstyled(domain.state, color=:blue)
         # if !(norm(A-A')≈0.0)
         #     printstyled(norm(A-A'), color=:red)
         #     # error()
         # end
+        # # ! testing Newton
+        function f(∂∂u)
+            domain.state[domain.eq_to_dof] = u + Δt * ∂u + 0.5 *Δt * Δt * ((1 - β2) * ∂∂u + β2 * ∂∂up)
+            fint, stiff = assembleStiffAndForce( globdat, domain )
+            res = M * ∂∂up + fint - fext
+            A = M + 0.5*β2*Δt^2 * stiff
+            res, A
+        end
+        # gradtest(f, ∂∂u)
+        # error()
 
         Δ∂∂u = A\res
-        ∂∂u -= Δ∂∂u
-
+        ∂∂up -= Δ∂∂u
+        # @show norm(A*Δ∂∂u-res)
+        # r, B = f(∂∂u)
+        # @show norm(res), norm(r), norm(B)
+        # error()
+        # @info Δ∂∂u
         println("$Newtoniterstep, $(norm(res))")
         if (norm(res) < ε || Newtoniterstep > maxiterstep)
             if Newtoniterstep > maxiterstep

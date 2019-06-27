@@ -38,7 +38,7 @@
     NBC, f = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
     
 
-    prop = Dict("name"=> testtype, "rho"=> 1.0, "E"=> 1000.0, "nu"=> 0.4,
+    prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 1000.0, "nu"=> 0.4,
                 "sigmaY"=>50, "K"=>1000)
 
     elements = []

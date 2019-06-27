@@ -3,7 +3,7 @@ using Test
 using NNFEM
 using PyCall
 
-elements_, nodes, boundaries = readMesh("$(@__DIR__)/deps/plate.msh")
+elements_, nodes, boundaries = readMesh("$(@__DIR__)/../deps/plate.msh")
 # Dirichlet_1 : bottom
 # Dirichlet_2 : right
 # Dirichlet_3 : top 
@@ -78,13 +78,13 @@ updateStates!(domain, globdat)
 
 
 # solver = ExplicitSolver(Δt, globdat, domain )
-NT = 100
+NT = 1e6
 Δt = 1/NT
 for i = 1:NT
-    solver = NewmarkSolver(Δt, globdat, domain, 0.5, 0.5, 1e-8, 500)
+    solver = NewmarkSolver(Δt, globdat, domain, 0.5, 0.5, 1e-6, 500)
 end
 # visdynamic(domain,"dym")
 # solver = StaticSolver(globdat, domain )
 #solver.run( props , globdat )
-# visualize(domain)
+visstatic(domain)
 # end
