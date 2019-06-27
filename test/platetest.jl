@@ -69,7 +69,7 @@ state = zeros(domain.neqs)
 globdat = GlobalData(state,zeros(domain.neqs),
                     zeros(domain.neqs),∂u, domain.neqs, gt)
 assembleMassMatrix!(globdat, domain)
-updateStates(domain, globdat)
+updateStates!(domain, globdat)
 
 # @info "F - F1", F - F1
 # @info "F", F

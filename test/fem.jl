@@ -45,7 +45,7 @@
                         zeros(domain.neqs),∂u, domain.neqs)
     assembleMassMatrix!(globdat, domain)
 
-    updateStates(domain, globdat)
+    updateStates!(domain, globdat)
 
     F1,K = assembleStiffAndForce(globdat, domain)
 

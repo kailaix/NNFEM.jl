@@ -1,6 +1,8 @@
+export gradtest
+
 function gradtest(f, x0, n=nothing)
     v0 = rand(Float64,size(x0))
-    γs = 10 ./10 .^(1:5)
+    γs = 1000 ./10 .^(1:5)
     err1 = []
     err2 = []
     f0, J = f(x0)
@@ -10,7 +12,7 @@ function gradtest(f, x0, n=nothing)
         f1, _ = f(x0+γs[i]*v0)
         f1 = f1'*q0
         
-        push!(err1, norm(f1-f0))
+        push!(err1, norm(f0-f1))
         push!(err2, norm(f1-f0-q0'*J*v0*γs[i]))
         @show norm(f0-f1),norm(f1-f0-q0'*J*v0*γs[i])
     end

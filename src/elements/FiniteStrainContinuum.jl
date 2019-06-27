@@ -11,17 +11,18 @@ mutable struct FiniteStrainContinuum
 end
 
 function FiniteStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, props::Dict{String, Any})
+    dhdx, weights, hs = getElemShapeData( coords, 2 )
+    nGauss = length(weights)
     name = props["name"]
     if name=="PlaneStrain"
-        mat = PlaneStrain(props)
+        mat = [PlaneStrain(props) for i = 1:nGauss]
     elseif name=="PlaneStress"
-        mat = PlaneStress(props)
+        mat = [PlaneStress(props) for i = 1:nGauss]
     elseif name=="PlaneStressPlasticity"
-        mat = PlaneStressPlasticity(props)
+        mat = [PlaneStressPlasticity(props) for i = 1:nGauss]
     else
         error("Not implemented yet: $name")
     end
-    dhdx, weights, hs = getElemShapeData( coords, 2 )
     strain = Array{Array{Float64}}(undef, length(weights))
     FiniteStrainContinuum(mat, elnodes, props, coords, dhdx, weights, hs, strain)
 end
@@ -46,7 +47,9 @@ function getStiffAndForce(self::FiniteStrainContinuum, state::Array{Float64}, Ds
         E = [ux+0.5*(ux*ux+vx*vx); vy+0.5*(uy*uy+vy*vy); uy+vx+ux*uy+vx*vy]
         DE = [Dux+0.5*(Dux*Dux+Dvx*Dvx); Dvy+0.5*(Duy*Duy+Dvy*Dvy); Duy+Dvx+Dux*Duy+Dvx*Dvy]
 
-        S, dS_dE = getStress(self.mat, E, DE)
+        # @show "+++",E, DE
+        S, dS_dE = getStress(self.mat[k], E, DE)
+        # error()
         self.strain[k] = S
 
         fint += ∂E∂u * S * self.weights[k] # 1x8
@@ -75,7 +78,7 @@ function getInternalForce(self::FiniteStrainContinuum, state::Array{Float64}, Ds
 
         E = [ux+0.5*(ux*ux+vx*vx); vy+0.5*(uy*uy+vy*vy); uy+vx+ux*uy+vx*vy]
         DE = [Dux+0.5*(Dux*Dux+Dvx*Dvx); Dvy+0.5*(Duy*Duy+Dvy*Dvy); Duy+Dvx+Dux*Duy+Dvx*Dvy]
-        S, _ = getStress(self.mat,E, DE)
+        S, _ = getStress(self.mat[k],E, DE)
         fint += ∂E∂u * S * self.weights[k] # 1x8
     end
     return fint
@@ -84,9 +87,9 @@ end
 function getMassMatrix(self::FiniteStrainContinuum)
     ndofs = dofCount(self)
     nnodes = length(self.elnodes)
-    rho = self.mat.ρ
     mass = zeros(ndofs,ndofs)
     for k = 1:length(self.weights)
+        rho = self.mat[k].ρ
         mass += [self.hs[k]*self.hs[k]' zeros(nnodes, nnodes)
                  zeros(nnodes, nnodes)  self.hs[k]*self.hs[k]']  * rho * self.weights[k]
     end
@@ -103,4 +106,8 @@ function dofCount(self::FiniteStrainContinuum)
     return 2length(self.elnodes)
 end
 
-
+function commitHistory(self::FiniteStrainContinuum)
+    for m in self.mat 
+        commitHistory(m)
+    end
+end

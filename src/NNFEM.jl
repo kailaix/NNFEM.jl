@@ -29,4 +29,6 @@ include("fem/fem.jl")
 include("fem/assembly.jl")
 include("utils/visualize.jl")
 include("utils/io.jl")
+include("utils/Testsuit.jl")
+
 end

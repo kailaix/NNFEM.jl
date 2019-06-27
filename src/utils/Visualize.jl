@@ -11,6 +11,7 @@ function visstatic(domain::Domain)
         σs = e.strain
         push!(σ,mean([sqrt(σ[1]^2-σ[1]*σ[2]+σ[2]^2+3*σ[3]^2) for σ in σs]))
     end
+    # @show σ
     cNorm  = colors.Normalize(
             vmin=minimum(σ),
             vmax=maximum(σ))

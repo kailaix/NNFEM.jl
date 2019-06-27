@@ -1,5 +1,5 @@
 using SparseArrays
-export Domain,GlobalData,updateStates
+export Domain,GlobalData,updateStates!,updateDomainStateBoundary!
 
 
 mutable struct GlobalData
@@ -75,7 +75,7 @@ end
 
 function commitHistory(domain::Domain)
     for e in domain.elements
-        commitHistory(e.mat)
+        commitHistory(e)
     end
 end
 
@@ -166,18 +166,38 @@ end
     :param disp: neqs array
     :param vel : neqs array
 
-    update Dirichlet boundary
+    update Dstate in Domain, update state in Domain
     :return:
 """ ->
-function updateStates(self::Domain, globaldat::GlobalData)
-    self.state[self.eq_to_dof] = globaldat.state
-    self.Dstate[self.eq_to_dof] = globaldat.Dstate
+function updateStates!(self::Domain, globaldat::GlobalData)
+    self.Dstate = self.state[:]
+    self.Dstate[self.eq_to_dof] = globaldat.Dstate[:]
+    self.state[self.eq_to_dof] = globaldat.state[:]
+    
     self.time = globaldat.time
     push!(self.state_history, copy(self.state))
     #todo also update time-dependent Dirichlet boundary/force load boundary
 
+    # g = globaldat.gt(globaldat.time) # user defined time-dependent boundary
+    # # println(g)
+    # gtdof_id = 0
+    # for idof = 1:self.ndims
+    #     for inode = 1:self.nnodes
+    #         if (self.EBC[inode, idof] == -2)
+    #             gtdof_id += 1
+    #             self.state[inode + (idof-1)*self.nnodes] = g[gtdof_id]
+    #         end
+    #     end
+    # end
+    updateDomainStateBoundary!(self, globaldat)
+end
+
+@doc """
+    Update domain boundary information.
+""" ->
+function updateDomainStateBoundary!(self::Domain, globaldat::GlobalData)
     g = globaldat.gt(globaldat.time) # user defined time-dependent boundary
-    println(g)
+    # println(g)
     gtdof_id = 0
     for idof = 1:self.ndims
         for inode = 1:self.nnodes

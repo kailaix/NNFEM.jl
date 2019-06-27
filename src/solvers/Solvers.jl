@@ -47,6 +47,8 @@ end
 
 
 
+
+
 @doc """
     Implicit solver for Ma + C v + R(u) = P
     a, v, u are acceleration, velocity and displacement
@@ -54,17 +56,23 @@ end
     u_{n+1} = u_n + dtv_n + dt^2/2 ((1 - 2\beta)a_n + 2\beta a_{n+1})
     v_{n+1} = v_n + dt((1 - gamma)a_n + gamma a_{n+1})
 
-    M a_{n+0.5} + C v_{n+0.5} + R(u_{n+0.5}) = P_{n+0.5}
+    M a_{n+1} + C v_{n+1} + R(u_{n+1}) = P_{n+1}
 """->
 function NewmarkSolver(Δt, globdat, domain, β2 = 0.5, γ = 0.5, ε = 1e-8, maxiterstep=100)
     
-    globdat.time  += 0.5*Δt
+    
+    globdat.time  += Δt
+    #udpate domain boundary
+    updateDomainStateBoundary!(domain, globdat)
+
+    @show domain.state, domain.Dstate
 
     M = globdat.M
-    ∂∂u = copy(globdat.acce)
-    u = copy(globdat.state)
-    ∂u  = copy(globdat.velo)
+    ∂∂u = globdat.acce[:]
+    u = globdat.state[:]
+    ∂u  = globdat.velo[:]
 
+    
     fext = domain.fext
     #Newton solve for a_{n+1}
     ∂∂up = ∂∂u[:]
@@ -74,18 +82,34 @@ function NewmarkSolver(Δt, globdat, domain, β2 = 0.5, γ = 0.5, ε = 1e-8, max
 
         Newtoniterstep += 1
         # update displacement to half step
-        domain.state[domain.eq_to_dof] = u + 0.5*Δt*∂u + 0.25*(1-β2)*Δt^2*∂∂u + 0.25*β2*Δt^2*∂∂up
+        domain.state[domain.eq_to_dof] = u + Δt * ∂u + 0.5 *Δt * Δt * ((1 - β2) * ∂∂u + β2 * ∂∂up)
         # t_nh = t_n + Δt/2.0
         fint, stiff = assembleStiffAndForce( globdat, domain )
-        
-        res = M * (∂∂u + ∂∂up)/2.0 + fint - fext
 
-        A = M/2.0 + 0.25*β2*Δt^2 * stiff
+        # # ! testing Newton
+        # if globdat.time>0.5
+        #     function f(∂∂u)
+        #         domain.state[domain.eq_to_dof] = u + Δt * ∂u + 0.5 *Δt * Δt * ((1 - β2) * ∂∂u + β2 * ∂∂up)
+        #         fint, stiff = assembleStiffAndForce( globdat, domain )
+        #         fint, 0.5*β2*Δt^2 *stiff
+        #     end
+        #     gradtest(f, ∂∂u)
+        #     error()
+        # end
+        
+        res = M * ∂∂up + fint - fext
+
+        A = M + 0.5*β2*Δt^2 * stiff
+        # printstyled(domain.state, color=:blue)
+        # if !(norm(A-A')≈0.0)
+        #     printstyled(norm(A-A'), color=:red)
+        #     # error()
+        # end
 
         Δ∂∂u = A\res
         ∂∂u -= Δ∂∂u
 
-        println("$Newtoniterstep, $(norm(res))")
+        # println("$Newtoniterstep, $(norm(res))")
         if (norm(res) < ε || Newtoniterstep > maxiterstep)
             if Newtoniterstep > maxiterstep
                 error("Newton iteration cannot converge $(norm(res))")
@@ -94,14 +118,17 @@ function NewmarkSolver(Δt, globdat, domain, β2 = 0.5, γ = 0.5, ε = 1e-8, max
             printstyled("Newton converged $Newtoniterstep\n", color=:green)
         end
     end
+
+
     globdat.Dstate = globdat.state[:]
     globdat.state += Δt * ∂u + 0.5 *Δt * Δt * ((1 - β2) * ∂∂u + β2 * ∂∂up)
     globdat.velo += Δt * ((1 - γ) * ∂∂u + γ * ∂∂up)
-    globdat.time  += 0.5*Δt
+
+    # @info "Dstate", globdat.Dstate ,  "state", globdat.state 
 
     # todo update historic parameters
     commitHistory(domain)
-    updateStates(domain, globdat)
+    updateStates!(domain, globdat)
 end
 
 
@@ -145,7 +172,7 @@ function StaticSolver(globdat, domain, loaditerstep = 10, ε = 1.e-8, maxiterste
                 end
                 Newtonconverge = true
             end
-            updateStates(domain, globdat)
+            updateStates!(domain, globdat)
         end
         commitHistory(domain)
         globdat.Dstate = copy(globdat.state)
