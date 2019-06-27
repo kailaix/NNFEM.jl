@@ -7,7 +7,7 @@
 
     testtype = "PlaneStressPlasticity"
     np = pyimport("numpy")
-    nx, ny =  2, 1
+    nx, ny =  20, 10
     nnodes, neles = (nx + 1)*(ny + 1), nx*ny
     x = np.linspace(0.0, 1.0, nx + 1)
     y = np.linspace(0.0, 1.0, ny + 1)
@@ -28,7 +28,7 @@
     EBC[collect(1:nx+1:(nx+1)*(ny+1)), :] .= -1
     EBC[collect(nx+1:nx+1:(nx+1)*(ny+1) + nx), 2] .= -1
     EBC[collect(nx+1:nx+1:(nx+1)*(ny+1) + nx), 1] .= -2
-    gt = t -> t*0.2*ones(sum(EBC.==-2))
+    gt = t -> t*0.2/100*ones(sum(EBC.==-2))
 
     # EBC[collect(1:nx+1:(nx+1)*(ny+1)), 1] .= -2
     # EBC[collect(1:nx+1:(nx+1)*(ny+1)), 2] .= -1
@@ -72,7 +72,7 @@
 
 
     # solver = ExplicitSolver(Δt, globdat, domain )
-    NT = 10
+    NT = 50
     Δt = 1/NT
     for i = 1:NT
         solver = NewmarkSolver(Δt, globdat, domain, 0.5, 0.5, 1e-6, 500)

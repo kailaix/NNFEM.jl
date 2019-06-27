@@ -65,7 +65,7 @@ function NewmarkSolver(Δt, globdat, domain, β2 = 0.5, γ = 0.5, ε = 1e-8, max
     #udpate domain boundary
     updateDomainStateBoundary!(domain, globdat)
 
-    @show domain.state, domain.Dstate
+    # @show domain.state, domain.Dstate
 
     M = globdat.M
     ∂∂u = globdat.acce[:]
@@ -87,14 +87,8 @@ function NewmarkSolver(Δt, globdat, domain, β2 = 0.5, γ = 0.5, ε = 1e-8, max
         fint, stiff = assembleStiffAndForce( globdat, domain )
 
         # # ! testing Newton
-        # if globdat.time>0.5
-        #     function f(∂∂u)
-        #         domain.state[domain.eq_to_dof] = u + Δt * ∂u + 0.5 *Δt * Δt * ((1 - β2) * ∂∂u + β2 * ∂∂up)
-        #         fint, stiff = assembleStiffAndForce( globdat, domain )
-        #         fint, 0.5*β2*Δt^2 *stiff
-        #     end
-        #     gradtest(f, ∂∂u)
-        #     error()
+        # if globdat.time>0.99999
+            
         # end
         
         res = M * ∂∂up + fint - fext
@@ -109,9 +103,16 @@ function NewmarkSolver(Δt, globdat, domain, β2 = 0.5, γ = 0.5, ε = 1e-8, max
         Δ∂∂u = A\res
         ∂∂u -= Δ∂∂u
 
-        # println("$Newtoniterstep, $(norm(res))")
+        println("$Newtoniterstep, $(norm(res))")
         if (norm(res) < ε || Newtoniterstep > maxiterstep)
             if Newtoniterstep > maxiterstep
+                function f(∂∂u)
+                    domain.state[domain.eq_to_dof] = u + Δt * ∂u + 0.5 *Δt * Δt * ((1 - β2) * ∂∂u + β2 * ∂∂up)
+                    fint, stiff = assembleStiffAndForce( globdat, domain )
+                    fint, 0.5*β2*Δt^2 *stiff
+                end
+                gradtest(f, ∂∂u)
+                # error()
                 error("Newton iteration cannot converge $(norm(res))")
             end
             Newtonconverge = true
