@@ -59,7 +59,7 @@ function getStress(self::PlaneStressPlasticity,  strain::Array{Float64},  Dstrai
     K = self.K 
     σY = self.σY 
     Δγ = 0.0
-    σ = σ0 + 0.5*H*(ε-ε0) 
+    σ = σ0 + H*(ε-ε0) 
     # σ = σ0
     α = α0 + Δγ
 
@@ -70,7 +70,7 @@ function getStress(self::PlaneStressPlasticity,  strain::Array{Float64},  Dstrai
     else
         function compute(σ, Δγ)
             α = α0 + Δγ
-            r1 = σ + Δγ * H* fσ(σ) - σ0 - H*ε - H*ε0 
+            r1 = σ + Δγ * H* fσ(σ) - σ0 - H*ε + H*ε0 
             r2 = f(σ, α, σY, K)
             J = [UniformScaling(1.0)+Δγ*H*fσσ(σ) H*fσ(σ)
                 reshape(fσ(σ),1,3) -K]
@@ -80,7 +80,7 @@ function getStress(self::PlaneStressPlasticity,  strain::Array{Float64},  Dstrai
 
         function compute_sensitivity(σ, Δγ)
             α = α0 + Δγ
-            r1 = σ + Δγ * H* fσ(σ) - σ0 - H*ε - H*ε0 
+            r1 = σ + Δγ * H* fσ(σ) - σ0 - H*ε + H*ε0 
             r2 = f(σ, α, σY, K)
                 
             J = [UniformScaling(1.0)+Δγ*H*fσσ(σ) H*fσ(σ)

@@ -56,8 +56,8 @@ EBC, g ,NBC, f, gt = set_boundary(boundaries, nnodes)
 # prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e9, "nu"=> 0.45,
 #             "sigmaY"=>300e6, "K"=>100)
 
-prop = Dict("name"=> testtype, "rho"=> 8000.0e-8, "E"=> 200e1, "nu"=> 0.45,
-            "sigmaY"=>300e-2, "K"=>0.3)
+prop = Dict("name"=> testtype, "rho"=> 8000.0e-9, "E"=> 200, "nu"=> 0.45,
+            "sigmaY"=>300e-9, "K"=>1e6)
 
 # prop = Dict("name"=> testtype, "rho"=> 0.8, "E"=> 20000, "nu"=> 0.45,
 #             "sigmaY"=>300, "K"=>10)
@@ -84,7 +84,7 @@ updateStates!(domain, globdat)
 
 
 # solver = ExplicitSolver(Δt, globdat, domain )
-NT = 100
+NT = 20
 Δt = 1/NT
 for i = 1:NT
     solver = NewmarkSolver(Δt, globdat, domain, 0.5, 0.5, 1e-6, 10)
