@@ -170,26 +170,21 @@ end
     :return:
 """ ->
 function updateStates!(self::Domain, globaldat::GlobalData)
-    self.Dstate = self.state[:]
-    self.Dstate[self.eq_to_dof] = globaldat.Dstate[:]
+    # self.Dstate = self.state[:]
+    # self.Dstate[self.eq_to_dof] = globaldat.Dstate[:]
     self.state[self.eq_to_dof] = globaldat.state[:]
+
+    #@show " 1 ",  self.state
     
     self.time = globaldat.time
     push!(self.state_history, copy(self.state))
-    #todo also update time-dependent Dirichlet boundary/force load boundary
 
-    # g = globaldat.gt(globaldat.time) # user defined time-dependent boundary
-    # # println(g)
-    # gtdof_id = 0
-    # for idof = 1:self.ndims
-    #     for inode = 1:self.nnodes
-    #         if (self.EBC[inode, idof] == -2)
-    #             gtdof_id += 1
-    #             self.state[inode + (idof-1)*self.nnodes] = g[gtdof_id]
-    #         end
-    #     end
-    # end
     updateDomainStateBoundary!(self, globaldat)
+    #@show " 2 ",  self.state
+
+
+    
+    self.Dstate = self.state[:]
 end
 
 @doc """

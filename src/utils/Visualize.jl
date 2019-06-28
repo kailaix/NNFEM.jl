@@ -1,5 +1,5 @@
 export visstatic, visdynamic
-function visstatic(domain::Domain)
+function visstatic(domain::Domain, vmin=nothing, vmax=nothing)
     u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
     nodes = domain.nodes
     fig,ax = subplots()
@@ -11,10 +11,12 @@ function visstatic(domain::Domain)
         σs = e.strain
         push!(σ,mean([sqrt(σ[1]^2-σ[1]*σ[2]+σ[2]^2+3*σ[3]^2) for σ in σs]))
     end
-    # @show σ
+    vmin = vmin==nothing ? minimum(σ) : vmin 
+    vmax = vmax==nothing ? maximum(σ) : vmax
+    #@show vmin, vmax
     cNorm  = colors.Normalize(
-            vmin=minimum(σ),
-            vmax=maximum(σ))
+            vmin=vmin,
+            vmax=vmax)
     scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
     for (k,e) in enumerate(domain.elements)
         n_ = nodes[getNodes(e),:] + [u[getNodes(e),:] v[getNodes(e),:]]

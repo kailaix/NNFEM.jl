@@ -84,7 +84,7 @@ Dir = zeros(Bool, 2n^2)
 Dir[dirichlet] .= true
 Dir[dirichlet .+ n^2] .= true
 
-@info "Finished constructing geometry"
+#@show "Finished constructing geometry"
 
 # Constitutive law: σ=Cε
 ν,E = 0.3, 2000
@@ -109,7 +109,7 @@ fα = zeros(ne)
 fY = 100
 fK = 500.0
 function f(σ, α)
-    # @show sqrt(σ[1]^2-σ[1]*σ[2]+σ[2]^2+3*σ[3]^2)
+    # #@show sqrt(σ[1]^2-σ[1]*σ[2]+σ[2]^2+3*σ[3]^2)
     return sqrt(σ[1]^2-σ[1]*σ[2]+σ[2]^2+3*σ[3]^2)-fY-fK*α
 end
 
@@ -174,7 +174,7 @@ function _rtm(σA, Δε)
                 if iter==1
                     e0 = e
                 end
-                # @show iter, e/e0
+                # #@show iter, e/e0
                 if iter==1000
                     error("Newton iteration fails, err=$(e/e0), input norm=$(norm(Δε[3(i-1)+1:3i]))")
                 end
@@ -186,7 +186,7 @@ function _rtm(σA, Δε)
                 δ = -J\[q1;q2]
                 Δσtrial += δ[1:3]
                 Δγ[i] += δ[4]
-                # @show Δσtrial,Δγ[i]
+                # #@show Δσtrial,Δγ[i]
             end
             Δσ[3(i-1)+1:3i] = Δσtrial
         end
@@ -258,7 +258,7 @@ function lnl(∂u, ∂∂uk, F, σA)
     global fα
     local σB, e0, Δγ
     ∂∂u = copy(∂∂uk)
-    # @show norm(∂∂uk), norm(∂u), norm(σA)
+    # #@show norm(∂∂uk), norm(∂u), norm(σA)
     for i = 1:10000
         q, J, σB, Δγ = dKd∂∂u(∂∂u, F, ∂u, ∂∂uk, σA)
         # # ! finite difference test
@@ -272,7 +272,7 @@ function lnl(∂u, ∂∂uk, F, σA)
         if i==1
             e0 = norm(q)
         end
-        # @show i, norm(q)/e0
+        # #@show i, norm(q)/e0
         if e0≈0 || (norm(q)/e0<tol)
             printstyled("lnl converged, iter = $i, err = $(norm(q)/e0)\n", color=:green)
             break 
@@ -282,11 +282,11 @@ function lnl(∂u, ∂∂uk, F, σA)
         end
         δ = zeros(2nv)
         δ[.!Dir] = -J[:,.!Dir]\q
-        # @show norm(δ), norm(∂∂u)
+        # #@show norm(δ), norm(∂∂u)
         α0 = 1.0
         for k = 1:100
             q0, _,_,_ = dKd∂∂u(∂∂u+α0*δ, F, ∂u, ∂∂uk, σA)
-            # @show k, norm(q0)
+            # #@show k, norm(q0)
             if norm(q0)<norm(q)
                 break
             end
@@ -295,7 +295,7 @@ function lnl(∂u, ∂∂uk, F, σA)
                 error("linesearch failed")
             end
         end
-        # @show α0
+        # #@show α0
         ∂∂u += α0*δ # todo: do we need linesearch or not?
         # ∂∂u[.!Dir] += δ
         # println(norm(Δγ))

@@ -51,10 +51,10 @@
 
     F = assembleInternalForce(globdat, domain)
 
-    # @info "F - F1", F - F1
-    # @info "F", F
-    # @info "K", K
-    # @info "M", globdat.M
+    # #@show "F - F1", F - F1
+    # #@show "F", F
+    # #@show "K", K
+    # #@show "M", globdat.M
 
 
     # solver = ExplicitSolver(Δt, globdat, domain )

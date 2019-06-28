@@ -47,7 +47,7 @@ function getStiffAndForce(self::FiniteStrainContinuum, state::Array{Float64}, Ds
         E = [ux+0.5*(ux*ux+vx*vx); vy+0.5*(uy*uy+vy*vy); uy+vx+ux*uy+vx*vy]
         DE = [Dux+0.5*(Dux*Dux+Dvx*Dvx); Dvy+0.5*(Duy*Duy+Dvy*Dvy); Duy+Dvx+Dux*Duy+Dvx*Dvy]
 
-        # @show "+++",E, DE
+        # #@show "+++",E, DE
         S, dS_dE = getStress(self.mat[k], E, DE)
         # error()
         self.strain[k] = S

@@ -7,7 +7,7 @@
 
     testtype = "PlaneStressPlasticity"
     np = pyimport("numpy")
-    nx, ny =  20, 10
+    nx, ny =  20, 1
     nnodes, neles = (nx + 1)*(ny + 1), nx*ny
     x = np.linspace(0.0, 1.0, nx + 1)
     y = np.linspace(0.0, 1.0, ny + 1)
@@ -28,7 +28,7 @@
     EBC[collect(1:nx+1:(nx+1)*(ny+1)), :] .= -1
     EBC[collect(nx+1:nx+1:(nx+1)*(ny+1) + nx), 2] .= -1
     EBC[collect(nx+1:nx+1:(nx+1)*(ny+1) + nx), 1] .= -2
-    gt = t -> t*0.02*ones(sum(EBC.==-2))
+    gt = t -> t*0.01*ones(sum(EBC.==-2))
 
     # EBC[collect(1:nx+1:(nx+1)*(ny+1)), 1] .= -2
     # EBC[collect(1:nx+1:(nx+1)*(ny+1)), 2] .= -1
@@ -38,8 +38,9 @@
     NBC, f = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
     
 
-    prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 1000.0, "nu"=> 0.4,
-                "sigmaY"=>50, "K"=>1000)
+
+    prop = Dict("name"=> testtype, "rho"=> 8000.0e-9, "E"=> 200, "nu"=> 0.45,
+    "sigmaY"=>0.3, "K"=>1/9*200)
 
     elements = []
     for j = 1:ny
@@ -65,17 +66,17 @@
 
     # F = assembleInternalForce(globdat, domain)
 
-    # @info "F - F1", F - F1
-    # @info "F", F
-    # @info "K", K
-    # @info "M", globdat.M
+    # #@show "F - F1", F - F1
+    # #@show "F", F
+    # #@show "K", K
+    # #@show "M", globdat.M
 
 
     # solver = ExplicitSolver(Δt, globdat, domain )
-    NT = 10
+    NT = 20
     Δt = 1/NT
     for i = 1:NT
-        solver = NewmarkSolver(Δt, globdat, domain, 0.5, 0.5, 1e-6, 500)
+        solver = NewmarkSolver(Δt, globdat, domain, 0.5, 0.5, 1e-6, 10)
         # break
         # close("all");visstatic(domain)
         # pause(0.5)

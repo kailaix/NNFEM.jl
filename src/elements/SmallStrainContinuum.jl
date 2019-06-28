@@ -35,14 +35,16 @@ function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64}, Dst
     out = Array{Float64}[]
     u = state[1:nnodes]; v = state[nnodes+1:2*nnodes]
     Du = Dstate[1:nnodes]; Dv = Dstate[nnodes+1:2*nnodes]
-    # @info "u ", u, " Du ", Du
-    # @info "v " v, " Dv " Dv
+    # #@show "u ", u, " Du ", Du
+    # #@show "v " v, " Dv " Dv
 
     for k = 1:length(self.weights)
+        # #@show "Gaussian point ", k
         g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
         
         ux = u'*g1; uy = u'*g2; vx = v'*g1; vy = v'*g2
         Dux = Du'*g1; Duy = Du'*g2; Dvx = Dv'*g1; Dvy = Dv'*g2
+        #@show "gauss", k , u, Du, ux, Dux
         
         # compute  ∂E∂u.T, 8 by 3 array 
         ∂E∂u = [g1   zeros(nnodes)    g2;
@@ -51,6 +53,7 @@ function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64}, Dst
         E = [ux; vy; uy+vx]
         DE = [Dux; Dvy; Duy+Dvx]
 
+        # #@show E, DE
         S, dS_dE = getStress(self.mat[k], E, DE)
         self.strain[k] = S
 

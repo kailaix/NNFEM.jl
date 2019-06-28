@@ -2,6 +2,7 @@ using Revise
 using Test 
 using NNFEM
 using PyCall
+using PyPlot
 
 elements_, nodes, boundaries = readMesh("$(@__DIR__)/../deps/plate.msh")
 # Dirichlet_1 : bottom
@@ -39,7 +40,7 @@ function set_boundary(boundaries, nnodes, ndofs = 2)
                 
         end
     end
-    gt = t -> t*0.02*ones(sum(EBC.==-2))
+    gt = t -> t*0.01*ones(sum(EBC.==-2))
     
     return EBC, g, NBC, f, gt
 end
@@ -47,7 +48,7 @@ end
 
 
 
-testtype = "PlaneStressPlasticity"
+testtype = "PlaneStress"
 ndofs = 2
 
 nnodes = size(nodes,1)
@@ -57,7 +58,7 @@ EBC, g ,NBC, f, gt = set_boundary(boundaries, nnodes)
 #             "sigmaY"=>300e6, "K"=>100)
 
 prop = Dict("name"=> testtype, "rho"=> 8000.0e-9, "E"=> 200, "nu"=> 0.45,
-            "sigmaY"=>300e-9, "K"=>1e6)
+            "sigmaY"=>0.3, "K"=>1/9*200)
 
 # prop = Dict("name"=> testtype, "rho"=> 0.8, "E"=> 20000, "nu"=> 0.45,
 #             "sigmaY"=>300, "K"=>10)
@@ -77,20 +78,32 @@ globdat = GlobalData(state,zeros(domain.neqs),
 assembleMassMatrix!(globdat, domain)
 updateStates!(domain, globdat)
 
-# @info "F - F1", F - F1
-# @info "F", F
-# @info "K", K
-# @info "M", globdat.M
+# #@show "F - F1", F - F1
+# #@show "F", F
+# #@show "K", K
+# #@show "M", globdat.M
 
 
 # solver = ExplicitSolver(Δt, globdat, domain )
 NT = 20
 Δt = 1/NT
 for i = 1:NT
-    solver = NewmarkSolver(Δt, globdat, domain, 0.5, 0.5, 1e-6, 10)
+    solver = NewmarkSolver(Δt, globdat, domain, 1.0, 0.5, 1e-6, 10)
 end
 # visdynamic(domain,"dym")
 # solver = StaticSolver(globdat, domain )
 #solver.run( props , globdat )
 visstatic(domain)
+
+function ct(x)
+    if x<0.25
+        return sqrt(0.25^2-x^2)
+    else
+        return 0.0
+    end
+end
+a = LinRange{Float64}(0.0,0.5,100)
+y = ct.(a)
+plot(a, y, "k--")
+plot([0.5;0.5;0.0;0.0],[0.0;0.5;0.5;0.25],"k--")
 # end

@@ -68,7 +68,7 @@ function getIntegrationPoints(nPoints::Int64)
             w2[n] = w[i]*w[j]
         end
     end
-    # @show q2
+    # #@show q2
     return q2, w2
 end
 
@@ -81,7 +81,7 @@ function getElemShapeData( elemCoords::Array{Float64} , nPoints::Int64 = 0 )
   #elemType = getElemType( elemCoords )
     
   (intCrds,intWghts) = getIntegrationPoints( nPoints )
-#   @show intCrds, intWghts
+#   #@show intCrds, intWghts
   dhdx = Array{Float64}[]
   weights = Float64[]
   hs = Array{Float64}[]

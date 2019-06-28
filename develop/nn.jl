@@ -127,7 +127,7 @@ function residual(∂∂u, F, ∂u, ∂∂uk, Δε, ε)
     r = M*∂∂u - F
     σB = constitutive_law(Δε, ε)
     for i = 1:ne
-        @show i
+        #@show i
         B = Ns[i]; ind = Vs[i]
         r = scatter_add(r, ind, B'*σB[i] * Areas[i])
     end
@@ -208,7 +208,7 @@ println("Initial loss = $l0")
 
 # for i = 1:10000
 #     _, l_ = run(sess, [opt, loss], feed_dict=Dict(lr=>0.05))
-#     @show i, l_
+#     #@show i, l_
 # end
 # error()
 
@@ -229,7 +229,7 @@ function step_callback(rk)
     __iter += 1
 end
 opt = ScipyOptimizerInterface(loss, method="L-BFGS-B",options=Dict("maxiter"=> 30000, "ftol"=>1e-12, "gtol"=>1e-12))
-@info "Optimization starts..."
+#@show "Optimization starts..."
 for j = 1:5
     ScipyOptimizerMinimize(sess, opt, loss_callback=print_loss, step_callback=step_callback, fetches=[loss])
     save(sess, "$type$j.txt")

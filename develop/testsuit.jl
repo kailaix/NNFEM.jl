@@ -12,7 +12,7 @@ function gradtest(f, x0, n=nothing)
         
         push!(err1, norm(f1-f0))
         push!(err2, norm(f1-f0-q0'*J*v0*γs[i]))
-        @show norm(f0-f1),norm(f1-f0-q0'*J*v0*γs[i])
+        #@show norm(f0-f1),norm(f1-f0-q0'*J*v0*γs[i])
     end
     close("all")
     loglog(γs, err1, "*-", label="finite difference")

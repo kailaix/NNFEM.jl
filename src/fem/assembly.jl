@@ -47,10 +47,15 @@ function assembleStiffAndForce(globdat::GlobalData, domain::Domain)
       el_eqns = getEqns(domain,iele)
   
       el_dofs = getDofs(domain,iele)
-  
+
+      #@show "iele", iele, el_dofs 
+      
+      #@show "domain.state", iele, domain.state 
+
       el_state  = getState(domain,el_dofs)
   
       el_Dstate = getDstate(domain,el_dofs)
+      # #@show "+++++", el_state, el_Dstate
   
       # Get the element contribution by calling the specified action
       fint, stiff  = getStiffAndForce(element, el_state, el_Dstate)

@@ -37,7 +37,7 @@ function compute(ipt)
     r2 = f(σ, α, σY, K)
     J = [UniformScaling(1.0)+Δγ*H*fσσ(σ) H*fσ(σ)
         reshape(fσ(σ),1,3) -K]
-    @show [r1;r2]
+    #@show [r1;r2]
     return [r1;r2], J
 end
 
