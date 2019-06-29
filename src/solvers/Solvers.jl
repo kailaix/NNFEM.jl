@@ -199,6 +199,7 @@ end
 
 
 function NewmarkSolver(Δt, globdat, domain, αm = -1, αf = 0, ε = 1e-8, maxiterstep=100)
+    
     β2 = 0.5*(1 - αm + αf)^2
     γ = 0.5 - αm + αf
 

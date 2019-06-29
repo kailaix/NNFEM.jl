@@ -7,10 +7,10 @@ using PyCall
 
 testtype = "PlaneStressPlasticity"
 np = pyimport("numpy")
-nx, ny =  2,1
+nx, ny =  2,4
 nnodes, neles = (nx + 1)*(ny + 1), nx*ny
-x = np.linspace(0.0, 1.0, nx + 1)
-y = np.linspace(0.0, 1.0, ny + 1)
+x = np.linspace(0.0, 0.5, nx + 1)
+y = np.linspace(0.0, 0.5, ny + 1)
 X, Y = np.meshgrid(x, y)
 nodes = zeros(nnodes,2)
 nodes[:,1], nodes[:,2] = X'[:], Y'[:]
@@ -18,9 +18,9 @@ ndofs = 2
 
 EBC, g = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 
-EBC[collect(1:nx+1:(nx+1)*(ny+1)), :] .= -1
-EBC[collect(nx+1:nx+1:(nx+1)*(ny+1) + nx), 2] .= -1
-EBC[collect(nx+1:nx+1:(nx+1)*(ny+1) + nx), 1] .= -2
+EBC[collect(1:nx+1), :] .= -1
+EBC[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] .= -1
+EBC[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 1] .= -2
 
 function ggt(t)
     v = 0.01
@@ -32,10 +32,6 @@ function ggt(t)
 end
 gt = ggt
 
-# EBC[collect(1:nx+1:(nx+1)*(ny+1)), 1] .= -2
-# EBC[collect(1:nx+1:(nx+1)*(ny+1)), 2] .= -1
-# EBC[collect(nx+1:nx+1:(nx+1)*(ny+1) + nx), :] .= -1
-# gt = t -> -t*0.04*ones(sum(EBC.==-2))
 
 NBC, f = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 
@@ -61,13 +57,16 @@ state = zeros(domain.neqs)
 globdat = GlobalData(state,zeros(domain.neqs),
                     zeros(domain.neqs),∂u, domain.neqs, gt)
 
+assembleMassMatrix!(globdat, domain)
+updateStates!(domain, globdat)
+
 
 
 T = 2.0
 NT = 500
 Δt = T/NT
 for i = 1:NT
-    @show i
+    @show i, "/" , NT
     solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-3, 100)
 end
 # solver = StaticSolver(globdat, domain )
