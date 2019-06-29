@@ -18,17 +18,19 @@ ndofs = 2
 
 EBC, g = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 
-
-# EBC[collect(1:nx+1:(nx+1)*(ny+1)), :] .= -1
-# EBC[collect(nx+1:nx+1:(nx+1)*(ny+1) + nx), 2] .= -1
-# EBC[collect(nx+1:nx+1:(nx+1)*(ny+1) + nx), 1] .= -1
-# g[collect(nx+1:nx+1:(nx+1)*(ny+1) + nx), 1] .= 0.04
-# gt = t->0.0
-
 EBC[collect(1:nx+1:(nx+1)*(ny+1)), :] .= -1
 EBC[collect(nx+1:nx+1:(nx+1)*(ny+1) + nx), 2] .= -1
 EBC[collect(nx+1:nx+1:(nx+1)*(ny+1) + nx), 1] .= -2
-gt = t -> t*0.01*ones(sum(EBC.==-2))
+
+function ggt(t)
+    v = 0.01
+    if t<1.0
+        t*v*ones(sum(EBC.==-2))
+    elseif t<3.0
+        (0.02 - t*v)*ones(sum(EBC.==-2))
+    end
+end
+gt = ggt
 
 # EBC[collect(1:nx+1:(nx+1)*(ny+1)), 1] .= -2
 # EBC[collect(1:nx+1:(nx+1)*(ny+1)), 2] .= -1
@@ -58,28 +60,15 @@ state = zeros(domain.neqs)
 ∂u = zeros(domain.neqs)
 globdat = GlobalData(state,zeros(domain.neqs),
                     zeros(domain.neqs),∂u, domain.neqs, gt)
-assembleMassMatrix!(globdat, domain)
-
-updateStates!(domain, globdat)
-
-# F1,K = assembleStiffAndForce(globdat, domain)
-
-# F = assembleInternalForce(globdat, domain)
-
-# #@show "F - F1", F - F1
-# #@show "F", F
-# #@show "K", K
-# #@show "M", globdat.M
 
 
-# solver = ExplicitSolver(Δt, globdat, domain )
-NT = 100
-Δt = 1/NT
+
+T = 2.0
+NT = 500
+Δt = T/NT
 for i = 1:NT
-    solver = NewmarkSolver(Δt, globdat, domain, 2, 1.5, 1e-6, 100)
-    # break
-    # close("all");visstatic(domain)
-    # pause(0.5)
+    @show i
+    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-3, 100)
 end
 # solver = StaticSolver(globdat, domain )
 visstatic(domain)

@@ -41,12 +41,11 @@ function set_boundary(boundaries, nnodes, ndofs = 2)
         end
     end
     function ggt(t)
-        if t<0.2
-            t*0.01*ones(sum(EBC.==-2))
-        elseif t<0.4
-            (0.2*0.01-(t-0.2)*0.02*0.2)*ones(sum(EBC.==-2))
-        else
-            ((t-0.4)*0.01-0.01*0.2)*ones(sum(EBC.==-2))
+        v = 0.01
+        if t<1.0
+            t*v*ones(sum(EBC.==-2))
+        elseif t<3.0
+            (0.02 - t*v)*ones(sum(EBC.==-2))
         end
     end
     gt = ggt
@@ -97,11 +96,12 @@ updateStates!(domain, globdat)
 
 
 # solver = ExplicitSolver(Δt, globdat, domain )
-NT = 50
-Δt = 0.2/NT
+T = 2.0
+NT = 500
+Δt = T/NT
 for i = 1:NT
     @show i
-    solver = NewmarkSolver(Δt, globdat, domain, 2.0, 1.5, 1e-3, 100)
+    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-3, 100)
 end
 # visdynamic(domain,"dym")
 # solver = StaticSolver(globdat, domain )
