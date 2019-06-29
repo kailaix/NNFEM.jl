@@ -58,6 +58,7 @@ function assembleStiffAndForce(globdat::GlobalData, domain::Domain)
       # #@show "+++++", el_state, el_Dstate
   
       # Get the element contribution by calling the specified action
+      @info "ele id is ", iele
       fint, stiff  = getStiffAndForce(element, el_state, el_Dstate)
 
       # Assemble in the global array
