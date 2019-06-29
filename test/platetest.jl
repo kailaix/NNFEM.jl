@@ -40,7 +40,16 @@ function set_boundary(boundaries, nnodes, ndofs = 2)
                 
         end
     end
-    gt = t -> t*0.01*ones(sum(EBC.==-2))
+    function ggt(t)
+        if t<0.2
+            t*0.01*ones(sum(EBC.==-2))
+        elseif t<0.4
+            (0.2*0.01-(t-0.2)*0.02*0.2)*ones(sum(EBC.==-2))
+        else
+            ((t-0.4)*0.01-0.01*0.2)*ones(sum(EBC.==-2))
+        end
+    end
+    gt = ggt
     
     return EBC, g, NBC, f, gt
 end
@@ -48,17 +57,20 @@ end
 
 
 
-testtype = "PlaneStress"
+testtype = "PlaneStressPlasticity"
 ndofs = 2
 
 nnodes = size(nodes,1)
 EBC, g ,NBC, f, gt = set_boundary(boundaries, nnodes)
 
-# prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e9, "nu"=> 0.45,
-#             "sigmaY"=>300e6, "K"=>100)
+prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e9, "nu"=> 0.45,
+            "sigmaY"=>300e6, "K"=>1/9*200e9)
 
-prop = Dict("name"=> testtype, "rho"=> 8000.0e-9, "E"=> 200, "nu"=> 0.45,
-            "sigmaY"=>0.3, "K"=>1/9*200)
+# prop = Dict("name"=> testtype, "rho"=> 8000.0e-9, "E"=> 200, "nu"=> 0.45,
+#             "sigmaY"=>0.3, "K"=>1/9*200)
+
+# prop = Dict("name"=> testtype, "rho"=> 1.0, "E"=> 2000, "nu"=> 0.3,
+#             "sigmaY"=>100, "K"=>500)
 
 # prop = Dict("name"=> testtype, "rho"=> 0.8, "E"=> 20000, "nu"=> 0.45,
 #             "sigmaY"=>300, "K"=>10)
@@ -85,15 +97,16 @@ updateStates!(domain, globdat)
 
 
 # solver = ExplicitSolver(Δt, globdat, domain )
-NT = 20
-Δt = 1/NT
+NT = 50
+Δt = 0.2/NT
 for i = 1:NT
-    solver = NewmarkSolver(Δt, globdat, domain, 1.0, 0.5, 1e-6, 10)
+    @show i
+    solver = NewmarkSolver(Δt, globdat, domain, 2.0, 1.5, 1e-3, 100)
 end
 # visdynamic(domain,"dym")
 # solver = StaticSolver(globdat, domain )
 #solver.run( props , globdat )
-visstatic(domain)
+visstatic(domain, scaling=10)
 
 function ct(x)
     if x<0.25
@@ -106,4 +119,5 @@ a = LinRange{Float64}(0.0,0.5,100)
 y = ct.(a)
 plot(a, y, "k--")
 plot([0.5;0.5;0.0;0.0],[0.0;0.5;0.5;0.25],"k--")
+axis("equal")
 # end

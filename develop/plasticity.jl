@@ -7,7 +7,7 @@ include("testsuit.jl")
 
 
 # * viscoplasticity or elasticity
-type = :elasticity 
+type = :viscoplasticity 
 
 # * parameters for Newmark algorithm 
 # Newmark Algorithm: http://solidmechanics.org/text/Chapter8_2/Chapter8_2.htm
@@ -88,6 +88,17 @@ Dir[dirichlet .+ n^2] .= true
 
 # Constitutive law: σ=Cε
 ν,E = 0.3, 2000
+
+# prop = Dict("name"=> testtype, "rho"=> 8000.0e-9, "E"=> 200, "nu"=> 0.45,
+#             "sigmaY"=>0.3, "K"=>1/9*200)
+
+# ν = 0.45
+# E = 200
+# fα = zeros(ne)
+# fY = 0.3
+# fK = 200/9
+# ρ = 8000e-9
+ρ = 1.0
 E = E/(1-ν^2)*[1 ν 0.0;ν 1 0.0;0.0 0.0 (1-ν)/2]
 
 # * computing stiffness and mass matrix for linear elasticity 
@@ -102,7 +113,7 @@ for i = 1:ne
     M[ind,ind] += D
 end
 remove_bd!(K)
-remove_bd!(M); M = sparse(M)
+remove_bd!(M); M = sparse(M)*ρ
 
 # * hardening and plastic flow
 fα = zeros(ne)
@@ -140,7 +151,7 @@ function dΔσdΔε(Δσ,Δγ,σA,Δε,Ielastic)
             push!(dσdε, E)
         else
             A = [UniformScaling(1.0)+Δγ[i]*E*fσσ(σ) E*fσ(σ);
-                reshape(fσ(σ),1,3) 0]
+                reshape(fσ(σ),1,3) -fK]
             rhs = [E;zeros(1,3)]
             out = A\rhs
             push!(dσdε,out[1:3,:])
@@ -182,7 +193,7 @@ function _rtm(σA, Δε)
                     break
                 end
                 J = [UniformScaling(1.0)+Δγ[i]*E*fσσ(σtrial) E*fσ(σtrial);
-                        reshape(fσ(σtrial),1,3) 0]
+                        reshape(fσ(σtrial),1,3) -fK]
                 δ = -J\[q1;q2]
                 Δσtrial += δ[1:3]
                 Δγ[i] += δ[4]

@@ -1,5 +1,5 @@
 export visstatic, visdynamic
-function visstatic(domain::Domain, vmin=nothing, vmax=nothing)
+function visstatic(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
     u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
     nodes = domain.nodes
     fig,ax = subplots()
@@ -19,7 +19,7 @@ function visstatic(domain::Domain, vmin=nothing, vmax=nothing)
             vmax=vmax)
     scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
     for (k,e) in enumerate(domain.elements)
-        n_ = nodes[getNodes(e),:] + [u[getNodes(e),:] v[getNodes(e),:]]
+        n_ = nodes[getNodes(e),:] + scaling*[u[getNodes(e),:] v[getNodes(e),:]]
         p = plt.Polygon(n_, facecolor = scalarMap.to_rgba(σ[k]), fill=true, alpha=0.5)
         ax.add_patch(p)
     end
