@@ -7,7 +7,7 @@ using PyCall
 
 testtype = "PlaneStressPlasticity"
 np = pyimport("numpy")
-nx, ny =  1,4
+nx, ny =  1,3
 nnodes, neles = (nx + 1)*(ny + 1), nx*ny
 x = np.linspace(0.0, 0.5, nx + 1)
 y = np.linspace(0.0, 0.5, ny + 1)
@@ -27,6 +27,8 @@ if one_dim
     EBC[collect((nx+1) : nx+1: (nx+1)*(ny+1)), 1] .= -1
     EBC[collect(1 : nx+1: (nx+1)*ny+1), 1] .= -1
 end
+
+
 function ggt(t)
     v = 0.01
     if t<1.0
@@ -51,7 +53,7 @@ for j = 1:ny
         n = (nx+1)*(j-1) + i
         elnodes = [n, n + 1, n + 1 + (nx + 1), n + (nx + 1)]
         coords = nodes[elnodes,:]
-        push!(elements,SmallStrainContinuum(coords,elnodes, prop))
+        push!(elements,SmallStrainContinuum(coords,elnodes, prop,1))
     end
 end
 
@@ -73,6 +75,7 @@ NT = 20
 for i = 1:NT
     @info i, "/" , NT
     solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-6, 10)
+    
 end
 # solver = StaticSolver(globdat, domain )
 visstatic(domain)

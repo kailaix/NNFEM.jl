@@ -198,14 +198,14 @@ end
 # """->
 
 
-function NewmarkSolver(Δt, globdat, domain, αm = -1, αf = 0, ε = 1e-8, maxiterstep=100)
-    @info NewmarkSolver
+function NewmarkSolver(Δt, globdat, domain, αm = -1, αf = 0, ε = 1e-8, maxiterstep=100, η = 1.0)
+    #@info NewmarkSolver
     
     β2 = 0.5*(1 - αm + αf)^2
     γ = 0.5 - αm + αf
 
     # compute solution at uⁿ⁺¹
-    globdat.time  += Δt/2.0
+    globdat.time  += (1 - αf)*Δt
 
     # domain.Dstate = uⁿ
     domain.Dstate = domain.state[:]
@@ -222,6 +222,8 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1, αf = 0, ε = 1e-8, maxit
 
     Newtoniterstep, Newtonconverge = 0, false
 
+    norm0 = Inf
+
     # @show "start Newton u ", u
     # @show "start Newton du ", ∂u
     # @show "start Newton ddu ", ∂∂u
@@ -229,8 +231,11 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1, αf = 0, ε = 1e-8, maxit
     while !Newtonconverge
         
         Newtoniterstep += 1
-
+        
         domain.state[domain.eq_to_dof] = (1 - αf)*(u + Δt*∂u + 0.5 * Δt * Δt * ((1 - β2)*∂∂u + β2*∂∂up)) + αf*u
+
+        #@info "At Newtoniterstep ",  Newtoniterstep, " disp ", domain.state
+
         fint, stiff = assembleStiffAndForce( globdat, domain )
         # error()
         res = M * ∂∂up *(1 - αm)  + fint - fext
@@ -238,20 +243,16 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1, αf = 0, ε = 1e-8, maxit
 
         A = M*(1 - αm) + (1 - αf) * 0.5 * β2 * Δt^2 * stiff
 
-        # # # ! testing Newton
-        # function f(∂∂u)
-        #     domain.state[domain.eq_to_dof] = u + 0.5 * Δt * ∂u + 0.25 *Δt * Δt * ((1 - β2) * ∂∂u + β2 * ∂∂up)
-        #     fint, stiff = assembleStiffAndForce( globdat, domain )
-        #     res = M * ∂∂up + fint - fext
-        #     A = M + 0.25*β2*Δt^2 * stiff
-        #     res, A
-        # end
-        # gradtest(f, ∂∂u)
-        # error()
-        #@show norm(∂∂up), norm(res)
-
         Δ∂∂u = A\res
-        ∂∂up -= Δ∂∂u
+        #@info " norm(Δ∂∂u) ", norm(Δ∂∂u) 
+        while η * norm(Δ∂∂u) > norm0
+            η /= 2.0
+            @info "η", η
+        end
+            
+
+
+        ∂∂up -= η*Δ∂∂u
 
         # @show norm(A*Δ∂∂u-res)
         # r, B = f(∂∂u)
@@ -273,6 +274,9 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1, αf = 0, ε = 1e-8, maxit
             Newtonconverge = true
             printstyled("[Newmark] Newton converged $Newtoniterstep\n", color=:green)
         end
+
+        η = min(1.0, 2η)
+        norm0 = norm(Δ∂∂u)
         # println("================ time = $(globdat.time) $Newtoniterstep =================")
     end
     
@@ -291,7 +295,10 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1, αf = 0, ε = 1e-8, maxit
     # #@show "Dstate", globdat.Dstate ,  "state", globdat.state 
 
     # todo update historic parameters
-    globdat.time  += Δt/2.0
+
+    
+    globdat.time  += αf*Δt
+    #@info "After Newmark, at T = ", globdat.time, " the disp is ", domain.state
     commitHistory(domain)
     updateStates!(domain, globdat)
 end 

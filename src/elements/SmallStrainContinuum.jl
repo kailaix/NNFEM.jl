@@ -10,8 +10,8 @@ mutable struct SmallStrainContinuum
     strain::Array{Array{Float64}}
 end
 
-function SmallStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, props::Dict{String, Any})
-    dhdx, weights, hs = getElemShapeData( coords, 2 )
+function SmallStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, props::Dict{String, Any}, ngp::Int64=2)
+    dhdx, weights, hs = getElemShapeData( coords, ngp )
     nGauss = length(weights)
     name = props["name"]
     if name=="PlaneStrain"
