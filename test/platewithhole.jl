@@ -97,7 +97,7 @@ updateStates!(domain, globdat)
 
 # solver = ExplicitSolver(Δt, globdat, domain )
 T = 2.0
-NT = 500
+NT = 80
 Δt = T/NT
 for i = 1:NT
     @show i

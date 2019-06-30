@@ -1,4 +1,5 @@
 using SparseArrays
+using Distributed
 export assembleStiffAndForce,assembleInternalForce,assembleMassMatrix!
 function assembleInternalForce(globdat::GlobalData, domain::Domain)
     Fint = zeros(Float64, domain.neqs)
@@ -32,10 +33,16 @@ function assembleInternalForce(globdat::GlobalData, domain::Domain)
 end
 
 function assembleStiffAndForce(globdat::GlobalData, domain::Domain)
-    Fint = zeros(Float64, domain.neqs)
-    K = zeros(Float64, domain.neqs, domain.neqs)
+    # Fint = zeros(Float64, domain.neqs)
+    
+    # K = zeros(Float64, domain.neqs, domain.neqs)
     neles = domain.neles
-  
+
+    FII = Array{Array{Int64}}(undef, neles)
+    FVV = Array{Array{Float64}}(undef, neles)
+    II = Array{Array{Int64}}(undef, neles)
+    JJ = Array{Array{Int64}}(undef, neles)
+    VV = Array{Array{Float64}}(undef, neles)
     # Loop over the elements in the elementGroup
     for iele  = 1:neles
       element = domain.elements[iele]
@@ -63,10 +70,23 @@ function assembleStiffAndForce(globdat::GlobalData, domain::Domain)
 
       # Assemble in the global array
       el_eqns_active = el_eqns .>= 1
-      K[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += stiff[el_eqns_active,el_eqns_active]
-      Fint[el_eqns[el_eqns_active]] += fint[el_eqns_active]
+      # K[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += stiff[el_eqns_active,el_eqns_active]
+
+      el_act = el_eqns[el_eqns_active]
+      # el_act = reshape(el_eqns[el_eqns_active], length(el_eqns[el_eqns_active]), 1)
+      II[iele] = (el_act*ones(Int64, 1, length(el_act)))[:]
+      JJ[iele] = (el_act*ones(Int64, 1, length(el_act)))'[:]
+      VV[iele] = stiff[el_eqns_active,el_eqns_active][:]
+      FII[iele] = el_act
+      FVV[iele] = fint[el_eqns_active]
+      # Fint[el_act] += fint[el_eqns_active]
     end
-    return Fint, sparse(K)
+    II = vcat(II...); JJ = vcat(JJ...); VV = vcat(VV...); FII=vcat(FII...); FVV = vcat(FVV...)
+    K = sparse(II,JJ,VV,domain.neqs,domain.neqs)
+    Fint = sparse(FII, ones(length(FII)), FVV, domain.neqs, 1)|>Array
+    # Ksp = sparse(II,JJ,VV)
+    # @show norm(K-Ksp)
+    return Fint, K
 end
 
 function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
