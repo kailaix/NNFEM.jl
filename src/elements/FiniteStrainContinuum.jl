@@ -11,7 +11,7 @@ mutable struct FiniteStrainContinuum
 end
 
 function FiniteStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, props::Dict{String, Any}, ngp::Int64=2)
-    dhdx, weights, hs = getElemShapeData( coords, ngp )
+    dhdx, weights, hs = get2DElemShapeData( coords, ngp )
     nGauss = length(weights)
     name = props["name"]
     if name=="PlaneStrain"
