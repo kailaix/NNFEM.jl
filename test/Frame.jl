@@ -6,7 +6,7 @@ using PyPlot
 using PyCall
 
 
-testtype = "Elasticity1D"
+testtype = "Plasticity1D" #"Elasticity1D"
 np = pyimport("numpy")
 
 """
@@ -60,7 +60,7 @@ gt = ggt
 NBC, f = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 
 
-prop = Dict("name"=> testtype, "rho"=> 0.1, "E"=> 200, "nu"=> 0.45,
+prop = Dict("name"=> testtype, "rho"=> 0.1, "E"=> 200, "B"=> 10.0,
             "sigmaY"=>0.300, "K"=>1/9*200, "A0"=> 1.0)
 
 elements = []

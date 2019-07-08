@@ -1,105 +1,88 @@
-export  Plasticity1D, getStress
+export  Plasticity1D
 
 mutable struct Plasticity1D
-    E::Float64 # Young's modulus
-    ν::Float64 # Poisson's ratio
     ρ::Float64 # density
-    # hardening parameter, yield function = f - (σY + Kα)
-    K::Float64 
+    E::Float64 # Young's modulus
+    # hardening parameter, yield function = |σ - q| - (σY + Kα)
+    K::Float64
+    B::Float64 
     σY::Float64
     α::Float64 
     α_::Float64 # α to be updated in `commitHistory`
-    σ0::Array{Float64} # stress at last time step
-    σ0_::Array{Float64} # σ0 to be updated in `commitHistory`
+    σ0::Float64 # stress at last time step
+    σ0_::Float64 # σ0 to be updated in `commitHistory
+    q::Float64 # stress at last time step
+    q_::Float64 # σ0 to be updated in `commitHistory`
 end
 
 
 function Plasticity1D(prop::Dict{String, Any})
-    E = prop["E"]; ν = prop["nu"]; ρ = prop["rho"];
+    ρ = prop["rho"]; 
+    E = prop["E"]; B = prop["B"]; 
     K = prop["K"]; σY = prop["sigmaY"]
+    α = 0.0; α_ = 0.0
     σ0 = 0.0; σ0_ = 0.0
-    Plasticity1D(H, E, ν, ρ, K, σY, 0.0, 0.0, σ0, σ0_)
+    q = 0.0; q_ = 0.0
+    Plasticity1D(ρ, E, K, B, σY, α, α_, σ0, σ0_, q, q_)
 end
 
-function getStress(self::PlaneStressPlasticity,  strain::Array{Float64},  Dstrain::Array{Float64})
-    # #@show "***", strain, Dstrain
+
+
+@doc """
+    For Plasticity material
+    :param hysteresis_variables: [eps_vp, alpha, q], plastic strain, internal hardening variable, and back stress
+    The yield condition is
+        f = |sigma - q| - (σY + alpha * K)
+    here K is the plastic modulus, , σY is the flow stress
+    D_eps_p = gamma df/dsigma        
+    D_alpha = |D_eps_p|
+    D_q     = B * D_eps_p
+    f  = 0    or f  < 0
+
+""" -> 
+function getStress(self::Plasticity1D,  strain::Float64,  Dstrain::Float64)
+    
     local dΔσdΔε
-    ε = strain 
-    ε0 = Dstrain 
-    σ0 = self.σ0 
-    α0 = self.α
-    H = self.H 
-    K = self.K 
+    ε = strain; ε0 = Dstrain 
+    σ0 = self.σ0;  α0 = self.α;  q0 = self.q
+    E = self.E;    K = self.K;   B = self.B; 
     σY = self.σY 
+    
+    #trial stress
     Δγ = 0.0
-    σ = σ0 + H*(ε-ε0) 
-    # σ = σ0
-    α = α0 + Δγ
+    σ = σ0 + E*(ε-ε0) 
+    α = α0 + abs(Δγ)
+    q = q0 + B*Δγ
+    ξ = σ - q
 
-    r2 = f(σ, α, σY, K)
-    if r2<0
-        #@show "Elasticity"
-        σ = σ0 + H*(ε-ε0) 
-        dΔσdΔε = H
-        #@show "elastic", α, α0, σ, σ0,ε, ε0, σ0 + H*(ε-ε0) , H*ε
+    r2 = abs(ξ) - (σY + K*α)
+    if r2 <= 0
+        σ = σ0 + E*(ε-ε0)
+        dΔσdΔε = E
+
     else
-        # @show "Plasticity"
-        σ = σ0 + H*(ε-ε0) 
-        function compute(σ, Δγ)
-            α = α0 + Δγ
-            r1 = σ + Δγ * H* fσ(σ) - σ0 - H*ε + H*ε0 
-            r2 = f(σ, α, σY, K)
-            J = [UniformScaling(1.0)+Δγ*H*fσσ(σ) H*fσ(σ)
-                reshape(fσ(σ),1,3) -K]
-            # #@show [r1;r2]
-            return [r1;r2], J
-        end
+        Δγ = r2/(B + E + K)
+        q += B * Δγ * sign(ξ)
+        α += Δγ
 
-        function compute_sensitivity(σ, Δγ)
-            α = α0 + Δγ
-            J = [UniformScaling(1.0)+Δγ*H*fσσ(σ) H*fσ(σ)
-                reshape(fσ(σ),1,3) -K]
-            δ = J\[H;zeros(1,3)]
-            return δ[1:3,:]
-        end
-        res0, _ = compute(σ, Δγ)
-        for i = 1:10
-            res, J = compute(σ, Δγ)
-            δ = -J\res
-            σ += δ[1:3]; Δγ += δ[4]
-            # #@show norm(res)/norm(res0)
-            if norm(res)/norm(res0)<1e-5
-                break
-            end
-            if i==100
-                function f(∂∂u)
-                    res, J = compute(∂∂u[1:3],∂∂u[4])
-                end
-                gradtest(f, [σ;Δγ])
-                error("Newton in GetStress does not converge")
-            end
-        end
-
-        dΔσdΔε = compute_sensitivity(σ, Δγ)
-        #@show "plastic", α, α0, Δγ, σ,σ0,ε, ε0, σ0 + H*(ε-ε0) , H*ε
-        # if σ[1]<0.0
-        #     error()
-        # end
-        
+        σ -= Δγ * E * sign(ξ)
+        dΔσdΔε = E*(B + K)/(B + E + K)
     end
+            
     # #@show Δγ
-    self.α_ = self.α + Δγ
-    self.σ0_ = σ[:]
-    # self.σ0_ = self.σ0
-    # #@show σ, dΔσdΔε
+    self.α_  = self.α + Δγ
+    self.σ0_ = σ
+    self.q_  = q
+
     return σ, dΔσdΔε
 end
 
-function getTangent(self::PlaneStressPlasticity)
+function getTangent(self::Plasticity1D)
     error("Not implemented")
 end
 
-function commitHistory(self::PlaneStressPlasticity)
+function commitHistory(self::Plasticity1D)
     self.α = self.α_
     self.σ0 = self.σ0_
+    self.q = self.q_
 end
