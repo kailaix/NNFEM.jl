@@ -49,7 +49,7 @@ function PlaneStressPlasticity(prop::Dict{String, Any})
     PlaneStressPlasticity(H, E, ν, ρ, K, σY, 0.0, 0.0, σ0, σ0_)
 end
 
-function getStress(self::PlaneStressPlasticity,  strain::Array{Float64},  Dstrain::Array{Float64})
+function getStress(self::PlaneStressPlasticity,  strain::Array{Float64},  Dstrain::Array{Float64}, Δt::Float64 = 0.0)
     # #@show "***", strain, Dstrain
     local dΔσdΔε
     ε = strain 

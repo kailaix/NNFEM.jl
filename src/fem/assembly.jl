@@ -32,7 +32,7 @@ function assembleInternalForce(globdat::GlobalData, domain::Domain)
     return Fint
 end
 
-function assembleStiffAndForce(globdat::GlobalData, domain::Domain)
+function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
     # Fint = zeros(Float64, domain.neqs)
     
     # K = zeros(Float64, domain.neqs, domain.neqs)
@@ -66,7 +66,7 @@ function assembleStiffAndForce(globdat::GlobalData, domain::Domain)
   
       # Get the element contribution by calling the specified action
       #@info "ele id is ", iele
-      fint, stiff  = getStiffAndForce(element, el_state, el_Dstate)
+      fint, stiff  = getStiffAndForce(element, el_state, el_Dstate, Δt)
 
       # Assemble in the global array
       el_eqns_active = el_eqns .>= 1
@@ -89,7 +89,7 @@ function assembleStiffAndForce(globdat::GlobalData, domain::Domain)
     return Fint, K
 end
 
-# function assembleStiffAndForce(globdat::GlobalData, domain::Domain)
+# function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
 #   Fint = zeros(Float64, domain.neqs)
 #   K = zeros(Float64, domain.neqs, domain.neqs)
 #   neles = domain.neles
@@ -117,7 +117,7 @@ end
 
 #     # Get the element contribution by calling the specified action
 #     #@info "ele id is ", iele
-#     fint, stiff  = getStiffAndForce(element, el_state, el_Dstate)
+#     fint, stiff  = getStiffAndForce(element, el_state, el_Dstate, Δt)
 
 #     # Assemble in the global array
 #     el_eqns_active = el_eqns .>= 1

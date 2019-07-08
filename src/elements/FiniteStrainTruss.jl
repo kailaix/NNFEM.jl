@@ -20,6 +20,8 @@ function FiniteStrainTruss(coords::Array{Float64}, elnodes::Array{Int64}, props:
         mat = [Elasticity1D(props) for i = 1:nGauss]
     elseif name=="Plasticity1D"
         mat = [Plasticity1D(props) for i = 1:nGauss]
+    elseif name=="Viscoplasticity1D"
+        mat = [Viscoplasticity1D(props) for i = 1:nGauss]
     else
         error("Not implemented yet: $name")
     end
@@ -37,7 +39,7 @@ function FiniteStrainTruss(coords::Array{Float64}, elnodes::Array{Int64}, props:
 end
 
 
-function getStiffAndForce(self::FiniteStrainTruss, state::Array{Float64}, Dstate::Array{Float64})
+function getStiffAndForce(self::FiniteStrainTruss, state::Array{Float64}, Dstate::Array{Float64}, Δt::Float64)
     ndofs = dofCount(self); 
     nnodes = length(self.elnodes)
     fint = zeros(Float64, ndofs)
@@ -63,7 +65,7 @@ function getStiffAndForce(self::FiniteStrainTruss, state::Array{Float64}, Dstate
     for k = 1:length(self.weights)
 
         # #@show E, DE
-        S, dS_dE = getStress(self.mat[k], E, DE)
+        S, dS_dE = getStress(self.mat[k], E, DE, Δt)
 
         self.strain[k] = S
 
@@ -80,7 +82,7 @@ function getStiffAndForce(self::FiniteStrainTruss, state::Array{Float64}, Dstate
     return fint, stiff
 end
 
-function getInternalForce(self::FiniteStrainTruss, state::Array{Float64}, Dstate::Array{Float64})
+function getInternalForce(self::FiniteStrainTruss, state::Array{Float64}, Dstate::Array{Float64}, Δt::Float64)
 end
 
 function getMassMatrix(self::FiniteStrainTruss)

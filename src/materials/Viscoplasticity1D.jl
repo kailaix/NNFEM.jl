@@ -1,11 +1,12 @@
-export  Plasticity1D
+export  Viscoplasticity1D
 
-mutable struct Plasticity1D
+mutable struct Viscoplasticity1D
     ρ::Float64 # density
     E::Float64 # Young's modulus
     # hardening parameter, yield function = |σ - q| - (σY + Kα)
     K::Float64
-    B::Float64 
+    B::Float64
+    η::Float64 
     σY::Float64
     α::Float64 
     α_::Float64 # α to be updated in `commitHistory`
@@ -16,37 +17,39 @@ mutable struct Plasticity1D
 end
 
 
-function Plasticity1D(prop::Dict{String, Any})
+function Viscoplasticity1D(prop::Dict{String, Any})
     ρ = prop["rho"]; 
     E = prop["E"]; B = prop["B"]; 
     K = prop["K"]; σY = prop["sigmaY"]
+    η = prop["eta"]
     α = 0.0; α_ = 0.0
     σ0 = 0.0; σ0_ = 0.0
     q = 0.0; q_ = 0.0
-    Plasticity1D(ρ, E, K, B, σY, α, α_, σ0, σ0_, q, q_)
+    Viscoplasticity1D(ρ, E, K, B, η, σY, α, α_, σ0, σ0_, q, q_)
 end
 
 
 
 @doc """
-    For Plasticity material
+    For Viscoplasticity material
     :param hysteresis_variables: [eps_vp, alpha, q], plastic strain, internal hardening variable, and back stress
     The yield condition is
         f = |sigma - q| - (σY + alpha * K)
     here K is the plastic modulus, , σY is the flow stress
-    D_eps_p = gamma df/dsigma        
+    D_eps_vp = <phi(f)>/eta * df/dsigma
     D_alpha = |D_eps_p|
-    D_q     = B * D_eps_p
-    f  = 0    or f  < 0
+    D_q     = B * D_eps_vp
+
+    here <phi(f)> = (f+|f|)/2
 
 """ -> 
-function getStress(self::Plasticity1D,  strain::Float64,  Dstrain::Float64, Δt::Float64 = 0.0)
+function getStress(self::Viscoplasticity1D,  strain::Float64,  Dstrain::Float64, Δt::Float64)
     
     local dΔσdΔε
     ε = strain; ε0 = Dstrain 
     σ0 = self.σ0;  α0 = self.α;  q0 = self.q
     E = self.E;    K = self.K;   B = self.B; 
-    σY = self.σY 
+    η = self.η; σY = self.σY 
     
     #trial stress
     Δγ = 0.0
@@ -61,12 +64,13 @@ function getStress(self::Plasticity1D,  strain::Float64,  Dstrain::Float64, Δt:
         dΔσdΔε = E
 
     else
-        Δγ = r2/(B + E + K)
+
+        Δγ = r2 * Δt / (η + Δt * (E + H + B))
         q += B * Δγ * sign(ξ)
         α += Δγ
 
         σ -= Δγ * E * sign(ξ)
-        dΔσdΔε = E*(B + K)/(B + E + K)
+        dΔσdΔε = E * (η + Δt*(B + K)) / (η + Δt*(B + E + K))
     end
             
     # #@show Δγ
@@ -77,11 +81,11 @@ function getStress(self::Plasticity1D,  strain::Float64,  Dstrain::Float64, Δt:
     return σ, dΔσdΔε
 end
 
-function getTangent(self::Plasticity1D)
+function getTangent(self::Viscoplasticity1D)
     error("Not implemented")
 end
 
-function commitHistory(self::Plasticity1D)
+function commitHistory(self::Viscoplasticity1D)
     self.α = self.α_
     self.σ0 = self.σ0_
     self.q = self.q_

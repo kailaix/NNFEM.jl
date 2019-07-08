@@ -9,7 +9,7 @@ function Elasticity1D(prop::Dict{String, Any})
     Elasticity1D(E, ρ)
 end
 
-function getStress(self::Elasticity1D, strain::Float64, Dstrain::Float64)
+function getStress(self::Elasticity1D, strain::Float64, Dstrain::Float64, Δt::Float64 = 0.0)
     sigma = self.E * strain
 
     return sigma, self.E
