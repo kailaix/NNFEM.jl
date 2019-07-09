@@ -2,3 +2,4 @@ PyCall
 PyPlot
 SparseArrays
 JLD2
+Distributed

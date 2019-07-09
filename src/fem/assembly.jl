@@ -1,5 +1,4 @@
 using SparseArrays
-using Distributed
 export assembleStiffAndForce,assembleInternalForce,assembleMassMatrix!
 function assembleInternalForce(globdat::GlobalData, domain::Domain)
     Fint = zeros(Float64, domain.neqs)
