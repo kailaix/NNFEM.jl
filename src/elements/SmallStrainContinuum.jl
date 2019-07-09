@@ -11,7 +11,7 @@ mutable struct SmallStrainContinuum
 end
 
 function SmallStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, props::Dict{String, Any}, ngp::Int64=2)
-    dhdx, weights, hs = getElemShapeData( coords, ngp )
+    dhdx, weights, hs = get2DElemShapeData( coords, ngp )
     nGauss = length(weights)
     name = props["name"]
     if name=="PlaneStrain"
@@ -27,7 +27,7 @@ function SmallStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, pro
     SmallStrainContinuum(mat, elnodes, props, coords, dhdx, weights, hs, strain)
 end
 
-function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64}, Dstate::Array{Float64})
+function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64}, Dstate::Array{Float64}, Δt::Float64)
     ndofs = dofCount(self); 
     nnodes = length(self.elnodes)
     fint = zeros(Float64, ndofs)
@@ -54,7 +54,7 @@ function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64}, Dst
         DE = [Dux; Dvy; Duy+Dvx]
 
         # #@show E, DE
-        S, dS_dE = getStress(self.mat[k], E, DE)
+        S, dS_dE = getStress(self.mat[k], E, DE, Δt)
         self.strain[k] = S
 
         fint += ∂E∂u * S * self.weights[k] # 1x8
@@ -64,7 +64,7 @@ function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64}, Dst
     return fint, stiff
 end
 
-function getInternalForce(self::SmallStrainContinuum, state::Array{Float64}, Dstate::Array{Float64})
+function getInternalForce(self::SmallStrainContinuum, state::Array{Float64}, Dstate::Array{Float64}, Δt::Float64)
     n = dofCount(self)
     fint = zeros(Float64,n)
     out = Array{Float64}[]
@@ -82,7 +82,7 @@ function getInternalForce(self::SmallStrainContinuum, state::Array{Float64}, Dst
         E = [ux; vy; uy+vx]
         DE = [Dux; Dvy; Duy+Dvx]
 
-        S, dS_dE = getStress(self.mat[k], E, DE)
+        S, dS_dE = getStress(self.mat[k], E, DE, Δt)
 
         fint += ∂E∂u * S * self.weights[k] # 1x8
     end

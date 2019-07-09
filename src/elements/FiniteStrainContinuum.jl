@@ -11,7 +11,7 @@ mutable struct FiniteStrainContinuum
 end
 
 function FiniteStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, props::Dict{String, Any}, ngp::Int64=2)
-    dhdx, weights, hs = getElemShapeData( coords, ngp )
+    dhdx, weights, hs = get2DElemShapeData( coords, ngp )
     nGauss = length(weights)
     name = props["name"]
     if name=="PlaneStrain"
@@ -27,7 +27,7 @@ function FiniteStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, pr
     FiniteStrainContinuum(mat, elnodes, props, coords, dhdx, weights, hs, strain)
 end
 
-function getStiffAndForce(self::FiniteStrainContinuum, state::Array{Float64}, Dstate::Array{Float64})
+function getStiffAndForce(self::FiniteStrainContinuum, state::Array{Float64}, Dstate::Array{Float64}, Δt::Float64)
     ndofs = dofCount(self); 
     nnodes = length(self.elnodes)
     fint = zeros(Float64, ndofs)
@@ -48,7 +48,7 @@ function getStiffAndForce(self::FiniteStrainContinuum, state::Array{Float64}, Ds
         DE = [Dux+0.5*(Dux*Dux+Dvx*Dvx); Dvy+0.5*(Duy*Duy+Dvy*Dvy); Duy+Dvx+Dux*Duy+Dvx*Dvy]
 
         # #@show "+++",E, DE
-        S, dS_dE = getStress(self.mat[k], E, DE)
+        S, dS_dE = getStress(self.mat[k], E, DE, Δt)
         # error()
         self.strain[k] = S
 
@@ -62,7 +62,7 @@ function getStiffAndForce(self::FiniteStrainContinuum, state::Array{Float64}, Ds
     return fint, stiff
 end
 
-function getInternalForce(self::FiniteStrainContinuum, state::Array{Float64}, Dstate::Array{Float64})
+function getInternalForce(self::FiniteStrainContinuum, state::Array{Float64}, Dstate::Array{Float64}, Δt::Float64)
     n = dofCount(self)
     fint = zeros(Float64,n)
     out = Array{Float64}[]
@@ -78,7 +78,7 @@ function getInternalForce(self::FiniteStrainContinuum, state::Array{Float64}, Ds
 
         E = [ux+0.5*(ux*ux+vx*vx); vy+0.5*(uy*uy+vy*vy); uy+vx+ux*uy+vx*vy]
         DE = [Dux+0.5*(Dux*Dux+Dvx*Dvx); Dvy+0.5*(Duy*Duy+Dvy*Dvy); Duy+Dvx+Dux*Duy+Dvx*Dvy]
-        S, _ = getStress(self.mat[k],E, DE)
+        S, _ = getStress(self.mat[k],E, DE, Δt)
         fint += ∂E∂u * S * self.weights[k] # 1x8
     end
     return fint

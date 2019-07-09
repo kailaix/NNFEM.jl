@@ -19,7 +19,7 @@ function PlaneStress(prop::Dict{String, Any})
     PlaneStress(H, E, ν, ρ)
 end
 
-function getStress(self::PlaneStress, strain::Array{Float64}, Dstrain::Array{Float64})
+function getStress(self::PlaneStress, strain::Array{Float64}, Dstrain::Array{Float64}, Δt::Float64 = 0.0)
     sigma = self.H * strain
 
     return sigma, self.H

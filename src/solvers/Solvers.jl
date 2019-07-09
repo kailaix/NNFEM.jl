@@ -30,7 +30,7 @@ function ExplicitSolver(Δt, globdat, domain)
     velo += 0.5*Δt * acce
     state += Δt * velo
     
-    fint  = assembleInternalForce( globdat, domain )
+    fint  = assembleInternalForce( globdat, domain, Δt)
 
     if length(globdat.M)==0
         error("globalDat is not initialized, call `assembleMassMatrix!(globaldat, domain)`")
@@ -236,7 +236,7 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1, αf = 0, ε = 1e-8, maxit
 
         #@info "At Newtoniterstep ",  Newtoniterstep, " disp ", domain.state
 
-        fint, stiff = assembleStiffAndForce( globdat, domain )
+        fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
         # error()
         res = M * ∂∂up *(1 - αm)  + fint - fext
         # @show fint, stiff
