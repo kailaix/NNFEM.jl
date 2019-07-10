@@ -85,7 +85,8 @@ function tfAssembleInternalForce(globdat::GlobalData, domain::Domain, nn::Functi
     i<=neles*nGauss+1
   end
   function body(i, tensor_array)
-    x = read(tensor_array, i-1)
+    # x = read(tensor_array, i-1)
+    x = constant(zeros(domain.neqs))
     fint = w∂E∂u_all[i - 1] * σ_all[i - 1]
     fint = fint*cast(Float64, el_eqns_active_all[i - 1])
     x = scatter_add(x, el_eqns_all[i - 1], fint)
@@ -97,7 +98,8 @@ function tfAssembleInternalForce(globdat::GlobalData, domain::Domain, nn::Functi
   i = constant(2, dtype=Int32)
   _, out = while_loop(cond0, body, [i, tensor_array])
   out = stack(out)
-  Fint = out[neles*nGauss+1]
+  Fint = sum(out, dims=1)
+  # Fint = out[neles*nGauss+1]
   return Fint
 end
 
