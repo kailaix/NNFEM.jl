@@ -35,20 +35,24 @@ function tfAssembleInternalForce(globdat::GlobalData, domain::Domain, nn::Functi
   Fint = constant(zeros(Float64, domain.neqs))
   neles = domain.neles
   nGauss = length(domain.elements[1].weights)
-  ε = zeros(neles*nGauss, 3)
+  neqns_per_elem = length(getEqns(domain,1))
+  nstrains = 3
   
-  el_eqns_active_ = zeros(Bool, neles, length(getEqns(domain,1)))
+
+  el_eqns_active_all = zeros(Bool, neles, neqns_per_elem)
   # @show size(el_eqns_active_)
-  el_eqns_ = zeros(Int32, neles, length(getEqns(domain,1)))
-  wdEdu_ = zeros(neles*nGauss, 8, 3)
+  el_eqns_all = zeros(Int32, neles, neqns_per_elem)
+
+  E_all = zeros(neles*nGauss, nstrains)
+  w∂E∂u_all = zeros(neles*nGauss, neqns_per_elem, nstrains)
   #todo Dε 
-  Dε  = ε
+  DE_all  = E_all
 
   #todo σ0
-  σ0 = constant(ε)
+  σ0_all = constant(E_all)
   
 
-  # Loop over the elements in the elementGroup
+  # Loop over the elements in the elementGroup to construct strain and geo-matrix E_all and w∂E∂u_all
   for iele  = 1:neles
     element = domain.elements[iele]
 
@@ -63,33 +67,35 @@ function tfAssembleInternalForce(globdat::GlobalData, domain::Domain, nn::Functi
     el_state  = getState(domain,el_dofs)
 
     # Get the element contribution by calling the specified action
-    E, wdEdu = getStrain(element, el_state)
-    ε[(iele-1)*nGauss+1:iele*nGauss,:] = E
+    E, w∂E∂u = getStrain(element, el_state)
+    E_all[(iele-1)*nGauss+1:iele*nGauss,:] = E
     # # Assemble in the global array
-    el_eqns_active_[iele,:] = (el_eqns .>= 1)
-    el_eqns_[iele,:] = el_eqns
-    wdEdu_[(iele-1)*nGauss+1:iele*nGauss,:,:] = wdEdu
+    el_eqns_active_all[iele,:] = (el_eqns .>= 1)
+    el_eqns_all[iele,:] = el_eqns
+    w∂E∂u_all[(iele-1)*nGauss+1:iele*nGauss,:,:] = w∂E∂u
     # 
   end
-  σ = nn(Dε, ε, σ0)
-  el_eqns_active_ = constant(.!el_eqns_active_,dtype=Bool)
-  el_eqns_ = constant(el_eqns_)
-  wdEdu_ = constant(wdEdu_)
-  function cond0(i, ta)
+  σ_all = nn(DE_all, E_all, σ0_all)
+  el_eqns_active_all = constant(.!el_eqns_active_all, dtype=Bool)
+  el_eqns_all = constant(el_eqns_all)
+  w∂E∂u_all = constant(w∂E∂u_all)
+
+
+  function cond0(i, tensor_array)
     i<=neles*nGauss+1
   end
-  function body(i, ta)
-    x = read(ta, i-1)
-    fint = wdEdu_[i] * σ[i]
-    fint = fint*cast(Float64,el_eqns_active_[i])
-    x = scatter_add(x, el_eqns_[i], fint)
-    ta = write(ta, i, constant(zeros(1143)))
-    i+1,ta
+  function body(i, tensor_array)
+    x = read(tensor_array, i-1)
+    fint = w∂E∂u_all[i - 1] * σ_all[i - 1]
+    fint = fint*cast(Float64, el_eqns_active_all[i - 1])
+    x = scatter_add(x, el_eqns_all[i - 1], fint)
+    tensor_array = write(tensor_array, i, x)
+    i+1,tensor_array
   end
-  ta = TensorArray(neles*nGauss+1)
-  ta = write(ta, 1, Fint)
+  tensor_array = TensorArray(neles*nGauss+1)
+  tensor_array = write(tensor_array, 1, Fint)
   i = constant(2, dtype=Int32)
-  _, out = while_loop(cond0, body, [i, ta])
+  _, out = while_loop(cond0, body, [i, tensor_array])
   out = stack(out)
   Fint = out[neles*nGauss+1]
   return Fint
