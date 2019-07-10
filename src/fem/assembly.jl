@@ -36,6 +36,7 @@ function tfAssembleInternalForce(globdat::GlobalData, domain::Domain, nn::Functi
   neles = domain.neles
   nGauss = length(domain.elements[1].weights)
   ε = zeros(neles*nGauss, 3)
+  
   el_eqns_active_ = zeros(Bool, neles, length(getEqns(domain,1)))
   # @show size(el_eqns_active_)
   el_eqns_ = zeros(Int32, neles, length(getEqns(domain,1)))
