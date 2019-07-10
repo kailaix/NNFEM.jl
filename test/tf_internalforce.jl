@@ -4,6 +4,15 @@ using NNFEM
 using PyCall
 using PyPlot
 using JLD2
+using ADCME
+
+function nn(ε, ε0, σ0)
+    @show [constant([ε ε0]) σ0]
+    x = [constant([ε ε0]) σ0]
+    y = ae(x, [20,20,20,20,3], "nn")
+    @show y
+    y
+end
 
 elements_, nodes, boundaries = readMesh("$(@__DIR__)/../deps/plate.msh")
 # Dirichlet_1 : bottom
@@ -57,14 +66,14 @@ end
 
 
 
-testtype = "PlaneStressPlasticity"
+testtype = "NeuralNetwork2D"
 ndofs = 2
 
 nnodes = size(nodes,1)
 EBC, g ,NBC, f, gt = set_boundary(boundaries, nnodes)
 
 prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e9, "nu"=> 0.45,
-            "sigmaY"=>300e6, "K"=>1/9*200e9)
+            "sigmaY"=>300e6, "K"=>1/9*200e9, "nn"=>nn)
 
 # prop = Dict("name"=> testtype, "rho"=> 8000.0e-9, "E"=> 200, "nu"=> 0.45,
 #             "sigmaY"=>0.3, "K"=>1/9*200)
@@ -77,9 +86,9 @@ prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e9, "nu"=> 0.45,
 
 elements = []
 for i = 1:length(elements_)
-        elnodes = elements_[i]
-        coords = nodes[elnodes,:]
-        push!(elements,SmallStrainContinuum(coords,elnodes, prop))
+    elnodes = elements_[i]
+    coords = nodes[elnodes,:]
+    push!(elements,SmallStrainContinuum(coords,elnodes, prop))
 end
 
 domain = Domain(nodes, elements, ndofs, EBC, g, NBC, f)
@@ -90,42 +99,4 @@ globdat = GlobalData(state,zeros(domain.neqs),
 assembleMassMatrix!(globdat, domain)
 updateStates!(domain, globdat)
 
-# #@show "F - F1", F - F1
-# #@show "F", F
-# #@show "K", K
-# #@show "M", globdat.M
-
-
-# solver = ExplicitSolver(Δt, globdat, domain )
-T = 2.0
-NT = 80
-Δt = T/NT
-for i = 1:NT
-    @show i
-    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-3, 100)
-end
-
-# @time for i = 1:10
-#     @show i
-#     solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-3, 100)
-# end
-# visdynamic(domain,"dym")
-# solver = StaticSolver(globdat, domain )
-#solver.run( props , globdat )
-visstatic(domain, scaling=10)
-
-function ct(x)
-    if x<0.25
-        return sqrt(0.25^2-x^2)
-    else
-        return 0.0
-    end
-end
-a = LinRange{Float64}(0.0,0.5,100)
-y = ct.(a)
-plot(a, y, "k--")
-plot([0.5;0.5;0.0;0.0],[0.0;0.5;0.5;0.25],"k--")
-axis("equal")
-# end
-
-# @save "platewithhole" domain globdat
+fint = tfAssembleInternalForce(globdat, domain,nn)

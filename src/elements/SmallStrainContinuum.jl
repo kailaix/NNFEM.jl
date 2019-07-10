@@ -20,6 +20,8 @@ function SmallStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, pro
         mat = [PlaneStress(props) for i = 1:nGauss]
     elseif name=="PlaneStressPlasticity"
         mat = [PlaneStressPlasticity(props) for i = 1:nGauss]
+    elseif name=="NeuralNetwork2D"
+        mat = [NeuralNetwork2D(props) for i = 1:nGauss]
     else
         error("Not implemented yet: $name")
     end
@@ -87,6 +89,23 @@ function getInternalForce(self::SmallStrainContinuum, state::Array{Float64}, Dst
         fint += ∂E∂u * S * self.weights[k] # 1x8
     end
     return fint
+end
+
+function getStrain(self::SmallStrainContinuum, state::Array{Float64})
+    n = dofCount(self)
+    u = state[1:4]; v = state[5:8]
+    nGauss = length(self.weights)
+    E = zeros(nGauss, 3)
+    w∂E∂u = zeros(nGauss, 8, 3)
+    for k = 1:nGauss
+        g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
+        ux = u'*g1; uy = u'*g2; vx = v'*g1; vy = v'*g2
+        # compute  ∂E∂u.T, 8 by 3 array 
+        w∂E∂u[k,:,:] = [g1   zeros(4)    g2;
+                zeros(4)    g2   g1;] * self.weights[k]
+        E[k,:] = [ux; vy; uy+vx]
+    end
+    return E, w∂E∂u
 end
 
 function getMassMatrix(self::SmallStrainContinuum)

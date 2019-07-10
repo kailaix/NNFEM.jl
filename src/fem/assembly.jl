@@ -1,5 +1,5 @@
 using SparseArrays
-export assembleStiffAndForce,assembleInternalForce,assembleMassMatrix!
+export assembleStiffAndForce,assembleInternalForce,assembleMassMatrix!,tfAssembleInternalForce
 function assembleInternalForce(globdat::GlobalData, domain::Domain)
     Fint = zeros(Float64, domain.neqs)
     neles = domain.neles
@@ -31,6 +31,69 @@ function assembleInternalForce(globdat::GlobalData, domain::Domain)
     return Fint
 end
 
+function tfAssembleInternalForce(globdat::GlobalData, domain::Domain, nn::Function)
+  Fint = constant(zeros(Float64, domain.neqs))
+  neles = domain.neles
+  nGauss = length(domain.elements[1].weights)
+  ε = zeros(neles*nGauss, 3)
+  el_eqns_active_ = zeros(Bool, neles, length(getEqns(domain,1)))
+  # @show size(el_eqns_active_)
+  el_eqns_ = zeros(Int32, neles, length(getEqns(domain,1)))
+  wdEdu_ = zeros(neles*nGauss, 8, 3)
+  #todo Dε 
+  Dε  = ε
+
+  #todo σ0
+  σ0 = constant(ε)
+  
+
+  # Loop over the elements in the elementGroup
+  for iele  = 1:neles
+    element = domain.elements[iele]
+
+    # Get the element nodes
+    el_nodes = getNodes(element)
+
+    # Get the element nodes
+    el_eqns = getEqns(domain,iele)
+
+    el_dofs = getDofs(domain,iele)
+
+    el_state  = getState(domain,el_dofs)
+
+    # Get the element contribution by calling the specified action
+    E, wdEdu = getStrain(element, el_state)
+    ε[(iele-1)*nGauss+1:iele*nGauss,:] = E
+    # # Assemble in the global array
+    el_eqns_active_[iele,:] = (el_eqns .>= 1)
+    el_eqns_[iele,:] = el_eqns
+    wdEdu_[(iele-1)*nGauss+1:iele*nGauss,:,:] = wdEdu
+    # 
+  end
+  σ = nn(Dε, ε, σ0)
+  el_eqns_active_ = constant(.!el_eqns_active_,dtype=Bool)
+  el_eqns_ = constant(el_eqns_)
+  wdEdu_ = constant(wdEdu_)
+  function cond0(i, ta)
+    i<=neles*nGauss+1
+  end
+  function body(i, ta)
+    x = read(ta, i-1)
+    fint = wdEdu_[i] * σ[i]
+    fint = fint*cast(Float64,el_eqns_active_[i])
+    x = scatter_add(x, el_eqns_[i], fint)
+    ta = write(ta, i, constant(zeros(1143)))
+    i+1,ta
+  end
+  ta = TensorArray(neles*nGauss+1)
+  ta = write(ta, 1, Fint)
+  i = constant(2, dtype=Int32)
+  _, out = while_loop(cond0, body, [i, ta])
+  out = stack(out)
+  Fint = out[neles*nGauss+1]
+  return Fint
+end
+
 function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
     # Fint = zeros(Float64, domain.neqs)
     
@@ -43,7 +106,7 @@ function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64
     JJ = Array{Array{Int64}}(undef, neles)
     VV = Array{Array{Float64}}(undef, neles)
     # Loop over the elements in the elementGroup
-    for iele  = 1:neles
+    Threads.@threads for iele  = 1:neles
       element = domain.elements[iele]
   
       # Get the element nodes

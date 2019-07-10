@@ -5,6 +5,8 @@ using JLD2
 using PyCall
 using Statistics
 using LinearAlgebra
+using PyCall:PyObject
+using ADCME
 animation = PyNULL()
 colors = PyNULL()
 cmx = PyNULL()
@@ -25,6 +27,7 @@ include("materials/PlaneStressPlasticity.jl")
 include("materials/Elasticity1D.jl")
 include("materials/Plasticity1D.jl")
 include("materials/Viscoplasticity1D.jl")
+include("materials/NeuralNetwork2D.jl")
 include("solvers/Solvers.jl")
 include("elements/FiniteStrainContinuum.jl")
 include("elements/SmallStrainContinuum.jl")

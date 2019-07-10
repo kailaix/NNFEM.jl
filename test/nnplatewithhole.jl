@@ -77,9 +77,9 @@ prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e9, "nu"=> 0.45,
 
 elements = []
 for i = 1:length(elements_)
-        elnodes = elements_[i]
-        coords = nodes[elnodes,:]
-        push!(elements,SmallStrainContinuum(coords,elnodes, prop))
+    elnodes = elements_[i]
+    coords = nodes[elnodes,:]
+    push!(elements,NNSmallStrainContinuum(coords,elnodes, prop))
 end
 
 domain = Domain(nodes, elements, ndofs, EBC, g, NBC, f)
