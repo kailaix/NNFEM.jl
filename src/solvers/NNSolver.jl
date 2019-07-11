@@ -38,7 +38,7 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, fext::Array{Fl
     return total_loss
 end
 
-function BFGS(sess::PyObject, loss::PyObject; kwargs...)
+function BFGS(sess::PyObject, loss::PyObject, max_iter=15000; kwargs...)
     __cnt = 0
     function print_loss(l)
         if mod(__cnt,1)==0
@@ -53,7 +53,7 @@ function BFGS(sess::PyObject, loss::PyObject; kwargs...)
         end
         __iter += 1
     end
-    opt = ScipyOptimizerInterface(loss, method="L-BFGS-B",options=Dict("maxiter"=> 30000, "ftol"=>1e-12, "gtol"=>1e-12))
+    opt = ScipyOptimizerInterface(loss, method="L-BFGS-B",options=Dict("maxiter"=> max_iter, "ftol"=>1e-12, "gtol"=>1e-12))
     @info "Optimization starts..."
     ScipyOptimizerMinimize(sess, opt, loss_callback=print_loss, step_callback=step_callback, fetches=[loss])
 end
@@ -93,7 +93,7 @@ end
 # compute E from U 
 function preprocessing(domain::Domain, globdat::GlobalData, F::Array{Float64},Δt::Float64)
     U = hcat(domain.state_history...)
-    @info " U ", size(U),  U'
+    # @info " U ", size(U),  U'
     M = globdat.M
 
     NT = size(U,2)-1
@@ -111,7 +111,7 @@ function preprocessing(domain::Domain, globdat::GlobalData, F::Array{Float64},Δ
 
     for i = 1:NT+1
         domain.state = U[:, i]
-        @info "domain state", domain.state
+        # @info "domain state", domain.state
         # Loop over the elements in the elementGroup to construct strain and geo-matrix E_all and w∂E∂u_all
         for iele  = 1:neles
             element = domain.elements[iele]

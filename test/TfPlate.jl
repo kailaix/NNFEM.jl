@@ -66,7 +66,7 @@ globdat = GlobalData(state,zeros(domain.neqs),
                     zeros(domain.neqs),∂u, domain.neqs, gt)
 
 assembleMassMatrix!(globdat, domain)
-# updateStates!(domain, globdat)
+updateStates!(domain, globdat)
 
 
 
@@ -86,7 +86,7 @@ H_ = Variable(diagm(0=>ones(3)))
 H = H_'*H_
 # H = Variable(rand(3,3))
 H0 = [250783699059.561126708984375 112852664576.802505493164063 0.000000000000000; 112852664576.802505493164063 250783699059.561126708984375 0.000000000000000; 0.000000000000000 0.000000000000000 68965517241.379318237304688]
-H = constant(H0/1e11)
+# H = constant(H0/1e11)
 
 function nn(ε, ε0, σ0)
     local y
@@ -106,7 +106,7 @@ end
 
 F = zeros(domain.neqs, NT+1)
 Fext, E_all = preprocessing(domain, globdat, F, Δt)
-@info "Fext ", Fext
+# @info "Fext ", Fext
 loss = DynamicMatLawLoss(domain, E_all, Fext, nn)
 sess = Session(); init(sess)
 @show run(sess, loss)

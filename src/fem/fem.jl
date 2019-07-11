@@ -68,7 +68,7 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array
     dof_to_eq = zeros(Bool, nnodes * ndims)
     fext = Float64[]
     
-    his = [copy(state)]
+    his = Array{Float64}[]
     domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, LM, DOF, ID, neqs, eq_to_dof, dof_to_eq, EBC, g, NBC, fext, 0.0, his)
     setDirichletBoundary!(domain, EBC, g)
     setNeumannBoundary!(domain, NBC, f)
