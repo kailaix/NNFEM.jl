@@ -71,7 +71,7 @@ assembleMassMatrix!(globdat, domain)
 
 
 T = 0.8
-NT = 40
+NT = 5
 Δt = T/NT
 for i = 1:NT
     @info i, "/" , NT
@@ -85,7 +85,8 @@ nntype = "linear"
 H = Variable(diagm(0=>ones(3)))
 H = H'*H
 # H = Variable(rand(3,3))
-# H = constant([2.50784e11 1.12853e11 0.0; 1.12853e11 2.50784e11 0.0; 0.0 0.0 6.89655e10]/1e11)
+H0 = [250783699059.561126708984375 112852664576.802505493164063 0.000000000000000; 112852664576.802505493164063 250783699059.561126708984375 0.000000000000000; 0.000000000000000 0.000000000000000 68965517241.379318237304688]
+H = constant(H0/1e11)
 
 function nn(ε, ε0, σ0)
     local y
@@ -109,6 +110,6 @@ Fext, E_all = preprocessing(domain, globdat, F, Δt)
 loss = DynamicMatLawLoss(domain, E_all, Fext, nn)
 sess = Session(); init(sess)
 @show run(sess, loss)
-# BFGS(sess, loss)
-# println("Real H = ", [2.50784e11 1.12853e11 0.0; 1.12853e11 2.50784e11 0.0; 0.0 0.0 6.89655e10]/1e11)
-# run(sess, H)
+BFGS(sess, loss)
+println("Real H = ", H0/1e11)
+run(sess, H)

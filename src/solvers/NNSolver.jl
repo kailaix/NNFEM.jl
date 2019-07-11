@@ -22,8 +22,8 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, fext::Array{Fl
         # @show E, DE
         fint, σ = tfAssembleInternalForce(domain,nn,E,DE,σ0)
         # @show E, DE
-        # op = tf.print(i)
-        # σ = bind(σ, op)
+        # op = tf.print(i,(fint), summarize=-1)
+        # fint = bind(fint, op)
         ta_σ = write(ta_σ, i, σ)
         ta_loss = write(ta_loss, i, sum((fint-fext[i-1])^2))
         i+1, ta_loss, ta_σ
@@ -33,7 +33,7 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, fext::Array{Fl
     ta_σ = TensorArray(NT+1); ta_σ = write(ta_σ, 1, σ0)
     ta_loss = TensorArray(NT+1); ta_loss = write(ta_loss, 1, constant(0.0))
     i = constant(2, dtype=Int32)
-    _, out, _ = while_loop(cond0, body, [i,ta_loss, ta_σ]; parallel_iterations=10)
+    _, out, _ = while_loop(cond0, body, [i,ta_loss, ta_σ]; parallel_iterations=1)
     total_loss = sum(stack(out)[2:NT])
     return total_loss
 end
@@ -73,12 +73,12 @@ function NNMatLaw(sess::PyObject)
     vars = run(sess, vars)
     n = div(length(vars),2)
     for i = 1:n
-        vars[2i] = repeat(vars[2i], size(vars[2(i-1)+1],1), 1)
+        vars[2i] = repeat(reshape(vars[2i], 1, length(vars[2i])), size(vars[2(i-1)],1), 1)
     end
     function nn(ε, ε0, σ0, Δt)
         x = reshape([ε; ε0; σ0], 1, 9)
         for i = 1:n
-            # @show size(vars[2(i-1)+1]), size(vars[2i])
+            @show size(vars[2(i-1)+1]), size(vars[2i])
             x = x*vars[2(i-1)+1]+vars[2i]
             if i<=n-1
                 x = tanh(x)

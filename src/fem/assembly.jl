@@ -70,7 +70,7 @@ function tfAssembleInternalForce(domain::Domain, nn::Function,
     w∂E∂u_all[(iele-1)*nGauss+1:iele*nGauss,:,:] = w∂E∂u
   end
   # @info "here"
-  σ_all = nn(DE_all, E_all, σ0_all)
+  σ_all = nn(E_all, DE_all, σ0_all)
   # @info "here"
   el_eqns_active_all = constant(el_eqns_active_all, dtype=Bool)
   #while loop only aa
@@ -86,12 +86,18 @@ function tfAssembleInternalForce(domain::Domain, nn::Function,
   function body(i, tensor_array)
     x = constant(zeros(Float64, domain.neqs))
     fint = w∂E∂u_all[i - 1] * σ_all[i - 1]
-    # op = tf.print("-",i, σ_all[i - 1], summarize=-1)
-    # fint = bind(fint, op)
-    fint = fint * cast(Float64, el_eqns_active_all[i - 1]) # 8D
+    
     # op = tf.print("+",i,fint, summarize=-1)
     # fint = bind(fint, op)
+
+    fint = fint * cast(Float64, el_eqns_active_all[i - 1]) # 8D
+
+    # op = tf.print("-",i, el_eqns_all[i-1], summarize=-1)
+    # fint = bind(fint, op)
+
     x = scatter_add(x, el_eqns_all[i-1], fint)
+    op = tf.print("-",i, x, summarize=-1)
+    x = bind(x, op)
     tensor_array = write(tensor_array, i, x)
     i+1,tensor_array
   end
@@ -104,8 +110,8 @@ function tfAssembleInternalForce(domain::Domain, nn::Function,
 
 
   Fint = sum(out, dims=1)
-  # op = tf.print("*",norm(Fint))
-  # Fint = bind(Fint, op)
+  op = tf.print("*",Fint, summarize=-1)
+  Fint = bind(Fint, op)
   return Fint, σ_all
 end
 
