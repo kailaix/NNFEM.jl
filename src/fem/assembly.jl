@@ -96,8 +96,8 @@ function tfAssembleInternalForce(domain::Domain, nn::Function,
     # fint = bind(fint, op)
 
     x = scatter_add(x, el_eqns_all[i-1], fint)
-    op = tf.print("-",i, x, summarize=-1)
-    x = bind(x, op)
+    # op = tf.print("-",i, x, summarize=-1)
+    # x = bind(x, op)
     tensor_array = write(tensor_array, i, x)
     i+1,tensor_array
   end
@@ -110,8 +110,8 @@ function tfAssembleInternalForce(domain::Domain, nn::Function,
 
 
   Fint = sum(out, dims=1)
-  op = tf.print("*",Fint, summarize=-1)
-  Fint = bind(Fint, op)
+  # op = tf.print("*",Fint, summarize=-1)
+  # Fint = bind(Fint, op)
   return Fint, σ_all
 end
 

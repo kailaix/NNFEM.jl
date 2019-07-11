@@ -82,8 +82,8 @@ end
 
 
 nntype = "linear"
-H = Variable(diagm(0=>ones(3)))
-H = H'*H
+H_ = Variable(diagm(0=>ones(3)))
+H = H_'*H_
 # H = Variable(rand(3,3))
 H0 = [250783699059.561126708984375 112852664576.802505493164063 0.000000000000000; 112852664576.802505493164063 250783699059.561126708984375 0.000000000000000; 0.000000000000000 0.000000000000000 68965517241.379318237304688]
 H = constant(H0/1e11)
@@ -110,6 +110,6 @@ Fext, E_all = preprocessing(domain, globdat, F, Δt)
 loss = DynamicMatLawLoss(domain, E_all, Fext, nn)
 sess = Session(); init(sess)
 @show run(sess, loss)
-BFGS(sess, loss)
-println("Real H = ", H0/1e11)
-run(sess, H)
+# BFGS(sess, loss)
+# println("Real H = ", H0/1e11)
+# run(sess, H)
