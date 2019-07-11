@@ -37,5 +37,6 @@ include("fem/assembly.jl")
 include("utils/visualize.jl")
 include("utils/io.jl")
 include("utils/Testsuit.jl")
+include("solvers/NNSolver.jl")
 
 end

@@ -31,27 +31,21 @@ function assembleInternalForce(globdat::GlobalData, domain::Domain)
     return Fint
 end
 
-function tfAssembleInternalForce(globdat::GlobalData, domain::Domain, nn::Function)
-  Fint = constant(zeros(Float64, domain.neqs))
+function tfAssembleInternalForce(domain::Domain, nn::Function,
+  E_all::PyObject, DE_all::PyObject, σ0_all::PyObject)
   neles = domain.neles
   nGauss = length(domain.elements[1].weights)
   neqns_per_elem = length(getEqns(domain,1))
   nstrains = 3
+
+  @assert size(E_all)==(neles*nGauss, nstrains)
+  @assert size(DE_all)==(neles*nGauss, nstrains)
+  @assert size(σ0_all)==(neles*nGauss, nstrains)
   
-
-  el_eqns_active_all = zeros(Bool, neles, neqns_per_elem)
-  # @show size(el_eqns_active_)
-  el_eqns_all = zeros(Int32, neles, neqns_per_elem)
-
-  E_all = zeros(neles*nGauss, nstrains)
+  el_eqns_active_all = zeros(Bool, neles*nGauss, neqns_per_elem)
+  el_eqns_all = zeros(Int32, neles*nGauss, neqns_per_elem)
   w∂E∂u_all = zeros(neles*nGauss, neqns_per_elem, nstrains)
-  #todo Dε 
-  DE_all  = E_all
-
-  #todo σ0
-  σ0_all = constant(E_all)
   
-
   # Loop over the elements in the elementGroup to construct strain and geo-matrix E_all and w∂E∂u_all
   for iele  = 1:neles
     element = domain.elements[iele]
@@ -67,40 +61,46 @@ function tfAssembleInternalForce(globdat::GlobalData, domain::Domain, nn::Functi
     el_state  = getState(domain,el_dofs)
 
     # Get the element contribution by calling the specified action
-    E, w∂E∂u = getStrain(element, el_state)
-    E_all[(iele-1)*nGauss+1:iele*nGauss,:] = E
+    _, w∂E∂u = getStrain(element, el_state)
+    
     # # Assemble in the global array
-    el_eqns_active_all[iele,:] = (el_eqns .>= 1)
-    el_eqns_all[iele,:] = el_eqns
+    el_eqns_active_all[(iele-1)*nGauss+1:iele*nGauss,:] = repeat((el_eqns .>= 1)', nGauss, 1)
+    el_eqns_all[(iele-1)*nGauss+1:iele*nGauss,:] = repeat(el_eqns', nGauss, 1)
+    
     w∂E∂u_all[(iele-1)*nGauss+1:iele*nGauss,:,:] = w∂E∂u
-    # 
   end
+  # @info "here"
   σ_all = nn(DE_all, E_all, σ0_all)
-  el_eqns_active_all = constant(.!el_eqns_active_all, dtype=Bool)
-  el_eqns_all = constant(el_eqns_all)
+  # @info "here"
+  el_eqns_active_all = constant(el_eqns_active_all, dtype=Bool)
+  #while loop only aa
+  el_eqns_all[el_eqns_all .<= 0] .= 1 
+  el_eqns_all = constant(el_eqns_all, dtype=Int64)
   w∂E∂u_all = constant(w∂E∂u_all)
+  # @info "here"
 
-
+  # * while loop
   function cond0(i, tensor_array)
     i<=neles*nGauss+1
   end
   function body(i, tensor_array)
-    # x = read(tensor_array, i-1)
-    x = constant(zeros(domain.neqs))
+    x = constant(zeros(Float64, domain.neqs))
     fint = w∂E∂u_all[i - 1] * σ_all[i - 1]
-    fint = fint*cast(Float64, el_eqns_active_all[i - 1])
-    x = scatter_add(x, el_eqns_all[i - 1], fint)
+    fint = fint * cast(Float64, el_eqns_active_all[i - 1]) # 8D
+    x = scatter_add(x, el_eqns_all[i-1], fint)
     tensor_array = write(tensor_array, i, x)
     i+1,tensor_array
   end
   tensor_array = TensorArray(neles*nGauss+1)
+  Fint = constant(zeros(Float64, domain.neqs))
   tensor_array = write(tensor_array, 1, Fint)
   i = constant(2, dtype=Int32)
-  _, out = while_loop(cond0, body, [i, tensor_array])
+  _, out = while_loop(cond0, body, [i, tensor_array]; parallel_iterations=10)
   out = stack(out)
+
+
   Fint = sum(out, dims=1)
-  # Fint = out[neles*nGauss+1]
-  return Fint
+  return Fint, σ_all
 end
 
 function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)

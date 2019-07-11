@@ -5,7 +5,7 @@ using NNFEM
 using PyPlot
 using PyCall
 
-testtype = "PlaneStressPlasticity"
+testtype = "PlaneStress"
 np = pyimport("numpy")
 nx, ny =  1,3
 nnodes, neles = (nx + 1)*(ny + 1), nx*ny
@@ -53,7 +53,7 @@ for j = 1:ny
         n = (nx+1)*(j-1) + i
         elnodes = [n, n + 1, n + 1 + (nx + 1), n + (nx + 1)]
         coords = nodes[elnodes,:]
-        push!(elements,SmallStrainContinuum(coords,elnodes, prop,1))
+        push!(elements,SmallStrainContinuum(coords,elnodes, prop,2))
     end
 end
 
@@ -65,7 +65,7 @@ globdat = GlobalData(state,zeros(domain.neqs),
                     zeros(domain.neqs),∂u, domain.neqs, gt)
 
 assembleMassMatrix!(globdat, domain)
-updateStates!(domain, globdat)
+# updateStates!(domain, globdat)
 
 
 

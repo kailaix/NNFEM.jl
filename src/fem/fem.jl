@@ -35,6 +35,7 @@ mutable struct Domain
     ID::Array{Int64}
     neqs::Int64
     eq_to_dof::Array{Int64}
+    dof_to_eq::Array{Bool}
     EBC::Array{Int64}  # Dirichlet boundary condition
     g::Array{Float64}  # Value for Dirichlet boundary condition
     NBC::Array{Int64}  # Nodal force boundary condition
@@ -64,10 +65,11 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array
     ID = Int64[]
     neqs = 0
     eq_to_dof = Int64[]
+    dof_to_eq = zeros(Bool, nnodes * ndims)
     fext = Float64[]
     
     his = [state]
-    domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, LM, DOF, ID, neqs, eq_to_dof, EBC, g, NBC, fext, 0.0, his)
+    domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, LM, DOF, ID, neqs, eq_to_dof, dof_to_eq, EBC, g, NBC, fext, 0.0, his)
     setDirichletBoundary!(domain, EBC, g)
     setNeumannBoundary!(domain, NBC, f)
     domain
@@ -96,7 +98,7 @@ function setDirichletBoundary!(self::Domain, EBC::Array{Int64}, g::Array{Float64
     neles, elements = self.neles, self.elements
     ID = zeros(Int64, nnodes, ndims) .- 1
 
-    eq_to_dof = Int64[]
+    eq_to_dof, dof_to_eq = Int64[], zeros(Bool, nnodes * ndims)
     neqs = 0
     for idof = 1:ndims
       for inode = 1:nnodes
@@ -104,13 +106,14 @@ function setDirichletBoundary!(self::Domain, EBC::Array{Int64}, g::Array{Float64
               neqs += 1
               ID[inode, idof] = neqs
               push!(eq_to_dof,inode + (idof-1)*nnodes)
+              dof_to_eq[(idof - 1)*nnodes + inode] = true
           elseif (EBC[inode, idof] == -1)
               self.state[inode + (idof-1)*nnodes] = g[inode, idof]
           end
       end
     end
 
-    self.ID, self.neqs, self.eq_to_dof = ID, neqs, eq_to_dof
+    self.ID, self.neqs, self.eq_to_dof, self.dof_to_eq = ID, neqs, eq_to_dof, dof_to_eq
 
 
     # LM(e,d) is the global equation number of element e's d th freedom

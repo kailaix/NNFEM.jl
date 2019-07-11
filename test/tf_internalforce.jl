@@ -5,12 +5,21 @@ using PyCall
 using PyPlot
 using JLD2
 using ADCME
+using LinearAlgebra
+
+nntype = "linear"
+H = Variable(diagm(0=>ones(3)))
+# H = Variable(rand(3,3))
+H = constant([2.50784e11 1.12853e11 0.0; 1.12853e11 2.50784e11 0.0; 0.0 0.0 6.89655e10])
 
 function nn(ε, ε0, σ0)
-    @show [constant([ε ε0]) σ0]
-    x = [constant([ε ε0]) σ0]
-    y = ae(x, [20,20,20,20,3], "nn")
-    @show y
+    local y
+    if nntype=="linear"
+        y = ε*H
+    elseif nntype=="nn"
+        x = [ε ε0 σ0]
+        y = ae(x, [20,20,20,20,3], "nn")
+    end
     y
 end
 
@@ -96,7 +105,27 @@ state = zeros(domain.neqs)
 ∂u = zeros(domain.neqs)
 globdat = GlobalData(state,zeros(domain.neqs),
                     zeros(domain.neqs),∂u, domain.neqs, gt)
-assembleMassMatrix!(globdat, domain)
-updateStates!(domain, globdat)
+# assembleMassMatrix!(globdat, domain)
+# updateStates!(domain, globdat)
 
-fint = tfAssembleInternalForce(globdat, domain,nn)
+
+# # test on plate with hole
+# neles = domain.neles
+# nGauss = length(domain.elements[1].weights)
+# nstrains = 3
+# NT = 10
+# E_all = (rand(NT+1, neles*nGauss, nstrains))
+# fext = (rand(NT, domain.neqs))
+# loss = DynamicMatLawLoss(domain, E_all, fext, nn)
+
+# sess = Session(); init(sess)
+# run(sess, loss)
+
+# MinimizeLoss(sess, loss)
+include("$(@__DIR__)/plate.jl")
+close("all");
+Fext, E_all = preprocessing(domain, globdat, zeros(domain.neqs, NT+1), Δt)
+loss = DynamicMatLawLoss(domain, E_all, Fext, nn)
+sess = Session(); init(sess)
+@show run(sess, loss)
+ADAM(sess, loss)
