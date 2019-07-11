@@ -55,8 +55,13 @@ function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64}, Dst
         E = [ux; vy; uy+vx]
         DE = [Dux; Dvy; Duy+Dvx]
 
+        
+
         # #@show E, DE
         S, dS_dE = getStress(self.mat[k], E, DE, Δt)
+
+        @info "gauss ", k, " E ", E, " S ", S
+
         self.strain[k] = S
 
         fint += ∂E∂u * S * self.weights[k] # 1x8

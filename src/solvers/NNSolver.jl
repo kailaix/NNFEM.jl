@@ -70,8 +70,9 @@ end
 # compute E from U 
 function preprocessing(domain::Domain, globdat::GlobalData, F::Array{Float64},Δt::Float64)
     U = hcat(domain.state_history...)
+    @info " U ", size(U),  U'
     M = globdat.M
-    @info size(U)
+
     NT = size(U,2)-1
     @info NT
     @assert size(F,2)==NT+1[]
@@ -87,6 +88,7 @@ function preprocessing(domain::Domain, globdat::GlobalData, F::Array{Float64},Δ
 
     for i = 1:NT+1
         domain.state = U[:, i]
+        @info "domain state", domain.state
         # Loop over the elements in the elementGroup to construct strain and geo-matrix E_all and w∂E∂u_all
         for iele  = 1:neles
             element = domain.elements[iele]

@@ -284,8 +284,11 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1, αf = 0, ε = 1e-8, maxit
 
     globdat.Dstate = globdat.state[:]
     globdat.state += Δt * ∂u + Δt^2/2 * ((1 - β2) * ∂∂u + β2 * ∂∂up)
+
+    
     globdat.velo += Δt * ((1 - γ) * ∂∂u + γ * ∂∂up)
     globdat.acce = ∂∂up[:]
+
     println("||a|| = $(norm(globdat.acce ))") 
     # @show globdat.state, ∂∂up, ∂u
     # error()
