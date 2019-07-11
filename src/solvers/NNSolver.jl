@@ -1,4 +1,4 @@
-export DynamicMatLawLoss, BFGS, preprocessing, ADAM
+export DynamicMatLawLoss, BFGS, preprocessing, ADAM, NNMatLaw
 function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, fext::Array{Float64},
         nn::Function)
     # define variables
@@ -65,6 +65,29 @@ function ADAM(sess::PyObject, loss::PyObject; kwargs...)
         l, _ = run(sess, [loss, opt])
         println("Iter $i, loss = $l")
     end
+end
+
+function NNMatLaw(sess::PyObject)
+    vars = get_collection("nn")
+    println(vars)
+    vars = run(sess, vars)
+    n = div(length(vars),2)
+    for i = 1:n
+        vars[2i] = repeat(vars[2i], size(vars[2(i-1)+1],1), 1)
+    end
+    function nn(ε, ε0, σ0, Δt)
+        x = reshape([ε; ε0; σ0], 1, 9)
+        for i = 1:n
+            # @show size(vars[2(i-1)+1]), size(vars[2i])
+            x = x*vars[2(i-1)+1]+vars[2i]
+            if i<=n-1
+                x = tanh(x)
+            end
+            @show size(x)
+        end
+        return x
+    end
+    return nn
 end
 
 # compute E from U 
