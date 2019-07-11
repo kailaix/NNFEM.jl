@@ -24,11 +24,6 @@ ndofs = 2
 EBC, g = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 
 EBC[collect(1:nx+1), :] .= -1
-EBC[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 1] .= -1
-#pull in the y direction
-EBC[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] .= -2
-
-
 
 function ggt(t)
     v = 0.01
@@ -41,7 +36,10 @@ end
 gt = ggt
 
 
-NBC, f = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
+#pull in the y direction
+NBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
+NBC[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] .= -1
+fext[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] = [1000,2000]
 
 
 
@@ -59,7 +57,7 @@ for j = 1:ny
 end
 
 
-domain = Domain(nodes, elements, ndofs, EBC, g, NBC, f)
+domain = Domain(nodes, elements, ndofs, EBC, g, NBC, fext)
 state = zeros(domain.neqs)
 ∂u = zeros(domain.neqs)
 globdat = GlobalData(state,zeros(domain.neqs),
@@ -115,16 +113,17 @@ function nn(ε, ε0, σ0)
 end
 
 
-F = zeros(domain.neqs, NT+1)
-Fext, E_all = preprocessing(domain, globdat, F, Δt)
-Fext = [-1.83823521926099986423 1.83823521926099897605 -10.41666612582739404047 -10.41666612582739404047
--0.00000014971328692826 0.00000014971329137836 -0.00000108167848899163 -0.00000108167849091910
-0.00000007485663168454 -0.00000007485663374036 0.00000054083913203309 0.00000054083913738728
-0.00000000000001074496 -0.00000000000001156994 0.00000000000011383182 0.00000000000011433157
--0.00000000000000317019 0.00000000000000129020 -0.00000000000002433776 -0.00000000000003840134]*2
+#F = zeros(domain.neqs, NT+1)
+F = repeat(domain.fext, 1, NT+1)
+Ftot, E_all = preprocessing(domain, globdat, F, Δt)
+# Fext = [-1.83823521926099986423 1.83823521926099897605 -10.41666612582739404047 -10.41666612582739404047
+# -0.00000014971328692826 0.00000014971329137836 -0.00000108167848899163 -0.00000108167849091910
+# 0.00000007485663168454 -0.00000007485663374036 0.00000054083913203309 0.00000054083913738728
+# 0.00000000000001074496 -0.00000000000001156994 0.00000000000011383182 0.00000000000011433157
+# -0.00000000000000317019 0.00000000000000129020 -0.00000000000002433776 -0.00000000000003840134]*2
 
 # @info "Fext ", Fext
-loss = DynamicMatLawLoss(domain, E_all, Fext, nn)
+loss = DynamicMatLawLoss(domain, E_all, Ftot, nn)
 sess = Session(); init(sess)
 @show run(sess, loss)
 BFGS(sess, loss)

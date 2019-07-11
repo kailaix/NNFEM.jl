@@ -8,6 +8,7 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, fext::Array{Fl
     NT = size(E_all,1)-1
     @assert size(E_all)==(NT+1, neles*nGauss, nstrains)
     @assert size(fext)==(NT, domain.neqs)
+    # @show E_all[2,:,:]
     E_all = constant(E_all)
     fext = constant(fext)
 
@@ -21,9 +22,10 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, fext::Array{Fl
         DE = E_all[i-1]
         # @show E, DE
         fint, σ = tfAssembleInternalForce(domain,nn,E,DE,σ0)
-        # @show E, DE
+        # # @show E, DE
         # op = tf.print(i,(fint), summarize=-1)
         # fint = bind(fint, op)
+
         ta_σ = write(ta_σ, i, σ)
         ta_loss = write(ta_loss, i, sum((fint-fext[i-1])^2))
         i+1, ta_loss, ta_σ
@@ -98,9 +100,10 @@ function preprocessing(domain::Domain, globdat::GlobalData, F::Array{Float64},Δ
 
     NT = size(U,2)-1
     @info NT
-    @assert size(F,2)==NT+1[]
+    @assert size(F,2)==NT+1
     ∂∂U = zeros(size(U,1), NT+1)
     ∂∂U[:,2:NT] = (U[:,1:NT-1]+U[:,3:NT+1]-2U[:,2:NT])/Δt^2
+    println("$(∂∂U)")
     fext = F[:,2:end]-M*∂∂U[domain.dof_to_eq,2:end]
     
     neles = domain.neles

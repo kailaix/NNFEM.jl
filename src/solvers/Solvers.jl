@@ -238,7 +238,7 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1, αf = 0, ε = 1e-8, maxit
 
         fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
         # error()
-        res = M * ∂∂up *(1 - αm)  + fint - fext
+        res = M * (∂∂up *(1 - αm) + αm*∂∂u)  + fint - fext
         # @show fint, stiff
 
         A = M*(1 - αm) + (1 - αf) * 0.5 * β2 * Δt^2 * stiff
