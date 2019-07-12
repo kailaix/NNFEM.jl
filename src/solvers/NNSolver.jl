@@ -94,17 +94,29 @@ end
 
 # compute E from U 
 function preprocessing(domain::Domain, globdat::GlobalData, F::Array{Float64},Δt::Float64)
-    U = hcat(domain.state_history...)
+    U = hcat(domain.history["state"]...)
     # @info " U ", size(U),  U'
     M = globdat.M
+    MID = globdat.MID 
 
     NT = size(U,2)-1
     @info NT
     @assert size(F,2)==NT+1
+
+    bc_acc = zeros(sum(domain.EBC.==-2),NT)
+    for i = 1:NT
+        _, bc_acc[:,i]  = globdat.gt(Δt*i)
+    end
+    @info bc_acc
+
+    
     ∂∂U = zeros(size(U,1), NT+1)
     ∂∂U[:,2:NT] = (U[:,1:NT-1]+U[:,3:NT+1]-2U[:,2:NT])/Δt^2
-    println("$(∂∂U)")
-    fext = F[:,2:end]-M*∂∂U[domain.dof_to_eq,2:end]
+    for i = 1:size(∂∂U,2)
+        println("***$(∂∂U[:,i])")
+    end
+    # println("∂∂U, $(∂∂U)")
+    fext = F[:,2:end]-M*∂∂U[domain.dof_to_eq,2:end]-MID*bc_acc
     
     neles = domain.neles
     nGauss = length(domain.elements[1].weights)
@@ -135,5 +147,7 @@ function preprocessing(domain::Domain, globdat::GlobalData, F::Array{Float64},Δ
             E_all[i, (iele-1)*nGauss+1:iele*nGauss, :] = E
         end
     end
+    # DEBUG
+    fext = hcat(domain.history["fint"]...)
     return fext'|>Array, E_all
 end

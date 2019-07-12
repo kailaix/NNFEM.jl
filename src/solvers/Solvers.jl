@@ -199,6 +199,7 @@ end
 
 
 function NewmarkSolver(Δt, globdat, domain, αm = -1, αf = 0, ε = 1e-8, maxiterstep=100, η = 1.0)
+    
     #@info NewmarkSolver
     
     β2 = 0.5*(1 - αm + αf)^2
@@ -209,15 +210,18 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1, αf = 0, ε = 1e-8, maxit
 
     # domain.Dstate = uⁿ
     domain.Dstate = domain.state[:]
-    updateDomainStateBoundary!(domain, globdat)
+    bc_acc = updateDomainStateBoundary!(domain, globdat)
+    @show "--",bc_acc
     
     M = globdat.M
+    MID = globdat.MID
     ∂∂u = globdat.acce[:] #∂∂uⁿ
     u = globdat.state[:]  #uⁿ
     ∂u  = globdat.velo[:] #∂uⁿ
 
     
     fext = domain.fext
+    fbc = MID*bc_acc
     ∂∂up = ∂∂u[:]
 
     Newtoniterstep, Newtonconverge = 0, false
@@ -237,8 +241,9 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1, αf = 0, ε = 1e-8, maxit
         #@info "At Newtoniterstep ",  Newtoniterstep, " disp ", domain.state
 
         fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
+        
         # error()
-        res = M * (∂∂up *(1 - αm) + αm*∂∂u)  + fint - fext
+        res = M * (∂∂up *(1 - αm) + αm*∂∂u)  + fint - fext + fbc
         # @show fint, stiff
 
         A = M*(1 - αm) + (1 - αf) * 0.5 * β2 * Δt^2 * stiff
@@ -292,8 +297,21 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1, αf = 0, ε = 1e-8, maxit
     println("||a|| = $(norm(globdat.acce ))") 
     # @show globdat.state, ∂∂up, ∂u
     # error()
+    fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
+    # debug
+    push!(domain.history["fint"], fint)
+    
+    @show "acce",  globdat.acce
+    @show "state", globdat.state
+    @show "Newton fint ",  fint
+    @show "Newton fbc ",  fbc
+    @show "Newton finertial", globdat.M * globdat.acce
+    #@show globdat.M
+    @show "M(∂∂up *(1 - αm) + αm*∂∂u)", globdat.M * (∂∂up *(1 - αm) + αm*∂∂u)
+    @show ∂∂up, ∂∂u
+    @show "Newton fext ", fext
 
-    #@show "Newton state ",  globdat.state
+
 
     # #@show "Dstate", globdat.Dstate ,  "state", globdat.state 
 

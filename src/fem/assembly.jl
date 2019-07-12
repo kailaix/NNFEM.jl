@@ -217,6 +217,7 @@ function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
     Mlumped = zeros(Float64, domain.neqs)
     neles = domain.neles
 
+    MID = zeros(domain.neqs, sum(domain.EBC .== -2))
     # Loop over the elements in the elementGroup
     for iele = 1:neles
         element = domain.elements[iele]
@@ -233,14 +234,16 @@ function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
         # Assemble in the global array
         
         el_eqns_active = (el_eqns .>= 1)
+        el_eqns_acc_active = (el_eqns .== -2)
+        
         M[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += lM[el_eqns_active, el_eqns_active]
         Mlumped[el_eqns[el_eqns_active]] += lumped[el_eqns_active]
-
+        MID[el_eqns[el_eqns_active], el_eqns[el_eqns_acc_active]] += lM[el_eqns_active, el_eqns_acc_active]
         
     end
 
     globaldat.M = sparse(M)
     globaldat.Mlumped = sparse(Mlumped)
-  
+    globaldat.MID = MID
 end
 

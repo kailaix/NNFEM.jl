@@ -12,7 +12,7 @@ using LinearAlgebra
 
 testtype = "PlaneStress"
 np = pyimport("numpy")
-nx, ny =  1,2
+nx, ny =  20, 10
 nnodes, neles = (nx + 1)*(ny + 1), nx*ny
 x = np.linspace(0.0, 0.5, nx + 1)
 y = np.linspace(0.0, 0.5, ny + 1)
@@ -30,13 +30,25 @@ EBC[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] .= -2
 
 
 
+# function ggt(t)
+#     v = 0.01
+#     if t<1.0
+#         t*v*ones(sum(EBC.==-2))
+#     elseif t<3.0
+#         (0.02 - t*v)*ones(sum(EBC.==-2))
+#     end
+# end
+
 function ggt(t)
     v = 0.01
-    if t<1.0
-        t*v*ones(sum(EBC.==-2))
-    elseif t<3.0
-        (0.02 - t*v)*ones(sum(EBC.==-2))
-    end
+    f = 0.5
+    k = sum(EBC.==-2)
+    u  = Array{Float64}(1:k)*2
+    state = (2π*f*t)*v*u
+    acc = -(2π*f)^2*sin(2π*f*t)*v*u
+    acc = zeros(size(acc))
+    # @show state
+    state, acc
 end
 gt = ggt
 
@@ -70,12 +82,12 @@ updateStates!(domain, globdat)
 
 
 
-T = 2.0
+T = 0.2
 NT = 5
 Δt = T/NT
 for i = 1:NT
     @info i, "/" , NT
-    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-6, 10)
+    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-3, 10)
     
 end
 
@@ -97,7 +109,16 @@ H0[3,3] = E/(2.0*(1.0+ν))
 H0 /= 1e11
 
 # H = Variable(H0.+1)
-# H = H0
+# H = Variable(H0+rand(3,3))
+E = Variable(1.0)
+ν = Variable(0.0)
+H = [
+    E/(1-ν*ν) ν*E/(1-ν*ν) constant(0.0);
+    ν*E/(1-ν*ν) E/(1-ν*ν) constant(0.0);
+    constant(0.0) constant(0.0)  E/(2.0*(1.0+ν))
+]
+H = tensor(H)
+
 
 function nn(ε, ε0, σ0)
     local y
@@ -116,17 +137,13 @@ end
 
 
 F = zeros(domain.neqs, NT+1)
-Fext, E_all = preprocessing(domain, globdat, F, Δt)
-Fext = [-1.83823521926099986423 1.83823521926099897605 -10.41666612582739404047 -10.41666612582739404047
--0.00000014971328692826 0.00000014971329137836 -0.00000108167848899163 -0.00000108167849091910
-0.00000007485663168454 -0.00000007485663374036 0.00000054083913203309 0.00000054083913738728
-0.00000000000001074496 -0.00000000000001156994 0.00000000000011383182 0.00000000000011433157
--0.00000000000000317019 0.00000000000000129020 -0.00000000000002433776 -0.00000000000003840134]*2
+Ftot, E_all = preprocessing(domain, globdat, F, Δt)
 
 # @info "Fext ", Fext
-loss = DynamicMatLawLoss(domain, E_all, Fext, nn)
+loss = DynamicMatLawLoss(domain, E_all, Ftot, nn)/1e8
 sess = Session(); init(sess)
 @show run(sess, loss)
-BFGS(sess, loss)
+BFGS(sess, loss, 50)
 println("Real H = ", H0)
 run(sess, H)
+run(sess, gradients(loss, H))

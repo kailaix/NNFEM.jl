@@ -10,7 +10,9 @@ mutable struct GlobalData
     time::Float64
     M::Union{SparseMatrixCSC{Float64,Int64},Array{Float64}}
     Mlumped::Array{Float64}
+    MID::Array{Float64}
     gt::Union{Function,Nothing}
+    
 end
 
 function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Float64},acce::Array{Float64}, neqs::Int64,
@@ -18,7 +20,8 @@ function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Flo
     time = 0.0
     M = Float64[]
     Mlumped = Float64[]
-    GlobalData(state, Dstate, velo, acce, time, M, Mlumped, gt)
+    MID = Float64[]
+    GlobalData(state, Dstate, velo, acce, time, M, Mlumped, MID, gt)
 end
 
 
@@ -41,7 +44,7 @@ mutable struct Domain
     NBC::Array{Int64}  # Nodal force boundary condition
     fext::Array{Float64}  # Value for Nodal force boundary condition
     time::Float64
-    state_history::Array{Array{Float64}}
+    history::Dict{String, Array{Array{Float64}}}
 end
 
 @doc """
@@ -68,8 +71,8 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array
     dof_to_eq = zeros(Bool, nnodes * ndims)
     fext = Float64[]
     
-    his = Array{Float64}[]
-    domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, LM, DOF, ID, neqs, eq_to_dof, dof_to_eq, EBC, g, NBC, fext, 0.0, his)
+    history = Dict("state"=>Array{Float64}[], "acc"=>Array{Float64}[], "fint"=>Array{Float64}[])
+    domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, LM, DOF, ID, neqs, eq_to_dof, dof_to_eq, EBC, g, NBC, fext, 0.0, history)
     setDirichletBoundary!(domain, EBC, g)
     setNeumannBoundary!(domain, NBC, f)
     domain
@@ -180,7 +183,8 @@ function updateStates!(self::Domain, globaldat::GlobalData)
     #@show " 1 ",  self.state
     
     self.time = globaldat.time
-    push!(self.state_history, copy(self.state))
+    push!(self.history["state"], copy(self.state))
+    push!(self.history["acc"], copy(globaldat.acce))
 
     updateDomainStateBoundary!(self, globaldat)
     #@show " 2 ",  self.state
@@ -194,7 +198,7 @@ end
     Update domain boundary information.
 """ ->
 function updateDomainStateBoundary!(self::Domain, globaldat::GlobalData)
-    g = globaldat.gt(globaldat.time) # user defined time-dependent boundary
+    g, acc = globaldat.gt(globaldat.time) # user defined time-dependent boundary
     # println(g)
     gtdof_id = 0
     for idof = 1:self.ndims
@@ -205,6 +209,7 @@ function updateDomainStateBoundary!(self::Domain, globaldat::GlobalData)
             end
         end
     end
+    return acc
 end
 
 function getCoords(self::Domain, el_nodes::Array{Int64})

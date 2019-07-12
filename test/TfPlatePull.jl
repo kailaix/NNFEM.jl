@@ -28,10 +28,11 @@ EBC[collect(1:nx+1), :] .= -1
 function ggt(t)
     v = 0.01
     if t<1.0
-        t*v*ones(sum(EBC.==-2))
+        state = t*v*ones(sum(EBC.==-2))
     elseif t<3.0
-        (0.02 - t*v)*ones(sum(EBC.==-2))
+        state = (0.02 - t*v)*ones(sum(EBC.==-2))
     end
+    return state, zeros(sum(EBC.==-2))
 end
 gt = ggt
 

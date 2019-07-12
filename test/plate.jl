@@ -22,7 +22,7 @@ EBC[collect(1:nx+1), :] .= -1
 EBC[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 1] .= -1
 #pull in the y direction
 EBC[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] .= -2
-one_dim = true
+one_dim = false
 if one_dim
     EBC[collect((nx+1) : nx+1: (nx+1)*(ny+1)), 1] .= -1
     EBC[collect(1 : nx+1: (nx+1)*ny+1), 1] .= -1
@@ -32,10 +32,12 @@ end
 function ggt(t)
     v = 0.01
     if t<1.0
-        t*v*ones(sum(EBC.==-2))
+        state = t*v*ones(sum(EBC.==-2))
     elseif t<3.0
-        (0.02 - t*v)*ones(sum(EBC.==-2))
+        state = (0.02 - t*v)*ones(sum(EBC.==-2))
     end
+
+    return state, zeros(sum(EBC.==-2))
 end
 gt = ggt
 

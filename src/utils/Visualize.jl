@@ -41,9 +41,9 @@ function visdynamic(domain::Domain, name::String)
     ims = Any[(scat0,)]
 
     N = size(domain.nodes,1)
-    for k = 1:length(domain.state_history)
-        u1 = domain.state_history[k][1:N] + domain.nodes[:,1]
-        u2 = domain.state_history[k][N+1:end] + domain.nodes[:,2]
+    for k = 1:length(domain.history["state"])
+        u1 = domain.history["state"][k][1:N] + domain.nodes[:,1]
+        u2 = domain.history["state"][k][N+1:end] + domain.nodes[:,2]
 
         scat = scatter(u1, u2, color="orange")
         grid(true)
