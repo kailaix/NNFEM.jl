@@ -105,7 +105,7 @@ function preprocessing(domain::Domain, globdat::GlobalData, F::Array{Float64},Δ
 
     bc_acc = zeros(sum(domain.EBC.==-2),NT)
     for i = 1:NT
-        _, bc_acc[:,i]  = globdat.gt(Δt*i)
+        _, bc_acc[:,i]  = globdat.EBC_func(Δt*i)
     end
     @info bc_acc
 

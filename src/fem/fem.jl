@@ -1,5 +1,5 @@
 using SparseArrays
-export Domain,GlobalData,updateStates!,updateDomainStateBoundary!
+export Domain,GlobalData,updateStates!,updateDomainStateBoundary!,getExternalForce!
 
 
 mutable struct GlobalData
@@ -11,17 +11,19 @@ mutable struct GlobalData
     M::Union{SparseMatrixCSC{Float64,Int64},Array{Float64}}
     Mlumped::Array{Float64}
     MID::Array{Float64}
-    gt::Union{Function,Nothing}
+
+    EBC_func::Union{Function,Nothing}  #time dependent Dirichlet boundary condition
+    FBC_func::Union{Function,Nothing}  #time force load boundary condition
     
 end
 
 function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Float64},acce::Array{Float64}, neqs::Int64,
-        gt::Union{Function, Nothing}=nothing)
+        EBC_func::Union{Function, Nothing}=nothing, FBC_func::Union{Function, Nothing}=nothing)
     time = 0.0
     M = Float64[]
     Mlumped = Float64[]
     MID = Float64[]
-    GlobalData(state, Dstate, velo, acce, time, M, Mlumped, MID, gt)
+    GlobalData(state, Dstate, velo, acce, time, M, Mlumped, MID, EBC_func, FBC_func)
 end
 
 
@@ -41,7 +43,7 @@ mutable struct Domain
     dof_to_eq::Array{Bool}
     EBC::Array{Int64}  # Dirichlet boundary condition
     g::Array{Float64}  # Value for Dirichlet boundary condition
-    NBC::Array{Int64}  # Nodal force boundary condition
+    FBC::Array{Int64}  # Nodal force boundary condition
     fext::Array{Float64}  # Value for Nodal force boundary condition
     time::Float64
     history::Dict{String, Array{Array{Float64}}}
@@ -54,11 +56,11 @@ end
     ndims: 2
     EBC: n by 2 Int64, nodal Dirichlet boundary condition, -1 time-independent, -2 time-dependent
     g: n by 2 Float64, values for nodal time-independent Dirichlet boundary condition
-    NBC: n by 2 Int64, nodal force boundary condition, -1 time-independent, -2 time-dependent
+    FBC: n by 2 Int64, nodal force boundary condition, -1 time-independent, -2 time-dependent
     f: n by 2 Float64, values for nodal force time independent force boundary condition
 
 """->
-function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array{Int64}, g::Array{Float64}, NBC::Array{Int64}, f::Array{Float64})
+function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array{Int64}, g::Array{Float64}, FBC::Array{Int64}, f::Array{Float64})
     nnodes = size(nodes,1)
     neles = size(elements,1)
     state = zeros(nnodes * ndims)
@@ -72,9 +74,9 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array
     fext = Float64[]
     
     history = Dict("state"=>Array{Float64}[], "acc"=>Array{Float64}[], "fint"=>Array{Float64}[])
-    domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, LM, DOF, ID, neqs, eq_to_dof, dof_to_eq, EBC, g, NBC, fext, 0.0, history)
+    domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, LM, DOF, ID, neqs, eq_to_dof, dof_to_eq, EBC, g, FBC, fext, 0.0, history)
     setDirichletBoundary!(domain, EBC, g)
-    setNeumannBoundary!(domain, NBC, f)
+    setNeumannBoundary!(domain, FBC, f)
     domain
 end
 
@@ -142,15 +144,15 @@ end
 
 @doc """
 
-    :param EBC[n, d] is the boundary condition of of node n's dth freedom,
-        -1 means fixed Dirichlet boundary nodes
-        -2 means time dependent Dirichlet boundary nodes
-    :param g[n, d] is the fixed Dirichlet boundary value
+    :param FBC[n, d] is the boundary condition of node n's dth freedom,
+        -1 means fixed force load boundary condition
+        -2 means time dependent force load boundary condition
+    :param f[n, d] is the fixed force load value
 
     :param nbc:
     :return:
 """ -> 
-function setNeumannBoundary!(self::Domain, NBC::Array{Int64}, f::Array{Float64})
+function setNeumannBoundary!(self::Domain, FBC::Array{Int64}, f::Array{Float64})
 
     fext = zeros(Float64, self.neqs)
     # ID(n,d) is the global equation number of node n's dth freedom, -1 means no freedom
@@ -158,7 +160,7 @@ function setNeumannBoundary!(self::Domain, NBC::Array{Int64}, f::Array{Float64})
     nnodes, ndims, ID = self.nnodes, self.ndims, self.ID
     for idof = 1:ndims
       for inode = 1:nnodes
-          if (NBC[inode, idof] == -1)
+          if (FBC[inode, idof] == -1)
               @assert ID[inode, idof] > 0
               fext[ID[inode, idof]] += f[inode, idof]
           end
@@ -195,22 +197,50 @@ function updateStates!(self::Domain, globaldat::GlobalData)
 end
 
 @doc """
-    Update domain boundary information.
+    Update domain time dependent boundary information.
 """ ->
 function updateDomainStateBoundary!(self::Domain, globaldat::GlobalData)
-    g, acc = globaldat.gt(globaldat.time) # user defined time-dependent boundary
-    # println(g)
-    gtdof_id = 0
-    for idof = 1:self.ndims
-        for inode = 1:self.nnodes
-            if (self.EBC[inode, idof] == -2)
-                gtdof_id += 1
-                self.state[inode + (idof-1)*self.nnodes] = g[gtdof_id]
+    if globaldat.EBC_func != nothing
+        disp, acce = globaldat.EBC_func(globaldat.time) # user defined time-dependent boundary
+        dof_id = 0
+        for idof = 1:self.ndims
+            for inode = 1:self.nnodes
+                if (self.EBC[inode, idof] == -2)
+                    dof_id += 1
+                    self.state[inode + (idof-1)*self.nnodes] = disp[dof_id]
+                end
             end
         end
     end
-    return acc
+
+    if globaldat.FBC_func != nothing
+        nodal_force = globaldat.FBC_func(globaldat.time) # user defined time-dependent boundary
+        dof_id = 0
+        for idof = 1:self.ndims
+            for inode = 1:self.nnodes
+                if (self.FBC[inode, idof] == -2)
+                    dof_id += 1
+                    self.fext[inode + (idof-1)*self.nnodes] = nodal_force[dof_id]
+                end
+            end
+        end
+    end
 end
+
+@doc """
+    the external force include the Dirichlet boundary condition effect
+""" ->
+function getExternalForce!(self::Domain, globaldat::GlobalData)
+    fext = self.fext[:]
+    if globaldat.EBC_func != nothing
+        MID = globaldat.MID
+        _, acce = globaldat.EBC_func(globaldat.time)
+
+        fext -= MID * acce
+    end
+    fext
+end
+
 
 function getCoords(self::Domain, el_nodes::Array{Int64})
     return self.nodes[el_nodes, :]

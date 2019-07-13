@@ -4,6 +4,11 @@ using NNFEM
 using PyCall
 using PyPlot
 using JLD2
+using ADCME
+using LinearAlgebra
+
+
+
 
 elements_, nodes, boundaries = readMesh("$(@__DIR__)/../deps/plate.msh")
 # Dirichlet_1 : bottom
@@ -57,7 +62,7 @@ end
 
 
 
-testtype = "PlaneStressPlasticity"
+testtype = "PlaneStress"
 ndofs = 2
 
 nnodes = size(nodes,1)
@@ -77,9 +82,9 @@ prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e9, "nu"=> 0.45,
 
 elements = []
 for i = 1:length(elements_)
-    elnodes = elements_[i]
-    coords = nodes[elnodes,:]
-    push!(elements,NNSmallStrainContinuum(coords,elnodes, prop))
+        elnodes = elements_[i]
+        coords = nodes[elnodes,:]
+        push!(elements,SmallStrainContinuum(coords,elnodes, prop))
 end
 
 domain = Domain(nodes, elements, ndofs, EBC, g, NBC, f)
@@ -98,34 +103,40 @@ updateStates!(domain, globdat)
 
 # solver = ExplicitSolver(Δt, globdat, domain )
 T = 2.0
-NT = 80
+NT = 2
 Δt = T/NT
 for i = 1:NT
     @show i
     solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-3, 100)
 end
 
-# @time for i = 1:10
-#     @show i
-#     solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-3, 100)
-# end
-# visdynamic(domain,"dym")
-# solver = StaticSolver(globdat, domain )
-#solver.run( props , globdat )
-visstatic(domain, scaling=10)
 
-function ct(x)
-    if x<0.25
-        return sqrt(0.25^2-x^2)
-    else
-        return 0.0
+
+
+nntype = "linear"
+H_ = Variable(diagm(0=>ones(3)))
+H = H_'*H_
+# H = Variable(rand(3,3))
+H0 = [250783699059.561126708984375 112852664576.802505493164063 0.000000000000000; 112852664576.802505493164063 250783699059.561126708984375 0.000000000000000; 0.000000000000000 0.000000000000000 68965517241.379318237304688]
+# H = constant(H0/1e11)
+
+function nn(ε, ε0, σ0)
+    local y
+    if nntype=="linear"
+        y = ε*H*1e11
+    elseif nntype=="nn"
+        x = [ε ε0 σ0]
+        y = ae(x, [20,20,20,20,3], "nn")
     end
+    y
 end
-a = LinRange{Float64}(0.0,0.5,100)
-y = ct.(a)
-plot(a, y, "k--")
-plot([0.5;0.5;0.0;0.0],[0.0;0.5;0.5;0.25],"k--")
-axis("equal")
-# end
 
-# @save "platewithhole" domain globdat
+F = zeros(domain.neqs, NT+1)
+Fext, E_all = preprocessing(domain, globdat, F, Δt)
+# @info "Fext ", Fext
+loss = DynamicMatLawLoss(domain, E_all, Fext, nn)
+sess = Session(); init(sess)
+@show run(sess, loss)
+BFGS(sess, loss, 25)
+println("Real H = ", H0/1e11)
+run(sess, H)

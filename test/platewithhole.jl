@@ -12,7 +12,7 @@ elements_, nodes, boundaries = readMesh("$(@__DIR__)/../deps/plate.msh")
 # Dirichlet_4 : left
 function set_boundary(boundaries, nnodes, ndofs = 2)
     EBC, g = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
-    NBC, f = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
+    FBC, f = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
     for (boundaryname, boundaryedges) in boundaries
         if boundaryname == "\"Dirichlet_1\""
             for (n1, n2) in boundaryedges
@@ -41,17 +41,19 @@ function set_boundary(boundaries, nnodes, ndofs = 2)
                 
         end
     end
-    function ggt(t)
+    function EBC_func(t)
         v = 0.01
         if t<1.0
-            t*v*ones(sum(EBC.==-2))
+            disp = t*v*ones(sum(EBC.==-2))
         elseif t<3.0
-            (0.02 - t*v)*ones(sum(EBC.==-2))
+            disp = (0.02 - t*v)*ones(sum(EBC.==-2))
         end
+        acce = zeros(length(disp))
+        disp, acce
     end
-    gt = ggt
+
     
-    return EBC, g, NBC, f, gt
+    return EBC, g, EBC_func, FBC, f
 end
 
 
@@ -61,7 +63,7 @@ testtype = "PlaneStressPlasticity"
 ndofs = 2
 
 nnodes = size(nodes,1)
-EBC, g ,NBC, f, gt = set_boundary(boundaries, nnodes)
+EBC, g, EBC_func, FBC, f = set_boundary(boundaries, nnodes)
 
 prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e9, "nu"=> 0.45,
             "sigmaY"=>300e6, "K"=>1/9*200e9)
@@ -82,11 +84,11 @@ for i = 1:length(elements_)
         push!(elements,SmallStrainContinuum(coords,elnodes, prop))
 end
 
-domain = Domain(nodes, elements, ndofs, EBC, g, NBC, f)
+domain = Domain(nodes, elements, ndofs, EBC, g, FBC, f)
 state = zeros(domain.neqs)
 ∂u = zeros(domain.neqs)
 globdat = GlobalData(state,zeros(domain.neqs),
-                    zeros(domain.neqs),∂u, domain.neqs, gt)
+                    zeros(domain.neqs),∂u, domain.neqs, EBC_func)
 assembleMassMatrix!(globdat, domain)
 updateStates!(domain, globdat)
 
