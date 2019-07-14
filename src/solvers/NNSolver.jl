@@ -1,4 +1,11 @@
 export DynamicMatLawLoss, BFGS, preprocessing, ADAM, NNMatLaw
+
+@doc """
+    form the loss function, based on dynamic equilibrium 
+        (Mddu + fint(NN, E, DE) + MIDddu_bc = fext
+
+    loss = ∑ ||fint(NN, E, DE) - (fext - MIDddu_bc - Mddu)||^2
+"""->
 function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, fext::Array{Float64},
         nn::Function)
     # define variables
