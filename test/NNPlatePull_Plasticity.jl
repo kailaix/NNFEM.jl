@@ -80,7 +80,7 @@ end
 
 
 
-nntype = "linear"
+nntype = "nn"
 H_ = Variable(diagm(0=>ones(3)))
 H = H_'*H_
 
@@ -98,19 +98,56 @@ H0 /= 1e11
 # H = Variable(H0.+1)
 # H = H0
 
+
+
+W1 = Variable(rand(9,3))
+b1 = Variable(rand(3))
+W2 = Variable(rand(3,3))
+b2 = Variable(rand(3))
+W3 = Variable(rand(3,1))
+b3 = Variable(rand(1))
+
+_W1 = Variable(rand(9,3))
+_b1 = Variable(rand(3))
+_W2 = Variable(rand(3,3))
+_b2 = Variable(rand(3))
+_W3 = Variable(rand(3,3))
+_b3 = Variable(rand(3))
+
+
 function nn(ε, ε0, σ0)
-    local y
+    local y, y1, y2, y3
     if nntype=="linear"
         y = ε*H*1e11
         # op1 = tf.print("* ", ε,summarize=-1)
         # y = bind(y, op1)
         # op2 = tf.print("& ", y, summarize=-1)
         # y = bind(y, op2)
+        y
     elseif nntype=="nn"
-        x = [ε ε0 σ0]
-        y = ae(x, [20,20,20,20,3], "nn")
+        x = [ε*1e11 ε0*1e11 σ0]
+        # x = ε
+        # y = ae(x, [20,3], "nn")*1e11
+        y1 = x*W1+b1
+        y2 = tanh(y1)
+        y2 = y2*W2+b2
+        y3 = tanh(y2)
+        y3 = sigmoid(y3*W3+b3)
+        # i = cast(squeeze(y3)>0.5, Float64)
+        i = squeeze(y3)
+        i = [i i i]
+
+        y1 = x*_W1+_b1
+        y2 = tanh(y1)
+        y2 = y2*_W2+_b2
+        y3 = tanh(y2)
+        y3 = y3*_W3+_b3
+        i .* (σ0 + (ε-ε0)*H0*1e11) + (1-i) .* (y1+y2+y3)
+        
     end
-    y
+    # op = tf.print(σ0)
+    # y = bind(y, op)
+    
 end
 
 
