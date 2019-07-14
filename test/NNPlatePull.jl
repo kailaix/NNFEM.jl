@@ -12,7 +12,7 @@ using LinearAlgebra
 
 testtype = "PlaneStress"
 np = pyimport("numpy")
-nx, ny =  1,2
+nx, ny =  4,8
 nnodes, neles = (nx + 1)*(ny + 1), nx*ny
 x = np.linspace(0.0, 0.5, nx + 1)
 y = np.linspace(0.0, 0.5, ny + 1)
@@ -40,7 +40,7 @@ gt = ggt
 #pull in the y direction
 NBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 NBC[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] .= -1
-fext[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] = [1000,2000]
+fext[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] = LinRange(1000,2000,nx+1)|>Array
 
 
 
@@ -80,7 +80,7 @@ end
 
 
 
-nntype = "linear"
+nntype = "nn"
 H_ = Variable(diagm(0=>ones(3)))
 H = H_'*H_
 
@@ -98,6 +98,13 @@ H0 /= 1e11
 # H = Variable(H0.+1)
 # H = H0
 
+W1 = Variable(rand(9,3))
+b1 = Variable(rand(3))
+W2 = Variable(rand(3,3))
+b2 = Variable(rand(3))
+W3 = Variable(rand(3,3))
+b3 = Variable(rand(3))
+
 function nn(ε, ε0, σ0)
     local y
     if nntype=="linear"
@@ -107,10 +114,19 @@ function nn(ε, ε0, σ0)
         # op2 = tf.print("& ", y, summarize=-1)
         # y = bind(y, op2)
     elseif nntype=="nn"
-        x = [ε ε0 σ0]
-        y = ae(x, [20,20,20,20,3], "nn")
+        x = [ε*1e11 ε0*1e11 σ0]
+        # x = ε
+        # y = ae(x, [20,3], "nn")*1e11
+        y = x
+        y1 = y*W1+b1
+        y2 = tanh(y1)
+        y2 = y2*W2+b2
+        y3 = tanh(y2)
+        y3 = y3*W3+b3
     end
-    y
+    op = tf.print(σ0)
+    y = bind(y, op)
+    y1+y2+y3
 end
 
 
@@ -127,6 +143,6 @@ Ftot, E_all = preprocessing(domain, globdat, F, Δt)
 loss = DynamicMatLawLoss(domain, E_all, Ftot, nn)
 sess = Session(); init(sess)
 @show run(sess, loss)
-BFGS(sess, loss)
+BFGS(sess, loss, 200)
 println("Real H = ", H0)
 run(sess, H)
