@@ -113,13 +113,10 @@ _W2 = Variable(rand(3,3))
 _b2 = Variable(rand(3))
 _W3 = Variable(rand(3,3))
 _b3 = Variable(rand(3))
-_W4 = Variable(rand(3,3))
-_b4 = Variable(rand(3))
-_W5 = Variable(rand(3,3))
-_b5 = Variable(rand(3))
+
 
 function nn(ε, ε0, σ0)
-    local y, y1, y2, y3, y4, y5
+    local y, y1, y2, y3
     if nntype=="linear"
         y = ε*H*1e11
         # op1 = tf.print("* ", ε,summarize=-1)
@@ -145,11 +142,7 @@ function nn(ε, ε0, σ0)
         y2 = y2*_W2+_b2
         y3 = tanh(y2)
         y3 = y3*_W3+_b3
-        y4 = tanh(y3)
-        y4 = y4*_W4+_b4
-        y5 = tanh(y4)
-        y5 = y5*_W5+_b5
-        i .* (σ0 + (ε-ε0)*H0*1e11) + (1-i) .* (y1+y2+y3+y4+y5)
+        i .* (σ0 + (ε-ε0)*H0*1e11) + (1-i) .* (y1+y2+y3)
         
     end
     # op = tf.print(σ0)

@@ -18,13 +18,12 @@ end
 
 function getStress(self::NeuralNetwork2D,  strain::Array{Float64},  Dstrain::Array{Float64}, Δt::Float64 = 0.0)
     # #@show "***", strain, Dstrain
-    local dΔσdΔε
     ε = strain 
     ε0 = Dstrain 
     σ0 = self.σ0 
-    σ = self.nn(ε, ε0, σ0, Δt)
+    σ, dΔσdΔε = self.nn(ε, ε0, σ0, Δt)
     self.σ0_ = σ
-    return σ, nothing
+    return σ, dΔσdΔε
 end
 
 function getTangent(self::NeuralNetwork2D)
