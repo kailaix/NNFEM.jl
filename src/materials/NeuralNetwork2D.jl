@@ -3,8 +3,8 @@ export  NeuralNetwork2D, getStress
 mutable struct NeuralNetwork2D
     ρ::Float64 # density
     # hardening parameter, yield function = f - (σY + Kα)
-    σ0::PyObject # stress at last time step
-    σ0_::PyObject # σ0 to be updated in `commitHistory`
+    σ0::Array{Float64} # stress at last time step
+    σ0_::Array{Float64} # σ0 to be updated in `commitHistory`
     nn::Function
 end
 
@@ -12,7 +12,7 @@ end
 function NeuralNetwork2D(prop::Dict{String, Any})
     ρ = prop["rho"];
     nn = prop["nn"]
-    σ0 = constant(zeros(3)); σ0_ = constant(zeros(3))
+    σ0 = zeros(3); σ0_ = zeros(3)
     NeuralNetwork2D(ρ, σ0, σ0_, nn)
 end
 

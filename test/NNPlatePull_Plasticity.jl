@@ -7,10 +7,11 @@ using JLD2
 using ADCME
 using LinearAlgebra
 
+include("nnutil.jl")
 
 
-
-testtype = "PlaneStressPlasticity"
+# testtype = "PlaneStressPlasticity"
+testtype = "NeuralNetwork2D"
 np = pyimport("numpy")
 nx, ny =  1,2
 nnodes, neles = (nx + 1)*(ny + 1), nx*ny
@@ -45,7 +46,7 @@ fext[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] = [2.0,3.0]*1e8
 
 
 prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45,
-"sigmaY"=>0.3e+9, "K"=>1/9*200e+9)
+"sigmaY"=>0.3e+9, "K"=>1/9*200e+9, "nn"=>post_nn)
 
 elements = []
 for j = 1:ny
@@ -77,7 +78,7 @@ for i = 1:NT
     solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-6, 10)
     
 end
-
+error()
 
 
 nntype = "nn"

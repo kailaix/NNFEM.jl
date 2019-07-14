@@ -124,7 +124,8 @@ function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64
     JJ = Array{Array{Int64}}(undef, neles)
     VV = Array{Array{Float64}}(undef, neles)
     # Loop over the elements in the elementGroup
-    Threads.@threads for iele  = 1:neles
+    # Threads.@threads 
+    for iele  = 1:neles
       element = domain.elements[iele]
   
       # Get the element nodes
