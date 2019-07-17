@@ -7,6 +7,8 @@ using JLD2
 using ADCME
 using LinearAlgebra
 
+include("nnutil.jl")
+
 
 # testtype = "PlaneStressPlasticity"
 testtype = "NeuralNetwork2D"
@@ -68,16 +70,9 @@ assembleMassMatrix!(globdat, domain)
 updateStates!(domain, globdat)
 
 
-
 T = 2.0
 NT = 20
 Δt = T/NT
-for i = 1:NT
-    @info i, "/" , NT
-    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-6, 10)
-    
-end
-error()
 
 
 nntype = "nn"
@@ -98,8 +93,6 @@ H0 /= 1e11
 # H = Variable(H0.+1)
 # H = H0
 
-
-
 W1 = Variable(rand(9,3))
 b1 = Variable(rand(3))
 W2 = Variable(rand(3,3))
@@ -114,56 +107,27 @@ _b2 = Variable(rand(3))
 _W3 = Variable(rand(3,3))
 _b3 = Variable(rand(3))
 
+all_vars = [W1,b1,W2,b2,W3,b3,_W1,_b1,_W2,_b2,_W3,_b3]
 
-function nn(ε, ε0, σ0)
-    local y, y1, y2, y3
-    if nntype=="linear"
-        y = ε*H*1e11
-        # op1 = tf.print("* ", ε,summarize=-1)
-        # y = bind(y, op1)
-        # op2 = tf.print("& ", y, summarize=-1)
-        # y = bind(y, op2)
-        y
-    elseif nntype=="nn"
-        x = [ε*1e11 ε0*1e11 σ0]
-        # x = ε
-        # y = ae(x, [20,3], "nn")*1e11
-        y1 = x*W1+b1
-        y2 = tanh(y1)
-        y2 = y2*W2+b2
-        y3 = tanh(y2)
-        y3 = sigmoid(y3*W3+b3)
-        # i = cast(squeeze(y3)>0.5, Float64)
-        i = squeeze(y3)
-        i = [i i i]
 
-        y1 = x*_W1+_b1
-        y2 = tanh(y1)
-        y2 = y2*_W2+_b2
-        y3 = tanh(y2)
-        y3 = y3*_W3+_b3
-        i .* (σ0 + (ε-ε0)*H0*1e11) + (1-i) .* (y1+y2+y3)
-        
-    end
-    # op = tf.print(σ0)
-    # y = bind(y, op)
-    
+n_data = 10
+losses = Array{PyObject}(undef, n_data)
+for i = 1:n_data
+    state_history, fext_history = read_data("Data/train$n_data.txt")
+    losses[i] = DynamicMatLawLoss(domain, state_history, fext_history, nn)
 end
-
-
-#F = zeros(domain.neqs, NT+1)
-F = repeat(domain.fext, 1, NT+1)
-Ftot, E_all = preprocessing(domain, globdat, F, Δt)
-# Fext = [-1.83823521926099986423 1.83823521926099897605 -10.41666612582739404047 -10.41666612582739404047
-# -0.00000014971328692826 0.00000014971329137836 -0.00000108167848899163 -0.00000108167849091910
-# 0.00000007485663168454 -0.00000007485663374036 0.00000054083913203309 0.00000054083913738728
-# 0.00000000000001074496 -0.00000000000001156994 0.00000000000011383182 0.00000000000011433157
-# -0.00000000000000317019 0.00000000000000129020 -0.00000000000002433776 -0.00000000000003840134]*2
-
-# @info "Fext ", Fext
-loss = DynamicMatLawLoss(domain, E_all, Ftot, nn)
+loss = sum(losses)
 sess = Session(); init(sess)
 @show run(sess, loss)
 BFGS(sess, loss)
 println("Real H = ", H0)
 run(sess, H)
+
+# save nn parameters
+var_val = run(sess, all_vars)
+for i = 1:length(all_vars)
+    if !occursin("Weights", "Data")
+        mkdir("Data/Weights")
+    end
+    writedlm("Data/Weights/$i.txt", var_val[i])
+end

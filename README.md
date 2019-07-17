@@ -19,3 +19,10 @@ julia> ]
 pkg> test NNFEM
 ```
 For every function, a test snippet should go into `test` folder. Be sure to include the new files in `runtests.jl`.
+
+
+
+# TODO
+- store fext in domain.history
+- implement DynamicMatLawLoss
+- Benchmark test

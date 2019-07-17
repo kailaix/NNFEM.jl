@@ -47,6 +47,12 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, fext::Array{Fl
     return total_loss
 end
 
+
+function DynamicMatLawLoss(domain::Domain, state_history::Array{Array{Float64}}, fext_history::Array{Array{Float64}}, nn::Function)
+    # todo convert to E_all, Ftot
+    DynamicMatLawLoss(domain, E_all, fext, nn)
+end
+
 function BFGS(sess::PyObject, loss::PyObject, max_iter=15000; kwargs...)
     __cnt = 0
     function print_loss(l)

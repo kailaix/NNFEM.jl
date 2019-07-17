@@ -73,7 +73,8 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array
     dof_to_eq = zeros(Bool, nnodes * ndims)
     fext = Float64[]
     
-    history = Dict("state"=>Array{Float64}[], "acc"=>Array{Float64}[], "fint"=>Array{Float64}[])
+    history = Dict("state"=>Array{Float64}[], "acc"=>Array{Float64}[], "fint"=>Array{Float64}[],
+                "fext"=>Array{Float64}[])
     domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, LM, DOF, ID, neqs, eq_to_dof, dof_to_eq, EBC, g, FBC, fext, 0.0, history)
     setDirichletBoundary!(domain, EBC, g)
     setNeumannBoundary!(domain, FBC, f)

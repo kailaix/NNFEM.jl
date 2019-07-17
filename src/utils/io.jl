@@ -1,4 +1,4 @@
-export readMesh, save, load
+export readMesh, save, load, read_data, write_data
 function readMesh(gmshFile::String)
     fp = open(gmshFile);
     boundaries = Dict{String, Array}()
@@ -76,4 +76,13 @@ end
 function load(file::String)
     @load file domain globaldata
     return domain, globaldata
+end
+
+
+# domain.state, domain.fint, fext
+function write_data(file::String, domain::Domain)
+end
+
+# state, fext
+function read_data(file::String)
 end
