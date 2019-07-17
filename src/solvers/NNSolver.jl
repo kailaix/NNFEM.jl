@@ -48,9 +48,11 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, fext::Array{Fl
 end
 
 
-function DynamicMatLawLoss(domain::Domain, state_history::Array{Array{Float64}}, fext_history::Array{Array{Float64}}, nn::Function)
+function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{Any}, fext_history::Array{Any}, nn::Function, Δt::Float64)
     # todo convert to E_all, Ftot
-    DynamicMatLawLoss(domain, E_all, fext, nn)
+    domain.history["state"] = state_history
+    Ftot, E_all = preprocessing(domain, globdat, hcat(fext_history...), Δt)
+    DynamicMatLawLoss(domain, E_all, Ftot, nn)
 end
 
 function BFGS(sess::PyObject, loss::PyObject, max_iter=15000; kwargs...)
@@ -107,6 +109,7 @@ end
 
 # compute E from U 
 function preprocessing(domain::Domain, globdat::GlobalData, F::Array{Float64},Δt::Float64)
+    local fext
     U = hcat(domain.history["state"]...)
     # @info " U ", size(U),  U'
     M = globdat.M
@@ -114,22 +117,28 @@ function preprocessing(domain::Domain, globdat::GlobalData, F::Array{Float64},Δ
 
     NT = size(U,2)-1
     @info NT
-    @assert size(F,2)==NT+1
 
     bc_acc = zeros(sum(domain.EBC.==-2),NT)
     for i = 1:NT
         _, bc_acc[:,i]  = globdat.EBC_func(Δt*i)
     end
-    @info bc_acc
+    # @info bc_acc
 
     
     ∂∂U = zeros(size(U,1), NT+1)
     ∂∂U[:,2:NT] = (U[:,1:NT-1]+U[:,3:NT+1]-2U[:,2:NT])/Δt^2
-    for i = 1:size(∂∂U,2)
-        println("***$(∂∂U[:,i])")
-    end
+    # for i = 1:size(∂∂U,2)
+    #     println("***$(∂∂U[:,i])")
+    # end
     # println("∂∂U, $(∂∂U)")
-    fext = F[:,2:end]-M*∂∂U[domain.dof_to_eq,2:end]-MID*bc_acc
+    # @info size(F)
+    if size(F,2)==NT+1
+        fext = F[:,2:end]-M*∂∂U[domain.dof_to_eq,2:end]-MID*bc_acc
+    elseif size(F,2)==NT
+        fext = F-M*∂∂U[domain.dof_to_eq,2:end]-MID*bc_acc
+    else
+        error("F size is not valid")
+    end
     
     neles = domain.neles
     nGauss = length(domain.elements[1].weights)
@@ -160,7 +169,7 @@ function preprocessing(domain::Domain, globdat::GlobalData, F::Array{Float64},Δ
             E_all[i, (iele-1)*nGauss+1:iele*nGauss, :] = E
         end
     end
-    # DEBUG
-    fext = hcat(domain.history["fint"]...)
+    # # DEBUG
+    # fext = hcat(domain.history["fint"]...)
     return fext'|>Array, E_all
 end

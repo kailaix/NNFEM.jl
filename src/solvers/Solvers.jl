@@ -300,6 +300,7 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1, αf = 0, ε = 1e-8, maxit
     fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
     # debug
     push!(domain.history["fint"], fint)
+    push!(domain.history["fext"], fext)
     
     # @show "acce",  globdat.acce
     # @show "state", globdat.state

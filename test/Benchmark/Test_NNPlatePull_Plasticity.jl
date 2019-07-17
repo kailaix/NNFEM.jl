@@ -86,31 +86,24 @@ H0 /= 1e11
 # H = Variable(H0.+1)
 # H = H0
 
-W1 = Float64[]
-b1 = Float64[]
-W2 = Float64[]
-b2 = Float64[]
-W3 = Float64[]
-b3 = Float64[]
 
-_W1 = Float64[]
-_b1 = Float64[]
-_W2 = Float64[]
-_b2 = Float64[]
-_W3 = Float64[]
-_b3 = Float64[]
 
-all_vars = [W1,b1,W2,b2,W3,b3,_W1,_b1,_W2,_b2,_W3,_b3]
+all_vars = Array{Array{Float64}}(undef, 12)
 
+# update weights
+for i = 1:length(all_vars)
+    all_vars[i] = readdlm("$(@__DIR__)/Data/Weights/$i.txt")
+end
+
+W1,b1,W2,b2,W3,b3,_W1,_b1,_W2,_b2,_W3,_b3 = all_vars
 
 T = 2.0
 NT = 20
 Δt = T/NT
 for i = 1:NT
     @info i, "/" , NT
-    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-6, 10)
-    
+    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-5, 10)
 end
 
-
+visstatic(domain)
 

@@ -2,6 +2,7 @@ __precompile__(true)
 module NNFEM
 using PyPlot
 using JLD2
+using MAT
 using PyCall
 using Statistics
 using LinearAlgebra

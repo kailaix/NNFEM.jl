@@ -78,5 +78,6 @@ for i = 1:NT
     
 end
 
+# error()
 # todo write data
-write_data("", domain)
+write_data("$(@__DIR__)/Data/1.dat", domain)

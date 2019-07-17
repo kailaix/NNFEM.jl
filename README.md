@@ -22,7 +22,10 @@ For every function, a test snippet should go into `test` folder. Be sure to incl
 
 
 
-# TODO
-- store fext in domain.history
-- implement DynamicMatLawLoss
-- Benchmark test
+# Quick Start
+
+```
+include("test/Benchmark/Data_NNPlatePull_Plasticity.jl")  # generate data
+include("test/Benchmark/Train_NNPlatePull_Plasticity.jl") # training
+include("test/Benchmark/Test_NNPlatePull_Plasticity.jl")  # testing
+```

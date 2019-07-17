@@ -110,11 +110,11 @@ _b3 = Variable(rand(3))
 all_vars = [W1,b1,W2,b2,W3,b3,_W1,_b1,_W2,_b2,_W3,_b3]
 
 
-n_data = 10
+n_data = 1
 losses = Array{PyObject}(undef, n_data)
 for i = 1:n_data
-    state_history, fext_history = read_data("Data/train$n_data.txt")
-    losses[i] = DynamicMatLawLoss(domain, state_history, fext_history, nn)
+    state_history, fext_history = read_data("$(@__DIR__)/Data/$i.dat")
+    losses[i] = DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
 end
 loss = sum(losses)
 sess = Session(); init(sess)
@@ -126,8 +126,8 @@ run(sess, H)
 # save nn parameters
 var_val = run(sess, all_vars)
 for i = 1:length(all_vars)
-    if !occursin("Weights", "Data")
-        mkdir("Data/Weights")
+    if !isdir("$(@__DIR__)/Data/Weights")
+        mkdir("$(@__DIR__)/Data/Weights")
     end
-    writedlm("Data/Weights/$i.txt", var_val[i])
+    writedlm("$(@__DIR__)/Data/Weights/$i.txt", var_val[i])
 end
