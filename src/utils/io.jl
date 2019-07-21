@@ -84,11 +84,13 @@ function write_data(file::String, domain::Domain)
     file = matopen(file, "w")
     write(file, "state", domain.history["state"])
     write(file, "fext", domain.history["fext"])
+    write(file, "fint", domain.history["fint"])
     close(file)
 end
 
 # state, fext
 function read_data(file::String)
     vars = matread(file)
-    vars["state"], vars["fext"]
+    #use fint for debugging purpose
+    vars["state"], vars["fint"]
 end
