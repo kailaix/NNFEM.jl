@@ -60,7 +60,7 @@ end
 
 W1,b1,W2,b2,W3,b3,_W1,_b1,_W2,_b2,_W3,_b3 = all_vars
 
-T = 2.0
+T = 0.5
 NT = 20
 Δt = T/NT
 for i = 1:NT

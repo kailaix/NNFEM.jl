@@ -11,7 +11,7 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, fext::Array{Fl
     # define variables
     neles = domain.neles
     nGauss = length(domain.elements[1].weights)
-    nstrains = 3
+    nstrains = size(E_all,3)
     NT = size(E_all,1)-1
     @assert size(E_all)==(NT+1, neles*nGauss, nstrains)
     @assert size(fext)==(NT, domain.neqs)

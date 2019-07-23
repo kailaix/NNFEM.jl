@@ -28,28 +28,12 @@ assembleMassMatrix!(globdat, domain)
 updateStates!(domain, globdat)
 
 
-T = 2.0
+T = 0.5
 NT = 20
 Δt = T/NT
 
 
 nntype = "nn"
-H_ = Variable(diagm(0=>ones(3)))
-H = H_'*H_
-
-E = prop["E"]; ν = prop["nu"]; ρ = prop["rho"]
-H0 = zeros(3,3)
-
-H0[1,1] = E/(1. -ν*ν)
-H0[1,2] = H0[1,1]*ν
-H0[2,1] = H0[1,2]
-H0[2,2] = H0[1,1]
-H0[3,3] = E/(2.0*(1.0+ν))
-
-H0 /= 1e11
-
-# H = Variable(H0.+1)
-# H = H0
 
 W1 = Variable(rand(9,3))
 b1 = Variable(rand(3))
