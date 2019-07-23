@@ -7,10 +7,16 @@ using JLD2
 using ADCME
 using LinearAlgebra
 
+include("nnutil.jl")
+
+
+# testtype = "PlaneStressPlasticity"
+testtype = "NeuralNetwork2D"
 include("NNPlatePull_Domain.jl")
-testtype = "PlaneStress"
+
+
 # np = pyimport("numpy")
-# nx, ny =  8,10
+# nx, ny =  1,2
 # nnodes, neles = (nx + 1)*(ny + 1), nx*ny
 # x = np.linspace(0.0, 0.5, nx + 1)
 # y = np.linspace(0.0, 0.5, ny + 1)
@@ -39,14 +45,11 @@ testtype = "PlaneStress"
 # #pull in the y direction
 # NBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 # NBC[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] .= -1
-
-# # * modify this line for new data
-# fext[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] = collect(range(2.0, stop=2.0, length=nx+1))*1e7
-
+# fext[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] = [2.0,3.0]*1e8
 
 
 prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45,
-"sigmaY"=>0.3e+9, "K"=>1/9*200e+9)
+"sigmaY"=>0.3e+9, "K"=>1/9*200e+9, "nn"=>post_nn)
 
 elements = []
 for j = 1:ny
@@ -68,18 +71,42 @@ globdat = GlobalData(state,zeros(domain.neqs),
 assembleMassMatrix!(globdat, domain)
 updateStates!(domain, globdat)
 
+nntype = "nn"
+H_ = Variable(diagm(0=>ones(3)))
+H = H_'*H_
+
+E = prop["E"]; ν = prop["nu"]; ρ = prop["rho"]
+H0 = zeros(3,3)
+
+H0[1,1] = E/(1. -ν*ν)
+H0[1,2] = H0[1,1]*ν
+H0[2,1] = H0[1,2]
+H0[2,2] = H0[1,1]
+H0[3,3] = E/(2.0*(1.0+ν))
+
+H0 /= 1e11
+
+# H = Variable(H0.+1)
+# H = H0
+
+
+
+all_vars = Array{Array{Float64}}(undef, 12)
+
+# update weights
+for i = 1:length(all_vars)
+    all_vars[i] = readdlm("$(@__DIR__)/Data/Weights/$i.txt")
+end
+
+W1,b1,W2,b2,W3,b3,_W1,_b1,_W2,_b2,_W3,_b3 = all_vars
 
 T = 2.0
 NT = 20
 Δt = T/NT
 for i = 1:NT
     @info i, "/" , NT
-    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-6, 10)
-    
+    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-5, 10)
 end
 
-# error()
-# todo write data
-write_data("$(@__DIR__)/Data/1.dat", domain)
+visstatic(domain)
 
-visstatic(domain, scaling=10)
