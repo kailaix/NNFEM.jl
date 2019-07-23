@@ -7,8 +7,6 @@ using JLD2
 using ADCME
 using LinearAlgebra
 
-
-testtype = "Plasticity1D" #"Elasticity1D"
 np = pyimport("numpy")
 
 """
@@ -19,7 +17,7 @@ local node id: left to right
 """
 
 ndofs = 2
-nx = 1
+nx = 4
 nnodes, neles = (nx + 1), nx
 
 # PARAMETER: distance between nodes 0-1 and 0-2
@@ -54,6 +52,6 @@ NBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 NBC[nx+1, 1] = -1
 
 #modify this line for new data
-fext[nx+1, 1] = 1
+fext[nx+1, 1] = 1.0e3
 
 ngp=2

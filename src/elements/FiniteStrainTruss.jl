@@ -51,8 +51,6 @@ function getStiffAndForce(self::FiniteStrainTruss, state::Array{Float64}, Dstate
     lu = rot_mat * state
     Dlu = rot_mat * Dstate
 
-    @info "lu ", lu
-
     A0, l0 = self.A0, self.l0
 
     E = (lu[2]-lu[1])/l0 + 0.5*((lu[2]-lu[1])/l0)^2 + 0.5*((lu[4]-lu[3])/l0)^2
