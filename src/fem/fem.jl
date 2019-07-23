@@ -149,8 +149,6 @@ end
         -1 means fixed force load boundary condition
         -2 means time dependent force load boundary condition
     :param f[n, d] is the fixed force load value
-
-    :param nbc:
     :return:
 """ -> 
 function setNeumannBoundary!(self::Domain, FBC::Array{Int64}, f::Array{Float64})
@@ -204,6 +202,7 @@ function updateDomainStateBoundary!(self::Domain, globaldat::GlobalData)
     if globaldat.EBC_func != nothing
         disp, acce = globaldat.EBC_func(globaldat.time) # user defined time-dependent boundary
         dof_id = 0
+        #update state of all nodes
         for idof = 1:self.ndims
             for inode = 1:self.nnodes
                 if (self.EBC[inode, idof] == -2)
@@ -215,13 +214,17 @@ function updateDomainStateBoundary!(self::Domain, globaldat::GlobalData)
     end
 
     if globaldat.FBC_func != nothing
+        ID = self.ID
         nodal_force = globaldat.FBC_func(globaldat.time) # user defined time-dependent boundary
+        @info nodal_force
         dof_id = 0
+        #update fext for active nodes (length of neqs)
         for idof = 1:self.ndims
             for inode = 1:self.nnodes
                 if (self.FBC[inode, idof] == -2)
                     dof_id += 1
-                    self.fext[inode + (idof-1)*self.nnodes] = nodal_force[dof_id]
+                    @assert ID[inode, idof] > 0
+                    self.fext[ID[inode, idof]] = nodal_force[dof_id]
                 end
             end
         end

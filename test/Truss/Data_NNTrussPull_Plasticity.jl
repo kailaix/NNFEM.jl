@@ -8,10 +8,7 @@ using ADCME
 using LinearAlgebra
 
 include("NNTrussPull_Domain.jl")
-testtype = "Plasticity1D" #"Elasticity1D"
-#testtype = "Elasticity1D"
-
-
+testtype = "Plasticity1D" 
 
 
 
@@ -28,13 +25,13 @@ end
 
 
 
-domain = Domain(nodes, elements, ndofs, EBC, g, NBC, fext)
+domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
 state = zeros(domain.neqs)
 ∂u = zeros(domain.neqs)
-globdat = GlobalData(state,zeros(domain.neqs),
-                    zeros(domain.neqs),∂u, domain.neqs, gt)
+globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
 
 assembleMassMatrix!(globdat, domain)
+# need to update state in domain from globdat
 updateStates!(domain, globdat)
 
 

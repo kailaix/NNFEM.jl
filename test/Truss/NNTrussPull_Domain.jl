@@ -35,23 +35,31 @@ EBC[1, :] .= -1
 
 
 function ggt(t)
-    v = 0.01
-    if t<1.0
-        state = t*v*ones(sum(EBC.==-2))
-    elseif t<3.0
-        state = (0.02 - t*v)*ones(sum(EBC.==-2))
-    end
-    return state, zeros(sum(EBC.==-2))
+    return zeros(sum(EBC.==-2)), zeros(sum(EBC.==-2))
 end
-gt = Nothing
-
-NBC, f = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
+gt = ggt
 
 #pull in the x direction
-NBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
-NBC[nx+1, 1] = -1
+FBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 
-#modify this line for new data
-fext[nx+1, 1] = 1.0e3
+
+# todo PARAMETER
+FORCE_TYPE = "constant"
+
+
+
+if FORCE_TYPE == "constant"
+    FBC[nx+1, 1] = -1
+    fext[nx+1, 1] = 1.0e3
+else
+    FBC[nx+1, 1] = -2
+end
+
+#force load function
+function fft(t)
+    return 5.0e2 * sin(2*pi*t)
+end
+ft = fft
+
 
 ngp=2
