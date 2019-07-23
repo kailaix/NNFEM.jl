@@ -51,16 +51,18 @@ function getStiffAndForce(self::FiniteStrainTruss, state::Array{Float64}, Dstate
     lu = rot_mat * state
     Dlu = rot_mat * Dstate
 
+    @info "lu ", lu
+
     A0, l0 = self.A0, self.l0
 
-    E = (lu[3]-lu[1])/l0 + 0.5*((lu[3]-lu[1])/l0)^2 + 0.5*((lu[4]-lu[2])/l0)^2
-    DE = (Dlu[3]-Dlu[1])/l0 + 0.5*((Dlu[3]-Dlu[1])/l0)^2 + 0.5*((Dlu[4]-Dlu[2])/l0)^2
+    E = (lu[2]-lu[1])/l0 + 0.5*((lu[2]-lu[1])/l0)^2 + 0.5*((lu[4]-lu[3])/l0)^2
+    DE = (Dlu[2]-Dlu[1])/l0 + 0.5*((Dlu[2]-Dlu[1])/l0)^2 + 0.5*((Dlu[4]-Dlu[3])/l0)^2
     # compute  ∂E∂u.T, 4 by 1 array 
-    ∂E∂u =  [-1/l0+(lu[1]-lu[3])/l0;  (lu[2]-lu[4])/l0;  1/l0+(lu[3]-lu[1])/l0; (lu[4]-lu[2])/l0]
-    ∂∂E∂∂u =  [1/l0   0     -1/l0       0;  
-               0     1/l0   0       -1/l0;   
-               -1/l0   0    1/l0        0;   
-               0     -1/l0  0        1/l0]   
+    ∂E∂u =  [-1/l0+(lu[1]-lu[2])/l0;  1/l0+(lu[2]-lu[1])/l0; (lu[3]-lu[4])/l0; (lu[4]-lu[3])/l0]
+    ∂∂E∂∂u =  [1/l0  -1/l0     0        0;
+              -1/l0   1/l0     0        0;   
+               0       0      1/l0    -1/l0;       
+               0       0     -1/l0    1/l0]   
 
     for k = 1:length(self.weights)
 
