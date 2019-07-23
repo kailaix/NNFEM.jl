@@ -43,7 +43,7 @@ function ggt(t)
     end
     return state, zeros(sum(EBC.==-2))
 end
-gt = ggt
+gt = Nothing
 
 NBC, f = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 
