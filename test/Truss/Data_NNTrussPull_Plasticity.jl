@@ -8,7 +8,8 @@ using ADCME
 using LinearAlgebra
 
 include("NNTrussPull_Domain.jl")
-testtype = "Plasticity1D" 
+#testtype = "Plasticity1D" 
+testtype = "Elasticity1D" 
 
 
 
@@ -35,7 +36,7 @@ assembleMassMatrix!(globdat, domain)
 updateStates!(domain, globdat)
 
 
-T = 1.0
+T = 0.5
 NT = 20
 Δt = T/NT
 for i = 1:NT

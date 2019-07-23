@@ -44,12 +44,12 @@ FBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 
 
 # todo PARAMETER
-FORCE_TYPE = "constant"
+FORCE_TYPE = "non-constant"
 
 
 
 if FORCE_TYPE == "constant"
-    FBC[nx+1, 1] = -1
+    FBC[nx+1, 1]  = -1
     fext[nx+1, 1] = 1.0e3
 else
     FBC[nx+1, 1] = -2
@@ -57,7 +57,7 @@ end
 
 #force load function
 function fft(t)
-    return 5.0e2 * sin(2*pi*t)
+    return 1.e3 * sin(2*pi*t)
 end
 ft = fft
 
