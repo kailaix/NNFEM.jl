@@ -35,7 +35,8 @@ function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, 
   neles = domain.neles
   nGauss = length(domain.elements[1].weights)
   neqns_per_elem = length(getEqns(domain,1))
-  nstrains = 3
+  nstrains = size(E_all,3)
+ 
 
   @assert size(E_all)==(neles*nGauss, nstrains)
   @assert size(DE_all)==(neles*nGauss, nstrains)
@@ -72,7 +73,11 @@ function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, 
   end
 
   # get stress at each Gaussian points
+  @info "* ", E_all, DE_all, σ0_all
   σ_all = nn(E_all, DE_all, σ0_all)
+
+  @info "* *** "
+
   # cast to tensorflow variable
   el_eqns_active_all = constant(el_eqns_active_all, dtype=Bool)
   # trick, set Dirichlet equation number to 1, when assemble, add 0 to equation 1.

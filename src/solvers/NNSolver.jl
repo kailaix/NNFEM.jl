@@ -12,6 +12,7 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, F_tot::Array{F
     neles = domain.neles
     nGauss = length(domain.elements[1].weights)
     nstrains = size(E_all,3)
+
     NT = size(E_all,1)-1
     @assert size(E_all)==(NT+1, neles*nGauss, nstrains)
     @assert size(F_tot)==(NT, domain.neqs)
@@ -27,9 +28,9 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, F_tot::Array{F
         σ0 = read(ta_σ, i-1)
         E = E_all[i]
         DE = E_all[i-1]
-        # @show E, DE
+        
         fint, σ = tfAssembleInternalForce(domain,nn,E,DE,σ0)
-        # # @show E, DE
+        
         # op = tf.print(i,(fint), summarize=-1)
         # fint = bind(fint, op)
 
@@ -144,8 +145,9 @@ function preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64
     nGauss = length(domain.elements[1].weights)
     neqns_per_elem = length(getEqns(domain,1))
 
-
+    
     nstrains = div((domain.elements[1].eledim + 1)*domain.elements[1].eledim, 2)
+
     E_all = zeros(NT+1, neles*nGauss, nstrains)
 
     for i = 1:NT+1

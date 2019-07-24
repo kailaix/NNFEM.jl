@@ -35,6 +35,7 @@ NT = 20
 
 nntype = "nn"
 
+
 E = prop["E"]
 H0 = zeros(1,1)
 H0[1,1] = E
