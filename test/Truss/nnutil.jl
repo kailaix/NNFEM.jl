@@ -6,7 +6,7 @@ using DelimitedFiles
 function nn(ε, ε0, σ0)
     local y, y1, y2, y3
     if nntype=="linear"
-        y = ε*H*1e11
+        y = ε*H0
         # op1 = tf.print("* ", ε,summarize=-1)
         # y = bind(y, op1)
         # op2 = tf.print("& ", y, summarize=-1)
@@ -29,7 +29,7 @@ function nn(ε, ε0, σ0)
         y2 = y2*_W2+_b2
         y3 = tanh(y2)
         y3 = y3*_W3+_b3
-        i .* (σ0 + (ε-ε0)*H0*1e11) + (1-i) .* (y1+y2+y3)
+        i .* (σ0 + (ε-ε0)*H0) + (1-i) .* (y1+y2+y3)
         
     end
     # op = tf.print(σ0)
@@ -66,7 +66,7 @@ function nn_helper(ε, ε0, σ0)
     #                 size(ε-ε0), size(H0))
     # @show size(σ0' + (ε-ε0)'*H0*1e11)
     out = i .* (σ0' + (ε-ε0)'*H0*1e11) + (1 .- i) .* (y1+y2+y3) 
-    out = reshape(out, 3)
+    out = reshape(out, 1)
     # println(out)
     # error()
 end

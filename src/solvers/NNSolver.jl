@@ -6,7 +6,7 @@ export DynamicMatLawLoss, BFGS, preprocessing, ADAM, NNMatLaw
 
     loss = ∑ ||fint(NN, E, DE) - (fext - MIDddu_bc - Mddu)||^2
 """->
-function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, fext::Array{Float64},
+function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, F_tot::Array{Float64},
         nn::Function)
     # define variables
     neles = domain.neles
@@ -14,10 +14,10 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, fext::Array{Fl
     nstrains = size(E_all,3)
     NT = size(E_all,1)-1
     @assert size(E_all)==(NT+1, neles*nGauss, nstrains)
-    @assert size(fext)==(NT, domain.neqs)
+    @assert size(F_tot)==(NT, domain.neqs)
     # @show E_all[2,:,:]
     E_all = constant(E_all)
-    fext = constant(fext)
+    F_tot = constant(F_tot)
 
     function cond0(i, ta_loss, ta_σ)
         i<=NT+1
@@ -34,7 +34,7 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, fext::Array{Fl
         # fint = bind(fint, op)
 
         ta_σ = write(ta_σ, i, σ)
-        ta_loss = write(ta_loss, i, sum((fint-fext[i-1])^2))
+        ta_loss = write(ta_loss, i, sum((fint-F_tot[i-1])^2))
         i+1, ta_loss, ta_σ
     end
 
