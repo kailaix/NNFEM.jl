@@ -1,5 +1,6 @@
 export SmallStrainContinuum
 mutable struct SmallStrainContinuum
+    eledim::Int64
     mat  # constitutive law
     elnodes::Array{Int64}   # the node indices in this finite element
     props::Dict{String, Any}
@@ -11,6 +12,7 @@ mutable struct SmallStrainContinuum
 end
 
 function SmallStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, props::Dict{String, Any}, ngp::Int64=2)
+    eledim = 2
     dhdx, weights, hs = get2DElemShapeData( coords, ngp )
     nGauss = length(weights)
     name = props["name"]
@@ -26,7 +28,7 @@ function SmallStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, pro
         error("Not implemented yet: $name")
     end
     strain = Array{Array{Float64}}(undef, length(weights))
-    SmallStrainContinuum(mat, elnodes, props, coords, dhdx, weights, hs, strain)
+    SmallStrainContinuum(eledim, mat, elnodes, props, coords, dhdx, weights, hs, strain)
 end
 
 function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64}, Dstate::Array{Float64}, Δt::Float64)

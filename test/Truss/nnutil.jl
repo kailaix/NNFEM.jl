@@ -13,9 +13,8 @@ function nn(ε, ε0, σ0)
         # y = bind(y, op2)
         y
     elseif nntype=="nn"
-        x = [ε*1e11 ε0*1e11 σ0]
-        # x = ε
-        # y = ae(x, [20,3], "nn")*1e11
+        x = [ε ε0 σ0]
+    
         y1 = x*W1+b1
         y2 = tanh(y1)
         y2 = y2*W2+b2

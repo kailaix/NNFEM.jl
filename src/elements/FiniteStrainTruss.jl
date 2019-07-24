@@ -1,5 +1,6 @@
 export FiniteStrainTruss
 mutable struct FiniteStrainTruss
+    eledim::Int64
     mat  # constitutive law
     elnodes::Array{Int64}   # the node indices in this finite element
     props::Dict{String, Any}
@@ -13,6 +14,7 @@ mutable struct FiniteStrainTruss
 end
 
 function FiniteStrainTruss(coords::Array{Float64}, elnodes::Array{Int64}, props::Dict{String, Any}, ngp::Int64=2)
+    eledim = 1
     weights, hs = get1DElemShapeData( coords, ngp )
     nGauss = length(weights)
     name = props["name"]
@@ -22,6 +24,8 @@ function FiniteStrainTruss(coords::Array{Float64}, elnodes::Array{Int64}, props:
         mat = [Plasticity1D(props) for i = 1:nGauss]
     elseif name=="Viscoplasticity1D"
         mat = [Viscoplasticity1D(props) for i = 1:nGauss]
+    elseif name=="NeuralNetwork1D"
+        mat = [NeuralNetwork1D(props) for i = 1:nGauss]
     else
         error("Not implemented yet: $name")
     end
@@ -35,7 +39,7 @@ function FiniteStrainTruss(coords::Array{Float64}, elnodes::Array{Int64}, props:
                -sinα  0    cosα   0;
                0     -sinα   0    cosα]
 
-    FiniteStrainTruss(mat, elnodes, props, coords, weights, hs, strain, l0, props["A0"], rot_mat)
+    FiniteStrainTruss(eledim, mat, elnodes, props, coords, weights, hs, strain, l0, props["A0"], rot_mat)
 end
 
 
@@ -100,6 +104,33 @@ function getMassMatrix(self::FiniteStrainTruss)
     lumped = sum(mass, dims=2)
     #@show mass
     mass, lumped
+end
+
+function getStrain(self::FiniteStrainTruss, state::Array{Float64})
+    ndofs = dofCount(self); 
+    nnodes = length(self.elnodes)
+    fint = zeros(Float64, ndofs)
+    stiff = zeros(Float64, ndofs,ndofs)
+    
+    
+    rot_mat = self.rot_mat
+    #rotate displacement to the local coordinate
+    lu = rot_mat * state
+
+    A0, l0 = self.A0, self.l0
+
+    nGauss = length(self.weights)
+    E = zeros(nGauss, 1)
+    w∂E∂u = zeros(nGauss, 4, 1)
+
+      
+    for k = 1:nGauss
+        # compute  ∂E∂u.T, 8 by 3 array 
+        E[k,:] = [(lu[2]-lu[1])/l0 + 0.5*((lu[2]-lu[1])/l0)^2 + 0.5*((lu[4]-lu[3])/l0)^2]
+        w∂E∂u[k,:,:] = [-1/l0+(lu[1]-lu[2])/l0;  1/l0+(lu[2]-lu[1])/l0; (lu[3]-lu[4])/l0; (lu[4]-lu[3])/l0] * self.weights[k]
+    end
+
+    return E, w∂E∂u
 end
 
 

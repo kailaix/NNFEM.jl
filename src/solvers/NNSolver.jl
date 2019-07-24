@@ -47,12 +47,16 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, fext::Array{Fl
     return total_loss
 end
 
-
+@doc """
+    compute loss function from state and external force history 
+        
+    F_tot includes inertial force, external force, F_tot ≈ F_int    
+"""->
 function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{Any}, fext_history::Array{Any}, nn::Function, Δt::Float64)
     # todo convert to E_all, Ftot
     domain.history["state"] = state_history
-    Ftot, E_all = preprocessing(domain, globdat, hcat(fext_history...), Δt)
-    DynamicMatLawLoss(domain, E_all, Ftot, nn)
+    F_tot, E_all = preprocessing(domain, globdat, hcat(fext_history...), Δt)
+    DynamicMatLawLoss(domain, E_all, F_tot, nn)
 end
 
 function BFGS(sess::PyObject, loss::PyObject, max_iter=15000; kwargs...)
@@ -107,35 +111,31 @@ function NNMatLaw(sess::PyObject)
     return nn
 end
 
-# compute E from U 
-function preprocessing(domain::Domain, globdat::GlobalData, F::Array{Float64},Δt::Float64)
-    local fext
+@doc """
+    compute F_tot ≈ F_int , ane E_all
+"""->
+function preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64},Δt::Float64)
     U = hcat(domain.history["state"]...)
     # @info " U ", size(U),  U'
     M = globdat.M
     MID = globdat.MID 
 
     NT = size(U,2)-1
-    @info NT
 
+    #Acceleration of Dirichlet nodes
     bc_acc = zeros(sum(domain.EBC.==-2),NT)
     for i = 1:NT
         _, bc_acc[:,i]  = globdat.EBC_func(Δt*i)
     end
-    # @info bc_acc
 
     
     ∂∂U = zeros(size(U,1), NT+1)
     ∂∂U[:,2:NT] = (U[:,1:NT-1]+U[:,3:NT+1]-2U[:,2:NT])/Δt^2
-    # for i = 1:size(∂∂U,2)
-    #     println("***$(∂∂U[:,i])")
-    # end
-    # println("∂∂U, $(∂∂U)")
-    # @info size(F)
-    if size(F,2)==NT+1
-        fext = F[:,2:end]-M*∂∂U[domain.dof_to_eq,2:end]-MID*bc_acc
-    elseif size(F,2)==NT
-        fext = F-M*∂∂U[domain.dof_to_eq,2:end]-MID*bc_acc
+ 
+    if size(F_ext,2)==NT+1
+        F_tot = F_ext[:,2:end] - M*∂∂U[domain.dof_to_eq,2:end] - MID*bc_acc
+    elseif size(F_ext,2)==NT
+        F_tot = F_ext - M*∂∂U[domain.dof_to_eq,2:end] - MID*bc_acc
     else
         error("F size is not valid")
     end
@@ -143,7 +143,9 @@ function preprocessing(domain::Domain, globdat::GlobalData, F::Array{Float64},Δ
     neles = domain.neles
     nGauss = length(domain.elements[1].weights)
     neqns_per_elem = length(getEqns(domain,1))
-    nstrains = 3
+
+
+    nstrains = div((domain.elements[1].eledim + 1)*domain.elements[1].eledim, 2)
     E_all = zeros(NT+1, neles*nGauss, nstrains)
 
     for i = 1:NT+1
@@ -165,11 +167,12 @@ function preprocessing(domain::Domain, globdat::GlobalData, F::Array{Float64},Δ
 
             # Get the element contribution by calling the specified action
             E, w∂E∂u = getStrain(element, el_state) 
+      
             # @show E, nGauss
             E_all[i, (iele-1)*nGauss+1:iele*nGauss, :] = E
         end
     end
     # # DEBUG
     # fext = hcat(domain.history["fint"]...)
-    return fext'|>Array, E_all
+    return F_tot'|>Array, E_all
 end

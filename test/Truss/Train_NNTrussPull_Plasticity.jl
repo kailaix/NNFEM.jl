@@ -9,7 +9,7 @@ using LinearAlgebra
 
 include("nnutil.jl")
 
-testtype = "NeuralNetwork2D"
+testtype = "NeuralNetwork1D"
 include("NNTrussPull_Domain.jl")
 
 prop = Dict("name"=> testtype, "rho"=> 0.1, "E"=> 200, "B"=> 10.0,
@@ -35,19 +35,24 @@ NT = 20
 
 nntype = "nn"
 
-W1 = Variable(rand(9,3))
+E = prop["E"]
+H0 = zeros(1,1)
+H0[1,1] = E
+
+
+W1 = Variable(rand(3,3))
 b1 = Variable(rand(3))
 W2 = Variable(rand(3,3))
 b2 = Variable(rand(3))
 W3 = Variable(rand(3,1))
 b3 = Variable(rand(1))
 
-_W1 = Variable(rand(9,3))
-_b1 = Variable(rand(3))
-_W2 = Variable(rand(3,3))
-_b2 = Variable(rand(3))
-_W3 = Variable(rand(3,3))
-_b3 = Variable(rand(3))
+_W1 = Variable(rand(3,1))
+_b1 = Variable(rand(1))
+_W2 = Variable(rand(3,1))
+_b2 = Variable(rand(1))
+_W3 = Variable(rand(3,1))
+_b3 = Variable(rand(1))
 
 all_vars = [W1,b1,W2,b2,W3,b3,_W1,_b1,_W2,_b2,_W3,_b3]
 
@@ -63,7 +68,7 @@ sess = Session(); init(sess)
 @show run(sess, loss)
 BFGS(sess, loss)
 println("Real H = ", H0)
-run(sess, H)
+
 
 # save nn parameters
 var_val = run(sess, all_vars)

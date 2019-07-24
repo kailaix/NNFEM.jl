@@ -92,5 +92,5 @@ end
 function read_data(file::String)
     vars = matread(file)
     #use fint for debugging purpose
-    vars["state"], vars["fint"]
+    vars["state"], vars["fext"]
 end
