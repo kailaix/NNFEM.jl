@@ -124,8 +124,8 @@ function nn(ε, ε0, σ0)
         y3 = tanh(y2)
         y3 = y3*W3+b3
     end
-    op = tf.print(σ0)
-    y = bind(y, op)
+    # op = tf.print(σ0)
+    # y = bind(y, op)
     y1+y2+y3
 end
 

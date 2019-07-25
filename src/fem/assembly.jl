@@ -79,19 +79,19 @@ function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, 
     # fint in the ith Gaussian point
     fint = w∂E∂u[i - 1] * σ_all[i - 1]
 
-    op = tf.print("w∂E∂u_all", w∂E∂u[i - 1], summarize=-1)
-    fint = bind(fint, op)
+    # op = tf.print("w∂E∂u_all", w∂E∂u[i - 1], summarize=-1)
+    # fint = bind(fint, op)
 
-    op = tf.print("fint", fint,σ_all[i - 1], summarize=-1)
-    fint = bind(fint, op)
+    # op = tf.print("fint", fint,σ_all[i - 1], summarize=-1)
+    # fint = bind(fint, op)
 
     # set fint entries to 0, when the dof is Dirichlet boundary
     fint = fint * cast(Float64, el_eqns_active_all[i - 1]) # 8D
     # puth fint in the Fint at address el_eqns_all[i-1]
     x = scatter_add(x, el_eqns_all[i-1], fint)
 
-    op = tf.print(x, summarize=-1)
-    x = bind(x, op)
+    # op = tf.print(x, summarize=-1)
+    # x = bind(x, op)
     
     # write x to tensor_array_Fint
     tensor_array_Fint = write(tensor_array_Fint, i, x)
@@ -108,8 +108,8 @@ function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, 
 
   Fint = sum(out, dims=1)
 
-  op = tf.print("Fint", Fint, summarize=-1)
-  Fint = bind(Fint, op)
+  # op = tf.print("Fint", Fint, summarize=-1)
+  # Fint = bind(Fint, op)
   # op = tf.print("*",Fint, summarize=-1)
   # Fint = bind(Fint, op)
   return Fint, σ_all

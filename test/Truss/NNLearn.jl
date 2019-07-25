@@ -11,7 +11,7 @@ end
 
 sess = Session(); init(sess)
 
-for i = 1:10000
+for i = 1:50000
     l, _ = run(sess, [loss, opt])
     @show i,l
 end
@@ -24,3 +24,13 @@ plot(X[:,2], Y, ".", label="Exact")
 legend()
 
 ADCME.save(sess, "learned_nn.mat")
+
+
+# for α = [0.01,0.05,0.1]
+# x = constant(X.*(1 .+ α*rand(size(X)...)))
+# y = squeeze(ae(x, [20,20,20,20,1], "nn"))
+# out = run(sess, y)
+# plot(X[:,2], out,".", label="NN")
+# end
+# # plot(X[:,2], Y, ".", label="Exact")
+# legend()

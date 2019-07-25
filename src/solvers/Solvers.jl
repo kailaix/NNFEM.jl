@@ -59,7 +59,7 @@ end
 # """->
 
 
-function NewmarkSolver(Δt, globdat, domain, αm = -1, αf = 0, ε = 1e-8, maxiterstep=100, η = 1.0)
+function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, maxiterstep=100, η = 1.0)
     
     #@info NewmarkSolver
     
@@ -159,7 +159,7 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1, αf = 0, ε = 1e-8, maxit
     # error()
     fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
     @show fint
-    error()
+
     # debug
     push!(domain.history["fint"], fint)
     push!(domain.history["fext"], fext)
