@@ -69,7 +69,7 @@ for i = 1:n_data
 end
 loss = sum(losses)
 
-lr = placeholder(1e-3)
+lr = placeholder(1e-3, shape=())
 variable_scope("nn") do
     global opt = AdamOptimizer(learning_rate=lr).minimize(loss)
 end
@@ -86,7 +86,7 @@ sess = Session(); init(sess)
 
 for j = 1:10
     for i = 1:100000
-        l, _ = run(sess, [loss, opt])
+        l, _ = run(sess, [loss, opt], feed_dict=Dict(lr=>(1e-3)/2^j))
         @show i,l
         ADCME.save(sess, "trained_nn$j.mat")
     end
