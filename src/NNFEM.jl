@@ -21,7 +21,7 @@ function __init__()
     copy!(clb, pyimport("matplotlib.colorbar"))
 end
 
-include("utils/ShapeFunctions.jl")
+include("utils/shapeFunctions.jl")
 include("materials/PlaneStress.jl")
 include("materials/PlaneStrain.jl")
 include("materials/PlaneStressPlasticity.jl")

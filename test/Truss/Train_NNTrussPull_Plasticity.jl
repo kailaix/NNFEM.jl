@@ -69,8 +69,9 @@ for i = 1:n_data
 end
 loss = sum(losses)
 
+lr = placeholder(1e-3)
 variable_scope("nn") do
-    global opt = AdamOptimizer().minimize(loss)
+    global opt = AdamOptimizer(learning_rate=lr).minimize(loss)
 end
 # # error()
 # sess = Session(); init(sess)
@@ -82,12 +83,15 @@ sess = Session(); init(sess)
 @show run(sess, loss)
 # BFGS(sess, loss)
 
-for i = 1:100000
-    l, _ = run(sess, [loss, opt])
-    @show i,l
+
+for j = 1:10
+    for i = 1:100000
+        l, _ = run(sess, [loss, opt])
+        @show i,l
+        ADCME.save(sess, "trained_nn$j.mat")
+    end
 end
 
-ADCME.save(sess, "trained_nn.mat")
 
 
 # println("Real H = ", H0)
