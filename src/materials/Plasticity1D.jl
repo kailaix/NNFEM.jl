@@ -10,9 +10,11 @@ mutable struct Plasticity1D
     α::Float64 
     α_::Float64 # α to be updated in `commitHistory`
     σ0::Float64 # stress at last time step
-    σ0_::Float64 # σ0 to be updated in `commitHistory
+    σ0_::Float64 # σ0 to be updated in `commitHistory`
     q::Float64 # stress at last time step
     q_::Float64 # σ0 to be updated in `commitHistory`
+    ε0::Float64 # strain at last time step
+    ε0_::Float64 # ε0 to be updated in `commitHistory`
 end
 
 
@@ -23,7 +25,8 @@ function Plasticity1D(prop::Dict{String, Any})
     α = 0.0; α_ = 0.0
     σ0 = 0.0; σ0_ = 0.0
     q = 0.0; q_ = 0.0
-    Plasticity1D(ρ, E, K, B, σY, α, α_, σ0, σ0_, q, q_)
+    ε0 = 0.0; ε0_ = 0.0
+    Plasticity1D(ρ, E, K, B, σY, α, α_, σ0, σ0_, q, q_, ε0, ε0_)
 end
 
 
@@ -70,10 +73,11 @@ function getStress(self::Plasticity1D,  strain::Float64,  Dstrain::Float64, Δt:
         dΔσdΔε = E*(B + K)/(B + E + K)
     end
             
-    # #@show Δγ
+    @info ε, ε0, self.σ0, σ
     self.α_  = self.α + Δγ
     self.σ0_ = σ
     self.q_  = q
+    self.ε0_ = ε
 
     return σ, dΔσdΔε
 end
@@ -86,4 +90,5 @@ function commitHistory(self::Plasticity1D)
     self.α = self.α_
     self.σ0 = self.σ0_
     self.q = self.q_
+    self.ε0 = self.ε0_
 end

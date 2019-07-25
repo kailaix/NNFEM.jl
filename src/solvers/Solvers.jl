@@ -158,6 +158,8 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1, αf = 0, ε = 1e-8, maxit
     # @show globdat.state, ∂∂up, ∂u
     # error()
     fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
+    @show fint
+    error()
     # debug
     push!(domain.history["fint"], fint)
     push!(domain.history["fext"], fext)

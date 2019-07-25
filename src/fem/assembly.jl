@@ -31,7 +31,7 @@ function assembleInternalForce(globdat::GlobalData, domain::Domain)
     return Fint
 end
 
-function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, DE_all::PyObject, σ0_all::PyObject)
+function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, DE_all::PyObject, w∂E∂u::PyObject, σ0_all::PyObject)
   neles = domain.neles
   nGauss = length(domain.elements[1].weights)
   neqns_per_elem = length(getEqns(domain,1))
@@ -46,30 +46,15 @@ function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, 
   el_eqns_all = zeros(Int32, neles*nGauss, neqns_per_elem)
   # el_eqns_active_all = el_eqns_all > 0
   el_eqns_active_all = zeros(Bool, neles*nGauss, neqns_per_elem)
-  # Gaussian point weight * ∂E∂u.T at each Gassian points
-  w∂E∂u_all = zeros(neles*nGauss, neqns_per_elem, nstrains)
   
   # Loop over the elements in the elementGroup to construct el_eqns_active_all , el_eqns_all and w∂E∂u_all
   for iele  = 1:neles
-    element = domain.elements[iele]
-
-    # Get the element nodes
-    el_nodes = getNodes(element)
-
     # Get the element nodes
     el_eqns = getEqns(domain,iele)
-
-    el_dofs = getDofs(domain,iele)
-
-    el_state  = getState(domain,el_dofs)
-
-    # Get the weight * ∂E∂u for each element Gaussian points
-    _, w∂E∂u = getStrain(element, el_state)
-    
+ 
     # Assemble in the global array
     el_eqns_active_all[(iele-1)*nGauss+1:iele*nGauss,:] = repeat((el_eqns .>= 1)', nGauss, 1)
     el_eqns_all[(iele-1)*nGauss+1:iele*nGauss,:] = repeat(el_eqns', nGauss, 1)
-    w∂E∂u_all[(iele-1)*nGauss+1:iele*nGauss,:,:] = w∂E∂u
   end
 
   # get stress at each Gaussian points
@@ -83,9 +68,7 @@ function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, 
   # trick, set Dirichlet equation number to 1, when assemble, add 0 to equation 1.
   el_eqns_all[el_eqns_all .<= 0] .= 1 
   el_eqns_all = constant(el_eqns_all, dtype=Int64)
-  # cast to tensorflow variable
-  w∂E∂u_all = constant(w∂E∂u_all)
-  
+  # cast to tensorflow variable  
 
   # * while loop
   function cond0(i, tensor_array_Fint)
@@ -94,124 +77,142 @@ function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, 
   function body(i, tensor_array_Fint)
     x = constant(zeros(Float64, domain.neqs))
     # fint in the ith Gaussian point
-    fint = w∂E∂u_all[i - 1] * σ_all[i - 1]
+    fint = w∂E∂u[i - 1] * σ_all[i - 1]
+
+    op = tf.print("w∂E∂u_all", w∂E∂u[i - 1], summarize=-1)
+    fint = bind(fint, op)
+
+    op = tf.print("fint", fint,σ_all[i - 1], summarize=-1)
+    fint = bind(fint, op)
+
     # set fint entries to 0, when the dof is Dirichlet boundary
     fint = fint * cast(Float64, el_eqns_active_all[i - 1]) # 8D
     # puth fint in the Fint at address el_eqns_all[i-1]
     x = scatter_add(x, el_eqns_all[i-1], fint)
+
+    op = tf.print(x, summarize=-1)
+    x = bind(x, op)
+    
     # write x to tensor_array_Fint
     tensor_array_Fint = write(tensor_array_Fint, i, x)
     i+1,tensor_array_Fint
   end
   tensor_array_Fint = TensorArray(neles*nGauss+1)
   Fint = constant(zeros(Float64, domain.neqs))
+
   tensor_array_Fint = write(tensor_array_Fint, 1, Fint)
   i = constant(2, dtype=Int32)
-  _, out = while_loop(cond0, body, [i, tensor_array_Fint]; parallel_iterations=10)
+  _, out = while_loop(cond0, body, [i, tensor_array_Fint]; parallel_iterations=1)
   out = stack(out)
 
 
   Fint = sum(out, dims=1)
+
+  op = tf.print("Fint", Fint, summarize=-1)
+  Fint = bind(Fint, op)
   # op = tf.print("*",Fint, summarize=-1)
   # Fint = bind(Fint, op)
   return Fint, σ_all
 end
 
-function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
-    # Fint = zeros(Float64, domain.neqs)
-    
-    # K = zeros(Float64, domain.neqs, domain.neqs)
-    neles = domain.neles
-
-    FII = Array{Array{Int64}}(undef, neles)
-    FVV = Array{Array{Float64}}(undef, neles)
-    II = Array{Array{Int64}}(undef, neles)
-    JJ = Array{Array{Int64}}(undef, neles)
-    VV = Array{Array{Float64}}(undef, neles)
-    # Loop over the elements in the elementGroup
-    # Threads.@threads 
-    for iele  = 1:neles
-      element = domain.elements[iele]
-  
-      # Get the element nodes
-      el_nodes = getNodes(element)
-  
-      # Get the element nodes
-      el_eqns = getEqns(domain,iele)
-  
-      el_dofs = getDofs(domain,iele)
-
-      #@show "iele", iele, el_dofs 
-      
-      #@show "domain.state", iele, domain.state 
-
-      el_state  = getState(domain,el_dofs)
-  
-      el_Dstate = getDstate(domain,el_dofs)
-      # #@show "+++++", el_state, el_Dstate
-  
-      # Get the element contribution by calling the specified action
-      #@info "ele id is ", iele
-      fint, stiff  = getStiffAndForce(element, el_state, el_Dstate, Δt)
-
-      # Assemble in the global array
-      el_eqns_active = el_eqns .>= 1
-      # K[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += stiff[el_eqns_active,el_eqns_active]
-
-      el_act = el_eqns[el_eqns_active]
-      # el_act = reshape(el_eqns[el_eqns_active], length(el_eqns[el_eqns_active]), 1)
-      II[iele] = (el_act*ones(Int64, 1, length(el_act)))[:]
-      JJ[iele] = (el_act*ones(Int64, 1, length(el_act)))'[:]
-      VV[iele] = stiff[el_eqns_active,el_eqns_active][:]
-      FII[iele] = el_act
-      FVV[iele] = fint[el_eqns_active]
-      # Fint[el_act] += fint[el_eqns_active]
-    end
-    II = vcat(II...); JJ = vcat(JJ...); VV = vcat(VV...); FII=vcat(FII...); FVV = vcat(FVV...)
-    K = sparse(II,JJ,VV,domain.neqs,domain.neqs)
-    Fint = sparse(FII, ones(length(FII)), FVV, domain.neqs, 1)|>Array
-    # Ksp = sparse(II,JJ,VV)
-    # @show norm(K-Ksp)
-    return Fint, K
-end
-
 # function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
-#   Fint = zeros(Float64, domain.neqs)
-#   K = zeros(Float64, domain.neqs, domain.neqs)
-#   neles = domain.neles
-
-#   # Loop over the elements in the elementGroup
-#   for iele  = 1:neles
-#     element = domain.elements[iele]
-
-#     # Get the element nodes
-#     el_nodes = getNodes(element)
-
-#     # Get the element nodes
-#     el_eqns = getEqns(domain,iele)
-
-#     el_dofs = getDofs(domain,iele)
-
-#     #@show "iele", iele, el_dofs 
+#     # Fint = zeros(Float64, domain.neqs)
     
-#     #@show "domain.state", iele, domain.state 
+#     # K = zeros(Float64, domain.neqs, domain.neqs)
+#     neles = domain.neles
 
-#     el_state  = getState(domain,el_dofs)
+#     FII = Array{Array{Int64}}(undef, neles)
+#     FVV = Array{Array{Float64}}(undef, neles)
+#     II = Array{Array{Int64}}(undef, neles)
+#     JJ = Array{Array{Int64}}(undef, neles)
+#     VV = Array{Array{Float64}}(undef, neles)
+#     # Loop over the elements in the elementGroup
+#     # Threads.@threads 
+#     for iele  = 1:neles
+#       element = domain.elements[iele]
+  
+#       # Get the element nodes
+#       el_nodes = getNodes(element)
+  
+#       # Get the element nodes
+#       el_eqns = getEqns(domain,iele)
+  
+#       el_dofs = getDofs(domain,iele)
 
-#     el_Dstate = getDstate(domain,el_dofs)
-#     # #@show "+++++", el_state, el_Dstate
+#       #@show "iele", iele, el_dofs 
+      
+#       #@show "domain.state", iele, domain.state 
 
-#     # Get the element contribution by calling the specified action
-#     #@info "ele id is ", iele
-#     fint, stiff  = getStiffAndForce(element, el_state, el_Dstate, Δt)
+#       el_state  = getState(domain,el_dofs)
+  
+#       el_Dstate = getDstate(domain,el_dofs)
+#       # #@show "+++++", el_state, el_Dstate
+  
+#       # Get the element contribution by calling the specified action
+#       #@info "ele id is ", iele
+#       fint, stiff  = getStiffAndForce(element, el_state, el_Dstate, Δt)
 
-#     # Assemble in the global array
-#     el_eqns_active = el_eqns .>= 1
-#     K[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += stiff[el_eqns_active,el_eqns_active]
-#     Fint[el_eqns[el_eqns_active]] += fint[el_eqns_active]
-#   end
-#   return Fint, sparse(K)
+#       # Assemble in the global array
+#       el_eqns_active = el_eqns .>= 1
+#       # K[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += stiff[el_eqns_active,el_eqns_active]
+
+#       el_act = el_eqns[el_eqns_active]
+#       # el_act = reshape(el_eqns[el_eqns_active], length(el_eqns[el_eqns_active]), 1)
+#       II[iele] = (el_act*ones(Int64, 1, length(el_act)))[:]
+#       JJ[iele] = (el_act*ones(Int64, 1, length(el_act)))'[:]
+#       VV[iele] = stiff[el_eqns_active,el_eqns_active][:]
+#       FII[iele] = el_act
+#       FVV[iele] = fint[el_eqns_active]
+#       # Fint[el_act] += fint[el_eqns_active]
+#     end
+#     II = vcat(II...); JJ = vcat(JJ...); VV = vcat(VV...); FII=vcat(FII...); FVV = vcat(FVV...)
+#     K = sparse(II,JJ,VV,domain.neqs,domain.neqs)
+#     Fint = sparse(FII, ones(length(FII)), FVV, domain.neqs, 1)|>Array
+#     # Ksp = sparse(II,JJ,VV)
+#     # @show norm(K-Ksp)
+#     return Fint, K
 # end
+
+function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
+  Fint = zeros(Float64, domain.neqs)
+  K = zeros(Float64, domain.neqs, domain.neqs)
+  neles = domain.neles
+
+  # Loop over the elements in the elementGroup
+  for iele  = 1:neles
+    element = domain.elements[iele]
+
+    # Get the element nodes
+    el_nodes = getNodes(element)
+
+    # Get the element nodes
+    el_eqns = getEqns(domain,iele)
+
+    el_dofs = getDofs(domain,iele)
+
+    #@show "iele", iele, el_dofs 
+    
+    #@show "domain.state", iele, domain.state 
+
+    el_state  = getState(domain,el_dofs)
+
+    el_Dstate = getDstate(domain,el_dofs)
+    # #@show "+++++", el_state, el_Dstate
+
+    # Get the element contribution by calling the specified action
+    #@info "ele id is ", iele
+    fint, stiff  = getStiffAndForce(element, el_state, el_Dstate, Δt)
+    @info "fint ", fint
+
+    # Assemble in the global array
+    el_eqns_active = el_eqns .>= 1
+    K[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += stiff[el_eqns_active,el_eqns_active]
+    Fint[el_eqns[el_eqns_active]] += fint[el_eqns_active]
+
+    @info "Fint is ", Fint
+  end
+  return Fint, sparse(K)
+end
 
 @doc """
     compute constant mass matrix

@@ -1,4 +1,4 @@
-export visstatic, visdynamic
+export visstatic, visdynamic, show_strain_stress, prepare_strain_stress_data
 function visstatic(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
     u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
     nodes = domain.nodes
@@ -58,3 +58,40 @@ function visdynamic(domain::Domain, name::String)
     im_ani.save("$name.html", writer=writer)
 
 end
+
+function show_strain_stress(domain::Domain)
+    strain = domain.history["strain"]
+    stress = domain.history["stress"]
+    strain = hcat(strain...)
+    stress = hcat(stress...)
+    close("all")
+    for i = 1:size(strain,1)
+        plot(strain[i,:], stress[i,:])
+    end
+    xlabel("strain")
+    ylabel("stress")
+end
+
+function prepare_strain_stress_data(domain::Domain)
+    strain = domain.history["strain"]
+    stress = domain.history["stress"]
+    strain = hcat(strain...)
+    stress = hcat(stress...)
+    ngp = size(strain,1)
+    nt = size(strain,2)
+    X = zeros(nt*ngp,3)
+    y = zeros(nt*ngp)
+    strain = [zeros(ngp, 1) strain]
+    stress = [zeros(ngp,1) stress]
+    nt += 1
+    k = 1
+    for i = 1:ngp
+        for j = 2:nt 
+            X[k,:] = [strain[i,j-1] strain[i,j] stress[i,j-1]]
+            y[k] = stress[i,j]
+            k = k + 1
+        end
+    end
+    X,y
+end
+

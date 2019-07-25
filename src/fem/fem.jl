@@ -74,7 +74,7 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array
     fext = Float64[]
     
     history = Dict("state"=>Array{Float64}[], "acc"=>Array{Float64}[], "fint"=>Array{Float64}[],
-                "fext"=>Array{Float64}[])
+                "fext"=>Array{Float64}[], "strain"=>[], "stress"=>[])
     domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, LM, DOF, ID, neqs, eq_to_dof, dof_to_eq, EBC, g, FBC, fext, 0.0, history)
     setDirichletBoundary!(domain, EBC, g)
     setNeumannBoundary!(domain, FBC, f)
@@ -85,7 +85,40 @@ function commitHistory(domain::Domain)
     for e in domain.elements
         commitHistory(e)
     end
+    
+    # 1D, nstrain=1; 2D, nstrain=3
+    eledim = domain.elements[1].eledim
+    nstrain = div((eledim + 1)*eledim, 2)
+    ngp = domain.neles * length(domain.elements[1].weights)
+    if nstrain==1
+        strain = zeros(ngp)
+        stress = zeros(ngp)
+        k = 1
+        for e in domain.elements
+            for igp in e.mat
+                strain[k] = igp.ε0
+                stress[k] = igp.σ0
+                k += 1
+            end
+        end
+    else
+        strain = zeros(ngp, nstrain)
+        stress = zeros(ngp, nstrain)
+        k = 1
+        for e in domain.elements
+            for igp in e.mat
+                strain[k,:] = igp.ε0
+                stress[k,:] = igp.σ0
+                k += 1
+            end
+        end
+    end
+
+    push!(domain.history["strain"], strain)
+    push!(domain.history["stress"], stress)
 end
+
+
 
 @doc """
 

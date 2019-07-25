@@ -6,8 +6,9 @@ export DynamicMatLawLoss, BFGS, preprocessing, ADAM, NNMatLaw
 
     loss = ∑ ||fint(NN, E, DE) - (fext - MIDddu_bc - Mddu)||^2
 """->
-function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, F_tot::Array{Float64},
-        nn::Function)
+function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all::Array{Float64},
+     F_tot::Array{Float64}, nn::Function)
+    F_tot =  hcat(domain.history["fint"]...)'
     # define variables
     neles = domain.neles
     nGauss = length(domain.elements[1].weights)
@@ -19,18 +20,28 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, F_tot::Array{F
     # @show E_all[2,:,:]
     E_all = constant(E_all)
     F_tot = constant(F_tot)
+    w∂E∂u_all = constant(w∂E∂u_all)
 
     function cond0(i, ta_loss, ta_σ)
         i<=NT+1
+        # # ! comment this line out 
+        # i<=2
     end
 
     function body(i, ta_loss, ta_σ)
         σ0 = read(ta_σ, i-1)
         E = E_all[i]
         DE = E_all[i-1]
+        w∂E∂u = w∂E∂u_all[i]
         
-        fint, σ = tfAssembleInternalForce(domain,nn,E,DE,σ0)
+        fint, σ = tfAssembleInternalForce(domain,nn,E,DE,w∂E∂u,σ0)
         
+        # op = tf.print(i, fint, summarize=-1)
+        # fint = bind(fint, op)
+        # op = tf.print([E, DE, σ0, σ], summarize=-1)
+        # σ = bind(σ, op)
+
+
         # op = tf.print(i,(fint), summarize=-1)
         # fint = bind(fint, op)
 
@@ -56,8 +67,8 @@ end
 function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{Any}, fext_history::Array{Any}, nn::Function, Δt::Float64)
     # todo convert to E_all, Ftot
     domain.history["state"] = state_history
-    F_tot, E_all = preprocessing(domain, globdat, hcat(fext_history...), Δt)
-    DynamicMatLawLoss(domain, E_all, F_tot, nn)
+    F_tot, E_all, w∂E∂u_all = preprocessing(domain, globdat, hcat(fext_history...), Δt)
+    DynamicMatLawLoss(domain, E_all, w∂E∂u_all, F_tot, nn)
 end
 
 function BFGS(sess::PyObject, loss::PyObject, max_iter=15000; kwargs...)
@@ -149,6 +160,7 @@ function preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64
     nstrains = div((domain.elements[1].eledim + 1)*domain.elements[1].eledim, 2)
 
     E_all = zeros(NT+1, neles*nGauss, nstrains)
+    w∂E∂u_all = zeros(NT+1, neles*nGauss, neqns_per_elem, nstrains)
 
     for i = 1:NT+1
         domain.state = U[:, i]
@@ -172,9 +184,12 @@ function preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64
       
             # @show E, nGauss
             E_all[i, (iele-1)*nGauss+1:iele*nGauss, :] = E
+
+            w∂E∂u_all[i, (iele-1)*nGauss+1:iele*nGauss,:,:] = w∂E∂u
         end
     end
+    @info "preprocessing end..."
     # # DEBUG
     # fext = hcat(domain.history["fint"]...)
-    return F_tot'|>Array, E_all
+    return F_tot'|>Array, E_all, w∂E∂u_all
 end

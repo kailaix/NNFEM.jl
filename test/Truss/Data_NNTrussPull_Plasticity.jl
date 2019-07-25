@@ -45,3 +45,5 @@ write_data("$(@__DIR__)/Data/1.dat", domain)
 scatter(nodes[:, 1], nodes[:,2], color="red")
 u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
 scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
+
+@save "domain.jld2" domain
