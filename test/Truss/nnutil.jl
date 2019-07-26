@@ -44,6 +44,7 @@ function nn(ε, ε0, σ0)
     elseif nntype=="ae"
         x = [ε0 ε σ0]
         y = ae(x, [20,20,20,20,1], "nn")
+    elseif nntype=="exact"
     end
 
     

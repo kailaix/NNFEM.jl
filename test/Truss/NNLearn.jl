@@ -34,3 +34,15 @@ ADCME.save(sess, "learned_nn.mat")
 # end
 # # plot(X[:,2], Y, ".", label="Exact")
 # legend()
+
+@load "domain.jld2" domain
+X, Y = prepare_strain_stress_data(domain)
+x = constant(X)
+y = squeeze(ae(x, [20,20,20,20,1], "nn"))
+sess = Session(); init(sess)
+close("all")
+ADCME.load(sess, "learned_nn3.mat")
+out = run(sess, y)
+plot(X[:,2], out,"+", label="NN")
+plot(X[:,2], Y, ".", label="Exact")
+legend()
