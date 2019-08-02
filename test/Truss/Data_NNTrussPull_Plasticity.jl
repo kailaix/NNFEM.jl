@@ -9,6 +9,7 @@ using LinearAlgebra
 
 include("NNTrussPull_Domain.jl")
 testtype = "Plasticity1D" 
+testtype = "PathDependent1D" 
 #testtype = "Elasticity1D" 
 
 

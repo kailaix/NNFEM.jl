@@ -26,6 +26,8 @@ function FiniteStrainTruss(coords::Array{Float64}, elnodes::Array{Int64}, props:
         mat = [Viscoplasticity1D(props) for i = 1:nGauss]
     elseif name=="NeuralNetwork1D"
         mat = [NeuralNetwork1D(props) for i = 1:nGauss]
+    elseif name=="PathDependent1D"
+        mat = [PathDependent1D(props) for i = 1:nGauss]
     else
         error("Not implemented yet: $name")
     end
