@@ -9,7 +9,6 @@ function nn(ε, ε0, σ0)
 
     if nntype=="linear"
         y = ε*H0
-        
         y
     elseif nntype=="nn"
         x = [ε ε0 σ0]

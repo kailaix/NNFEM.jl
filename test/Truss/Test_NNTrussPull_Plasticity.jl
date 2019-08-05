@@ -11,7 +11,7 @@ include("nnutil.jl")
 
 
 # testtype = "PlaneStressPlasticity"
-testtype = "NeuralNetwork2D"
+testtype = "NeuralNetwork1D"
 include("NNTrussPull_Domain.jl")
 
 

@@ -36,9 +36,9 @@ for i = 1:NT
     @info i, "/" , NT
     solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-5, 100)
 
-    if i == 5
-        error()
-    end
+    # if i == 5
+    #     error()
+    # end
     
 end
 
@@ -46,8 +46,9 @@ end
 # todo write data
 write_data("$(@__DIR__)/Data/1.dat", domain)
 # plot
+close("all")
 scatter(nodes[:, 1], nodes[:,2], color="red")
 u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
 scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
 
-@save "domain.jld2" domain
+@save "Data/domain.jld2" domain
