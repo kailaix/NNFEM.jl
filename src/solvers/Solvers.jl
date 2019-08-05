@@ -107,7 +107,7 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, m
         # @show fint, fext
 
         A = M*(1 - αm) + (1 - αf) * 0.5 * β2 * Δt^2 * stiff
-
+   
         Δ∂∂u = A\res
 
         #@info " norm(Δ∂∂u) ", norm(Δ∂∂u) 
