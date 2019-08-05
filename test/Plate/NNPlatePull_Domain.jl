@@ -40,7 +40,7 @@ NBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 NBC[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] .= -1
 
 # * modify this line for new data
-fext[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] = collect(range(2.0, stop=2.0, length=nx+1))*1e7
+fext[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] = collect(range(2.0, stop=2.0, length=nx+1))*5e7
 
 fext[(nx+1)*ny + 1, 2] /= 2.0
 fext[(nx+1)*ny + nx+1, 2] /= 2.0

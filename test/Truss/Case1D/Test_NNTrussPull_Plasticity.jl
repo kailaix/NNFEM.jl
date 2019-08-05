@@ -49,7 +49,7 @@ scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
 
 @load "Data/domain.jld2" domain
 close("all")
-X, Y = prepare_strain_stress_data(domain)
+X, Y = prepare_strain_stress_data1D(domain)
 y = zeros(size(X,1))
 for i = 1:length(y)
     y[i] = post_nn(X[i,1], X[i,2], X[i,3], Δt)[1]

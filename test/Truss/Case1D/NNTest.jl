@@ -29,7 +29,7 @@ assembleMassMatrix!(globdat, domain)
 # updateStates!(domain, globdat)
 
 # # # # for debug
-# X, Y = prepare_strain_stress_data(domain)
+# X, Y = prepare_strain_stress_data1D(domain)
 # x = constant(X)
 # y = squeeze(ae(x, [20,20,20,20,1], "nn"))
 # sess = Session(); init(sess)
@@ -68,7 +68,7 @@ for i = 1:2000
     @show i,l
 end
 
-X, Y = prepare_strain_stress_data(domain)
+X, Y = prepare_strain_stress_data1D(domain)
 y = squeeze(nn(constant(X[:,1]),constant(X[:,2]),constant(X[:,3])))
 close("all")
 out = run(sess, y)

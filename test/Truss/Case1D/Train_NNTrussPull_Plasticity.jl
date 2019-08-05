@@ -71,7 +71,7 @@ end
 ADCME.save(sess, "Data/trained_nn_fem.mat")
 # BFGS!(sess, loss, 800)
 
-X, Y = prepare_strain_stress_data(domain)
+X, Y = prepare_strain_stress_data1D(domain)
 y = squeeze(nn(constant(X[:,1]),constant(X[:,2]),constant(X[:,3])))
 close("all")
 out = run(sess, y)

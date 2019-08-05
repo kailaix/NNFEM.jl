@@ -1,4 +1,4 @@
-export visstatic, visdynamic, show_strain_stress, prepare_strain_stress_data
+export visstatic, visdynamic, show_strain_stress, prepare_strain_stress_data1D, prepare_strain_stress_data2D
 function visstatic(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
     u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
     nodes = domain.nodes
@@ -72,7 +72,7 @@ function show_strain_stress(domain::Domain)
     ylabel("stress")
 end
 
-function prepare_strain_stress_data(domain::Domain)
+function prepare_strain_stress_data1D(domain::Domain)
     strain = domain.history["strain"]
     stress = domain.history["stress"]
     strain = hcat(strain...)
@@ -87,7 +87,6 @@ function prepare_strain_stress_data(domain::Domain)
     k = 1
     for i = 1:ngp
         for j = 2:nt
-             
             X[k,:] = [strain[i,j] strain[i,j-1] stress[i,j-1]] #ε, ε0, σ0
             y[k] = stress[i,j]
             k = k + 1
@@ -96,3 +95,25 @@ function prepare_strain_stress_data(domain::Domain)
     X,y
 end
 
+
+function prepare_strain_stress_data2D(domain::Domain)
+    strain = domain.history["strain"]
+    stress = domain.history["stress"]
+    ngp = size(strain[1],1)
+    nt = length(strain)
+    X = zeros(nt*ngp,9)
+    y = zeros(nt*ngp,3)
+    pushfirst!(strain, zero(strain[1]))
+    pushfirst!(stress, zero(stress[1]))
+    
+    k = 1
+    nt += 1
+    for i = 1:ngp
+        for j = 2:nt
+            X[k,:] = [strain[j][i,:];strain[j-1][i,:];stress[j-1][i,:]]#ε, ε0, σ0
+            y[k,:] = stress[j][i,:]
+            k = k + 1
+        end
+    end
+    X,y
+end

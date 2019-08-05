@@ -1,6 +1,6 @@
 using ADCME
 
-X, Y = prepare_strain_stress_data(domain)
+X, Y = prepare_strain_stress_data1D(domain)
 x = constant(X)
 y = squeeze(ae(x, [20,20,20,20,1], "nn"))
 
@@ -36,7 +36,7 @@ ADCME.save(sess, "Data/learned_nn.mat")
 # legend()
 
 @load "Data/domain.jld2" domain
-X, Y = prepare_strain_stress_data(domain)
+X, Y = prepare_strain_stress_data1D(domain)
 x = constant(X)
 y = squeeze(ae(x, [20,20,20,20,1], "nn"))
 sess = Session(); init(sess)

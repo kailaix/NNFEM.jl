@@ -12,6 +12,8 @@ mutable struct PlaneStressPlasticity
     α_::Float64 # α to be updated in `commitHistory`
     σ0::Array{Float64} # stress at last time step
     σ0_::Array{Float64} # σ0 to be updated in `commitHistory`
+    ε0::Array{Float64} # stress at last time step
+    ε0_::Array{Float64} # σ0 to be updated in `commitHistory`
 end
 
 
@@ -45,8 +47,8 @@ function PlaneStressPlasticity(prop::Dict{String, Any})
     H[2,1] = H[1,2]
     H[2,2] = H[1,1]
     H[3,3] = E/(2.0*(1.0+ν))
-    σ0 = zeros(3); σ0_ = zeros(3)
-    PlaneStressPlasticity(H, E, ν, ρ, K, σY, 0.0, 0.0, σ0, σ0_)
+    σ0 = zeros(3); σ0_ = zeros(3); ε0 = zeros(3); ε0_ = zeros(3)
+    PlaneStressPlasticity(H, E, ν, ρ, K, σY, 0.0, 0.0, σ0, σ0_, ε0, ε0_)
 end
 
 function getStress(self::PlaneStressPlasticity,  strain::Array{Float64},  Dstrain::Array{Float64}, Δt::Float64 = 0.0)
@@ -71,7 +73,7 @@ function getStress(self::PlaneStressPlasticity,  strain::Array{Float64},  Dstrai
         dΔσdΔε = H
         #@show "elastic", α, α0, σ, σ0,ε, ε0, σ0 + H*(ε-ε0) , H*ε
     else
-        # @show "Plasticity"
+        @show "Plasticity"
         σ = σ0 + H*(ε-ε0) 
         function compute(σ, Δγ)
             α = α0 + Δγ
@@ -118,6 +120,7 @@ function getStress(self::PlaneStressPlasticity,  strain::Array{Float64},  Dstrai
     # #@show Δγ
     self.α_ = self.α + Δγ
     self.σ0_ = σ[:]
+    self.ε0_ = ε0
     # self.σ0_ = self.σ0
     # #@show σ, dΔσdΔε
     return σ, dΔσdΔε
@@ -130,4 +133,5 @@ end
 function commitHistory(self::PlaneStressPlasticity)
     self.α = self.α_
     self.σ0 = self.σ0_
+    self.ε0 = self.ε0_
 end
