@@ -45,8 +45,8 @@ function getStress(self::PathDependent1D,  strain::Float64,  Dstrain::Float64, �
     E = self.E;    K = self.K;   B = self.B; 
     σY = self.σY 
     
-    σ = σ0 + (ε - ε0)*(ε - ε0)
-    dΔσdΔε = 2*(ε - ε0)
+    σ = σ0 + (ε - ε0)*(ε - ε0)/2.0
+    dΔσdΔε = (ε - ε0)
     
     self.α_  = self.α
     self.q_  = self.q

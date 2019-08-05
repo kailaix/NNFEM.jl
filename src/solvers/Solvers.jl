@@ -157,8 +157,9 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, m
     println("||a|| = $(norm(globdat.acce ))") 
     # @show globdat.state, ∂∂up, ∂u
     # error()
+    @show "***************debug print"
     fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
-    @show fint
+    @show "***************debug print", fint
 
     # debug
     push!(domain.history["fint"], fint)

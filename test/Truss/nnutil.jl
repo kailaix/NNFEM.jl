@@ -43,7 +43,9 @@ function nn(ε, ε0, σ0)
     elseif nntype=="ae"
         x = [ε0 ε σ0]
         y = ae(x, [20,20,20,20,1], "nn")
-    elseif nntype=="exact"
+    elseif nntype=="ae_scaled"
+        x = [ε0 ε σ0/100.0]
+        y = ae(x, [20,20,20,20,1], "ae_scaled")*100.0
     end
 
     

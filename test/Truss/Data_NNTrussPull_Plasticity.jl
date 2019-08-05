@@ -9,7 +9,7 @@ using LinearAlgebra
 
 include("NNTrussPull_Domain.jl")
 testtype = "Plasticity1D" 
-testtype = "PathDependent1D" 
+#testtype = "PathDependent1D" 
 #testtype = "Elasticity1D" 
 
 
@@ -34,10 +34,10 @@ T = 0.5
 NT = 20
 Δt = T/NT
 for i = 1:NT
-    @info i, "/" , NT
+    
     solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-5, 100)
-
-    # if i == 5
+    printstyled("============================== iteration $i ==============================\n",color=:green)
+    # if i == 3
     #     error()
     # end
     
