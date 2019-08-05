@@ -64,7 +64,7 @@ function getStress(self::Plasticity1D,  strain::Float64,  Dstrain::Float64, Δt:
         dΔσdΔε = E
 
     else
-        @info "Plasticity"
+        # @info "Plasticity"
         Δγ = r2/(B + E + K)
         q += B * Δγ * sign(ξ)
         α += Δγ
@@ -73,7 +73,7 @@ function getStress(self::Plasticity1D,  strain::Float64,  Dstrain::Float64, Δt:
         dΔσdΔε = E*(B + K)/(B + E + K)
     end
             
-    @info "Plasticity1D ", ε, ε0, self.σ0, σ
+    # @info "Plasticity1D ", ε, ε0, self.σ0, σ
     self.α_  = self.α + Δγ
     self.σ0_ = σ
     self.q_  = q

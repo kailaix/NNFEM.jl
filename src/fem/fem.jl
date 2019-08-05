@@ -249,7 +249,7 @@ function updateDomainStateBoundary!(self::Domain, globaldat::GlobalData)
     if globaldat.FBC_func != nothing
         ID = self.ID
         nodal_force = globaldat.FBC_func(globaldat.time) # user defined time-dependent boundary
-        @info nodal_force
+        # @info nodal_force
         dof_id = 0
         #update fext for active nodes (length of neqs)
         for idof = 1:self.ndims

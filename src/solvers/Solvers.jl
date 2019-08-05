@@ -60,7 +60,8 @@ end
 
 
 function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, maxiterstep=100, η = 1.0)
-    
+    # @info maxiterstep
+    # error()
     #@info NewmarkSolver
     
     β2 = 0.5*(1 - αm + αf)^2
@@ -124,7 +125,7 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, m
         # #@show norm(res), norm(r), norm(B)
         # error()
         # #@show Δ∂∂u
-        println("$Newtoniterstep, $(norm(res))")
+        println("$Newtoniterstep/$maxiterstep, $(norm(res))")
         if (norm(res) < ε || Newtoniterstep > maxiterstep)
             if Newtoniterstep > maxiterstep
                 function f(∂∂up)

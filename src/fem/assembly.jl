@@ -58,10 +58,10 @@ function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, 
   end
 
   # get stress at each Gaussian points
-  @info "* ", E_all, DE_all, σ0_all
+  # @info "* ", E_all, DE_all, σ0_all
   σ_all = nn(E_all, DE_all, σ0_all)
 
-  @info "* *** "
+  # @info "* *** "
 
   # cast to tensorflow variable
   el_eqns_active_all = constant(el_eqns_active_all, dtype=Bool)
@@ -202,14 +202,14 @@ function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64
     # Get the element contribution by calling the specified action
     #@info "ele id is ", iele
     fint, stiff  = getStiffAndForce(element, el_state, el_Dstate, Δt)
-    @info "fint ", fint
+    # @info "fint ", fint
 
     # Assemble in the global array
     el_eqns_active = el_eqns .>= 1
     K[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += stiff[el_eqns_active,el_eqns_active]
     Fint[el_eqns[el_eqns_active]] += fint[el_eqns_active]
 
-    @info "Fint is ", Fint
+    # @info "Fint is ", Fint
   end
   return Fint, sparse(K)
 end

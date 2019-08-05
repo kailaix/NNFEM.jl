@@ -86,8 +86,9 @@ function prepare_strain_stress_data(domain::Domain)
     nt += 1
     k = 1
     for i = 1:ngp
-        for j = 2:nt 
-            X[k,:] = [strain[i,j-1] strain[i,j] stress[i,j-1]]
+        for j = 2:nt
+             
+            X[k,:] = [strain[i,j] strain[i,j-1] stress[i,j-1]] #ε, ε0, σ0
             y[k] = stress[i,j]
             k = k + 1
         end

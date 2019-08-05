@@ -105,7 +105,7 @@ NT = 20
 Δt = T/NT
 for i = 1:NT
     @info i, "/" , NT
-    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-5, 10)
+    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-5, 100)
 end
 
 visstatic(domain)

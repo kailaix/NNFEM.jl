@@ -73,7 +73,7 @@ T = 2.0
 NT = 20
 Δt = T/NT
 for i = 1:NT
-    @info i, "/" , NT
+    # @info i, "/" , NT
     solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-6, 10)
     
 end

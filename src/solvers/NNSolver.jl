@@ -29,10 +29,10 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all:
     end
 
     function body(i, ta_loss, ta_σ)
-        σ0 = read(ta_σ, i-1)
         E = E_all[i]
         DE = E_all[i-1]
         w∂E∂u = w∂E∂u_all[i]
+        σ0 = read(ta_σ, i-1)
         
         fint, σ = tfAssembleInternalForce(domain,nn,E,DE,w∂E∂u,σ0)
         

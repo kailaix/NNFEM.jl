@@ -58,7 +58,7 @@ state_history, fext_history = read_data("$(@__DIR__)/Data/1.dat")
 loss = DynamicMatLawLossTest(domain, globdat, state_history, fext_history, nn,Δt)
 
 
-variable_scope("nn_scaled") do
+variable_scope(nntype) do
     global opt = AdamOptimizer().minimize(loss)
 end
 sess = Session(); init(sess)
@@ -72,7 +72,7 @@ end
 
 X, Y = prepare_strain_stress_data(domain)
 x = constant([X[:,1] X[:,2] X[:,3]/100])
-y = squeeze(ae(x, [20,20,20,20,1], "ae_scaled")*100.0)
+y = squeeze(ae(x, [20,20,20,20,1], nntype)*100.0)
 close("all")
 out = run(sess, y)
 plot(X[:,2], out,"+", label="NN")
