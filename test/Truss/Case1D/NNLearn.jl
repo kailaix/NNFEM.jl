@@ -15,7 +15,7 @@ for i = 1:50000
     l, _ = run(sess, [loss, opt])
     @show i,l
 end
-# BFGS(sess, loss, 1000)
+# BFGS!((sess, loss, 1000)
 
 out = run(sess, y)
 close("all")

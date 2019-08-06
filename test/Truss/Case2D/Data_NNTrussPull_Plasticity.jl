@@ -15,10 +15,6 @@ prop = Dict("name"=> testtype, "rho"=> 0.1, "E"=> 200, "B"=> 10.0,
 include("NNTrussPull_Domain.jl")
 
 
-
-
-
-
 domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
 state = zeros(domain.neqs)
 ∂u = zeros(domain.neqs)
@@ -30,13 +26,17 @@ updateStates!(domain, globdat)
 
 
 T = 0.5
-NT = 20
+NT = 50
 Δt = T/NT
 for i = 1:NT
-    
     solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-5, 100)
     
-    
+    close("all")
+    scatter(nodes[:, 1], nodes[:,2], color="red")
+    u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
+    scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
+    savefig("$(@__DIR__)/Debug/$i.png")
+
 end
 
 # error()
@@ -49,3 +49,9 @@ u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
 scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
 
 @save "Data/domain.jld2" domain
+
+
+X, Y = prepare_strain_stress_data1D(domain)
+close("all")
+plot(X[:,1], Y, ".", label="Exact")
+legend()

@@ -31,7 +31,18 @@ function assembleInternalForce(globdat::GlobalData, domain::Domain)
     return Fint
 end
 
-function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, DE_all::PyObject, w∂E∂u::PyObject, σ0_all::PyObject)
+
+@doc """
+    domain   : finite element domain, for data structure
+    E_all    : all strains for the current time-step, with size (neles*nGauss, nstrains)
+    DE_all   : all strains for the last time-step, with size (neles*nGauss, nstrains)
+    w∂E∂u_all: multiplication of the Gaussian weight and ∂E∂u^T for current time-step, 
+               with size (neles*nGauss, ndofs_per_element, nstrains)
+    σ0_all   : all stresses for the last time-step, with size (neles*nGauss, nstrains)
+
+    compute local internal force f_int and then assemble to F_int
+"""->
+function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, DE_all::PyObject, w∂E∂u_all::PyObject, σ0_all::PyObject)
   neles = domain.neles
   nGauss = length(domain.elements[1].weights)
   neqns_per_elem = length(getEqns(domain,1))
@@ -77,7 +88,7 @@ function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, 
   function body(i, tensor_array_Fint)
     x = constant(zeros(Float64, domain.neqs))
     # fint in the ith Gaussian point
-    fint = w∂E∂u[i - 1] * σ_all[i - 1]
+    fint = w∂E∂u_all[i - 1] * σ_all[i - 1]
 
     # op = tf.print("w∂E∂u_all", w∂E∂u[i - 1], summarize=-1)
     # fint = bind(fint, op)

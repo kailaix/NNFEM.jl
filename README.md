@@ -21,11 +21,14 @@ pkg> test NNFEM
 For every function, a test snippet should go into `test` folder. Be sure to include the new files in `runtests.jl`.
 
 
-
 # Quick Start
 
-```
-include("test/Benchmark/Data_NNPlatePull_Plasticity.jl")  # generate data
-include("test/Benchmark/Train_NNPlatePull_Plasticity.jl") # training
-include("test/Benchmark/Test_NNPlatePull_Plasticity.jl")  # testing
-```
+There are several test cases in `test/Plate` and `test/Truss/Case1D`
+
+* `Data_*` generates the test data and produces `Data/1.dat` and `Data/domain.jld2`
+
+* `NNLearn.jl` learns an ANN with end-to-end strain-to-stress data generated previously. It produces `learned_nn.mat`
+
+* `Train_NN*` learns an ANN from displacement data only.
+
+* `Test_NN*` substitutes the constitutive law with the learned NN from last step and computes the displacement. 

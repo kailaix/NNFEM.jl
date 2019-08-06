@@ -143,7 +143,7 @@ Ftot, E_all = preprocessing(domain, globdat, F, Δt)
 loss = DynamicMatLawLoss(domain, E_all, Ftot, nn)/1e8
 sess = Session(); init(sess)
 @show run(sess, loss)
-BFGS(sess, loss, 50)
+BFGS!((sess, loss, 50)
 println("Real H = ", H0)
 run(sess, H)
 run(sess, gradients(loss, H))
