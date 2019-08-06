@@ -35,9 +35,9 @@ function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, 
   neles = domain.neles
   nGauss = length(domain.elements[1].weights)
   neqns_per_elem = length(getEqns(domain,1))
-  nstrains = size(E_all,3)
+  nstrains = size(E_all,2) #todo
  
-
+  
   @assert size(E_all)==(neles*nGauss, nstrains)
   @assert size(DE_all)==(neles*nGauss, nstrains)
   @assert size(σ0_all)==(neles*nGauss, nstrains)

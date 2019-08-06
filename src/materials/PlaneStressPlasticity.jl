@@ -110,8 +110,12 @@ function getStress(self::PlaneStressPlasticity,  strain::Array{Float64},  Dstrai
             end
         end
 
+        # if f(σ, α, σY, K)>0
+        #     @show sqrt(σ[1]^2-σ[1]*σ[2]+σ[2]^2+3*σ[3]^2), α, K
+        # end
+
         dΔσdΔε = compute_sensitivity(σ, Δγ)
-        #@show "plastic", α, α0, Δγ, σ,σ0,ε, ε0, σ0 + H*(ε-ε0) , H*ε
+        # @show "plastic", α, α0, Δγ, σ,σ0,ε, ε0, σ0 + H*(ε-ε0) , H*ε
         # if σ[1]<0.0
         #     error()
         # end
@@ -120,7 +124,7 @@ function getStress(self::PlaneStressPlasticity,  strain::Array{Float64},  Dstrai
     # #@show Δγ
     self.α_ = self.α + Δγ
     self.σ0_ = σ[:]
-    self.ε0_ = ε0
+    self.ε0_ = ε
     # self.σ0_ = self.σ0
     # #@show σ, dΔσdΔε
     return σ, dΔσdΔε

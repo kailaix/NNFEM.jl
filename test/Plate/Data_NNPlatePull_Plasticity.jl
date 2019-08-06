@@ -7,40 +7,34 @@ using JLD2
 using ADCME
 using LinearAlgebra
 
-include("NNPlatePull_Domain.jl")
+
 testtype = "PlaneStressPlasticity"
 
 prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45,
 "sigmaY"=>0.3e+9, "K"=>1/9*200e+9)
 
-elements = []
-for j = 1:ny
-    for i = 1:nx 
-        n = (nx+1)*(j-1) + i
-        elnodes = [n, n + 1, n + 1 + (nx + 1), n + (nx + 1)]
-        coords = nodes[elnodes,:]
-        push!(elements,SmallStrainContinuum(coords,elnodes, prop,2))
-    end
-end
+include("NNPlatePull_Domain.jl")
 
 
-domain = Domain(nodes, elements, ndofs, EBC, g, NBC, fext)
+domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
 state = zeros(domain.neqs)
 ∂u = zeros(domain.neqs)
-globdat = GlobalData(state,zeros(domain.neqs),
-                    zeros(domain.neqs),∂u, domain.neqs, gt)
+globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
 
 assembleMassMatrix!(globdat, domain)
 updateStates!(domain, globdat)
 
 
-T = 2.0
+T = 0.0005
 NT = 20
 Δt = T/NT
 for i = 1:NT
     # @info i, "/" , NT
     solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-4, 100)
-    
+    # close("all")
+    # visσ(domain)
+    # savefig("Debug/$i.png")
+    # error()
 end
 
 # error()

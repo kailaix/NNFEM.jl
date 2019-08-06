@@ -1,4 +1,5 @@
-export visstatic, visdynamic, show_strain_stress, prepare_strain_stress_data1D, prepare_strain_stress_data2D
+export visstatic, visdynamic, show_strain_stress, prepare_strain_stress_data1D, prepare_strain_stress_data2D,
+    VisualizeStress2D,visσ
 function visstatic(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
     u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
     nodes = domain.nodes
@@ -96,7 +97,7 @@ function prepare_strain_stress_data1D(domain::Domain)
 end
 
 
-function prepare_strain_stress_data2D(domain::Domain)
+function prepare_strain_stress_data2D(domain::Domain, scale::Float64=1.0)
     strain = domain.history["strain"]
     stress = domain.history["stress"]
     ngp = size(strain[1],1)
@@ -108,12 +109,91 @@ function prepare_strain_stress_data2D(domain::Domain)
     
     k = 1
     nt += 1
-    for i = 1:ngp
-        for j = 2:nt
-            X[k,:] = [strain[j][i,:];strain[j-1][i,:];stress[j-1][i,:]]#ε, ε0, σ0
-            y[k,:] = stress[j][i,:]
+    for j = 2:nt
+        for i = 1:ngp
+            X[k,:] = [strain[j][i,:]; strain[j-1][i,:]; stress[j-1][i,:]/scale]#ε, ε0, σ0
+            y[k,:] = stress[j][i,:]/scale
             k = k + 1
         end
     end
     X,y
+end
+
+
+function helper_(stress::Array{Float64})
+    M = [stress[1] stress[3]; stress[3] stress[2]]
+    λ = eigvals(M)
+end
+
+function VisualizeStress2D(domain::Domain)
+    strain = domain.history["strain"]
+    stress = domain.history["stress"]
+    NT = length(stress)
+    ngp = size(stress[1], 1)
+    V = zeros(NT, ngp, 2)
+    for i = 1:NT
+        for j = 1:ngp
+            V[i,j,:] = helper_(stress[i][j,:])
+        end
+    end
+    close("all")
+    for i = rand(1:ngp, 10)
+        x = V[:,i,1][:]/1e8
+        y = V[:,i,2][:]/1e8
+        plot(x, y, ".-")
+    end
+    V
+end
+
+function VisualizeStress2D(σ_ref::Array{Float64}, σ_comp::Array{Float64}, NT::Int64)
+    ngp = Int64(size(σ_ref,1)/NT)
+    V_ref = zeros(NT, ngp, 2)
+    V_comp = zeros(NT, ngp, 2)
+    for i = 1:NT
+        for j = 1:ngp
+            V_ref[i,j,:] = helper_(σ_ref[(i-1)*ngp + j,:])
+            V_comp[i,j,:] = helper_(σ_comp[(i-1)*ngp + j,:])
+        end
+    end
+    close("all")
+    col = "rbkcg"
+    k = 0
+    for i = rand(1:ngp, 1)
+        k += 1
+        x = V_ref[:,i,1][:]
+        y = V_ref[:,i,2][:]
+        plot(x, y, ".-"*col[k])
+
+        x = V_comp[:,i,1][:]
+        y = V_comp[:,i,2][:]
+        plot(x, y, ".--"*col[k])
+    end
+end
+
+function visσ(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
+    u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
+    nodes = domain.nodes
+    fig,ax = subplots()
+    temp = nodes + [u v]
+    x1, x2 = minimum(temp[:,1]), maximum(temp[:,1])
+    y1, y2 = minimum(temp[:,2]), maximum(temp[:,2])
+    σ =[]
+    for e in domain.elements
+        σs = e.strain
+        push!(σ,mean([helper_(s)[1] for s in σs]))
+    end
+    vmin = vmin==nothing ? minimum(σ) : vmin 
+    vmax = vmax==nothing ? maximum(σ) : vmax
+    #@show vmin, vmax
+    cNorm  = colors.Normalize(
+            vmin=vmin,
+            vmax=vmax)
+    scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
+    for (k,e) in enumerate(domain.elements)
+        n_ = nodes[getNodes(e),:] + scaling*[u[getNodes(e),:] v[getNodes(e),:]]
+        p = plt.Polygon(n_, facecolor = scalarMap.to_rgba(σ[k]), fill=true, alpha=0.5)
+        ax.add_patch(p)
+    end
+    xlim(x1 .-0.1,x2 .+0.1)
+    ylim(y1 .-0.1,y2 .+0.1)
 end
