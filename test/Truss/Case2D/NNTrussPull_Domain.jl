@@ -95,3 +95,8 @@ for i = 1:nx
     elnodes = [2*i, 2*i+1]; coords = nodes[elnodes,:];
     push!(elements, FiniteStrainTruss(coords,elnodes, prop, ngp))
 end
+
+T = 0.3
+NT = 30
+Δt = T/NT
+stress_scale = 100.0

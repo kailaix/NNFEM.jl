@@ -34,6 +34,7 @@ end
 
 @doc """
     domain   : finite element domain, for data structure
+    nn: Neural network constitutive law, with 
     E_all    : all strains for the current time-step, with size (neles*nGauss, nstrains)
     DE_all   : all strains for the last time-step, with size (neles*nGauss, nstrains)
     w∂E∂u_all: multiplication of the Gaussian weight and ∂E∂u^T for current time-step, 

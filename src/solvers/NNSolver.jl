@@ -5,7 +5,8 @@ export DynamicMatLawLoss, preprocessing
     E_all    : all strains for the whole simulation, with size (NT+1, neles*nGauss, nstrains)
     w∂E∂u_all: multiplication of the Gaussian weight and ∂E∂u^T for the whole simulation, 
                with size (NT+1, neles*nGauss, ndofs_per_element, nstrains)
-
+    F_tot : approximated internal force for the whole simulation, with size(NT, ndofs), 
+            from time n=1 to time n=NT
 
     form the loss function, based on dynamic equilibrium 
         (Mddu + fint(NN, E, DE) + MIDddu_bc = fext
@@ -146,9 +147,13 @@ end
 @doc """
     domain   : finite element domain
     globdat  : finite element data structure
-    state_history : displace history of all time steps and all nodes, a list of NT+1  ndof-displacement vectors 
-    fext_history  : external force load of all time steps and all nodes, a list of NT+1 ndof-external-force vectors
-    nn: Neural network, with input output
+    state_history : displace history of all time steps and all nodes, 
+                    a list of NT+1  ndof-displacement vectors, including time 0
+                    hcat(state_history...) gives a matrix of size(ndof-displacement, NT+1)
+    fext_history  : external force load of all time steps and all nodes, 
+                    a list of NT+1 ndof-external-force vectors, including time 0
+                    hcat(fext_history...) gives a matrix of size(ndof-external-force, NT+1)
+    nn: Neural network
     Δt: time step size
     
     compute loss function from state and external force history 

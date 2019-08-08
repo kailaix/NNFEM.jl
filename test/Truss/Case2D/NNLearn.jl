@@ -24,13 +24,9 @@ sess = Session(); init(sess)
 # end
 BFGS!(sess, loss, 1000)
 out = run(sess, y)
-close("all")
-plot(X[:,2], out,"+", label="NN")
-plot(X[:,2], Y, ".", label="Exact")
-legend()
 
 ADCME.save(sess, "Data/learned_nn.mat")
-error()
+# error()
 
 @load "Data/domain.jld2" domain
 X, Y = prepare_strain_stress_data1D(domain)

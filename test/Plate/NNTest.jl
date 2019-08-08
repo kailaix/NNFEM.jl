@@ -37,7 +37,7 @@ sess = Session(); init(sess)
 # ADCME.load(sess, "$(@__DIR__)/Data/learned_nn.mat")
 @show run(sess, loss)
 
-BFGS!(!(sess, loss, 100)
+BFGS!(sess, loss, 100)
 
 
 # * test neural network

@@ -24,18 +24,14 @@ assembleMassMatrix!(globdat, domain)
 # need to update state in domain from globdat
 updateStates!(domain, globdat)
 
-
-T = 0.5
-NT = 50
-Δt = T/NT
 for i = 1:NT
     solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-5, 100)
     
-    close("all")
-    scatter(nodes[:, 1], nodes[:,2], color="red")
-    u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
-    scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
-    savefig("$(@__DIR__)/Debug/$i.png")
+    # close("all")
+    # scatter(nodes[:, 1], nodes[:,2], color="red")
+    # u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
+    # scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
+    # savefig("$(@__DIR__)/Debug/$i.png")
 
 end
 
@@ -47,11 +43,12 @@ close("all")
 scatter(nodes[:, 1], nodes[:,2], color="red")
 u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
 scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
-
+# error()
 @save "Data/domain.jld2" domain
 
 
 X, Y = prepare_strain_stress_data1D(domain)
 close("all")
 plot(X[:,1], Y, ".", label="Exact")
+grid("on")
 legend()

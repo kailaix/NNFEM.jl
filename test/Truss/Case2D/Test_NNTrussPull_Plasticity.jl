@@ -8,9 +8,8 @@ using ADCME
 using LinearAlgebra
 
 include("nnutil.jl")
-stress_scale = 100.0
 
-aedictae_scaled = matread("Data/learned_nn.mat"); # using MAT
+aedictae_scaled = matread("Data/trained_nn_fem.mat"); # using MAT
 Wkey = "ae_scaledbackslashfully_connectedbackslashweightscolon0"
 Wkey = "ae_scaledbackslashfully_connected_1backslashweightscolon0"
 Wkey = "ae_scaledbackslashfully_connected_2backslashweightscolon0"
@@ -50,19 +49,20 @@ assembleMassMatrix!(globdat, domain)
 # need to update state in domain from globdat
 updateStates!(domain, globdat)
 
-
-T = 0.5
-NT = 50
-Δt = T/NT
 for i = 1:NT
     @info i, "/" , NT
     solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-5, 100)
 
-    close("all")
-    scatter(nodes[:, 1], nodes[:,2], color="red")
-    u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
-    scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
-    savefig("Debug/$(i)_.png")
+#     close("all")
+#     scatter(nodes[:, 1], nodes[:,2], color="red")
+#     u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
+#     scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
+#     savefig("Debug/$(i)_.png")
 end
+
+close("all")
+scatter(nodes[:, 1], nodes[:,2], color="red")
+u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
+scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
 
 

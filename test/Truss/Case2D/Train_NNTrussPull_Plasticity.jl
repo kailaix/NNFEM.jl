@@ -10,7 +10,6 @@ reset_default_graph()
 include("nnutil.jl")
 
 testtype = "NeuralNetwork1D"
-stress_scale = 100.0
 
 prop = Dict("name"=> testtype, "rho"=> 0.1, "E"=> 200.0, "B"=> 10.0,
             "sigmaY"=>0.300, "K"=>1/9*200, "A0"=> 1.0, "eta"=> 10.0, "nn"=>post_nn)
@@ -25,9 +24,7 @@ globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.n
 assembleMassMatrix!(globdat, domain)
 
 
-T = 0.5
-NT = 50
-Δt = T/NT
+
 
 nntype = "ae_scaled"
 
@@ -42,16 +39,16 @@ loss = sum(losses)
 sess = Session(); init(sess)
 @show run(sess, loss)
 # error()
-# ADCME.load(sess,  "Data/trained_nn_fem.mat")
-BFGS!(sess, loss, 1000)
+# ADCME.load(sess,  "Data/learned_nn.mat")
+BFGS!(sess, loss, 200)
 ADCME.save(sess, "Data/trained_nn_fem.mat")
 
-# for online training
-for i = 1:10
-    BFGS!(sess, loss, 15000)
-    ADCME.save(sess, "Data/trained_nn_fem_$i.mat")
-end
-error()
+# # for online training
+# for i = 1:10
+#     BFGS!(sess, loss, 15000)
+#     ADCME.save(sess, "Data/trained_nn_fem_$i.mat")
+# end
+# error()
 
 # * test
 @load "Data/domain.jld2" domain
