@@ -9,7 +9,8 @@ using LinearAlgebra
 
 tid = 1
 
-testtype = "Elasticity1D" 
+# testtype = "PathDependent1D" 
+testtype = "Plasticity1D"
 
 prop = Dict("name"=> testtype, "rho"=> 0.1, "E"=> 200, "B"=> 10.0,
             "sigmaY"=>0.300, "K"=>1/9*200, "A0"=> 1.0, "eta"=> 10.0)
@@ -35,22 +36,29 @@ for i = 1:NT
     # savefig("$(@__DIR__)/Debug/$i.png")
 
 end
-
+# error()
 # error()
 # todo write data
 write_data("$(@__DIR__)/Data/$tid.dat", domain)
 # plot
 close("all")
-figure()
 scatter(nodes[:, 1], nodes[:,2], color="red")
 u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
 scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
+ylim(-0.2,1.5)
+savefig("$(@__DIR__)/Debug/terminal$tid.png")
 # error()
 @save "Data/domain.jld2" domain
 
 
 X, Y = prepare_strain_stress_data1D(domain)
-figure()
+close("all")
 plot(X[:,1], Y, ".", label="Exact")
 grid("on")
 legend()
+xlim(-0.05,0.05)
+ylim(-2,2)
+savefig("$(@__DIR__)/Debug/law$tid.png")
+
+
+

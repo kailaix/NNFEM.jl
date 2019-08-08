@@ -16,7 +16,7 @@ export DynamicMatLawLoss, preprocessing
 function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all::Array{Float64},
      F_tot::Array{Float64}, nn::Function)
     # todo, use fint instead of computed F_tot 
-    F_tot =  hcat(domain.history["fint"]...)'
+    # F_tot =  hcat(domain.history["fint"]...)'
     # define variables
     neles = domain.neles
     nGauss = length(domain.elements[1].weights)

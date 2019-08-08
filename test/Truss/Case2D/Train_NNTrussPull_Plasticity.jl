@@ -26,9 +26,9 @@ assembleMassMatrix!(globdat, domain)
 
 
 
-# nntype = "ae_scaled"
-nntype = "linear"
-n_data = 1
+nntype = "ae_scaled"
+# nntype = "linear"
+n_data = 5
 losses = Array{PyObject}(undef, n_data)
 for i = 1:n_data
     state_history, fext_history = read_data("$(@__DIR__)/Data/$i.dat")
@@ -38,8 +38,8 @@ loss = sum(losses)
 
 sess = Session(); init(sess)
 @show run(sess, loss)
-error()
-# ADCME.load(sess,  "Data/learned_nn.mat")
+# error()
+# ADCME.load(sess,  "Data/learned_nn.mat"); run(sess, loss); error()
 # error()
 BFGS!(sess, loss, 100)
 ADCME.save(sess, "Data/trained_nn_fem.mat")
