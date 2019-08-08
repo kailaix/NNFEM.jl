@@ -63,12 +63,13 @@ if FORCE_TYPE == "constant"
     FBC[2*nx+1, 1] = -1
     fext[2*nx+1, 1] = 1.0e2
 else
-    FBC[2*(nx+1), 1] = -2
+    FBC[2*(nx+1), 2] = -2
 end
 
 #force load function
 function fft(t)
-    return 20.0 * sin(2*pi*t)
+    # return 20.0 * sin(2*pi*t)
+    return 1.0
 end
 ft = fft
 
