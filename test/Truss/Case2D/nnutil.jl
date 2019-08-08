@@ -6,8 +6,9 @@ using MAT
 
 function nn(ε, ε0, σ0)
     local y, y1, y2, y3
-
-    if nntype=="ae_scaled"
+    if nntype=="linear"
+        y = 200 * ε
+    elseif nntype=="ae_scaled"
         x = [ε ε0 σ0/stress_scale]
         y = ae(x, [20,20,20,20,1], "ae_scaled")*stress_scale
     else

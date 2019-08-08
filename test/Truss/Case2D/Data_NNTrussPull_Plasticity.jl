@@ -7,7 +7,9 @@ using JLD2
 using ADCME
 using LinearAlgebra
 
-testtype = "Plasticity1D" 
+tid = 1
+
+testtype = "Elasticity1D" 
 
 prop = Dict("name"=> testtype, "rho"=> 0.1, "E"=> 200, "B"=> 10.0,
             "sigmaY"=>0.300, "K"=>1/9*200, "A0"=> 1.0, "eta"=> 10.0)
@@ -26,7 +28,6 @@ updateStates!(domain, globdat)
 
 for i = 1:NT
     solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-5, 100)
-    
     # close("all")
     # scatter(nodes[:, 1], nodes[:,2], color="red")
     # u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
@@ -37,7 +38,7 @@ end
 
 # error()
 # todo write data
-write_data("$(@__DIR__)/Data/1.dat", domain)
+write_data("$(@__DIR__)/Data/$tid.dat", domain)
 # plot
 close("all")
 figure()

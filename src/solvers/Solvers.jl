@@ -155,37 +155,19 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, m
     globdat.velo += Δt * ((1 - γ) * ∂∂u + γ * ∂∂up)
     globdat.acce = ∂∂up[:]
 
-    println("||a|| = $(norm(globdat.acce ))") 
-    # @show globdat.state, ∂∂up, ∂u
-    # error()
-    # @show "***************debug print"
-    fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
-    # @show "***************debug print", fint
-
-    # debug
-    push!(domain.history["fint"], fint)
-    push!(domain.history["fext"], fext)
-    
-    # @show "acce",  globdat.acce
-    # @show "state", globdat.state
-    # @show "Newton fint ",  fint
-    # @show "Newton finertial", globdat.M * globdat.acce
-    # #@show globdat.M
-    # @show "M(∂∂up *(1 - αm) + αm*∂∂u)", globdat.M * (∂∂up *(1 - αm) + αm*∂∂u)
-    # @show ∂∂up, ∂∂u
-    # @show "Newton fext ", fext
-
-
-
-    # #@show "Dstate", globdat.Dstate ,  "state", globdat.state 
-
-    # todo update historic parameters
-
-    
+   
     globdat.time  += αf*Δt
     #@info "After Newmark, at T = ", globdat.time, " the disp is ", domain.state
     commitHistory(domain)
     updateStates!(domain, globdat)
+
+    
+    
+
+    fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
+    push!(domain.history["fint"], fint)
+    push!(domain.history["fext"], fext)
+    
 end 
 
 

@@ -32,3 +32,8 @@ There are several test cases in `test/Plate` and `test/Truss/Case1D`
 * `Train_NN*` learns an ANN from displacement data only.
 
 * `Test_NN*` substitutes the constitutive law with the learned NN from last step and computes the displacement. 
+
+
+
+assembleStiffAndForce
+tfAssembleInternalForce

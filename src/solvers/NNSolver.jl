@@ -32,6 +32,7 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all:
 
     function cond0(i, ta_loss, ta_σ)
         i<=NT+1
+        # i<=2
     end
 
     function body(i, ta_loss, ta_σ)
@@ -44,8 +45,12 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all:
         
         # op = tf.print(i, fint, summarize=-1)
         # fint = bind(fint, op)
-        # op = tf.print([E, DE, σ0, σ], summarize=-1)
-        # σ = bind(σ, op)
+
+        # op = tf.print(i, F_tot[i-1], summarize=-1)
+        # fint = bind(fint, op)
+
+        # op = tf.print("F_tot",F_tot[i-1], summarize=-1)
+        # i = bind(i, op)
 
 
         ta_σ = write(ta_σ, i, σ)
@@ -223,6 +228,9 @@ function preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64
 
             # Get the element contribution by calling the specified action
             E, w∂E∂u = getStrain(element, el_state) 
+            # if i==2
+            #     @info (el_state, E)
+            # end
       
             # @show E, nGauss
             E_all[i, (iele-1)*nGauss+1:iele*nGauss, :] = E

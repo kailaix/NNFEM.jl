@@ -26,8 +26,8 @@ assembleMassMatrix!(globdat, domain)
 
 
 
-nntype = "ae_scaled"
-
+# nntype = "ae_scaled"
+nntype = "linear"
 n_data = 1
 losses = Array{PyObject}(undef, n_data)
 for i = 1:n_data
@@ -38,9 +38,10 @@ loss = sum(losses)
 
 sess = Session(); init(sess)
 @show run(sess, loss)
+error()
+# ADCME.load(sess,  "Data/learned_nn.mat")
 # error()
-# ADCME.load(sess,  "Data/trained_nn_fem.mat")
-BFGS!(sess, loss, 200)
+BFGS!(sess, loss, 100)
 ADCME.save(sess, "Data/trained_nn_fem.mat")
 
 # # for online training

@@ -76,8 +76,6 @@ function getStiffAndForce(self::FiniteStrainTruss, state::Array{Float64}, Dstate
         self.strain[k] = S
 
         fint += A0 * self.weights[k] * S * ∂E∂u  # 4x1
-
-        # @info "state ", state , "lu", lu, "S ", S, "wdEdu ", A0 * self.weights[k] * ∂E∂u
         
         stiff += A0 * self.weights[k] * (dS_dE * ∂E∂u * ∂E∂u' + S * ∂∂E∂∂u) # 4x4
     end
@@ -131,7 +129,7 @@ function getStrain(self::FiniteStrainTruss, state::Array{Float64})
     for k = 1:nGauss
         # compute  ∂E∂u.T, 8 by 3 array 
         E[k,1] = (lu[2]-lu[1])/l0 + 0.5*((lu[2]-lu[1])/l0)^2 + 0.5*((lu[4]-lu[3])/l0)^2
-        w∂E∂u[k,:,:] = [-1/l0+(lu[1]-lu[2])/l0;  1/l0+(lu[2]-lu[1])/l0; (lu[3]-lu[4])/l0; (lu[4]-lu[3])/l0] * A0 * self.weights[k]
+        w∂E∂u[k,:,:] = rot_mat' * [-1/l0+(lu[1]-lu[2])/l0;  1/l0+(lu[2]-lu[1])/l0; (lu[3]-lu[4])/l0; (lu[4]-lu[3])/l0] * A0 * self.weights[k]
     end
     # @info "state ", state , "lu", lu , "w∂E∂u[k,:,:] ", w∂E∂u[1,:,:]
 

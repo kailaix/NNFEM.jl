@@ -69,7 +69,7 @@ end
 #force load function
 function fft(t)
     # return 20.0 * sin(2*pi*t)
-    return 1.0*sin(2*π*t)
+    return (tid*0.2+0.6)
 end
 ft = fft
 
@@ -97,7 +97,7 @@ for i = 1:nx
     push!(elements, FiniteStrainTruss(coords,elnodes, prop, ngp))
 end
 
-T = 0.3
-NT = 30
+T = 0.5
+NT = 100
 Δt = T/NT
 stress_scale = 100.0
