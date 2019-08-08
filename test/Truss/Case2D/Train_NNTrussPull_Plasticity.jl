@@ -39,7 +39,7 @@ loss = sum(losses)
 sess = Session(); init(sess)
 @show run(sess, loss)
 # error()
-# ADCME.load(sess,  "Data/learned_nn.mat")
+# ADCME.load(sess,  "Data/trained_nn_fem.mat")
 BFGS!(sess, loss, 200)
 ADCME.save(sess, "Data/trained_nn_fem.mat")
 

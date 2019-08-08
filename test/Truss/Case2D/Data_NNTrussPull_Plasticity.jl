@@ -40,6 +40,7 @@ end
 write_data("$(@__DIR__)/Data/1.dat", domain)
 # plot
 close("all")
+figure()
 scatter(nodes[:, 1], nodes[:,2], color="red")
 u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
 scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
@@ -48,7 +49,7 @@ scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
 
 
 X, Y = prepare_strain_stress_data1D(domain)
-close("all")
+figure()
 plot(X[:,1], Y, ".", label="Exact")
 grid("on")
 legend()

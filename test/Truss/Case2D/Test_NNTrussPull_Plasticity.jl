@@ -61,8 +61,21 @@ for i = 1:NT
 end
 
 close("all")
+figure()
 scatter(nodes[:, 1], nodes[:,2], color="red")
 u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
 scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
+
+
+figure()
+X, Y = prepare_strain_stress_data1D(domain)
+x = constant(X)
+y = squeeze(nn(constant(X[:,1]), constant(X[:,2]), constant(X[:,3])))
+sess = Session(); init(sess)
+ADCME.load(sess, "Data/learned_nn.mat")
+out = run(sess, y)
+plot(X[:,1], out,"+", label="Learned NN")
+plot(X[:,1], Y, ".", label="FEM NN")
+legend()
 
 
