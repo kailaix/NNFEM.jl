@@ -13,7 +13,8 @@ stress_scale = 1.0e10
 
 
 # * Auto-generated code by `ae_to_code`
-aedictae_scaled = matread("Data/train_neural_network_from_fem.mat"); # using MAT
+# aedictae_scaled = matread("Data/train_neural_network_from_fem.mat"); # using MAT
+aedictae_scaled = matread("Data/train_neural_network_from_fem.mat")
 Wkey = "ae_scaledbackslashfully_connectedbackslashweightscolon0"
 Wkey = "ae_scaledbackslashfully_connected_1backslashweightscolon0"
 Wkey = "ae_scaledbackslashfully_connected_2backslashweightscolon0"
@@ -60,10 +61,10 @@ NT = 20
 Δt = T/NT
 for i = 1:NT
     @info i, "/" , NT
-    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-5, 100)
+    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-4, 100)
     close("all")
-    visσ(domain)
-    savefig("Debug/$(i)_.png")
+    visσ(domain,-1.5e9,4.5e9)
+    savefig("Debug/$(i)_nn.png")
 end
 
 # visstatic(domain)

@@ -191,9 +191,11 @@ function visσ(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
     scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
     for (k,e) in enumerate(domain.elements)
         n_ = nodes[getNodes(e),:] + scaling*[u[getNodes(e),:] v[getNodes(e),:]]
-        p = plt.Polygon(n_, facecolor = scalarMap.to_rgba(σ[k]), fill=true, alpha=0.5)
+        p = plt.Polygon(n_, facecolor = scalarMap.to_rgba(σ[k]), fill=true)
         ax.add_patch(p)
     end
+    scalarMap.set_array(σ)
+    colorbar(scalarMap)
     xlim(x1 .-0.1,x2 .+0.1)
     ylim(y1 .-0.1,y2 .+0.1)
 end

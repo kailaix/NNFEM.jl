@@ -26,7 +26,7 @@ sess = Session(); init(sess)
 #     l, _ = run(sess, [loss, opt])
 #     @show i,l
 # end
-BFGS!(sess, loss, 5000)
+BFGS!(sess, loss, 15000)
 # ADCME.load(sess, "Data/learned_nn.mat")
 # @show run(sess, loss)
 close("all")

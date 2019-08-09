@@ -41,7 +41,7 @@ sess = Session(); init(sess)
 # error()
 # ADCME.load(sess,  "Data/learned_nn.mat"); run(sess, loss); error()
 # error()
-BFGS!(sess, loss, 100)
+BFGS!(sess, loss, 200)
 ADCME.save(sess, "Data/trained_nn_fem.mat")
 
 # # for online training

@@ -35,9 +35,10 @@ loss = DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
 
 sess = Session(); init(sess)
 # ADCME.load(sess, "$(@__DIR__)/Data/learned_nn.mat")
+# ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
 @show run(sess, loss)
-
-BFGS!(sess, loss, 100)
+# error()
+BFGS!(sess, loss, 1000)
 
 ADCME.save(sess, "Data/train_neural_network_from_fem.mat")
 
