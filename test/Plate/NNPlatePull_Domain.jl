@@ -34,7 +34,7 @@ FBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 
 
 # todo PARAMETER
-FORCE_TYPE = "constant"
+FORCE_TYPE = "nonconstant"
 
 if FORCE_TYPE == "constant"
     #pull in the y direction
@@ -44,12 +44,14 @@ if FORCE_TYPE == "constant"
     fext[(nx+1)*ny + nx+1, 2] /= 2.0
 else
     FBC[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] .= -2
-    
 end
 
 #force load function
 function fft(t)
-    return 5.0e7 * sin(2*pi*t) * ones(nx + 1)
+    f = 1.0e8 *(1.0*tid) * sin(pi*t/T) * ones(nx + 1)
+    f[1] /= 2.0
+    f[end] /= 2.0
+    return f
 end
 ft = fft
 
@@ -62,3 +64,8 @@ for j = 1:ny
         push!(elements,SmallStrainContinuum(coords,elnodes, prop,2))
     end
 end
+
+T = 0.0005
+NT = 100
+Δt = T/NT
+stress_scale = 1.0e10

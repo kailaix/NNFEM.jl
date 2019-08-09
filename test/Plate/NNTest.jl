@@ -25,10 +25,6 @@ state = zeros(domain.neqs)
 globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
 assembleMassMatrix!(globdat, domain)
 
-T = 0.0005
-NT = 20
-Δt = T/NT
-
 nntype = "ae_scaled"
 state_history, fext_history = read_data("$(@__DIR__)/Data/1.dat")
 loss = DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)

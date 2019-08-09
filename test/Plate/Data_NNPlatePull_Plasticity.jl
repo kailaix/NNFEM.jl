@@ -7,6 +7,7 @@ using JLD2
 using ADCME
 using LinearAlgebra
 
+tid = 1
 
 testtype = "PlaneStressPlasticity"
 
@@ -25,25 +26,27 @@ assembleMassMatrix!(globdat, domain)
 updateStates!(domain, globdat)
 
 
-T = 0.0005
-NT = 20
-Δt = T/NT
 for i = 1:NT
     # @info i, "/" , NT
     solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-4, 100)
-    close("all")
-    visσ(domain,-1.5e9, 4.5e9)
-    savefig("Debug/$i.png")
+    # close("all")
+    # visσ(domain,-1.5e9, 4.5e9)
+    # savefig("Debug/$i.png")
     # error()
 end
 
 # error()
 # todo write data
-write_data("$(@__DIR__)/Data/1.dat", domain)
+write_data("$(@__DIR__)/Data/$tid.dat", domain)
 # plot
 close("all")
 scatter(nodes[:, 1], nodes[:,2], color="red")
 u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
 scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
+
+close("all")
+visσ(domain)
+# visσ(domain,-1.5e9, 4.5e9)
+savefig("Debug/terminal$tid.png")
 
 @save "Data/domain.jld2" domain

@@ -9,7 +9,6 @@ using MAT
 using LinearAlgebra
 
 include("nnutil.jl")
-stress_scale = 1.0e10
 
 
 # * Auto-generated code by `ae_to_code`
@@ -56,9 +55,6 @@ assembleMassMatrix!(globdat, domain)
 updateStates!(domain, globdat)
 nntype = "ae_scaled"
 
-T = 0.0005
-NT = 20
-Δt = T/NT
 for i = 1:NT
     @info i, "/" , NT
     solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-4, 100)
