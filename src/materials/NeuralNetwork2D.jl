@@ -25,6 +25,7 @@ function getStress(self::NeuralNetwork2D,  strain::Array{Float64},  Dstrain::Arr
     σ0 = self.σ0 
     σ, dΔσdΔε = self.nn(ε, ε0, σ0, Δt)
     self.σ0_ = σ
+    self.ε0_ = ε
     return σ, dΔσdΔε
 end
 

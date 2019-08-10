@@ -8,8 +8,9 @@ using ADCME
 using LinearAlgebra
 
 tid = 1
+printstyled("tid = $tid\n", color=:cyan)
 
-testtype = "PlaneStressPlasticity"
+testtype = "PlaneStress"
 
 prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45,
 "sigmaY"=>0.3e+9, "K"=>1/9*200e+9)
@@ -45,7 +46,7 @@ u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
 scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
 
 close("all")
-visσ(domain)
+visσ(domain,-3.0e9,5.0e9)
 # visσ(domain,-1.5e9, 4.5e9)
 savefig("Debug/terminal$tid.png")
 

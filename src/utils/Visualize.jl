@@ -156,17 +156,19 @@ function VisualizeStress2D(σ_ref::Array{Float64}, σ_comp::Array{Float64}, NT::
         end
     end
     close("all")
-    col = "rbkcg"
+    col = "r"
+    col2 = "g"
+    
     k = 0
     for i = rand(1:ngp, 1)
         k += 1
         x = V_ref[:,i,1][:]
         y = V_ref[:,i,2][:]
-        plot(x, y, ".-"*col[k])
+        plot(x, y, ".-"*col[1])
 
         x = V_comp[:,i,1][:]
         y = V_comp[:,i,2][:]
-        plot(x, y, ".--"*col[k])
+        plot(x, y, ".--"*col2[1])
     end
 end
 

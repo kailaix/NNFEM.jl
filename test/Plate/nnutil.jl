@@ -30,12 +30,13 @@ function sigmoid_(z)
   
 end
 
-
-
-
 function nn_helper(ε, ε0, σ0)
-    x = reshape([ε;ε0;σ0/stress_scale],1, 9)
-    reshape(nnae_scaled(x)*stress_scale,3,1)
+    if nntype=="ae_scaled"
+        x = reshape([ε;ε0;σ0/stress_scale],1, 9)
+        reshape(nnae_scaled(x)*stress_scale,3,1)
+    elseif nntype=="linear"
+        x = reshape(reshape(ε,1,3)*H0,3,1)
+    end
 end
 
 function post_nn(ε, ε0, σ0, Δt)

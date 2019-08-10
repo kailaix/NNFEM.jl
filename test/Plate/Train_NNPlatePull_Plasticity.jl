@@ -10,9 +10,13 @@ reset_default_graph()
 include("nnutil.jl")
 
 testtype = "NeuralNetwork2D"
+nntype = "linear"
+n_data = 1
+
 
 prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45,
 "sigmaY"=>0.3e+9, "K"=>1/9*200e+9,  "nn"=>post_nn)
+ps = PlaneStress(prop); H0 = ps.H
 
 include("NNPlatePull_Domain.jl")
 
@@ -24,8 +28,6 @@ state = zeros(domain.neqs)
 globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
 assembleMassMatrix!(globdat, domain)
 
-nntype = "ae_scaled"
-n_data = 5
 losses = Array{PyObject}(undef, n_data)
 for i = 1:n_data
     state_history, fext_history = read_data("$(@__DIR__)/Data/$i.dat")
@@ -38,12 +40,13 @@ sess = Session(); init(sess)
 # ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
 @show run(sess, loss)
 # error()
-BFGS!(sess, loss, 5000)
-ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
-BFGS!(sess, loss, 5000)
-ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
-BFGS!(sess, loss, 5000)
-ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
+# BFGS!(sess, loss, 1000)
+# ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
+# ADCME.load(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
+# BFGS!(sess, loss, 5000)
+# ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
+# BFGS!(sess, loss, 5000)
+# ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
 
 # * test neural network
 close("all")
@@ -51,7 +54,11 @@ close("all")
 X, Y = prepare_strain_stress_data2D(domain)
 x = constant(X)
 y = nn(X[:,1:3], X[:,4:6], X[:,7:9])
-O = run(sess, y)
+try
+    global O = run(sess, y)
+catch
+    global O = y 
+end
 using Random; Random.seed!(233)
 VisualizeStress2D(Y, O, 20)
 savefig("$(@__DIR__)/Debug/trainednn.png")
