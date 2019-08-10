@@ -12,7 +12,7 @@ stress_scale = 1.0e10
 loss = constant(0.0)
 for i = 1:ndata
     global loss
-    @load "Data/domain$tid.jld2" domain
+    @load "Data/domain$i.jld2" domain
     X, Y = prepare_strain_stress_data2D(domain)
     x = constant(X)
     y = nn(X[:,1:3], X[:,4:6], X[:,7:9])
@@ -35,7 +35,7 @@ BFGS!(sess, loss, 1000)
 # ADCME.load(sess, "Data/learned_nn.mat")
 # @show run(sess, loss)
 close("all")
-@load "Data/domain3.jld2" domain
+@load "Data/domain$tid.jld2" domain
 X, Y = prepare_strain_stress_data2D(domain)
 x = constant(X)
 y = nn(X[:,1:3], X[:,4:6], X[:,7:9])
