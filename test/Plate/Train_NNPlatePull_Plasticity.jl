@@ -11,7 +11,7 @@ include("nnutil.jl")
 
 testtype = "NeuralNetwork2D"
 nntype = "ae_scaled"
-n_data = 1
+n_data = 5
 
 
 prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45,
@@ -22,7 +22,7 @@ include("NNPlatePull_Domain.jl")
 
 
 # domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
-@load "Data/domain.jld2" domain
+@load "Data/domain1.jld2" domain
 state = zeros(domain.neqs)
 ∂u = zeros(domain.neqs)
 globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
@@ -38,20 +38,20 @@ loss = sum(losses)/stress_scale^2
 sess = Session(); init(sess)
 # ADCME.load(sess, "$(@__DIR__)/Data/learned_nn.mat")
 # ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
-@show run(sess, loss)
-error()
+# @show run(sess, loss)
 # error()
-# BFGS!(sess, loss, 1000)
+# error()
+BFGS!(sess, loss, 100)
 # ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
 # ADCME.load(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
 # BFGS!(sess, loss, 5000)
 # ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
 # BFGS!(sess, loss, 5000)
-# ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
+ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
 
 # * test neural network
 close("all")
-@load "$(@__DIR__)/Data/domain.jld2" domain
+@load "$(@__DIR__)/Data/domain1.jld2" domain
 X, Y = prepare_strain_stress_data2D(domain)
 x = constant(X)
 y = nn(X[:,1:3], X[:,4:6], X[:,7:9])

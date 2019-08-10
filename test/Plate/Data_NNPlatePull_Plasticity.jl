@@ -7,7 +7,7 @@ using JLD2
 using ADCME
 using LinearAlgebra
 
-tid = 1
+tid = 5
 printstyled("tid = $tid\n", color=:cyan)
 
 testtype = "PlaneStressPlasticity"
@@ -51,4 +51,4 @@ visσ(domain)
 # visσ(domain,-1.5e9, 4.5e9)
 savefig("Debug/terminal$tid.png")
 
-@save "Data/domain.jld2" domain
+@save "Data/domain$tid.jld2" domain
