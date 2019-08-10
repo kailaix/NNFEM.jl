@@ -10,7 +10,7 @@ reset_default_graph()
 include("nnutil.jl")
 
 testtype = "NeuralNetwork2D"
-nntype = "linear"
+nntype = "ae_scaled"
 n_data = 1
 
 
@@ -39,6 +39,7 @@ sess = Session(); init(sess)
 # ADCME.load(sess, "$(@__DIR__)/Data/learned_nn.mat")
 # ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
 @show run(sess, loss)
+error()
 # error()
 # BFGS!(sess, loss, 1000)
 # ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")

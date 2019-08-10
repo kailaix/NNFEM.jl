@@ -10,13 +10,10 @@ using LinearAlgebra
 
 include("nnutil.jl")
 
-nntype = "linear"
 
 # * Auto-generated code by `ae_to_code`
-if nntype=="ae_scaled"
-# aedictae_scaled = matread("Data/train_neural_network_from_fem.mat"); # using MAT
-     global aedictae_scaled = matread("Data/train_neural_network_from_fem.mat")
-end
+aedictae_scaled = matread("Data/learned_nn.mat"); # using MAT
+# aedictae_scaled = matread("Data/train_neural_network_from_fem.mat")
 Wkey = "ae_scaledbackslashfully_connectedbackslashweightscolon0"
 Wkey = "ae_scaledbackslashfully_connected_1backslashweightscolon0"
 Wkey = "ae_scaledbackslashfully_connected_2backslashweightscolon0"
@@ -56,18 +53,16 @@ globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.n
 
 assembleMassMatrix!(globdat, domain)
 updateStates!(domain, globdat)
+nntype = "ae_scaled"
 
 for i = 1:NT
     @info i, "/" , NT
     solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-4, 100)
-#     close("all")
-#     visσ(domain,-1.5e9,4.5e9)
-#     savefig("Debug/$(i)_nn.png")
+    
 end
 
 close("all")
-visσ(domain,-3.0e9,5.0e9)
-savefig("Debug/$(tid)_test.png")
+visσ(domain)
+savefig("Debug/$(i)_test.png")
 
 # visstatic(domain)
-

@@ -9,9 +9,6 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
     if nntype=="linear"
         y = ε*H0
         y
-    elseif nntype=="ae"
-        x = [ε ε0 σ0]
-        y = ae(x, [20,20,20,20,3], "ae")
     elseif nntype=="ae_scaled"
         x = [ε ε0 σ0/stress_scale]
         if isa(x, Array)
