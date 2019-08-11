@@ -2,11 +2,13 @@ using Revise
 using ADCME
 using NNFEM
 using JLD2
+using LinearAlgebra
 reset_default_graph()
 include("nnutil.jl")
 
 nntype = "ae_scaled"
-ndata = 5
+HH = Variable(diagm(0=>ones(3)))
+ndata = 1
 stress_scale = 1.0e10
 
 loss = constant(0.0)
@@ -35,7 +37,7 @@ BFGS!(sess, loss, 1000)
 # ADCME.load(sess, "Data/learned_nn.mat")
 # @show run(sess, loss)
 close("all")
-@load "Data/domain$tid.jld2" domain
+@load "Data/domain1.jld2" domain
 X, Y = prepare_strain_stress_data2D(domain)
 x = constant(X)
 y = nn(X[:,1:3], X[:,4:6], X[:,7:9])

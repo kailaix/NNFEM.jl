@@ -4,11 +4,14 @@ using DelimitedFiles
 
 
 function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
-    local y
+    local y, H
 
     if nntype=="linear"
         y = ε*H0
         y
+    elseif nntype=="linear_test"
+        y = ε*HH
+        y 
     elseif nntype=="ae_scaled"
         x = [ε ε0 σ0/stress_scale]
         if isa(x, Array)

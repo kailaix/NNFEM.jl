@@ -11,7 +11,7 @@ include("nnutil.jl")
 
 testtype = "NeuralNetwork2D"
 nntype = "ae_scaled"
-n_data = 5
+n_data = 1
 
 
 prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45,

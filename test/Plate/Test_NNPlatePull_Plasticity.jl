@@ -8,19 +8,22 @@ using ADCME
 using MAT
 using LinearAlgebra
 
-tid = 3
+tid = 1
 include("nnutil.jl")
+nntype = "ae_scaled"
 
 
 # * Auto-generated code by `ae_to_code`
-# aedictae_scaled = matread("Data/learned_nn.mat"); # using MAT
-aedictae_scaled = matread("Data/train_neural_network_from_fem.mat")
+aedictae_scaled = matread("Data/learned_nn.mat"); # using MAT
+# aedictae_scaled = matread("Data/train_neural_network_from_fem.mat")
 Wkey = "ae_scaledbackslashfully_connectedbackslashweightscolon0"
 Wkey = "ae_scaledbackslashfully_connected_1backslashweightscolon0"
 Wkey = "ae_scaledbackslashfully_connected_2backslashweightscolon0"
 Wkey = "ae_scaledbackslashfully_connected_3backslashweightscolon0"
 Wkey = "ae_scaledbackslashfully_connected_4backslashweightscolon0"
 function nnae_scaled(net)
+        # @show size(net)
+        return reshape(reshape(net[1:3],1,3)*H0,1,3)/stress_scale
         W0 = aedictae_scaled["ae_scaledbackslashfully_connectedbackslashweightscolon0"]; b0 = aedictae_scaled["ae_scaledbackslashfully_connectedbackslashbiasescolon0"];
         isa(net, Array) ? (net = net * W0 .+ b0') : (net = net *W0 + b0)
         isa(net, Array) ? (net = tanh.(net)) : (net=tanh(net))
@@ -54,7 +57,6 @@ globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.n
 
 assembleMassMatrix!(globdat, domain)
 updateStates!(domain, globdat)
-nntype = "ae_scaled"
 
 for i = 1:NT
     @info i, "/" , NT
