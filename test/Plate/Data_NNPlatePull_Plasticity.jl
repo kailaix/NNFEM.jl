@@ -7,10 +7,10 @@ using JLD2
 using ADCME
 using LinearAlgebra
 
-tid = 5
+tid = 1
 printstyled("tid = $tid\n", color=:cyan)
 
-testtype = "PlaneStressPlasticity"
+testtype = "PlaneStress"
 
 prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45,
 "sigmaY"=>0.3e+9, "K"=>1/9*200e+9)
