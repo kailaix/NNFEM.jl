@@ -2,6 +2,17 @@
 using ForwardDiff
 using DelimitedFiles
 
+function get_matrix(o::PyObject)
+    tensor([o[1] o[2] o[3];
+    o[2] o[4] o[5];
+    o[3] o[5] o[6]])
+end
+
+function get_matrix(o::AbstractArray)
+    [o[1] o[2] o[3];
+    o[2] o[4] o[5];
+    o[3] o[5] o[6]]
+end
 
 function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
     local y, H
@@ -24,7 +35,7 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
             x = constant(x)
         end
         y = ae(x, [20,20,20,20,9], "mae")*stress_scale
-        out = tf.map_fn(x->squeeze(reshape(x[2],1,3)*reshape(x[1], 3, 3)), (y, ε/strain_scale), dtype=tf.float64)
+        out = tf.map_fn(x->squeeze(reshape(x[2],1,3)*get_matrix(x[1])), (y, ε/strain_scale), dtype=tf.float64)
         out
     end
 
@@ -38,6 +49,8 @@ function sigmoid_(z)
   
 end
 
+
+
 function nn_helper(ε, ε0, σ0)
     if nntype=="ae_scaled"
         x = reshape([ε;ε0;σ0/stress_scale],1, 9)
@@ -46,7 +59,7 @@ function nn_helper(ε, ε0, σ0)
         x = reshape(reshape(ε,1,3)*H0,3,1)
     elseif nntype=="mae"
         x = reshape([ε;ε0;σ0/stress_scale],1, 9)
-        y = reshape(ε, 1, 3)*reshape(nnae_scaled(x),3,3)*stress_scale
+        y = reshape(ε, 1, 3)*get_matrix(nnae_scaled(x))*stress_scale
         reshape(y, 3, 1)
     end
 end

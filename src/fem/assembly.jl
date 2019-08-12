@@ -115,7 +115,7 @@ function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, 
 
   tensor_array_Fint = write(tensor_array_Fint, 1, Fint)
   i = constant(2, dtype=Int32)
-  _, out = while_loop(cond0, body, [i, tensor_array_Fint]; parallel_iterations=1)
+  _, out = while_loop(cond0, body, [i, tensor_array_Fint]; parallel_iterations=20)
   out = stack(out)
 
 

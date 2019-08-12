@@ -44,7 +44,7 @@ sess = Session(); init(sess)
 # @show run(sess, loss)
 # error()
 # error()
-BFGS!(sess, loss, 100)
+BFGS!(sess, loss, 20)
 # ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
 # ADCME.load(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
 # BFGS!(sess, loss, 5000)
@@ -58,6 +58,9 @@ close("all")
 X, Y = prepare_strain_stress_data2D(domain)
 x = constant(X)
 y = nn(X[:,1:3], X[:,4:6], X[:,7:9])
+init(sess)
+ADCME.load(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
+
 try
     global O = run(sess, y)
 catch

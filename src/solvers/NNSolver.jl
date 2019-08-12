@@ -62,7 +62,7 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all:
     ta_σ = TensorArray(NT+1); ta_σ = write(ta_σ, 1, σ0)
     ta_loss = TensorArray(NT+1); ta_loss = write(ta_loss, 1, constant(0.0))
     i = constant(2, dtype=Int32)
-    _, out, _ = while_loop(cond0, body, [i,ta_loss, ta_σ]; parallel_iterations=1)
+    _, out, _ = while_loop(cond0, body, [i,ta_loss, ta_σ]; parallel_iterations=20)
     total_loss = sum(stack(out)[2:NT])
     return total_loss
 end
@@ -144,7 +144,7 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all:
    ta_loss = TensorArray(NT+1); ta_loss = write(ta_loss, 1, constant(0.0))
    ta_σ = TensorArray(NT+1); ta_σ = write(ta_σ, 1, σ0)
    i = constant(2, dtype=Int32)
-   _, out = while_loop(cond0, body, [i,ta_loss,ta_σ]; parallel_iterations=1)
+   _, out = while_loop(cond0, body, [i,ta_loss,ta_σ]; parallel_iterations=20)
    total_loss = sum(stack(out)[2:NT])
    return total_loss
 end
