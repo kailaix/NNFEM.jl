@@ -57,7 +57,7 @@ end
 
 #force load function
 function fft(t)
-    return 1.e3 * sin(2*pi*t)
+    return  sin(pi*t/T) * 1e9
 end
 ft = fft
 

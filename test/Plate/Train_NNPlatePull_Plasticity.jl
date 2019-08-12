@@ -6,17 +6,20 @@ using PyPlot
 using JLD2
 using ADCME
 using LinearAlgebra
-reset_default_graph()
+# reset_default_graph()
 include("nnutil.jl")
 
 testtype = "NeuralNetwork2D"
-nntype = "ae_scaled"
+nntype = "mae"
+# H0 = SPDMatrix(3)
+H0 = Variable(rand(3,3))
 n_data = 1
 
 
 prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45,
 "sigmaY"=>0.3e+9, "K"=>1/9*200e+9,  "nn"=>post_nn)
-ps = PlaneStress(prop); H0 = ps.H
+ps = PlaneStress(prop); HH = ps.H
+# H0 = constant(HH)/stress_scale
 
 include("NNPlatePull_Domain.jl")
 

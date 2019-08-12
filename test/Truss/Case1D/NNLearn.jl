@@ -1,9 +1,10 @@
 using ADCME
-
+include("nnutil.jl")
+nntype="ae_scaled"
 X, Y = prepare_strain_stress_data1D(domain)
-x = constant(X)
-y = squeeze(ae(x, [20,20,20,20,1], "nn"))
-
+x = (constant(X[:,1]), constant(X[:,2]), constant(X[:,3]))
+y = squeeze(nn(x...))
+# error()
 loss = sum((y-Y)^2)
 variable_scope("nn") do
     global opt = AdamOptimizer().minimize(loss)
@@ -11,11 +12,12 @@ end
 
 sess = Session(); init(sess)
 
-for i = 1:50000
-    l, _ = run(sess, [loss, opt])
-    @show i,l
-end
-# BFGS!((sess, loss, 1000)
+# for i = 1:10000
+#     l, _ = run(sess, [loss, opt])
+#     @show i,l
+# end
+ADCME.load(sess, "Data/learned_nn.mat")
+BFGS!(sess, loss, 5000)
 
 out = run(sess, y)
 close("all")
@@ -38,7 +40,8 @@ ADCME.save(sess, "Data/learned_nn.mat")
 @load "Data/domain.jld2" domain
 X, Y = prepare_strain_stress_data1D(domain)
 x = constant(X)
-y = squeeze(ae(x, [20,20,20,20,1], "nn"))
+x = (constant(X[:,1]), constant(X[:,2]), constant(X[:,3]))
+y = squeeze(nn(x...))
 sess = Session(); init(sess)
 close("all")
 ADCME.load(sess, "Data/learned_nn.mat")

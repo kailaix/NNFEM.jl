@@ -44,8 +44,8 @@ function nn(ε, ε0, σ0)
         x = [ε ε0 σ0]
         y = ae(x, [20,20,20,20,1], "ae")
     elseif nntype=="ae_scaled"
-        x = [ε ε0 σ0/100.0]
-        y = ae(x, [20,20,20,20,1], "ae_scaled")*100.0
+        x = [ε ε0 σ0/1e10]
+        y = ae(x, [20,20,20,20,1], "ae_scaled")*1e10
     end
 
     
@@ -58,7 +58,7 @@ function sigmoid_(z)
   
 end
 
-aedictae_scaled = matread("Data/trained_nn_fem.mat"); # using MAT
+aedictae_scaled = matread("Data/learned_nn.mat"); # using MAT
 Wkey = "ae_scaledbackslashfully_connectedbackslashweightscolon0"
 Wkey = "ae_scaledbackslashfully_connected_1backslashweightscolon0"
 Wkey = "ae_scaledbackslashfully_connected_2backslashweightscolon0"
@@ -85,7 +85,7 @@ end
 
 function post_nn(ε::Float64, ε0::Float64, σ0::Float64, Δt::Float64)
     # @show "Post NN"
-    f = x -> nnae_scaled([x;ε0;σ0/100.0])*100.0
+    f = x -> nnae_scaled([x;ε0;σ0/1e10])*1e10
     df = ForwardDiff.derivative(f, ε)
     return f(ε), df
 end

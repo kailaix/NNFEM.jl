@@ -1,5 +1,7 @@
 export visstatic, visdynamic, show_strain_stress, prepare_strain_stress_data1D, prepare_strain_stress_data2D,
-    VisualizeStress2D,visσ
+    VisualizeStress2D,visσ, VisualizeStrainStressSurface
+import PyPlot:scatter3D
+using Random
 function visstatic(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
     u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
     nodes = domain.nodes
@@ -170,6 +172,13 @@ function VisualizeStress2D(σ_ref::Array{Float64}, σ_comp::Array{Float64}, NT::
         y = V_comp[:,i,2][:]
         plot(x, y, ".--"*col2[1])
     end
+end
+
+function VisualizeStrainStressSurface(X::Array{Float64}, Y::Array{Float64}, seed::Int64=233)
+    n = size(X,1)
+    Random.seed!(seed)
+    idx = rand(1:n, 2000)
+    scatter3D(X[idx,1], X[idx,2], Y[idx,1], marker=".")
 end
 
 function visσ(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)

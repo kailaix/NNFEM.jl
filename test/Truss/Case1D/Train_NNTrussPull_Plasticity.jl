@@ -18,8 +18,8 @@ include("nnutil.jl")
 testtype = "NeuralNetwork1D"
 include("NNTrussPull_Domain.jl")
 
-prop = Dict("name"=> testtype, "rho"=> 0.1, "E"=> 200.0, "B"=> 10.0,
-            "sigmaY"=>0.300, "K"=>1/9*200, "A0"=> 1.0, "eta"=> 10.0, "nn"=>post_nn)
+prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e9, "nu"=> 0.45,
+"sigmaY"=>0.3e9, "K"=>1/9*200e9, "B"=> 0.0, "A0"=> 1.0, "nn"=>post_nn)
 elements = []
 for i = 1:nx 
     elnodes = [i, i+1]; coords = nodes[elnodes,:];
@@ -33,10 +33,9 @@ globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.n
 assembleMassMatrix!(globdat, domain)
 
 
-T = 0.5
-NT = 20
+T = 0.005
+NT = 100
 Δt = T/NT
-
 
 nntype = "ae_scaled"
 
@@ -60,19 +59,20 @@ end
 sess = Session(); init(sess)
 @show run(sess, loss)
 
-for i = 1:2000
-    l, _ = run(sess, [loss, opt])
-    @show i,l
-    # if l<20000
-    #     break
-    # end
-end
-
+# for i = 1:2000
+#     l, _ = run(sess, [loss, opt])
+#     @show i,l
+#     # if l<20000
+#     #     break
+#     # end
+# end
+BFGS!(sess, loss, 800)
 ADCME.save(sess, "Data/trained_nn_fem.mat")
 # BFGS!(!(sess, loss, 800)
 
 X, Y = prepare_strain_stress_data1D(domain)
-y = squeeze(nn(constant(X[:,1]),constant(X[:,2]),constant(X[:,3])))
+x = (constant(X[:,1]), constant(X[:,2]), constant(X[:,3]))
+y = squeeze(nn(x...))
 close("all")
 out = run(sess, y)
 plot(X[:,1], out,"+", label="NN")

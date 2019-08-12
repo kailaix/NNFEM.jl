@@ -43,3 +43,10 @@ function post_nn2(ε::Float64, ε0::Float64, σ0::Float64, Δt::Float64)
     df = ForwardDiff.derivative(f, ε)
     return f(ε), df
 end
+
+function post_nn(ε::Float64, ε0::Float64, σ0::Float64, Δt::Float64)
+    # @show "Post NN"
+    f = x -> nnae_scaled(reshape([x;ε0;σ0/stress_scale],1,3))[1,1]*stress_scale .* 
+    df = ForwardDiff.derivative(f, ε)
+    return f(ε), df
+end

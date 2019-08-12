@@ -34,12 +34,12 @@ FBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 
 
 # todo PARAMETER
-FORCE_TYPE = "constant"
+FORCE_TYPE = "nonconstant"
 
 if FORCE_TYPE == "constant"
     #pull in the y direction
     FBC[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] .= -1
-    fext[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] = collect(range(2.0, stop=5.0, length=nx+1))*1e7*(0.1*tid+0.5)
+    fext[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] = collect(range(2.0, stop=5.0, length=nx+1))*1e8*(0.1*tid+0.5)
     fext[(nx+1)*ny + 1, 2] /= 2.0
     fext[(nx+1)*ny + nx+1, 2] /= 2.0
 else
@@ -69,3 +69,4 @@ T = 0.0005
 NT = 100
 Δt = T/NT
 stress_scale = 1.0e10
+strain_scale = 1

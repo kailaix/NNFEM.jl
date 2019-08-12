@@ -17,6 +17,9 @@ include("NNTrussPull_Domain.jl")
 
 prop = Dict("name"=> testtype, "rho"=> 0.1, "E"=> 200, "B"=> 10.0,
             "sigmaY"=>0.300, "K"=>1/9*200, "A0"=> 1.0, "eta"=> 10.0, "nn"=>post_nn)
+
+prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e9, "nu"=> 0.45,
+"sigmaY"=>0.3e9, "K"=>1/9*200e9, "B"=> 0.0, "A0"=> 1.0, "nn"=>post_nn)
 elements = []
 for i = 1:nx 
     elnodes = [i, i+1]; coords = nodes[elnodes,:];
@@ -31,8 +34,8 @@ assembleMassMatrix!(globdat, domain)
 updateStates!(domain, globdat)
 
 
-T = 0.5
-NT = 20
+T = 0.005
+NT = 100
 Δt = T/NT
 for i = 1:NT
     @info i, "/" , NT
@@ -47,17 +50,17 @@ scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
 
 
 
-@load "Data/domain.jld2" domain
-close("all")
-X, Y = prepare_strain_stress_data1D(domain)
-y = zeros(size(X,1))
-for i = 1:length(y)
-    y[i] = post_nn(X[i,1], X[i,2], X[i,3], Δt)[1]
-end
-close("all")
-plot(X[:,1], y,"+", label="NN")
-plot(X[:,1], Y, ".", label="Exact")
-legend()
+# @load "Data/domain.jld2" domain
+# close("all")
+# X, Y = prepare_strain_stress_data1D(domain)
+# y = zeros(size(X,1))
+# for i = 1:length(y)
+#     y[i] = post_nn(X[i,1], X[i,2], X[i,3], Δt)[1]
+# end
+# close("all")
+# plot(X[:,1], y,"+", label="NN")
+# plot(X[:,1], Y, ".", label="Exact")
+# legend()
 
 
 # # * test gradients
