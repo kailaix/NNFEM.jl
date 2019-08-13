@@ -15,6 +15,8 @@ function get_matrix(o::AbstractArray)
     o[3] o[5] o[6]]
 end
 
+transform = x->x
+
 function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
     local y, H
 
@@ -40,6 +42,19 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
         out
     elseif nntype=="maeadd"
         x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
+        x = transform(x)
+        if isa(x, Array)
+            x = constant(x)
+        end
+        y = ae(x, [20,20,20,20,6], nntype)
+        z = tf.reshape(sym_op(y), (-1,3,3))
+        out = squeeze(tf.matmul(z, tf.reshape((ε-ε0)/strain_scale, (-1,3,1)))) + σ0/stress_scale
+        @show out
+        # out = tf.map_fn(x->squeeze(reshape(x[4],1,3)+(reshape(x[2],1,3)-reshape(x[3],1,3))*get_matrix(x[1])), (y, ε/strain_scale, ε0/strain_scale, σ0/stress_scale), dtype=tf.float64)
+        out*stress_scale
+    elseif nntype=="indicator"
+        x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
+        x *= 1e3
         if isa(x, Array)
             x = constant(x)
         end
@@ -78,6 +93,15 @@ function nn_helper(ε, ε0, σ0)
         ε0 = ε0/strain_scale
         σ0 = σ0/stress_scale
         x = reshape([ε;ε0;σ0],1, 9)
+        x = transform(x)
+        y = reshape(σ0, 1, 3) + (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*get_matrix(nnae_scaled(x))
+        reshape(y, 3, 1)*stress_scale
+    elseif nntype=="indicator"
+        ε = ε/strain_scale
+        ε0 = ε0/strain_scale
+        σ0 = σ0/stress_scale
+        x = reshape([ε;ε0;σ0],1, 9)
+        x *= 1e3
         y = reshape(σ0, 1, 3) + (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*get_matrix(nnae_scaled(x))
         reshape(y, 3, 1)*stress_scale
     end
