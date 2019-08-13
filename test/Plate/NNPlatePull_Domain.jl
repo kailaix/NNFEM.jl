@@ -34,7 +34,7 @@ FBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 
 
 # todo PARAMETER
-FORCE_TYPE = "constant"
+FORCE_TYPE = "nonconstant"
 
 if FORCE_TYPE == "constant"
     #pull in the y direction

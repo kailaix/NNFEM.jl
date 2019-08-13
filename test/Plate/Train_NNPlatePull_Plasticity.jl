@@ -13,7 +13,7 @@ testtype = "NeuralNetwork2D"
 nntype = "indicator"
 # H0 = SPDMatrix(3)
 H0 = Variable(rand(3,3))
-n_data = 1
+n_data = 5
 
 
 prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45,
@@ -44,7 +44,7 @@ ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
 # @show run(sess, loss)
 # error()
 # error()
-BFGS!(sess, loss, 20)
+BFGS!(sess, loss, 200)
 # ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
 # ADCME.load(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
 # BFGS!(sess, loss, 5000)

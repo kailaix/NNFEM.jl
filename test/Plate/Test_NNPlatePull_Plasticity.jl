@@ -8,14 +8,14 @@ using ADCME
 using MAT
 using LinearAlgebra
 
-tid = 1
+tid = 3
 include("nnutil.jl")
 nntype = "indicator"
 
 
 # * Auto-generated code by `ae_to_code`
-# aedictae_scaled = matread("Data/learned_nn.mat"); # using MAT
-aedictae_scaled = matread("Data/train_neural_network_from_fem.mat")
+aedictae_scaled = matread("Data/learned_nn.mat"); # using MAT
+# aedictae_scaled = matread("Data/train_neural_network_from_fem.mat")
 Wkey = "$(nntype)backslashfully_connectedbackslashweightscolon0"
 Wkey = "$(nntype)backslashfully_connected_1backslashweightscolon0"
 Wkey = "$(nntype)backslashfully_connected_2backslashweightscolon0"
@@ -65,7 +65,7 @@ for i = 1:NT
 end
 
 close("all")
-visσ(domain,-1.1e9,2.6e9)
+visσ(domain,-1.6e9,2.7e9)
 savefig("Debug/$(tid)_test.png")
 
 # visstatic(domain)

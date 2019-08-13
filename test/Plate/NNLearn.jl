@@ -12,7 +12,7 @@ strain_scale = 1.0
 
 nntype = "indicator"
 H0 = Variable(diagm(0=>ones(3)))
-ndata = 1
+ndata = 5
 
 loss = constant(0.0)
 for i = 1:ndata
