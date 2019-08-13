@@ -1,6 +1,7 @@
 
 using ForwardDiff
 using DelimitedFiles
+include("ops.jl")
 
 function get_matrix(o::PyObject)
     tensor([o[1] o[2] o[3];
@@ -34,7 +35,7 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
         if isa(x, Array)
             x = constant(x)
         end
-        y = ae(x, [20,20,20,20,9], nntype)*stress_scale
+        y = ae(x, [20,20,20,20,6], nntype)*stress_scale
         out = tf.map_fn(x->squeeze(reshape(x[2],1,3)*get_matrix(x[1])), (y, ε/strain_scale), dtype=tf.float64)
         out
     elseif nntype=="maeadd"
@@ -42,8 +43,11 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
         if isa(x, Array)
             x = constant(x)
         end
-        y = ae(x, [20,20,20,20,9], nntype)
-        out = tf.map_fn(x->squeeze(reshape(x[4],1,3)+(reshape(x[2],1,3)-reshape(x[3],1,3))*get_matrix(x[1])), (y, ε/strain_scale, ε0/strain_scale, σ0/stress_scale), dtype=tf.float64)
+        y = ae(x, [20,20,20,20,6], nntype)
+        z = tf.reshape(sym_op(y), (-1,3,3))
+        out = squeeze(tf.matmul(z, tf.reshape((ε-ε0)/strain_scale, (-1,3,1)))) + σ0/stress_scale
+        @show out
+        # out = tf.map_fn(x->squeeze(reshape(x[4],1,3)+(reshape(x[2],1,3)-reshape(x[3],1,3))*get_matrix(x[1])), (y, ε/strain_scale, ε0/strain_scale, σ0/stress_scale), dtype=tf.float64)
         out*stress_scale
     end
 

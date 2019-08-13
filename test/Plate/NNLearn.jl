@@ -10,7 +10,7 @@ include("nnutil.jl")
 stress_scale = 1.0e10
 strain_scale = 1.0
 
-nntype = "ae_scaled"
+nntype = "maeadd"
 H0 = Variable(diagm(0=>ones(3)))
 ndata = 1
 
@@ -30,7 +30,7 @@ end
 
 sess = Session(); init(sess)
 @show run(sess, loss)
-# ADCME.load(sess, "Data/learned_nn.mat")
+ADCME.load(sess, "Data/learned_nn.mat")
 BFGS!(sess, loss, 1000)
 ADCME.save(sess, "Data/learned_nn.mat")
 

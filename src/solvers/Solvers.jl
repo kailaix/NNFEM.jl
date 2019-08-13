@@ -139,7 +139,7 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, m
         #     error()
         # end
         println("$Newtoniterstep/$maxiterstep, $(norm(res))")
-        if (norm(res)< ε || norm(res) < ε*norm(res0) || Newtoniterstep > maxiterstep)
+        if (norm(res)< ε || Newtoniterstep > maxiterstep)
             if Newtoniterstep > maxiterstep
                 function f(∂∂up)
                     domain.state[domain.eq_to_dof] = (1 - αf)*(u + Δt*∂u + 0.5 * Δt * Δt * ((1 - β2)*∂∂u + β2*∂∂up)) + αf*u
