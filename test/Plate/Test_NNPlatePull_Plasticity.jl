@@ -10,7 +10,7 @@ using LinearAlgebra
 
 tid = 1
 include("nnutil.jl")
-nntype = "mae"
+nntype = "maeadd"
 
 
 # * Auto-generated code by `ae_to_code`
