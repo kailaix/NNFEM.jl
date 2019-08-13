@@ -58,8 +58,8 @@ function nn_helper(ε, ε0, σ0)
     elseif nntype=="linear"
         x = reshape(reshape(ε,1,3)*H0,3,1)
     elseif nntype=="mae"
-        x = reshape([ε;ε0;σ0/stress_scale],1, 9)
-        y = reshape(ε, 1, 3)*get_matrix(nnae_scaled(x))*stress_scale
+        x = reshape([ε/strain_scale;ε0/strain_scale;σ0/stress_scale],1, 9)
+        y = reshape(ε/strain_scale, 1, 3)*get_matrix(nnae_scaled(x))*stress_scale
         reshape(y, 3, 1)
     end
 end
@@ -71,6 +71,35 @@ function post_nn(ε, ε0, σ0, Δt)
     return f(ε), df
 end
 
-function normalize(X, Y)
+function check_grad()
+    ε = rand(3); ε0 = rand(3); σ0 = rand(3)*1e10; Δt = 0.0
+    y_, J = post_nn(ε, ε0, σ0, Δt)
+
+    v_ = rand(3)
+    ms_ = Array{Array{Float64}}(undef, 5)
+    ys_ = Array{Array{Float64}}(undef, 5)
+    sval_ = Array{Float64}(undef, 5)
+    wval_ = Array{Float64}(undef, 5)
+    gs_ =  @. 1 / 10^(1:5)
+
+    for i = 1:5
+        g_ = gs_[i]
+        ms_[i] = ε + g_*v_
+        ys_[i],_ = post_nn(ms_[i], ε0, σ0, Δt)
+        sval_[i] = norm(ys_[i] - y_)
+        wval_[i] = norm(ys_[i] - y_ - g_*J*v_)
+    end
+
+
+    close("all")
+    loglog(gs_, abs.(sval_), "*-", label="finite difference")
+    loglog(gs_, abs.(wval_), "+-", label="automatic differentiation")
+    loglog(gs_, gs_.^2 * 0.5*abs(wval_[1])/gs_[1]^2, "--",label="\$\\mathcal{O}(\\gamma^2)\$")
+    loglog(gs_, gs_ * 0.5*abs(sval_[1])/gs_[1], "--",label="\$\\mathcal{O}(\\gamma)\$")
+
+    plt.gca().invert_xaxis()
+    legend()
+    xlabel("\$\\gamma\$")
+    ylabel("Error")
 
 end

@@ -9,7 +9,7 @@ include("nnutil.jl")
 stress_scale = 1.0e10
 strain_scale = 1.0
 
-nntype = "linear"
+nntype = "mae"
 H0 = Variable(diagm(0=>ones(3)))
 ndata = 1
 
@@ -29,25 +29,25 @@ end
 
 sess = Session(); init(sess)
 @show run(sess, loss)
-
-# error()
-# for i = 1:2000
-#     l, _ = run(sess, [loss, opt])
-#     @show i,l
-# end
-BFGS!(sess, loss, 1000)
+ADCME.load(sess, "Data/learned_nn.mat")
+BFGS!(sess, loss, 20)
 ADCME.save(sess, "Data/learned_nn.mat")
-# @show run(sess, loss)
+
+error()
 close("all")
 @load "Data/domain1.jld2" domain
 X, Y = prepare_strain_stress_data2D(domain)
 x = constant(X)
 y = nn(X[:,1:3], X[:,4:6], X[:,7:9])
 
+init(sess)
+# ADCME.load(sess, "Data/learned_nn.mat")
 O = run(sess, y)
+
 using Random; Random.seed!(233)
 VisualizeStress2D(Y, O, 20)
-ADCME.save(sess, "Data/learned_nn.mat")
+# ADCME.save(sess, "Data/learned_nn.mat")
+
 error("Learning stop!")
 
 ADCME.load(sess, "Data/learned_nn.mat")

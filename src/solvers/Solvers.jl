@@ -60,6 +60,7 @@ end
 
 
 function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, maxiterstep=100, η = 1.0)
+    local res0
     # @info maxiterstep
     # error()
     #@info NewmarkSolver
@@ -105,6 +106,9 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, m
         # error()
         res = M * (∂∂up *(1 - αm) + αm*∂∂u)  + fint - fext
         # @show fint, fext
+        if Newtoniterstep==1
+            res0 = res 
+        end
 
         A = M*(1 - αm) + (1 - αf) * 0.5 * β2 * Δt^2 * stiff
    
@@ -125,8 +129,17 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, m
         # #@show norm(res), norm(r), norm(B)
         # error()
         # #@show Δ∂∂u
+        # if globdat.time>0.0001
+        #     function f(∂∂up)
+        #         domain.state[domain.eq_to_dof] = (1 - αf)*(u + Δt*∂u + 0.5 * Δt * Δt * ((1 - β2)*∂∂u + β2*∂∂up)) + αf*u
+        #         fint, stiff = assembleStiffAndForce( globdat, domain )
+        #         fint, (1 - αf) * 0.5 * β2 * Δt^2 * stiff
+        #     end
+        #     gradtest(f, ∂∂up)
+        #     error()
+        # end
         println("$Newtoniterstep/$maxiterstep, $(norm(res))")
-        if (norm(res) < ε || Newtoniterstep > maxiterstep)
+        if (norm(res)< ε || norm(res) < ε*norm(res0) || Newtoniterstep > maxiterstep)
             if Newtoniterstep > maxiterstep
                 function f(∂∂up)
                     domain.state[domain.eq_to_dof] = (1 - αf)*(u + Δt*∂u + 0.5 * Δt * Δt * ((1 - β2)*∂∂u + β2*∂∂up)) + αf*u

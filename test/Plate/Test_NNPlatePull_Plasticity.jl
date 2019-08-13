@@ -14,7 +14,7 @@ nntype = "mae"
 
 
 # * Auto-generated code by `ae_to_code`
-aedictae_scaled = matread("Data/train_neural_network_from_fem.mat"); # using MAT
+aedictae_scaled = matread("Data/learned_nn.mat"); # using MAT
 # aedictae_scaled = matread("Data/train_neural_network_from_fem.mat")
 Wkey = "$(nntype)backslashfully_connectedbackslashweightscolon0"
 Wkey = "$(nntype)backslashfully_connected_1backslashweightscolon0"
@@ -60,7 +60,7 @@ updateStates!(domain, globdat)
 
 for i = 1:NT
     @info i, "/" , NT
-    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-4, 100)
+    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-3, 100)
     
 end
 

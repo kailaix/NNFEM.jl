@@ -9,7 +9,7 @@ using LinearAlgebra
 
 tid = 1
 printstyled("tid = $tid\n", color=:cyan)
-testtype = "PlaneStress"
+testtype = "PlaneStressPlasticity"
 
 prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45,
 "sigmaY"=>0.3e+9, "K"=>1/9*200e+9)
