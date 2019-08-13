@@ -54,7 +54,7 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
         out*stress_scale
     elseif nntype=="indicator"
         x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
-        x *= 1e3
+        x *= 1e2
         if isa(x, Array)
             x = constant(x)
         end
@@ -101,7 +101,7 @@ function nn_helper(ε, ε0, σ0)
         ε0 = ε0/strain_scale
         σ0 = σ0/stress_scale
         x = reshape([ε;ε0;σ0],1, 9)
-        x *= 1e3
+        x *= 1e2
         y = reshape(σ0, 1, 3) + (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*get_matrix(nnae_scaled(x))
         reshape(y, 3, 1)*stress_scale
     end
