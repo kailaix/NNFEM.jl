@@ -18,7 +18,7 @@ n_data = 5
 
 prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45,
 "sigmaY"=>0.3e+9, "K"=>1/9*200e+9,  "nn"=>post_nn)
-ps = PlaneStress(prop); HH = ps.H
+ps = PlaneStress(prop); H0 = ps.H
 # H0 = constant(HH)/stress_scale
 
 include("NNPlatePull_Domain.jl")
@@ -41,8 +41,8 @@ loss = sum(losses)/stress_scale^2
 sess = Session(); init(sess)
 # ADCME.load(sess, "$(@__DIR__)/Data/learned_nn.mat")
 ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
-# @show run(sess, loss)
-# error()
+@show run(sess, loss)
+error()
 # error()
 BFGS!(sess, loss, 200)
 # ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")

@@ -108,9 +108,22 @@ function nn_helper(ε, ε0, σ0)
 end
 
 function post_nn(ε, ε0, σ0, Δt)
-    # @show "Post NN"
-    f = x -> nn_helper(x, ε0, σ0)
-    df = ForwardDiff.jacobian(f, ε)
+    # # @show "Post NN"
+    # f = x -> nn_helper(x, ε0, σ0)
+    # df = ForwardDiff.jacobian(f, ε)
+    # return f(ε), df
+
+    if norm(ε)<1e-5
+        f = x -> σ0 + H0*(x-ε0)
+        df = ForwardDiff.jacobian(f, ε)
+        return f(ε), df
+    else
+        f = x -> nn_helper(x, ε0, σ0)
+        df = ForwardDiff.jacobian(f, ε)
+        return f(ε), df
+    end
+    # @show df, H0
+    # error()
     return f(ε), df
 end
 
