@@ -10,7 +10,7 @@ using LinearAlgebra
 
 tid = 3
 include("nnutil.jl")
-nntype = "indicator"
+nntype = "piecewise"
 
 
 # * Auto-generated code by `ae_to_code`
@@ -61,9 +61,9 @@ updateStates!(domain, globdat)
 for i = 1:NT
     @info i, "/" , NT
     solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-3, 100)
-    if i==50
-        break
-    end
+#     if i==75
+#         break
+#     end
 end
 
 close("all")

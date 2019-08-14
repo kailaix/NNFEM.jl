@@ -1,2 +1,3 @@
 Weights
 *.dat
+!train_neural_network_from_fem.mat

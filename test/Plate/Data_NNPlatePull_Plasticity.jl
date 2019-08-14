@@ -7,7 +7,7 @@ using JLD2
 using ADCME
 using LinearAlgebra
 
-tid = 5
+tid = 3
 printstyled("tid = $tid\n", color=:cyan)
 testtype = "PlaneStressPlasticity"
 
@@ -28,12 +28,15 @@ updateStates!(domain, globdat)
 
 
 for i = 1:NT
-    # @info i, "/" , NT
+    @info i, "/" , NT
     solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-4, 100)
     # close("all")
     # visσ(domain,-1.5e9, 4.5e9)
     # savefig("Debug/$i.png")
     # error()
+    # if i==75
+    #     break
+    # end
 end
 
 # error()
@@ -46,7 +49,7 @@ u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
 scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
 
 close("all")
-visσ(domain)
+visσ(domain,-1.6e9,2.6e9)
 # visσ(domain,-1.5e9, 4.5e9)
 savefig("Debug/terminal$tid.png")
 

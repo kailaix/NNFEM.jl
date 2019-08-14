@@ -64,6 +64,25 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
         @show out
         # out = tf.map_fn(x->squeeze(reshape(x[4],1,3)+(reshape(x[2],1,3)-reshape(x[3],1,3))*get_matrix(x[1])), (y, ε/strain_scale, ε0/strain_scale, σ0/stress_scale), dtype=tf.float64)
         out*stress_scale
+    elseif nntype=="piecewise"
+        x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
+        x = constant(x)
+        ε = constant(ε)
+        ε0 = constant(ε0)
+        σ0 = constant(σ0)
+        
+        H0 = [ 2.50784e11  1.12853e11  0.0       
+            1.12853e11  2.50784e11  0.0       
+            0.0         0.0         6.89655e10]/stress_scale
+        y = ae(x, [20,20,20,20,6], nntype)
+        z = tf.reshape(sym_op(y), (-1,3,3))
+        σnn = squeeze(tf.matmul(z, tf.reshape((ε-ε0)/strain_scale, (-1,3,1)))) + σ0/stress_scale
+        σH = (ε-ε0)/strain_scale * H0 + σ0/stress_scale
+        z = sum(ε^2,dims=2)
+        i = sigmoid(1e9*(z-(1e-4)^2))
+        i = [i i i]
+        out = σnn .* i + σH .* (1-i)
+        out*stress_scale
     end
 
 end
@@ -104,16 +123,31 @@ function nn_helper(ε, ε0, σ0)
         x *= 1e3
         y = reshape(σ0, 1, 3) + (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*get_matrix(nnae_scaled(x))
         reshape(y, 3, 1)*stress_scale
+    elseif nntype=="piecewise"
+        H0 = [ 2.50784e11  1.12853e11  0.0       
+            1.12853e11  2.50784e11  0.0       
+            0.0         0.0         6.89655e10]
+        ε = ε/strain_scale
+        ε0 = ε0/strain_scale
+        σ0 = σ0/stress_scale
+        x = reshape([ε;ε0;σ0],1, 9)
+        y1 = reshape(σ0, 1, 3) + (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*get_matrix(nnae_scaled(x))
+        y1 = reshape(y1, 3, 1)*stress_scale
+        y2 = reshape(reshape(ε,1,3)*H0,3,1)
+        i = sigmoid_(1e9*(norm(ε)^2-(1e-4)^2))
+        y1 * i + y2 * (1-i)
+    else
+        error()
     end
 end
 
 function post_nn(ε, ε0, σ0, Δt)
     # # @show "Post NN"
-    # f = x -> nn_helper(x, ε0, σ0)
-    # df = ForwardDiff.jacobian(f, ε)
-    # return f(ε), df
+    f = x -> nn_helper(x, ε0, σ0)
+    df = ForwardDiff.jacobian(f, ε)
+    return f(ε), df
 
-    if norm(ε)<1e-5
+    if norm(ε)<1e-4
         f = x -> σ0 + H0*(x-ε0)
         df = ForwardDiff.jacobian(f, ε)
         return f(ε), df

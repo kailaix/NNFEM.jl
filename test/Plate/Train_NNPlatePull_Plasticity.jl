@@ -10,7 +10,7 @@ using LinearAlgebra
 include("nnutil.jl")
 
 testtype = "NeuralNetwork2D"
-nntype = "indicator"
+nntype = "piecewise"
 # H0 = SPDMatrix(3)
 H0 = Variable(rand(3,3))
 n_data = 5
@@ -41,8 +41,8 @@ loss = sum(losses)/stress_scale^2
 sess = Session(); init(sess)
 # ADCME.load(sess, "$(@__DIR__)/Data/learned_nn.mat")
 ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
-@show run(sess, loss)
-error()
+# @show run(sess, loss)
+# error()
 # error()
 BFGS!(sess, loss, 200)
 # ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
