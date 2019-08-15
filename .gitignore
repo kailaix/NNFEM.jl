@@ -37,7 +37,6 @@
 *.png
 *frames
 *.html
-*.txt
 *.dat
 *.mat
 *.jld2

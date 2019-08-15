@@ -15,6 +15,7 @@ prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45,
 "sigmaY"=>0.3e+9, "K"=>1/9*200e+9, "C1"=>20e9, "C2"=>2e9)
 ps = PlaneStress(prop); H0 = ps.H
 
+
 include("NNPlatePull_Domain.jl")
 
 
