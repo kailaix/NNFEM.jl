@@ -2,7 +2,7 @@
 using ForwardDiff
 using DelimitedFiles
 include("ops.jl")
-
+threshold = 1e-4
 function get_matrix(o::PyObject)
     tensor([o[1] o[2] o[3];
     o[2] o[4] o[5];
@@ -79,7 +79,7 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
         σnn = squeeze(tf.matmul(z, tf.reshape((ε-ε0)/strain_scale, (-1,3,1)))) + σ0/stress_scale
         σH = (ε-ε0)/strain_scale * H0 + σ0/stress_scale
         z = sum(ε^2,dims=2)
-        i = sigmoid(1e9*(z-(1e-4)^2))
+        i = sigmoid(1e9*(z-(threshold)^2))
         i = [i i i]
         out = σnn .* i + σH .* (1-i)
         out*stress_scale
@@ -134,7 +134,7 @@ function nn_helper(ε, ε0, σ0)
         y1 = reshape(σ0, 1, 3) + (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*get_matrix(nnae_scaled(x))
         y1 = reshape(y1, 3, 1)*stress_scale
         y2 = reshape(reshape(ε,1,3)*H0,3,1)
-        i = sigmoid_(1e9*(norm(ε)^2-(1e-4)^2))
+        i = sigmoid_(1e9*(norm(ε)^2-(threshold)^2))
         y1 * i + y2 * (1-i)
     else
         error()

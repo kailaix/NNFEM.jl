@@ -11,7 +11,7 @@ using LinearAlgebra
 include("nnutil.jl")
 
 nntype = "ae_scaled"
-tid = 1
+tid = 3.5
 
 # * Auto-generated code by `ae_to_code`
 if nntype=="ae_scaled"

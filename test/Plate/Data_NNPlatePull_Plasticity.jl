@@ -7,12 +7,12 @@ using JLD2
 using ADCME
 using LinearAlgebra
 
-tid = 3
+tid = 1
 printstyled("tid = $tid\n", color=:cyan)
 testtype = "PlaneStressPlasticity"
 
 prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45,
-"sigmaY"=>0.3e+9, "K"=>1/9*200e+9)
+"sigmaY"=>0.3e+9, "K"=>1/9*200e+9, "C1"=>20e9, "C2"=>2e9)
 ps = PlaneStress(prop); H0 = ps.H
 
 include("NNPlatePull_Domain.jl")
@@ -34,9 +34,12 @@ for i = 1:NT
     # visσ(domain,-1.5e9, 4.5e9)
     # savefig("Debug/$i.png")
     # error()
-    # if i==75
-    #     break
-    # end
+    if i==75
+        close("all")
+        visσ(domain,-1.6e9,2.6e9)
+        # visσ(domain,-1.5e9, 4.5e9)
+        savefig("Debug/terminal$(tid)i=75.png")
+    end
 end
 
 # error()

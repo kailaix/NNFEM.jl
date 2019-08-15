@@ -8,7 +8,7 @@ using ADCME
 using MAT
 using LinearAlgebra
 
-tid = 3
+tid = 3.5
 include("nnutil.jl")
 nntype = "piecewise"
 
@@ -61,13 +61,13 @@ updateStates!(domain, globdat)
 for i = 1:NT
     @info i, "/" , NT
     solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-3, 100)
-#     if i==75
-#         break
-#     end
+    if i==75
+        break
+    end
 end
 
 close("all")
-visσ(domain,-1.6e9,2.7e9)
+visσ(domain,-1.6e9,2.6e9)
 savefig("Debug/$(tid)_test.png")
 
 # visstatic(domain)
