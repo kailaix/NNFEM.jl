@@ -8,7 +8,7 @@ using ADCME
 using MAT
 using LinearAlgebra
 
-tid = 3.5
+tid = 4.5
 include("nnutil.jl")
 nntype = "piecewise"
 
