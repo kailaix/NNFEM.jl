@@ -9,9 +9,12 @@ using LinearAlgebra
 
 tid = 1
 printstyled("tid = $tid\n", color=:cyan)
-testtype = "PlaneStressMooneyRivlin"
+testtype = "PlaneStressIncompressibleRivlinSaunders"
+#https://classes.engineering.wustl.edu/2009/spring/mase5513/abaqus/docs/v6.6/books/bmk/default.htm?startat=ch01s01ach08.html
+prop = Dict("name"=> testtype, "rho"=> 800.0, "C1"=>0.1863e6, "C2"=>-0.00979e6)
 
-prop = Dict("name"=> testtype, "rho"=> 8000.0, "C1"=>20e9, "C2"=>2e9)
+# testtype = "PlaneStress"
+# prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45)
 
 include("NNPlatePull_Domain.jl")
 
@@ -34,7 +37,7 @@ for i = 1:NT
     # error()
     if i==75
         close("all")
-        visσ(domain,-1.6e9,2.6e9)
+        visσ(domain)
         # visσ(domain,-1.5e9, 4.5e9)
         savefig("Debug/terminal$(tid)i=75.png")
     end
@@ -50,7 +53,7 @@ u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
 scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
 
 close("all")
-visσ(domain,-1.6e9,2.6e9)
+visσ(domain)
 # visσ(domain,-1.5e9, 4.5e9)
 savefig("Debug/terminal$tid.png")
 

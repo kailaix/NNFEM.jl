@@ -26,8 +26,8 @@ function SmallStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, pro
         mat = [PlaneStressPlasticity(props) for i = 1:nGauss]
     elseif name=="NeuralNetwork2D"
         mat = [NeuralNetwork2D(props) for i = 1:nGauss]
-    elseif name=="PlaneStressMooneyRivlin"
-        mat = [PlaneStressMooneyRivlin(props) for i = 1:nGauss]
+    elseif name=="PlaneStressIncompressibleRivlinSaunders"
+        mat = [PlaneStressIncompressibleRivlinSaunders(props) for i = 1:nGauss]
     else
         error("Not implemented yet: $name")
     end
