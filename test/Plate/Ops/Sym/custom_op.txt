@@ -1,0 +1,3 @@
+SymOp
+double x(?,6)
+double y(?,9) -> output

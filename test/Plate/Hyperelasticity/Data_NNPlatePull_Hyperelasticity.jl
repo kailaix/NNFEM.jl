@@ -7,7 +7,7 @@ using JLD2
 using ADCME
 using LinearAlgebra
 
-tid = 1
+tid = 3.5
 printstyled("tid = $tid\n", color=:cyan)
 testtype = "PlaneStressIncompressibleRivlinSaunders"
 #https://classes.engineering.wustl.edu/2009/spring/mase5513/abaqus/docs/v6.6/books/bmk/default.htm?startat=ch01s01ach08.html
