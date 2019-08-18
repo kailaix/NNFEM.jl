@@ -10,12 +10,12 @@ using LinearAlgebra
 
 tid = 3.5
 include("nnutil.jl")
-nntype = "piecewise"
+nntype = "ae_scaled"
 
 
 # * Auto-generated code by `ae_to_code`
-# aedictae_scaled = matread("Data/learned_nn.mat"); # using MAT
-aedictae_scaled = matread("Data/train_neural_network_from_fem.mat")
+aedictae_scaled = matread("Data/learned_nn.mat"); # using MAT
+# aedictae_scaled = matread("Data/train_neural_network_from_fem.mat")
 Wkey = "$(nntype)backslashfully_connectedbackslashweightscolon0"
 Wkey = "$(nntype)backslashfully_connected_1backslashweightscolon0"
 Wkey = "$(nntype)backslashfully_connected_2backslashweightscolon0"
@@ -44,10 +44,9 @@ end
 
 # testtype = "PlaneStressPlasticity"
 testtype = "NeuralNetwork2D"
-prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45,
+prop = Dict("name"=> testtype, "rho"=> 800.0, "E"=> 200e+9, "nu"=> 0.45,
 "sigmaY"=>0.3e+9, "K"=>1/9*200e+9,  "nn"=>post_nn)
 include("NNPlatePull_Domain.jl")
-
 
 
 domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
@@ -60,14 +59,14 @@ updateStates!(domain, globdat)
 
 for i = 1:NT
     @info i, "/" , NT
-    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-3, 100)
+    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-4, 100)
     if i==75
         break
     end
 end
 
 close("all")
-visσ(domain,-1.6e9,2.6e9)
+visσ(domain, -3e4, 13e4)
 savefig("Debug/$(tid)_test.png")
 
 # visstatic(domain)

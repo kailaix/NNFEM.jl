@@ -48,7 +48,7 @@ end
 
 #force load function
 function fft(t)
-    f = 1.0e4 *(1.0*tid) * sin(pi*t/T) * ones(nx + 1)
+    f = 1.0e4 *(0.2*tid) * sin(pi*t/T) * ones(nx + 1)
     f[1] /= 2.0
     f[end] /= 2.0
     return f
@@ -66,7 +66,7 @@ for j = 1:ny
 end
 
 T = 0.05
-NT = 200
+NT = 100
 Δt = T/NT
-stress_scale = 1.0e10
+stress_scale = 1.0e5
 strain_scale = 1

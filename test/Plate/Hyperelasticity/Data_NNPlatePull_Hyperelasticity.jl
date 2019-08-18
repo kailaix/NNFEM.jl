@@ -7,7 +7,7 @@ using JLD2
 using ADCME
 using LinearAlgebra
 
-tid = 3.5
+# tid = 2
 printstyled("tid = $tid\n", color=:cyan)
 testtype = "PlaneStressIncompressibleRivlinSaunders"
 #https://classes.engineering.wustl.edu/2009/spring/mase5513/abaqus/docs/v6.6/books/bmk/default.htm?startat=ch01s01ach08.html
@@ -37,7 +37,7 @@ for i = 1:NT
     # error()
     if i==75
         close("all")
-        visσ(domain)
+        visσ(domain, -3e4, 13e4)
         # visσ(domain,-1.5e9, 4.5e9)
         savefig("Debug/terminal$(tid)i=75.png")
     end
@@ -53,8 +53,7 @@ u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
 scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
 
 close("all")
-visσ(domain)
-# visσ(domain,-1.5e9, 4.5e9)
+visσ(domain, -3e4, 13e4)
 savefig("Debug/terminal$tid.png")
 
 @save "Data/domain$tid.jld2" domain

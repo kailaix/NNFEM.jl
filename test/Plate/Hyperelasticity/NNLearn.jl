@@ -7,10 +7,10 @@ using LinearAlgebra
 reset_default_graph()
 
 include("nnutil.jl")
-stress_scale = 1.0e10
+stress_scale = 1.0e5
 strain_scale = 1.0
 
-nntype = "piecewise"
+nntype = "ae_scaled"
 H0 = Variable(diagm(0=>ones(3)))
 ndata = 5
 
@@ -29,8 +29,8 @@ variable_scope(nntype) do
 end
 
 sess = Session(); init(sess)
+ADCME.load(sess, "Data/learned_nn.mat")
 @show run(sess, loss)
-# ADCME.load(sess, "Data/learned_nn.mat")
 BFGS!(sess, loss, 2000)
 ADCME.save(sess, "Data/learned_nn.mat")
 
@@ -45,20 +45,17 @@ init(sess)
 ADCME.load(sess, "Data/learned_nn.mat")
 O = run(sess, y)
 
-using Random; Random.seed!(233)
-VisualizeStress2D(Y, O, 20)
-# ADCME.save(sess, "Data/learned_nn.mat")
 
-error("Learning stop!")
-
+@info "Learning finshed"
 ADCME.load(sess, "Data/learned_nn.mat")
 @show run(sess, loss)
 close("all")
 O = run(sess, y)
 using Random; Random.seed!(233)
 VisualizeStress2D(Y, O, 20)
-
+savefig("Debug/learned_nn_1.png")
 
 
 VisualizeStrainStressSurface(X, Y)
 VisualizeStrainStressSurface(X, O)
+savefig("Debug/learned_nn_2.png")

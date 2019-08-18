@@ -1,4 +1,4 @@
-export DynamicMatLawLoss, preprocessing, BFGS!
+export DynamicMatLawLoss, preprocessing
 
 @doc """
     domain   : finite element domain, for data structure
@@ -242,30 +242,4 @@ function preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64
     # # DEBUG
     # fext = hcat(domain.history["fint"]...)
     return F_tot'|>Array, E_all, w∂E∂u_all
-end
-
-
-function BFGS!(sess::PyObject, loss::PyObject, max_iter::Int64=15000; kwargs...)
-    __cnt = 0
-    __loss = 0
-    out = []
-    function print_loss(l)
-        if mod(__cnt,1)==0
-            println("iter $__cnt, current loss=",l)
-        end
-        __loss = l
-        __cnt += 1
-    end
-    __iter = 0
-    function step_callback(rk)
-        if mod(__iter,1)==0
-            println("================ ITER $__iter ===============")
-        end
-        push!(out, __loss)
-        __iter += 1
-    end
-    opt = ScipyOptimizerInterface(loss, method="L-BFGS-B",options=Dict("maxiter"=> max_iter, "ftol"=>1e-12, "gtol"=>1e-12))
-    @info "Optimization starts..."
-    ScipyOptimizerMinimize(sess, opt, loss_callback=print_loss, step_callback=step_callback, fetches=[loss])
-    out
 end
