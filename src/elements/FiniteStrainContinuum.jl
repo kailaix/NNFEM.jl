@@ -103,6 +103,31 @@ function getMassMatrix(self::FiniteStrainContinuum)
     mass, lumped
 end
 
+function getStrain(self::FiniteStrainContinuum, state::Array{Float64})
+    ndofs = dofCount(self); 
+    nnodes = length(self.elnodes)
+    fint = zeros(Float64, ndofs)
+    stiff = zeros(Float64, ndofs,ndofs)
+    out = Array{Float64}[]
+    u = state[1:nnodes]; v = state[nnodes+1:2*nnodes]
+
+    nGauss = length(self.weights)
+    E = zeros(nGauss, 3)
+    w∂E∂u = zeros(nGauss, 8, 3)
+    for k = 1:length(self.weights)
+        g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
+        
+        ux = u'*g1; uy = u'*g2; vx = v'*g1; vy = v'*g2
+        # compute  ∂E∂u.T, 8 by 3 array 
+        ∂E∂u = [g1+ux*g1 uy*g2    g2 + g2*ux+g1*uy;
+                vx*g1    g2+vy*g2 g1 + g1*vy+g2*vx;]  # 8x3
+        E[k,:] = [ux+0.5*(ux*ux+vx*vx); vy+0.5*(uy*uy+vy*vy); uy+vx+ux*uy+vx*vy] # 3x1
+        w∂E∂u[k,:,:] = ∂E∂u*self.weights[k] # 8x3
+    end
+
+    return E, w∂E∂u
+end
+
 
 function getNodes(self::FiniteStrainContinuum)
     return self.elnodes

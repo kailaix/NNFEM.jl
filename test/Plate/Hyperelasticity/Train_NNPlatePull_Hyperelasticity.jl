@@ -10,13 +10,13 @@ using LinearAlgebra
 include("nnutil.jl")
 
 testtype = "NeuralNetwork2D"
-nntype = "piecewise"
+nntype = "ae_scaled"
 # H0 = SPDMatrix(3)
 H0 = Variable(rand(3,3))
 n_data = 5
 
 
-prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45,
+prop = Dict("name"=> testtype, "rho"=> 800.0, "E"=> 200e+9, "nu"=> 0.45,
 "sigmaY"=>0.3e+9, "K"=>1/9*200e+9,  "nn"=>post_nn)
 ps = PlaneStress(prop); H0 = ps.H
 # H0 = constant(HH)/stress_scale
@@ -39,12 +39,11 @@ end
 loss = sum(losses)/stress_scale^2
 
 sess = Session(); init(sess)
-ADCME.load(sess, "$(@__DIR__)/Data/learned_nn.mat")
+# ADCME.load(sess, "$(@__DIR__)/Data/learned_nn.mat")
 # ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
-@show run(sess, loss)
-error()
+# @show run(sess, loss)
 # error()
-BFGS!(sess, loss, 200)
+BFGS!(sess, loss, 500)
 # ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
 # ADCME.load(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
 # BFGS!(sess, loss, 5000)
@@ -68,4 +67,4 @@ catch
 end
 using Random; Random.seed!(233)
 VisualizeStress2D(Y, O, 20)
-savefig("$(@__DIR__)/Debug/trainednn.png")
+savefig("$(@__DIR__)/Debug/trained_nn.png")
