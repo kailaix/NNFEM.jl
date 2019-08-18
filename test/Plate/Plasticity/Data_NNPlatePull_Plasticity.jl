@@ -7,7 +7,7 @@ using JLD2
 using ADCME
 using LinearAlgebra
 
-tid = 4.5
+# tid = 4.5
 printstyled("tid = $tid\n", color=:cyan)
 testtype = "PlaneStressPlasticity"
 
