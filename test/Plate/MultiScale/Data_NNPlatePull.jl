@@ -18,7 +18,7 @@ https://www.azom.com/properties.aspx?ArticleID=42
 ρ = 3.2 g/cm^3  E = 400GPa   ν = 0.35
 length scale cm
 """
-prop0 = Dict("name"=> "PlaneStress","rho"=> 4.5, "E"=> 100e+10, "nu"=> 0.2,
+prop0 = Dict("name"=> "PlaneStressPlasticity","rho"=> 4.5, "E"=> 100e+10, "nu"=> 0.2,
 "sigmaY"=>0.97e+10, "K"=>10e+10)
 prop1 = Dict("name"=> "PlaneStress", "rho"=> 3.2, "E"=>400e10, "nu"=>0.35)
 
@@ -39,7 +39,7 @@ updateStates!(domain, globdat)
 
 for i = 1:NT
     @info i, "/" , NT
-    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-3, 100)
+    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-8, 100)
     # close("all")
     # visσ(domain,-1.5e9, 4.5e9)
     # savefig("Debug/$i.png")

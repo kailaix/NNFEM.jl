@@ -120,7 +120,7 @@ end
 
 
 FBC[collect(2:nx+1), 2] .= -1
-F = 1000e4
+F = 4e6   #elastic 3e6 ; plasticity starts from 4e6 
 fext[collect(1:nx+1), 2] = F * gauss(Lx, nx, Lx*5.0/6.0)
 
 
@@ -143,7 +143,7 @@ for j = 1:ny
     end
 end
 
-T = 0.5
+T = 0.0005
 NT = 100
 Δt = T/NT
 stress_scale = 1.0e5

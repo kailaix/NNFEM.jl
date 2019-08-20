@@ -67,6 +67,7 @@ function getStress(self::PlaneStressPlasticity,  strain::Array{Float64},  Dstrai
     α = α0 + Δγ
 
     r2 = f(σ, α, σY, K)
+    #@show r2, α, K, σY
     if r2<0
         #@show "Elasticity"
         σ = σ0 + H*(ε-ε0) 
