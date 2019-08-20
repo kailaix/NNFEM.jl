@@ -101,7 +101,7 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, m
         
         domain.state[domain.eq_to_dof] = (1 - αf)*(u + Δt*∂u + 0.5 * Δt * Δt * ((1 - β2)*∂∂u + β2*∂∂up)) + αf*u
 
-        fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
+        @time fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
 
         # error()
         res = M * (∂∂up *(1 - αm) + αm*∂∂u)  + fint - fext
@@ -111,8 +111,9 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, m
         end
 
         A = M*(1 - αm) + (1 - αf) * 0.5 * β2 * Δt^2 * stiff
-   
-        Δ∂∂u = A\res
+        
+        @show "solve..."
+        @time Δ∂∂u = A\res
 
         #@info " norm(Δ∂∂u) ", norm(Δ∂∂u) 
         while η * norm(Δ∂∂u) > norm0

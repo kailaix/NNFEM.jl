@@ -8,10 +8,19 @@ using ADCME
 using LinearAlgebra
 
 tid = 1
-printstyled("tid = $tid\n", color=:cyan)
-testtype = "PlaneStressIncompressibleRivlinSaunders"
-#https://classes.engineering.wustl.edu/2009/spring/mase5513/abaqus/docs/v6.6/books/bmk/default.htm?startat=ch01s01ach08.html
-prop = Dict("name"=> testtype, "rho"=> 800.0, "C1"=>0.1863e6, "C2"=>-0.00979e6)
+"""
+Property:
+The matrix is made of titanium, which are assumed to be elasto-plastic titanium material,  
+ρ = 4.5 g/cm^3;  E = 100GPa	 K=10e+9  ν =0.2   σY=970 MPa
+
+Fibers are made of SiC, which are assumed to be isotropic and elastic, with
+https://www.azom.com/properties.aspx?ArticleID=42
+ρ = 3.2 g/cm^3  E = 400GPa   ν = 0.35
+length scale cm
+"""
+prop0 = Dict("name"=> "PlaneStress","rho"=> 4.5, "E"=> 100e+10, "nu"=> 0.2,
+"sigmaY"=>0.97e+10, "K"=>10e+10)
+prop1 = Dict("name"=> "PlaneStress", "rho"=> 3.2, "E"=>400e10, "nu"=>0.35)
 
 # testtype = "PlaneStress"
 # prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45)

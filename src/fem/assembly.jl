@@ -136,7 +136,8 @@ end
 
 function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
   Fint = zeros(Float64, domain.neqs)
-  K = zeros(Float64, domain.neqs, domain.neqs)
+  # K = zeros(Float64, domain.neqs, domain.neqs)
+  ii = Int64[]; jj = Int64[]; vv = Float64[]
   neles = domain.neles
 
   # Loop over the elements in the elementGroup
@@ -166,13 +167,62 @@ function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64
 
     # Assemble in the global array
     el_eqns_active = el_eqns .>= 1
-    K[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += stiff[el_eqns_active,el_eqns_active]
+    # K[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += stiff[el_eqns_active,el_eqns_active]
+    Slocal = stiff[el_eqns_active,el_eqns_active]
+    Idx = el_eqns[el_eqns_active]
+    for i = 1:length(Idx)
+      for j = 1:length(Idx)
+        push!(ii, Idx[i])
+        push!(jj, Idx[j])
+        push!(vv, Slocal[i,j])
+      end
+    end
     Fint[el_eqns[el_eqns_active]] += fint[el_eqns_active]
-
     # @info "Fint is ", Fint
   end
-  return Fint, sparse(K)
+  K = sparse(ii, jj, vv, domain.neqs, domain.neqs)
+  return Fint, K
 end
+
+# function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
+#   Fint = zeros(Float64, domain.neqs)
+#   K = zeros(Float64, domain.neqs, domain.neqs)
+#   neles = domain.neles
+
+#   # Loop over the elements in the elementGroup
+#   for iele  = 1:neles
+#     element = domain.elements[iele]
+
+#     # Get the element nodes
+#     el_nodes = getNodes(element)
+
+#     # Get the element nodes
+#     el_eqns = getEqns(domain,iele)
+
+#     el_dofs = getDofs(domain,iele)
+
+#     #@show "iele", iele, el_dofs 
+    
+#     #@show "domain.state", iele, domain.state 
+
+#     el_state  = getState(domain,el_dofs)
+
+#     el_Dstate = getDstate(domain,el_dofs)
+#     # #@show "+++++", el_state, el_Dstate
+
+#     # Get the element contribution by calling the specified action
+#     #@info "ele id is ", iele
+#     fint, stiff  = getStiffAndForce(element, el_state, el_Dstate, Δt)
+
+#     # Assemble in the global array
+#     el_eqns_active = el_eqns .>= 1
+#     K[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += stiff[el_eqns_active,el_eqns_active]
+#     Fint[el_eqns[el_eqns_active]] += fint[el_eqns_active]
+
+#     # @info "Fint is ", Fint
+#   end
+#   return Fint, sparse(K)
+# end
 
 @doc """
     compute constant mass matrix
@@ -183,11 +233,13 @@ end
 """->
 function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
     Mlumped = zeros(Float64, domain.neqs)
-    M = zeros(Float64, domain.neqs, domain.neqs)
+    # M = zeros(Float64, domain.neqs, domain.neqs)
+    iiM = Int64[]; jjM = Int64[]; vvM = Float64[]
     Mlumped = zeros(Float64, domain.neqs)
     neles = domain.neles
 
     MID = zeros(domain.neqs, sum(domain.EBC .== -2))
+    iiMID = Int64[]; jjMID = Int64[]; vvMID = Float64[]
     # Loop over the elements in the elementGroup
     for iele = 1:neles
         element = domain.elements[iele]
@@ -206,58 +258,80 @@ function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
         el_eqns_active = (el_eqns .>= 1)
         el_eqns_acc_active = (el_eqns .== -2)
         
-        M[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += lM[el_eqns_active, el_eqns_active]
+        # M[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += lM[el_eqns_active, el_eqns_active]
+        Idx = el_eqns[el_eqns_active]
+        Mlocal = lM[el_eqns_active, el_eqns_active]
+        for i = 1:length(Idx)
+          for j = 1:length(Idx)
+            push!(iiM, Idx[i])
+            push!(jjM, Idx[j])
+            push!(vvM, Mlocal[i,j])
+          end
+        end
+
         Mlumped[el_eqns[el_eqns_active]] += lumped[el_eqns_active]
-        MID[el_eqns[el_eqns_active], el_eqns[el_eqns_acc_active]] += lM[el_eqns_active, el_eqns_acc_active]
+        # MID[el_eqns[el_eqns_active], el_eqns[el_eqns_acc_active]] += lM[el_eqns_active, el_eqns_acc_active]
+        Idx = el_eqns[el_eqns_active]
+        Idy = el_eqns[el_eqns_acc_active]
+        Mlocal = lM[el_eqns_active, el_eqns_acc_active]
+        for i = 1:length(Idx)
+          for j = 1:length(Idy)
+            push!(iiMID, Idx[i])
+            push!(jjMID, Idy[j])
+            push!(vvMID, Mlocal[i,j])
+          end
+        end
         
     end
 
-    globaldat.M = sparse(M)
+    # globaldat.M = sparse(M)
+    globaldat.M = sparse(iiM, jjM, vvM, domain.neqs, domain.neqs)
     globaldat.Mlumped = sparse(Mlumped)
-    globaldat.MID = MID
+    #globaldat.MID = MID
+    globaldat.MID = sparse(iiMID, jjMID, vvMID, domain.neqs, sum(domain.EBC .== -2))
 end
 
 
-@doc """
-    compute constant mass matrix as sparse matrix
-    due to the time-dependent Dirichlet boundary condition
-    mass matrix = M,    MID
-                  MID'  MDD
-    save M and MID and lump(M)
-"""->
+# @doc """
+#     compute constant mass matrix as sparse matrix
+#     due to the time-dependent Dirichlet boundary condition
+#     mass matrix = M,    MID
+#                   MID'  MDD
+#     save M and MID and lump(M)
+# """->
 
-function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
-  Mlumped = zeros(Float64, domain.neqs)
-  M = zeros(Float64, domain.neqs, domain.neqs)
-  Mlumped = zeros(Float64, domain.neqs)
-  neles = domain.neles
+# function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
+#   Mlumped = zeros(Float64, domain.neqs)
+#   M = zeros(Float64, domain.neqs, domain.neqs)
+#   Mlumped = zeros(Float64, domain.neqs)
+#   neles = domain.neles
 
-  MID = zeros(domain.neqs, sum(domain.EBC .== -2))
-  # Loop over the elements in the elementGroup
-  for iele = 1:neles
-      element = domain.elements[iele]
+#   MID = zeros(domain.neqs, sum(domain.EBC .== -2))
+#   # Loop over the elements in the elementGroup
+#   for iele = 1:neles
+#       element = domain.elements[iele]
 
-      # Get the element nodes
-      el_nodes = getNodes(element)
+#       # Get the element nodes
+#       el_nodes = getNodes(element)
   
-      # Get the element nodes
-      el_eqns = getEqns(domain,iele)
+#       # Get the element nodes
+#       el_eqns = getEqns(domain,iele)
 
-      # Get the element contribution by calling the specified action
-      lM, lumped = getMassMatrix(element)
+#       # Get the element contribution by calling the specified action
+#       lM, lumped = getMassMatrix(element)
 
-      # Assemble in the global array
+#       # Assemble in the global array
       
-      el_eqns_active = (el_eqns .>= 1)
-      el_eqns_acc_active = (el_eqns .== -2)
+#       el_eqns_active = (el_eqns .>= 1)
+#       el_eqns_acc_active = (el_eqns .== -2)
       
-      M[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += lM[el_eqns_active, el_eqns_active]
-      Mlumped[el_eqns[el_eqns_active]] += lumped[el_eqns_active]
-      MID[el_eqns[el_eqns_active], el_eqns[el_eqns_acc_active]] += lM[el_eqns_active, el_eqns_acc_active]
+#       M[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += lM[el_eqns_active, el_eqns_active]
+#       Mlumped[el_eqns[el_eqns_active]] += lumped[el_eqns_active]
+#       MID[el_eqns[el_eqns_active], el_eqns[el_eqns_acc_active]] += lM[el_eqns_active, el_eqns_acc_active]
       
-  end
+#   end
 
-  globaldat.M = sparse(M)
-  globaldat.Mlumped = sparse(Mlumped)
-  globaldat.MID = MID
-end
+#   globaldat.M = sparse(M)
+#   globaldat.Mlumped = sparse(Mlumped)
+#   globaldat.MID = MID
+# end

@@ -73,7 +73,7 @@ function generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distributio
     return ele_type
 end
 
-fiber_size = 2
+fiber_size = 10
 nxc, nyc = 60,10
 nx, ny =  nxc*fiber_size, nyc*fiber_size
 #Type 1=> SiC, type 0=>Ti, each fiber has size is k by k
@@ -81,8 +81,8 @@ fiber_fraction = 0.25
 fiber_distribution = "Uniform"
 ele_type = generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distribution)
 
-matshow(ele_type)
-error()
+#matshow(ele_type)
+#error()
 
 nnodes, neles = (nx + 1)*(ny + 1), nx*ny
 x = np.linspace(0.0, 3.0, nx + 1)
@@ -96,7 +96,9 @@ ndofs = 2
 
 EBC, g = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 
-EBC[collect(1:nx+1), :] .= -1
+EBC[collect(1:nx+1:(nx+1)*(ny+1)), :] .= -1 # fix left
+EBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= -1 # symmetric right
+
 
 function ggt(t)
     return zeros(sum(EBC.==-2)), zeros(sum(EBC.==-2))
@@ -110,24 +112,13 @@ FBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 
 
 # todo PARAMETER
-FORCE_TYPE = "nonconstant"
 
-if FORCE_TYPE == "constant"
-    #pull in the y direction
-    FBC[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] .= -1
-    fext[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] = collect(range(2.0, stop=5.0, length=nx+1))*1e2*(0.1*tid+0.5)
-    fext[(nx+1)*ny + 1, 2] /= 2.0
-    fext[(nx+1)*ny + nx+1, 2] /= 2.0
-else
-    FBC[collect((nx+1)*ny + 1:(nx+1)*ny + nx+1), 2] .= -2
-end
+FBC[round(Int,nx*10.0/12.0), 2] = -2
+
 
 #force load function
 function fft(t)
-    f = 1.0e4 *(0.2*tid) * sin(pi*t/T) * ones(nx + 1)
-    f[1] /= 2.0
-    f[end] /= 2.0
-    return f
+    f = 1.0e4 
 end
 ft = fft
 
@@ -137,7 +128,8 @@ for j = 1:ny
         n = (nx+1)*(j-1) + i
         elnodes = [n, n + 1, n + 1 + (nx + 1), n + (nx + 1)]
         coords = nodes[elnodes,:]
-        push!(elements,FiniteStrainContinuum(coords,elnodes, prop,2))
+        prop = ele_type[i,j] == 0 ? prop0 : prop1
+        push!(elements,SmallStrainContinuum(coords,elnodes, prop, 2))
     end
 end
 
