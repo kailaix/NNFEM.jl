@@ -1,3 +1,6 @@
+tid = myid()
+printstyled("tid=$tid\n", color=:green)
+
 using Revise
 using Test 
 using NNFEM
@@ -7,7 +10,7 @@ using JLD2
 using ADCME
 using LinearAlgebra
 
-tid = 1
+# tid = 1
 """
 Property:
 The matrix is made of titanium, which are assumed to be elasto-plastic titanium material,  

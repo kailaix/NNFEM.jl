@@ -120,7 +120,7 @@ end
 
 
 FBC[collect(2:nx+1), 2] .= -1
-F = 5e6   #elastic 3e6 ; plasticity starts from 4e6 
+F = 5e6*(0.2tid)   #elastic 3e6 ; plasticity starts from 4e6 
 fext[collect(1:nx+1), 2] = F * gauss(Lx, nx, Lx*5.0/6.0)
 
 
