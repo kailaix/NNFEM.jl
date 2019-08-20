@@ -39,14 +39,14 @@ updateStates!(domain, globdat)
 
 for i = 1:NT
     @info i, "/" , NT
-    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-4, 100)
+    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-3, 100)
     # close("all")
     # visσ(domain,-1.5e9, 4.5e9)
     # savefig("Debug/$i.png")
     # error()
     if i==75
         close("all")
-        visσ(domain, -3e4, 13e4)
+        visσ(domain)
         # visσ(domain,-1.5e9, 4.5e9)
         savefig("Debug/terminal$(tid)i=75.png")
     end
@@ -62,7 +62,7 @@ u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
 scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
 
 close("all")
-visσ(domain, -3e4, 13e4)
+visσ(domain)
 savefig("Debug/terminal$tid.png")
 
 @save "Data/domain$tid.jld2" domain

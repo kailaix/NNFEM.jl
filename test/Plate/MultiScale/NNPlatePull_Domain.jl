@@ -85,8 +85,9 @@ ele_type = generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distribut
 #error()
 
 nnodes, neles = (nx + 1)*(ny + 1), nx*ny
-x = np.linspace(0.0, 3.0, nx + 1)
-y = np.linspace(0.0, 0.5, ny + 1)
+Lx, Ly = 3.0, 0.5
+x = np.linspace(0.0, Lx, nx + 1)
+y = np.linspace(0.0, Ly, ny + 1)
 
 
 X, Y = np.meshgrid(x, y)
@@ -111,14 +112,23 @@ gt = ggt
 FBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 
 
-# todo PARAMETER
+# force parameter
+function gauss(L, n, x0; σ=0.2)
+    x = collect(LinRange(0, L, n+1))
+    g = 1.0/(sqrt(2*pi*σ^2)) * exp.(-0.5*(x .- x0).^2/σ^2)
+end
 
-FBC[round(Int,nx*10.0/12.0), 2] = -2
+
+FBC[collect(2:nx+1), 2] .= -1
+F = 1000e4
+fext[collect(1:nx+1), 2] = F * gauss(Lx, nx, Lx*5.0/6.0)
+
+
 
 
 #force load function
 function fft(t)
-    f = 1.0e4 
+    f = 1.0e6 
 end
 ft = fft
 
@@ -129,11 +139,11 @@ for j = 1:ny
         elnodes = [n, n + 1, n + 1 + (nx + 1), n + (nx + 1)]
         coords = nodes[elnodes,:]
         prop = ele_type[i,j] == 0 ? prop0 : prop1
-        push!(elements,SmallStrainContinuum(coords,elnodes, prop, 2))
+        push!(elements,SmallStrainContinuum(coords,elnodes, prop, 3))
     end
 end
 
-T = 0.05
+T = 0.5
 NT = 100
 Δt = T/NT
 stress_scale = 1.0e5
