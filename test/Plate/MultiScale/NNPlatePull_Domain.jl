@@ -73,7 +73,7 @@ function generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distributio
     return ele_type
 end
 
-fiber_size = 2
+fiber_size = 10
 nxc, nyc = 60,10
 nx, ny =  nxc*fiber_size, nyc*fiber_size
 #Type 1=> SiC, type 0=>Ti, each fiber has size is k by k
@@ -120,7 +120,7 @@ end
 
 
 FBC[collect(2:nx+1), 2] .= -1
-F = 4e6   #elastic 3e6 ; plasticity starts from 4e6 
+F = 5e6   #elastic 3e6 ; plasticity starts from 4e6 
 fext[collect(1:nx+1), 2] = F * gauss(Lx, nx, Lx*5.0/6.0)
 
 
@@ -143,8 +143,8 @@ for j = 1:ny
     end
 end
 
-T = 0.0005
-NT = 100
+T = 0.001
+NT = 200
 Δt = T/NT
 stress_scale = 1.0e5
 strain_scale = 1
