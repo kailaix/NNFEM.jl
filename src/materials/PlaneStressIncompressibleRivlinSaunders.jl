@@ -1,7 +1,11 @@
 using ForwardDiff
 export  PlaneStressIncompressibleRivlinSaunders, getStress
 
-
+@doc """
+Pascon, João Paulo. 
+"Large deformation analysis of plane-stress hyperelastic problems via triangular membrane finite elements." 
+International Journal of Advanced Structural Engineering (2019): 1-20.
+"""->
 mutable struct PlaneStressIncompressibleRivlinSaunders
     ρ::Float64 # density
     C1::Float64 # Young's modulus
