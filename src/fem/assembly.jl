@@ -180,8 +180,9 @@ function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64
     Fint[el_eqns[el_eqns_active]] += fint[el_eqns_active]
     # @info "Fint is ", Fint
   end
-  K = sparse(ii, jj, vv, domain.neqs, domain.neqs)
-  return Fint, K
+  Ksparse = sparse(ii, jj, vv, domain.neqs, domain.neqs)
+  # @show norm(K-Array(Ksparse))
+  return Fint, Ksparse
 end
 
 # function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
@@ -238,7 +239,7 @@ function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
     Mlumped = zeros(Float64, domain.neqs)
     neles = domain.neles
 
-    MID = zeros(domain.neqs, sum(domain.EBC .== -2))
+    # MID = zeros(domain.neqs, sum(domain.EBC .== -2))
     iiMID = Int64[]; jjMID = Int64[]; vvMID = Float64[]
     # Loop over the elements in the elementGroup
     for iele = 1:neles
@@ -286,9 +287,11 @@ function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
 
     # globaldat.M = sparse(M)
     globaldat.M = sparse(iiM, jjM, vvM, domain.neqs, domain.neqs)
+    # @show norm(M-Array(globaldat.M))
     globaldat.Mlumped = sparse(Mlumped)
     #globaldat.MID = MID
     globaldat.MID = sparse(iiMID, jjMID, vvMID, domain.neqs, sum(domain.EBC .== -2))
+    # @show norm(MID - Array(globaldat.MID))
 end
 
 
