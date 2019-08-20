@@ -8,6 +8,7 @@ using Statistics
 using LinearAlgebra
 using PyCall:PyObject
 using ADCME
+using SparseArrays
 animation = PyNULL()
 colors = PyNULL()
 cmx = PyNULL()

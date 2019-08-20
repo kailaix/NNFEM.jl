@@ -41,3 +41,5 @@
 *.mat
 *.jld2
 
+
+test/Truss/Data/*
