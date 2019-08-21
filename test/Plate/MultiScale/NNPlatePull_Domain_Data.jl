@@ -7,6 +7,7 @@ using JLD2
 using ADCME
 using LinearAlgebra
 using Distributions, Random
+matplotlib.use("macosx")
 
 np = pyimport("numpy")
 """
@@ -73,7 +74,7 @@ function generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distributio
     return ele_type
 end
 
-fiber_size = 10
+fiber_size = 2
 nxc, nyc = 60,10
 nx, ny =  nxc*fiber_size, nyc*fiber_size
 #Type 1=> SiC, type 0=>Ti, each fiber has size is k by k
@@ -98,39 +99,49 @@ ndofs = 2
 EBC, g = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 
 EBC[collect(1:nx+1:(nx+1)*(ny+1)), :] .= -1 # fix left
-EBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= -1 # symmetric right
-
 
 function ggt(t)
     return zeros(sum(EBC.==-2)), zeros(sum(EBC.==-2))
 end
 gt = ggt
 
-
-
-#pull in the y direction
-FBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
-
-
-# force parameter
-function gauss(L, n, x0; σ=0.2)
-    x = collect(LinRange(0, L, n+1))
-    g = 1.0/(sqrt(2*pi*σ^2)) * exp.(-0.5*(x .- x0).^2/σ^2)
-end
-
-
-FBC[collect(2:nx+1), 2] .= -1
-F = 5e6*(0.2tid)   #elastic 3e6 ; plasticity starts from 4e6 
-fext[collect(1:nx+1), 2] = F * gauss(Lx, nx, Lx*5.0/6.0)
-
-
-
-
 #force load function
 function fft(t)
     f = 1.0e6 
 end
 ft = fft
+
+FBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
+#Bending or Pulling
+data_type = "Bending" 
+if data_type == "Bending"
+    EBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= -1 # symmetric right
+    
+    #pull in the y direction
+    
+    # force parameter
+    function gauss(L, n, x0; σ=0.2)
+        x = collect(LinRange(0, L, n+1))
+        g = 1.0/(sqrt(2*pi*σ^2)) * exp.(-0.5*(x .- x0).^2/σ^2)
+    end
+
+
+    FBC[collect(2:nx+1), 2] .= -1
+    F = 5e6*(0.2tid)   #elastic 3e6 ; plasticity starts from 4e6 
+    fext[collect(1:nx+1), 2] = F * gauss(Lx, nx, Lx*5.0/6.0)
+
+elseif data_type == "Pulling"
+
+    FBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= -1
+    F = 5e6*(0.2tid)   #elastic 3e6 ; plasticity starts from 4e6 
+    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= F 
+
+else
+    error("Invalid Data_Type")
+end
+
+
+
 
 elements = []
 for j = 1:ny
@@ -143,8 +154,8 @@ for j = 1:ny
     end
 end
 
-T = 0.001
-NT = 200
+T = 0.0003
+NT = 100
 Δt = T/NT
 stress_scale = 1.0e5
 strain_scale = 1

@@ -1,4 +1,5 @@
-tid = myid()
+# tid = myid()
+tid = 5
 printstyled("tid=$tid\n", color=:green)
 
 using Revise
@@ -22,13 +23,13 @@ https://www.azom.com/properties.aspx?ArticleID=42
 length scale cm
 """
 prop0 = Dict("name"=> "PlaneStressPlasticity","rho"=> 4.5, "E"=> 100e+10, "nu"=> 0.2,
-"sigmaY"=>0.97e+10, "K"=>10e+10)
+"sigmaY"=>0.97e+10, "K"=>0.01e+10)
 prop1 = Dict("name"=> "PlaneStress", "rho"=> 3.2, "E"=>400e10, "nu"=>0.35)
-
+prop1 = prop0
 # testtype = "PlaneStress"
 # prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45)
 
-include("NNPlatePull_Domain.jl")
+include("NNPlatePull_Domain_Data.jl")
 
 
 domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
