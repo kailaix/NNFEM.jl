@@ -74,7 +74,7 @@ function generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distributio
     return ele_type
 end
 
-fiber_size = 2
+fiber_size = 10
 nxc, nyc = 60,10
 nx, ny =  nxc*fiber_size, nyc*fiber_size
 #Type 1=> SiC, type 0=>Ti, each fiber has size is k by k

@@ -1,5 +1,5 @@
-tid = myid()
-# tid = 5
+# tid = myid()
+tid = 5
 θ = 2π*(tid-1)/8
 printstyled("tid=$tid\n", color=:green)
 
