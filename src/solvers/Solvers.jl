@@ -56,10 +56,12 @@ end
 #     v_{n+1} = v_n + dt((1 - gamma)a_n + gamma a_{n+1})
 
 #     M a_{n+0.5} + fint(u_{n+0.f}) = fext_{n+0.5}
+#
+#     absolution error ε = 1e-8, 
+#     relative error ε0 = 1e-8   
 # """->
 
-
-function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, maxiterstep=100, η = 1.0)
+function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, ε0 = 1e-8, maxiterstep=100, η = 1.0)
     local res0
     # @info maxiterstep
     # error()
@@ -139,7 +141,7 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, m
         #     error()
         # end
         println("$Newtoniterstep/$maxiterstep, $(norm(res))")
-        if (norm(res)< ε || norm(res)< ε*norm(res0) ||Newtoniterstep > maxiterstep)
+        if (norm(res)< ε || norm(res)< ε0*norm(res0) ||Newtoniterstep > maxiterstep)
             if Newtoniterstep > maxiterstep
                 function f(∂∂up)
                     domain.state[domain.eq_to_dof] = (1 - αf)*(u + Δt*∂u + 0.5 * Δt * Δt * ((1 - β2)*∂∂u + β2*∂∂up)) + αf*u

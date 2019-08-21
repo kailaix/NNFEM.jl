@@ -59,7 +59,7 @@
 
     # solver = ExplicitSolver(Δt, globdat, domain )
     for i = 1:10
-        solver = NewmarkSolver(Δt, globdat, domain, 0.5, 0.5, 1e-8, 500)
+        solver = NewmarkSolver(Δt, globdat, domain, 0.5, 0.5, 1e-8, 1e-8, 500) # ok
     end
     visdynamic(domain,"dym")
     # solver = StaticSolver(globdat, domain )

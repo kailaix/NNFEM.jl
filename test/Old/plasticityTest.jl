@@ -69,7 +69,7 @@ NT = 10
 d = (ny+1)*nx
 globdat.velo[1:d] .= 0.1
 for i = 1:NT
-    solver = NewmarkSolver(Δt, globdat, domain, 0.5, 0.5, 1e-6, 10)
+    solver = NewmarkSolver(Δt, globdat, domain, 0.5, 0.5, 1e-6, 1e-6, 10) # ok
 end
 # visdynamic(domain,"dym")
 # solver = StaticSolver(globdat, domain )

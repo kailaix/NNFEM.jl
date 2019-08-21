@@ -74,7 +74,7 @@ NT = 5
 Δt = T/NT
 for i = 1:NT
     @info i, "/" , NT
-    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-6, 10)
+    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0,1e-6,  1e-6, 10) # ok
     
 end
 

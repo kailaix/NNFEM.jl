@@ -28,7 +28,7 @@ assembleMassMatrix!(globdat, domain)
 updateStates!(domain, globdat)
 
 for i = 1:NT
-    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-5, 100)
+    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-5, 1e-5, 100) # ok
     # close("all")
     # scatter(nodes[:, 1], nodes[:,2], color="red")
     # u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]

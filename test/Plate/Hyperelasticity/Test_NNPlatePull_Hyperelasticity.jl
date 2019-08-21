@@ -60,7 +60,7 @@ updateStates!(domain, globdat)
 
 for i = 1:NT
     @info i, "/" , NT
-    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-4, 100)
+    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-4, 1e-4, 100) # ok
     if i==75
         break
     end

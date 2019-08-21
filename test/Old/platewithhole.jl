@@ -104,7 +104,7 @@ NT = 80
 Δt = T/NT
 for i = 1:NT
     @show i
-    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-3, 100)
+    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-3, 1e-3, 100) # ok
 end
 
 # @time for i = 1:10

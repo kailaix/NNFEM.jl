@@ -38,7 +38,7 @@ NT = 100
 Δt = T/NT
 for i = 1:NT
     
-    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-5, 100)
+    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-5, 1e-5, 100) # ok
     printstyled("============================== iteration $i ==============================\n",color=:green)
     # if i == 3
     #     error()
