@@ -1,5 +1,4 @@
-tid = myid()
-# tid = 5
+tid = parse(Int64, ARGS[1])
 θ = 2π*(tid-1)/8
 printstyled("tid=$tid\n", color=:green)
 
