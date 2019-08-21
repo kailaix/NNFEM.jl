@@ -7,9 +7,18 @@ using JLD2
 using ADCME
 using LinearAlgebra
 
-# tid = 4.5
+if Sys.isapple()
+    matplotlib.use("macosx")
+end
+tid = 1
 printstyled("tid = $tid\n", color=:cyan)
 testtype = "PlaneStressPlasticity"
+# testtype = "PlaneStress"
+
+# training -- large force
+# elasticity -- small force
+data_for = "training" 
+    
 
 prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45,
 "sigmaY"=>0.3e+9, "K"=>1/9*200e+9, "C1"=>20e9, "C2"=>2e9)

@@ -48,7 +48,13 @@ end
 
 #force load function
 function fft(t)
-    f = 1.0e8 *(1.0*tid) * sin(pi*t/T) * ones(nx + 1)
+    local f
+    if (@isdefined data_for) && data_for=="elasticity"
+        @info "Generating data using small force"
+        f = 1.0e6 *(1.0*tid) * sin(pi*t/T) * ones(nx + 1) # used for learning elasticity H
+    else
+        f = 1.0e8 *(1.0*tid) * sin(pi*t/T) * ones(nx + 1)
+    end
     f[1] /= 2.0
     f[end] /= 2.0
     return f

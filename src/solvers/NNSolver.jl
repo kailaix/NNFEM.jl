@@ -1,4 +1,4 @@
-export DynamicMatLawLoss, preprocessing
+export DynamicMatLawLoss, preprocessing, fitlinear
 
 @doc """
     domain   : finite element domain, for data structure
@@ -163,10 +163,16 @@ end
     
     compute loss function from state and external force history 
 """->
-function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{Any}, fext_history::Array{Any}, nn::Function, Δt::Float64)
+function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{T}, fext_history::Array{S}, nn::Function, Δt::Float64) where {T, S}
     # todo convert to E_all, Ftot
     domain.history["state"] = state_history
     F_tot, E_all, w∂E∂u_all = preprocessing(domain, globdat, hcat(fext_history...), Δt)
+    DynamicMatLawLoss(domain, E_all, w∂E∂u_all, F_tot, nn)
+end
+
+function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{T}, fext_history::Array{S}, nn::Function, Δt::Float64, n::Int64) where {T, S}
+    domain.history["state"] = state_history
+    F_tot, E_all, w∂E∂u_all = preprocessing(domain, globdat, hcat(fext_history...), Δt, n)
     DynamicMatLawLoss(domain, E_all, w∂E∂u_all, F_tot, nn)
 end
 
@@ -242,4 +248,106 @@ function preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64
     # # DEBUG
     # fext = hcat(domain.history["fint"]...)
     return F_tot'|>Array, E_all, w∂E∂u_all
+end
+
+
+@doc """
+preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64},Δt::Float64, n::Int64)
+
+Same as `preprocessing`, except that only the first `n` steps are considered
+"""->
+function preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64},Δt::Float64, n::Int64)
+    U = hcat(domain.history["state"]...)
+    # @info " U ", size(U),  U'
+    M = globdat.M
+    MID = globdat.MID 
+
+    NT = size(U,2)-1
+
+    #Acceleration of Dirichlet nodes
+    bc_acc = zeros(sum(domain.EBC.==-2),NT)
+    for i = 1:NT
+        _, bc_acc[:,i]  = globdat.EBC_func(Δt*i)
+    end
+
+    
+    ∂∂U = zeros(size(U,1), NT+1)
+    ∂∂U[:,2:NT] = (U[:,1:NT-1]+U[:,3:NT+1]-2U[:,2:NT])/Δt^2
+ 
+    if size(F_ext,2)==NT+1
+        F_tot = F_ext[:,2:end] - M*∂∂U[domain.dof_to_eq,2:end] - MID*bc_acc
+    elseif size(F_ext,2)==NT
+        F_tot = F_ext - M*∂∂U[domain.dof_to_eq,2:end] - MID*bc_acc
+    else
+        error("F size is not valid")
+    end
+    
+    neles = domain.neles
+    nGauss = length(domain.elements[1].weights)
+    neqns_per_elem = length(getEqns(domain,1))
+
+    
+    nstrains = div((domain.elements[1].eledim + 1)*domain.elements[1].eledim, 2)
+
+    E_all = zeros(NT+1, neles*nGauss, nstrains)
+    w∂E∂u_all = zeros(NT+1, neles*nGauss, neqns_per_elem, nstrains)
+
+    for i = 1:NT+1
+        domain.state = U[:, i]
+        # @info "domain state", domain.state
+        # Loop over the elements in the elementGroup to construct strain and geo-matrix E_all and w∂E∂u_all
+        for iele  = 1:neles
+            element = domain.elements[iele]
+
+            # Get the element nodes
+            el_nodes = getNodes(element)
+
+            # Get the element nodes
+            el_eqns = getEqns(domain,iele)
+
+            el_dofs = getDofs(domain,iele)
+
+            el_state  = getState(domain,el_dofs)
+
+            # Get the element contribution by calling the specified action
+            E, w∂E∂u = getStrain(element, el_state) 
+            # if i==2
+            #     @info (el_state, E)
+            # end
+      
+            # @show E, nGauss
+            E_all[i, (iele-1)*nGauss+1:iele*nGauss, :] = E
+
+            w∂E∂u_all[i, (iele-1)*nGauss+1:iele*nGauss,:,:] = w∂E∂u
+        end
+    end
+    @info "preprocessing end..."
+    # # DEBUG
+    # fext = hcat(domain.history["fint"]...)
+    F_tot = F_tot'|>Array
+
+    F_tot[1:n,:], E_all[1:n+1, :, :], w∂E∂u_all[1:n+1, :, :, :]
+end
+
+function fitlinear(n::Int64, domain::Domain, globdat::GlobalData,
+         n_data::Int64, Δt::Float64, wkdir::String, stress_scale::Float64)
+    A = Variable(rand(3,3))
+    H = A + A'
+    # H = constant([2.50784e11  1.12853e11  0.0       
+    # 1.12853e11  2.50784e11  0.0       
+    # 0.0         0.0         6.89655e10]/stress_scale)
+    function linear_map(ε, ε0, σ0)
+        y = ε*H*stress_scale
+    end
+
+    losses = Array{PyObject}(undef, n_data)
+    for i = 1:n_data
+        state_history, fext_history = read_data("$wkdir/Data/$i.dat")
+        losses[i] = DynamicMatLawLoss(domain, globdat, state_history, fext_history, linear_map,Δt, n)
+    end
+    loss = sum(losses)/stress_scale
+    sess = Session(); init(sess)
+    @show run(sess, loss)
+    BFGS!(sess, loss, 2000)
+    run(sess, H)*stress_scale
 end
