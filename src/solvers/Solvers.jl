@@ -150,10 +150,11 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, �
                 end
                 gradtest(f, ∂∂up)
                 # error()
-                error("Newton iteration cannot converge $(norm(res))")
+                @warn("Newton iteration cannot converge $(norm(res))"); Newtonconverge = true
+            else
+                Newtonconverge = true
+                printstyled("[Newmark] Newton converged $Newtoniterstep\n", color=:green)
             end
-            Newtonconverge = true
-            printstyled("[Newmark] Newton converged $Newtoniterstep\n", color=:green)
         end
 
         η = min(1.0, 2η)

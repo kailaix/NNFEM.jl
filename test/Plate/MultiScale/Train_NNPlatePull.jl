@@ -6,10 +6,12 @@ using PyPlot
 using JLD2
 using ADCME
 using LinearAlgebra
+np = pyimport("numpy")
 # reset_default_graph()
 include("nnutil.jl")
 testtype = "NeuralNetwork2D"
-nntype = "piecewise"
+nntype = "ae_scaled"
+n_data = 5
 
 # density 4.5*(1 - 0.25) + 3.2*0.25
 prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - 0.25) + 3.2*0.25, "nn"=>nn)
@@ -23,6 +25,7 @@ nx, ny =  12, 5
 # number of subelements in one element in each directions
 sx_f, sy_f = nx_f/nx, ny_f/ny
 
+ndofs = 2
 fine_to_coarse = zeros(Int64, ndofs*(nx+1)*(ny+1))
 for idof = 1:ndofs
 for iy = 1:ny+1
@@ -149,7 +152,7 @@ sess = Session(); init(sess)
 # ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
 # @show run(sess, loss)
 # error()
-BFGS!(sess, loss, 1500)
+BFGS!(sess, loss, 2000)
 # ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
 # ADCME.load(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
 # BFGS!(sess, loss, 5000)

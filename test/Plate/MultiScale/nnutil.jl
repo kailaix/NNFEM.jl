@@ -5,7 +5,13 @@ include("ops.jl")
 threshold = 1e-4
 function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
     local y, H
-    if nntype=="piecewise"
+    if nntype=="ae_scaled"
+        x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
+        if isa(x, Array)
+            x = constant(x)
+        end
+        y = ae(x, [20,20,20,20,3], nntype)*stress_scale
+    elseif nntype=="piecewise"
         x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
         x = constant(x)
         ε = constant(ε)
@@ -38,7 +44,10 @@ function sigmoid_(z)
 end
 
 function nn_helper(ε, ε0, σ0)
-    if nntype=="piecewise"
+    if nntype=="ae_scaled"
+        x = reshape([ε;ε0;σ0/stress_scale],1, 9)
+        reshape(nnae_scaled(x)*stress_scale,3,1)
+    elseif nntype=="piecewise"
         H0 = [ 2.50784e11  1.12853e11  0.0       
             1.12853e11  2.50784e11  0.0       
             0.0         0.0         6.89655e10]
