@@ -17,3 +17,8 @@ https://www.azom.com/properties.aspx?ArticleID=42
 ρ = 3200 kg/m^3  E = 400GPa   ν = 0.35
 The matrix is made of titanium, which are assumed to be elasto-plastic titanium material,  
 ρ = 4500 kg/m^3;  E = 100GPa	 K=10e+9  ν =0.2   σY=970 MPa
+
+
+```julia
+u = [reshape(domain.history["state"][i][2542:end], ny+1, nx+1)[1,end] for i = 1:NT]
+```

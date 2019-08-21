@@ -111,9 +111,25 @@ function fft(t)
 end
 ft = fft
 
+
+function training_fext( θ)
+    F = 5e6   #elastic 3e6 ; plasticity starts from 4e6
+    
+    FBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= -1
+    FBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= -1
+    
+    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= F * cos(θ)
+    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= F * sin(θ)
+    fext[nx+1, 1] /= 2
+    fext[nx+1, 2] /= 2
+    fext[(nx+1)*(ny+1), 1] /= 2
+    fext[(nx+1)*(ny+1), 2] /= 2
+    FBC, fext
+end
+
 FBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 #Bending or Pulling
-data_type = "Bending" 
+data_type = "Custom" 
 if data_type == "Bending"
     EBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= -1 # symmetric right
     
@@ -135,10 +151,12 @@ elseif data_type == "Pulling"
     FBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= -1
     F = 5e6*(0.2tid)   #elastic 3e6 ; plasticity starts from 4e6 
     fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= F 
-
+elseif data_type == "Custom"
+    global FBC, fext = training_fext(θ)
 else
     error("Invalid Data_Type")
 end
+
 
 
 
@@ -154,7 +172,7 @@ for j = 1:ny
     end
 end
 
-T = 0.0003
+T = 0.001
 NT = 100
 Δt = T/NT
 stress_scale = 1.0e5
