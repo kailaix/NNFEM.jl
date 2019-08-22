@@ -8,22 +8,29 @@ using ADCME
 using LinearAlgebra
 np = pyimport("numpy")
 # reset_default_graph()
+H0 = Variable(zeros(3,3))
+H0 = H0 + H0'
+# H0 = constant(H1/stress_scale)
 include("nnutil.jl")
 testtype = "NeuralNetwork2D"
-nntype = "ae_scaled"
-n_data = 5
+nntype = "linear"
+n_data = [1]
+
 
 # density 4.5*(1 - 0.25) + 3.2*0.25
-prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - 0.25) + 3.2*0.25, "nn"=>nn)
+fiber_fraction = 0.25
+prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>nn)
 
 # DNS computaional domain
 #nx_f, ny_f = 600, 100
 nx_f, ny_f = 120, 20
+# nx_f, ny_f = 12, 4
+
 # homogenized computaional domain
 # number of elements in each directions
 nx, ny =  12, 5
 # number of subelements in one element in each directions
-sx_f, sy_f = nx_f/nx, ny_f/ny
+sx_f, sy_f = div(nx_f,nx), div(ny_f,ny)
 
 ndofs = 2
 fine_to_coarse = zeros(Int64, ndofs*(nx+1)*(ny+1))
@@ -35,7 +42,7 @@ for iy = 1:ny+1
 end
 end
 
-# Attention fix left 
+# Attention fix left
 fine_to_coarse_fext = zeros(Int64, ndofs*nx*(ny+1))
 for idof = 1:ndofs
 for iy = 1:ny+1
@@ -45,14 +52,6 @@ for iy = 1:ny+1
 end
 end
 
-# DOF = zeros(Int64, nx_f+1, ny_f+1)
-# k = 1
-# for i = 1:nx_f+1
-#     for j = 1:ny_f+1    
-#         DOF[i, j] = k
-#         global k += 1
-#     end
-# end
 
 
 nnodes, neles = (nx + 1)*(ny + 1), nx*ny
@@ -65,7 +64,7 @@ nodes = zeros(nnodes,2)
 nodes[:,1], nodes[:,2] = X'[:], Y'[:]
 ndofs = 2
 
-# set boundary conditions
+# # set boundary conditions
 EBC, g = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 EBC[collect(1:nx+1:(nx+1)*(ny+1)), :] .= -1 # fix left
 
@@ -129,28 +128,28 @@ state = zeros(domain.neqs)
 globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
 assembleMassMatrix!(globdat, domain)
 
-losses = Array{PyObject}(undef, n_data)
-for i = 1:n_data
+losses = Array{PyObject}(undef, length(n_data))
+for (k, i) in enumerate(n_data)
     full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/$i.dat")
     #update state history and fext_history on the homogenized domain
     state_history = [x[fine_to_coarse] for x in full_state_history]
     #todo hard code the sy_f, it is on the right hand side
     
-    fext_history = [x[fine_to_coarse_fext] * sy_f for x in full_fext_history]
+    global fext_history = [x[fine_to_coarse_fext] * sy_f for x in full_fext_history]
 
     #fext_history = [fext[:] for k = 1:length(full_fext_history)]
     
     # @show  fext_history[1], fext[:]
     # @assert fext_history[1] == fext[:]
 
-    losses[i] = DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
+    losses[k] = DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
 end
 loss = sum(losses)/stress_scale^2
 
 sess = Session(); init(sess)
 # ADCME.load(sess, "$(@__DIR__)/Data/learned_nn.mat")
 # ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
-# @show run(sess, loss)
+@info run(sess, loss)
 # error()
 BFGS!(sess, loss, 2000)
 # ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")

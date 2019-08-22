@@ -74,16 +74,16 @@ function generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distributio
     return ele_type
 end
 
-fiber_size = 10
+fiber_size = 2
 nxc, nyc = 60,10
 nx, ny =  nxc*fiber_size, nyc*fiber_size
 #Type 1=> SiC, type 0=>Ti, each fiber has size is k by k
 fiber_fraction = 0.25
 fiber_distribution = "Uniform"
 ele_type = generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distribution)
-
+@show "fiber fraction: ",  sum(ele_type)/(nx*ny)
 #matshow(ele_type)
-#error()
+
 
 nnodes, neles = (nx + 1)*(ny + 1), nx*ny
 Lx, Ly = 3.0, 0.5
@@ -97,8 +97,8 @@ nodes[:,1], nodes[:,2] = X'[:], Y'[:]
 ndofs = 2
 
 EBC, g = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
-
 EBC[collect(1:nx+1:(nx+1)*(ny+1)), :] .= -1 # fix left
+
 
 function ggt(t)
     return zeros(sum(EBC.==-2)), zeros(sum(EBC.==-2))
@@ -129,7 +129,11 @@ end
 
 FBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
 #Bending or Pulling
-data_type = "Custom" 
+if tid==101
+    data_type = "Pulling" 
+else
+    data_type = "Custom"
+end
 if data_type == "Bending"
     EBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= -1 # symmetric right
     
@@ -147,10 +151,13 @@ if data_type == "Bending"
     fext[collect(1:nx+1), 2] = F * gauss(Lx, nx, Lx*5.0/6.0)
 
 elseif data_type == "Pulling"
+    F = 10e6
+    FBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= -1
+      
+    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= F * LinRange(0,1,ny+1)
+    fext[nx+1, 1] /= 2
+    fext[(nx+1)*(ny+1), 1] /= 2
 
-    FBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= -1
-    F = 5e6*(0.2tid)   #elastic 3e6 ; plasticity starts from 4e6 
-    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= F 
 elseif data_type == "Custom"
     global FBC, fext = training_fext(θ)
 else
