@@ -1,5 +1,5 @@
 # tid = parse(Int64, ARGS[1])
-tid = 200
+tid = 100
 if Sys.MACHINE=="x86_64-pc-linux-gnu"
     global tid = parse(Int64, ARGS[1])
 end
@@ -19,10 +19,10 @@ https://www.azom.com/properties.aspx?ArticleID=42
 length scale cm
 """
 prop0 = Dict("name"=> "PlaneStressPlasticity","rho"=> 4.5, "E"=> 100e+10, "nu"=> 0.2,
-"sigmaY"=>0.97e+10, "K"=>5.0e+10)
+"sigmaY"=>0.97e+10, "K"=>10e+10)
 prop1 = Dict("name"=> "PlaneStress", "rho"=> 3.2, "E"=>400e10, "nu"=>0.35)
-prop0 = prop1
-ps1 = PlaneStress(prop0); H1 = ps1.H
+#prop0 = prop1
+#ps1 = PlaneStress(prop0); H1 = ps1.H
 ps2 = PlaneStress(prop1); H2 = ps2.H
 
 
@@ -60,6 +60,9 @@ for i = 1:NT
     #     visσ(domain)
     #     # visσ(domain,-1.5e9, 4.5e9)
     #     savefig("Debug/terminal$(tid)i=75.png")
+    # end
+    # if i==40
+    #     break
     # end
 end
 

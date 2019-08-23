@@ -28,7 +28,7 @@ length scale cm
 """
 fiber_size = 2
 ndofs = 2
-nxc, nyc = 10,5
+nxc, nyc = 40,20
 nx, ny =  nxc*fiber_size, nyc*fiber_size
 #Type 1=> SiC, type 0=>Ti, each fiber has size is k by k
 fiber_fraction = 0.25
@@ -39,7 +39,7 @@ ele_type = generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distribut
 # savefig("test.png")
 # error()
 
-F0 = 5e7
+F0 = 5e5
 nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, F0)
 elements = []
 for j = 1:ny
@@ -52,7 +52,7 @@ for j = 1:ny
     end
 end
 
-T = 0.0001
+T = 0.00005
 NT = 100
 Δt = T/NT
 stress_scale = 1.0e5

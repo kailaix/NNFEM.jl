@@ -5,7 +5,7 @@ H0 = H0 + H0'
 # H0 = constant(H1/stress_scale)
 testtype = "NeuralNetwork2D"
 nntype = "linear"
-n_data = [200]
+n_data = [100]
 
 
 # density 4.5*(1 - 0.25) + 3.2*0.25
@@ -15,12 +15,12 @@ fiber_fraction = 1.0
 prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>nn)
 
 # DNS computaional domain
-nx_f, ny_f = 20, 10
+nx_f, ny_f = 40*2, 20*2
 # nx_f, ny_f = 12, 4
 
 # homogenized computaional domain
 # number of elements in each directions
-nx, ny = 10, 5
+nx, ny = 20, 10
 # number of subelements in one element in each directions
 sx_f, sy_f = div(nx_f,nx), div(ny_f,ny)
 
