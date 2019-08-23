@@ -19,6 +19,7 @@ n_data = [1]
 
 # density 4.5*(1 - 0.25) + 3.2*0.25
 fiber_fraction = 0.25
+fiber_fraction = 1.0
 prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>nn)
 
 # DNS computaional domain

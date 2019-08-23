@@ -1,6 +1,8 @@
 # tid = parse(Int64, ARGS[1])
-tid = 1
-θ = 2π*(tid-1)/8
+tid = 202
+if Sys.MACHINE=="x86_64-pc-linux-gnu"
+    global tid = parse(Int64, ARGS[1])
+end
 printstyled("tid=$tid\n", color=:green)
 
 using Revise
@@ -49,17 +51,23 @@ updateStates!(domain, globdat)
 
 for i = 1:NT
     @info i, "/" , NT
-    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-4, 1e-6, 10)
+    #solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-4, 1e-6, 10)
+    solver = NewmarkSolver(Δt, globdat, domain, 0.5, 0.5, 1e-4, 1e-6, 10)
     # close("all")
-    # visσ(domain,-1.5e9, 4.5e9)
+    # visσ(domain)
+    # axis("equal")
     # savefig("Debug/$i.png")
     # error()
-    if i==75
-        close("all")
-        visσ(domain)
-        # visσ(domain,-1.5e9, 4.5e9)
-        savefig("Debug/terminal$(tid)i=75.png")
-    end
+    # close("all")
+    # visσ(domain)
+    # # visσ(domain,-1.5e9, 4.5e9)
+    # savefig("Debug/terminal$(tid)i=$i.png")
+    # if i==75
+    #     close("all")
+    #     visσ(domain)
+    #     # visσ(domain,-1.5e9, 4.5e9)
+    #     savefig("Debug/terminal$(tid)i=75.png")
+    # end
 end
 
 # error()
@@ -73,6 +81,7 @@ scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
 
 close("all")
 visσ(domain)
+axis("equal")
 savefig("Debug/terminal$tid.png")
 
 @save "Data/domain$tid.jld2" domain

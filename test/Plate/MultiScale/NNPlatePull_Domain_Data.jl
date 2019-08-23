@@ -7,7 +7,9 @@ using JLD2
 using ADCME
 using LinearAlgebra
 using Distributions, Random
-matplotlib.use("macosx")
+if Sys.MACHINE=="x86_64-apple-darwin18.6.0"
+    matplotlib.use("macosx")
+end
 
 np = pyimport("numpy")
 """
@@ -75,18 +77,19 @@ function generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distributio
 end
 
 fiber_size = 2
-nxc, nyc = 60,10
+nxc, nyc = 40,20
 nx, ny =  nxc*fiber_size, nyc*fiber_size
 #Type 1=> SiC, type 0=>Ti, each fiber has size is k by k
 fiber_fraction = 0.25
 fiber_distribution = "Uniform"
 ele_type = generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distribution)
 @show "fiber fraction: ",  sum(ele_type)/(nx*ny)
-#matshow(ele_type)
-
+# matshow(ele_type)
+# savefig("test.png")
+# error()
 
 nnodes, neles = (nx + 1)*(ny + 1), nx*ny
-Lx, Ly = 3.0, 0.5
+Lx, Ly = 1.0, 0.5
 x = np.linspace(0.0, Lx, nx + 1)
 y = np.linspace(0.0, Ly, ny + 1)
 
@@ -97,75 +100,52 @@ nodes[:,1], nodes[:,2] = X'[:], Y'[:]
 ndofs = 2
 
 EBC, g = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
-EBC[collect(1:nx+1:(nx+1)*(ny+1)), :] .= -1 # fix left
-
-
-function ggt(t)
-    return zeros(sum(EBC.==-2)), zeros(sum(EBC.==-2))
-end
-gt = ggt
-
-#force load function
-function fft(t)
-    f = 1.0e6 
-end
-ft = fft
-
-
-function training_fext( θ)
-    F = 5e6   #elastic 3e6 ; plasticity starts from 4e6
-    
-    FBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= -1
-    FBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= -1
-    
-    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= F * cos(θ)
-    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= F * sin(θ)
-    fext[nx+1, 1] /= 2
-    fext[nx+1, 2] /= 2
-    fext[(nx+1)*(ny+1), 1] /= 2
-    fext[(nx+1)*(ny+1), 2] /= 2
-    FBC, fext
-end
-
 FBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
-#Bending or Pulling
-if tid==101
-    data_type = "Pulling" 
-else
-    data_type = "Custom"
+ft = gt = nothing
+
+# setting EBC:
+# tid = 1XX   |==|--> 
+# tid = 2XX   
+if div(tid,100)==1
+    EBC[collect(1:nx+1), :] .= -1 # fix bottom
+    FBC[collect((nx+1)*ny+1:(nx+1)*(ny+1)), :] .= -1 # force on the top
+elseif div(tid,100)==2
+    EBC[collect(1:nx+1:(nx+1)*(ny+1)), :] .= -1 # fix left
+    FBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), :] .= -1 # force on the right
+    
 end
-if data_type == "Bending"
-    EBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= -1 # symmetric right
-    
-    #pull in the y direction
-    
+
+F0 = 5e7
+#Bending or Pulling
+if tid==100
+    fext[collect((nx+1)*ny+1:(nx+1)*(ny+1)), 1] .= 0
+    fext[collect((nx+1)*ny+1:(nx+1)*(ny+1)), 2] .= F0
+elseif tid == 200
+    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= F0
+    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= 0
+elseif tid == 201
+    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= -F0
+    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= 0
+elseif tid == 202
+    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= 0
+    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= F0
+elseif tid == 203
+    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= F0/sqrt(2)
+    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= F0/sqrt(2)
+
+elseif tid == 250
+    # data_type == "Bending"
     # force parameter
     function gauss(L, n, x0; σ=0.2)
         x = collect(LinRange(0, L, n+1))
         g = 1.0/(sqrt(2*pi*σ^2)) * exp.(-0.5*(x .- x0).^2/σ^2)
     end
 
-
-    FBC[collect(2:nx+1), 2] .= -1
-    F = 5e6*(0.2tid)   #elastic 3e6 ; plasticity starts from 4e6 
-    fext[collect(1:nx+1), 2] = F * gauss(Lx, nx, Lx*5.0/6.0)
-
-elseif data_type == "Pulling"
-    F = 10e6
-    FBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= -1
-      
-    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= F * LinRange(0,1,ny+1)
-    fext[nx+1, 1] /= 2
-    fext[(nx+1)*(ny+1), 1] /= 2
-
-elseif data_type == "Custom"
-    global FBC, fext = training_fext(θ)
+    fext[collect(1:nx+1), 1] = 0.0
+    fext[collect(1:nx+1), 2] = F0 * gauss(Lx, nx, Lx*5.0/6.0)
 else
-    error("Invalid Data_Type")
+    error("tid = $tid is not understood")
 end
-
-
-
 
 
 elements = []
@@ -179,7 +159,7 @@ for j = 1:ny
     end
 end
 
-T = 0.001
+T = 0.0001
 NT = 100
 Δt = T/NT
 stress_scale = 1.0e5

@@ -20,6 +20,10 @@ function PlaneStress(prop::Dict{String, Any})
     H[2,2] = H[1,1]
     H[3,3] = E/(2.0*(1.0+ν))
     # @show H
+    # # ! remove it!!!
+    # H = [ 4.09627e12  2.88053e11  -1.77231   
+    #     2.88053e11  8.29483e11   0.616748  
+    # -1.77231     0.616748     3.43662e11]
     σ0 = zeros(3); σ0_ = zeros(3); ε0 = zeros(3); ε0_ = zeros(3)
     PlaneStress(H, E, ν, ρ, σ0, σ0_,ε0,ε0_)
 end
