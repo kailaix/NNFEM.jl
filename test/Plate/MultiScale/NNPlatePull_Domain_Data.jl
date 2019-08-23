@@ -1,12 +1,3 @@
-using Revise
-using Test 
-using NNFEM
-using PyCall
-using PyPlot
-using JLD2
-using ADCME
-using LinearAlgebra
-using Distributions, Random
 if Sys.MACHINE=="x86_64-apple-darwin18.6.0"
     matplotlib.use("macosx")
 end
@@ -35,49 +26,9 @@ The matrix is made of titanium, which are assumed to be elasto-plastic titanium 
 
 length scale cm
 """
-function generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distribution)
-    if fiber_distribution == "Uniform"
-        nx,ny = nxc*fiber_size , nyc*fiber_size
-        # a,fiber_size,a,fiber_size,a void ratio is about fiber_size^2/(a+fiber_size)^2
-        ele_type_x =  zeros(Int, nx,1)
-        ele_type_y =  zeros(Int, 1,ny)
-
-        a = round(Int, fiber_size*(1.0/sqrt(fiber_fraction)-1))
-        if a <2 
-            print("Mesh for the multiscale simulaion is too coarse")
-            error()
-        end
-        rx = nx%(a + fiber_size)
-        counter = a
-        for i = round(Int, (rx+a)/2.0)+1:nx
-            if counter%(a+fiber_size) > a-1
-                ele_type_x[i] = 1
-            end
-            counter += 1
-        end 
-
-        ry = ny%(a + fiber_size)
-        counter = a
-        for i = round(Int, (ry+a)/2.0)+1:ny
-            if counter%(a+fiber_size) > a-1
-                ele_type_y[i] = 1
-            end
-            counter += 1
-        end 
-        ele_type = ele_type_x * ele_type_y
-
-    else
-        Random.seed!(123)
-        d = Binomial(1, fiber_fraction)
-        ele_type_c =  rand(d, nxc, nyc)
-        ele_type =  kron(ele_type_c, ones(Int, fiber_size, fiber_size))
-    end
-
-    return ele_type
-end
-
 fiber_size = 2
-nxc, nyc = 40,20
+ndofs = 2
+nxc, nyc = 10,5
 nx, ny =  nxc*fiber_size, nyc*fiber_size
 #Type 1=> SiC, type 0=>Ti, each fiber has size is k by k
 fiber_fraction = 0.25
@@ -88,66 +39,8 @@ ele_type = generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distribut
 # savefig("test.png")
 # error()
 
-nnodes, neles = (nx + 1)*(ny + 1), nx*ny
-Lx, Ly = 1.0, 0.5
-x = np.linspace(0.0, Lx, nx + 1)
-y = np.linspace(0.0, Ly, ny + 1)
-
-
-X, Y = np.meshgrid(x, y)
-nodes = zeros(nnodes,2)
-nodes[:,1], nodes[:,2] = X'[:], Y'[:]
-ndofs = 2
-
-EBC, g = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
-FBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
-ft = gt = nothing
-
-# setting EBC:
-# tid = 1XX   |==|--> 
-# tid = 2XX   
-if div(tid,100)==1
-    EBC[collect(1:nx+1), :] .= -1 # fix bottom
-    FBC[collect((nx+1)*ny+1:(nx+1)*(ny+1)), :] .= -1 # force on the top
-elseif div(tid,100)==2
-    EBC[collect(1:nx+1:(nx+1)*(ny+1)), :] .= -1 # fix left
-    FBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), :] .= -1 # force on the right
-    
-end
-
 F0 = 5e7
-#Bending or Pulling
-if tid==100
-    fext[collect((nx+1)*ny+1:(nx+1)*(ny+1)), 1] .= 0
-    fext[collect((nx+1)*ny+1:(nx+1)*(ny+1)), 2] .= F0
-elseif tid == 200
-    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= F0
-    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= 0
-elseif tid == 201
-    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= -F0
-    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= 0
-elseif tid == 202
-    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= 0
-    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= F0
-elseif tid == 203
-    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= F0/sqrt(2)
-    fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= F0/sqrt(2)
-
-elseif tid == 250
-    # data_type == "Bending"
-    # force parameter
-    function gauss(L, n, x0; σ=0.2)
-        x = collect(LinRange(0, L, n+1))
-        g = 1.0/(sqrt(2*pi*σ^2)) * exp.(-0.5*(x .- x0).^2/σ^2)
-    end
-
-    fext[collect(1:nx+1), 1] = 0.0
-    fext[collect(1:nx+1), 2] = F0 * gauss(Lx, nx, Lx*5.0/6.0)
-else
-    error("tid = $tid is not understood")
-end
-
-
+nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, F0)
 elements = []
 for j = 1:ny
     for i = 1:nx 

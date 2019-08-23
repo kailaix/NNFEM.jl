@@ -1,7 +1,5 @@
 
-using ForwardDiff
-using DelimitedFiles
-include("ops.jl")
+include("CommonFuncs.jl")
 threshold = 1e-4
 function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
     local y

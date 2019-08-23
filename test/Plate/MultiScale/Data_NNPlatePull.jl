@@ -1,18 +1,11 @@
 # tid = parse(Int64, ARGS[1])
-tid = 202
+tid = 200
 if Sys.MACHINE=="x86_64-pc-linux-gnu"
     global tid = parse(Int64, ARGS[1])
 end
 printstyled("tid=$tid\n", color=:green)
 
-using Revise
-using Test 
-using NNFEM
-using PyCall
-using PyPlot
-using JLD2
-using ADCME
-using LinearAlgebra
+include("CommonFuncs.jl")
 
 # tid = 1
 """
@@ -83,5 +76,11 @@ close("all")
 visσ(domain)
 axis("equal")
 savefig("Debug/terminal$tid.png")
+
+
+close("all")
+u = [reshape(domain.history["state"][i][(nx+1)*(ny+1)+1:end], ny+1, nx+1)[1,end] for i = 1:length(domain.history["state"])]
+plot(u)
+savefig("Debug/u$tid.png")
 
 @save "Data/domain$tid.jld2" domain

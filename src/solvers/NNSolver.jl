@@ -181,6 +181,7 @@ end
 """->
 function preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64},Δt::Float64)
     U = hcat(domain.history["state"]...)
+    # @show size(U)
     # @info " U ", size(U),  U'
     M = globdat.M
     MID = globdat.MID 
@@ -189,17 +190,19 @@ function preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64
 
     #Acceleration of Dirichlet nodes
     bc_acc = zeros(sum(domain.EBC.==-2),NT)
-    for i = 1:NT
-        _, bc_acc[:,i]  = globdat.EBC_func(Δt*i)
+    if !(globdat.EBC_func===nothing)
+        for i = 1:NT
+            _, bc_acc[:,i]  = globdat.EBC_func(Δt*i)
+        end
     end
-
     
     ∂∂U = zeros(size(U,1), NT+1)
     ∂∂U[:,2:NT] = (U[:,1:NT-1]+U[:,3:NT+1]-2U[:,2:NT])/Δt^2
- 
+    # @show size(∂∂U),size(U)
     if size(F_ext,2)==NT+1
         F_tot = F_ext[:,2:end] - M*∂∂U[domain.dof_to_eq,2:end] - MID*bc_acc
     elseif size(F_ext,2)==NT
+        # @show size(∂∂U)
         F_tot = F_ext - M*∂∂U[domain.dof_to_eq,2:end] - MID*bc_acc
     else
         error("F size is not valid")
