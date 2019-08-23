@@ -48,19 +48,18 @@ end
 
 
 
-# @doc """
-#     Implicit solver for Ma + C v + R(u) = P
-#     a, v, u are acceleration, velocity and displacement
+@doc """
+    Implicit solver for Ma + C v + R(u) = P
+    a, v, u are acceleration, velocity and displacement
 
-#     u_{n+1} = u_n + dtv_n + dt^2/2 ((1 - 2\beta)a_n + 2\beta a_{n+1})
-#     v_{n+1} = v_n + dt((1 - gamma)a_n + gamma a_{n+1})
+    u_{n+1} = u_n + dtv_n + dt^2/2 ((1 - 2\beta)a_n + 2\beta a_{n+1})
+    v_{n+1} = v_n + dt((1 - gamma)a_n + gamma a_{n+1})
 
-#     M a_{n+0.5} + fint(u_{n+0.f}) = fext_{n+0.5}
-#
-#     absolution error ε = 1e-8, 
-#     relative error ε0 = 1e-8   
-# """->
+    M a_{n+0.5} + fint(u_{n+0.f}) = fext_{n+0.5}
 
+    absolution error ε = 1e-8, 
+    relative error ε0 = 1e-8   
+"""->
 function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, ε0 = 1e-8, maxiterstep=100, η = 1.0)
     local res0
     # @info maxiterstep

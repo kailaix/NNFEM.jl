@@ -11,17 +11,19 @@ include("CommonFuncs.jl")
 """
 Property:
 The matrix is made of titanium, which are assumed to be elasto-plastic titanium material,  
-ρ = 4.5 g/cm^3;  E = 100GPa	 K=10e+9  ν =0.2   σY=970 MPa
+time ms
+ρ = 4.5 g/cm^3;  E = 100GPa = 	100*10^9 Kg/m/s^2 = 10^6 g/cm/ms^2, K=10e+9Pa =  10^5 g/cm/ms^2
+ν =0.2   σY=970 MPa = 9700
 
 Fibers are made of SiC, which are assumed to be isotropic and elastic, with
 https://www.azom.com/properties.aspx?ArticleID=42
-ρ = 3.2 g/cm^3  E = 400GPa   ν = 0.35
+ρ = 3.2 g/cm^3  E = 400GPa =  4*10^6 g/cm/ms^2  ν = 0.35
 length scale cm
 """
-prop0 = Dict("name"=> "PlaneStressPlasticity","rho"=> 4.5, "E"=> 100e+10, "nu"=> 0.2,
-"sigmaY"=>0.97e+10, "K"=>10e+10)
-prop1 = Dict("name"=> "PlaneStress", "rho"=> 3.2, "E"=>400e10, "nu"=>0.35)
-#prop0 = prop1
+prop0 = Dict("name"=> "PlaneStressPlasticity","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.2,
+"sigmaY"=>0.97e+4, "K"=>10e+5)
+prop1 = Dict("name"=> "PlaneStress", "rho"=> 3.2, "E"=>4e6, "nu"=>0.35)
+prop0 = prop1
 #ps1 = PlaneStress(prop0); H1 = ps1.H
 ps2 = PlaneStress(prop1); H2 = ps2.H
 
@@ -44,8 +46,8 @@ updateStates!(domain, globdat)
 
 for i = 1:NT
     @info i, "/" , NT
-    #solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-4, 1e-6, 10)
-    solver = NewmarkSolver(Δt, globdat, domain, 0.5, 0.5, 1e-4, 1e-6, 10)
+    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-4, 1e-6, 10)
+    #solver = NewmarkSolver(Δt, globdat, domain, 0.5, 0.5, 1e-4, 1e-6, 10)
     # close("all")
     # visσ(domain)
     # axis("equal")

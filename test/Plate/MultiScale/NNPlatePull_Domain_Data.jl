@@ -39,7 +39,7 @@ ele_type = generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distribut
 # savefig("test.png")
 # error()
 
-F0 = 5e5
+F0 = 5e4 #gcm/ms^2
 nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, F0)
 elements = []
 for j = 1:ny
@@ -52,8 +52,8 @@ for j = 1:ny
     end
 end
 
-T = 0.00005
+T = 0.05
 NT = 100
 Δt = T/NT
-stress_scale = 1.0e5
+stress_scale = 1
 strain_scale = 1

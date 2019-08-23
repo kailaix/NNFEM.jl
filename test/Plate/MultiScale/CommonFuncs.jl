@@ -135,18 +135,20 @@ function BoundaryCondition(tid, nx, ny, F0 = 5e7, Lx = 1.0, Ly = 0.5)
 
     EBC, g = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
     FBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
-    ft = gt = nothing
+    gt = nothing
 
     # setting EBC:
     # tid = 1XX   |==|--> 
     # tid = 2XX   
     if div(tid,100)==1
         EBC[collect(1:nx+1), :] .= -1 # fix bottom
-        FBC[collect((nx+1)*ny+1:(nx+1)*(ny+1)), :] .= -1 # force on the top
+        FBC[collect((nx+1)*ny+1:(nx+1)*(ny+1)), :] .= -2 # force on the top
     elseif div(tid,100)==2
         EBC[collect(1:nx+1:(nx+1)*(ny+1)), :] .= -1 # fix left
-        FBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), :] .= -1 # force on the right
-        
+        FBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), :] .= -2 # force on the right        
+    elseif div(tid,100)==3
+        EBC[collect(1:nx+1:(nx+1)*(ny+1)), :] .= -1 # fix left
+        FBC[collect(1:nx+1), :] .= -2 # force on the bottom
     end
 
     
@@ -154,20 +156,28 @@ function BoundaryCondition(tid, nx, ny, F0 = 5e7, Lx = 1.0, Ly = 0.5)
     if tid==100
         fext[collect((nx+1)*ny+1:(nx+1)*(ny+1)), 1] .= 0
         fext[collect((nx+1)*ny+1:(nx+1)*(ny+1)), 2] .= F0
+        fext[(nx+1)*ny+1, :] /= 2.0
+        fext[(nx+1)*(ny+1), :] /= 2.0
+
     elseif tid == 200
         fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= F0
         fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= 0
+        # fext[]
+        fext[[nx+1; (nx+1)*(ny+1)], :] /= 2.0
     elseif tid == 201
         fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= -F0
         fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= 0
+        fext[[nx+1; (nx+1)*(ny+1)], 2] .= 0
     elseif tid == 202
         fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= 0
         fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= F0
+        fext[[nx+1; (nx+1)*(ny+1)], :] /= 2.0
     elseif tid == 203
         fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= F0/sqrt(2)
         fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= F0/sqrt(2)
+        fext[[nx+1;(nx+1)*(ny+1)], 2] .= F0/sqrt(2)
 
-    elseif tid == 250
+    elseif tid == 300
         # data_type == "Bending"
         # force parameter
         function gauss(L, n, x0; σ=0.2)
@@ -177,8 +187,13 @@ function BoundaryCondition(tid, nx, ny, F0 = 5e7, Lx = 1.0, Ly = 0.5)
 
         fext[collect(1:nx+1), 1] .= 0.0
         fext[collect(1:nx+1), 2] .= F0 * gauss(Lx, nx, Lx*5.0/6.0)
+        fext[[1;nx+1], :] /= 2.0
     else
         error("tid = $tid is not understood")
     end
+
+    dof_to_active = findall(FBC[:].==-2)
+    ft = t->fext[:][dof_to_active]*sin(π*t/(2T))
+    # @show ft(T)
     return nodes, EBC, g, gt, FBC, fext, ft
 end

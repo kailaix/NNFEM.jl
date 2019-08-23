@@ -26,11 +26,11 @@ u = [reshape(domain.history["state"][i][(nx+1)*(ny+1)+1:end], ny+1, nx+1)[1,end]
 
 ### Setting Code
 tid               description
-100               fix bottom, compress from top with F = (F0, 0)
+100               fix bottom, pull from top with F = (F0, 0)
 200               fix left, pull from right with F = (F0, 0)
 201               fix left, compress from right with F = (-F0, 0)
 202               fix left, pull from right with F = (0, F0)
 203               fix left, pull from right with F = (F0/√2, F0/√2)
 204         
 205
-250               fix left, push from bottom with a Gaussian distributed load
+300               fix left, push from bottom with a Gaussian distributed load
