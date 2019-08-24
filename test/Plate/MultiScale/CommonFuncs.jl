@@ -148,7 +148,7 @@ function BoundaryCondition(tid, nx, ny, Lx = 1.0, Ly = 0.5)
         FBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), :] .= -2 # force on the right        
     elseif div(tid,100)==3
         EBC[collect(1:nx+1:(nx+1)*(ny+1)), :] .= -1 # fix left
-        FBC[collect(1:nx+1), :] .= -2 # force on the bottom
+        FBC[collect(2:nx+1), :] .= -2 # force on the bottom
     end
 
     F1 = 2e2 #gcm/ms^2 compress/pull
@@ -186,9 +186,9 @@ function BoundaryCondition(tid, nx, ny, Lx = 1.0, Ly = 0.5)
             return 1.0/(sqrt(2*pi*σ^2)) * exp.(-0.5*(x .- x0).^2/σ^2)
         end
 
-        fext[collect(1:nx+1), 1] .= 0.0
-        fext[collect(1:nx+1), 2] .= F2 * gauss(Lx, nx, Lx*5.0/6.0)
-        fext[[1;nx+1], :] /= 2.0
+        fext[collect(2:nx+1), 1] .= 0.0
+        fext[collect(2:nx+1), 2] .= F2 * gauss(Lx, nx, Lx*5.0/6.0)[2:end]
+        fext[[2;nx+1], :] /= 2.0
     else
         error("tid = $tid is not understood")
     end

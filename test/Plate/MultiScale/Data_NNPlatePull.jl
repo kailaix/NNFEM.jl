@@ -1,8 +1,8 @@
 # tid = parse(Int64, ARGS[1])
-tid = 203
-if Sys.MACHINE=="x86_64-pc-linux-gnu"
-   global tid = parse(Int64, ARGS[1])
-end
+tid = 300
+# if Sys.MACHINE=="x86_64-pc-linux-gnu"
+#    global tid = parse(Int64, ARGS[1])
+# end
 printstyled("tid=$tid\n", color=:green)
 
 include("CommonFuncs.jl")
