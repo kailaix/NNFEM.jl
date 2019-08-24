@@ -121,7 +121,7 @@ function generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distributio
     return ele_type
 end
 
-function BoundaryCondition(tid, nx, ny, F0 = 5e7, Lx = 1.0, Ly = 0.5)
+function BoundaryCondition(tid, nx, ny, Lx = 1.0, Ly = 0.5)
     nnodes, neles = (nx + 1)*(ny + 1), nx*ny
     Lx, Ly = 1.0, 0.5
     x = np.linspace(0.0, Lx, nx + 1)
@@ -151,31 +151,32 @@ function BoundaryCondition(tid, nx, ny, F0 = 5e7, Lx = 1.0, Ly = 0.5)
         FBC[collect(1:nx+1), :] .= -2 # force on the bottom
     end
 
-    
+    F1 = 2e2 #gcm/ms^2 compress/pull
+    F2 = 2e1 #gcm/ms^2 bend 
     #Bending or Pulling
     if tid==100
         fext[collect((nx+1)*ny+1:(nx+1)*(ny+1)), 1] .= 0
-        fext[collect((nx+1)*ny+1:(nx+1)*(ny+1)), 2] .= F0
-        fext[(nx+1)*ny+1, :] /= 2.0
-        fext[(nx+1)*(ny+1), :] /= 2.0
+        fext[collect((nx+1)*ny+1:(nx+1)*(ny+1)), 2] .= F1
+        fext[[(nx+1)*ny+1,(nx+1)*(ny+1)], :] /= 2.0
+        
 
     elseif tid == 200
-        fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= F0
+        fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= F1
         fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= 0
         # fext[]
         fext[[nx+1; (nx+1)*(ny+1)], :] /= 2.0
     elseif tid == 201
-        fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= -F0
+        fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= -F1
         fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= 0
-        fext[[nx+1; (nx+1)*(ny+1)], 2] .= 0
+        fext[[nx+1; (nx+1)*(ny+1)], 2] /= 2.0
     elseif tid == 202
         fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= 0
-        fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= F0
+        fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= F2
         fext[[nx+1; (nx+1)*(ny+1)], :] /= 2.0
     elseif tid == 203
-        fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= F0/sqrt(2)
-        fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= F0/sqrt(2)
-        fext[[nx+1;(nx+1)*(ny+1)], 2] .= F0/sqrt(2)
+        fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= F1/sqrt(2)
+        fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= F2/sqrt(2)
+        fext[[nx+1;(nx+1)*(ny+1)], 2] /= 2.0
 
     elseif tid == 300
         # data_type == "Bending"
@@ -186,7 +187,7 @@ function BoundaryCondition(tid, nx, ny, F0 = 5e7, Lx = 1.0, Ly = 0.5)
         end
 
         fext[collect(1:nx+1), 1] .= 0.0
-        fext[collect(1:nx+1), 2] .= F0 * gauss(Lx, nx, Lx*5.0/6.0)
+        fext[collect(1:nx+1), 2] .= F2 * gauss(Lx, nx, Lx*5.0/6.0)
         fext[[1;nx+1], :] /= 2.0
     else
         error("tid = $tid is not understood")

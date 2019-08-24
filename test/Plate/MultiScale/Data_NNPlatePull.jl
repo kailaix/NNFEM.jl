@@ -1,5 +1,5 @@
 # tid = parse(Int64, ARGS[1])
-tid = 100
+tid = 203
 if Sys.MACHINE=="x86_64-pc-linux-gnu"
    global tid = parse(Int64, ARGS[1])
 end
@@ -47,8 +47,9 @@ ele_type = generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distribut
 # savefig("test.png")
 # error()
 
-F0 = 5e2 #gcm/ms^2
-nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, F0)
+
+
+nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny)
 elements = []
 for j = 1:ny
     for i = 1:nx 

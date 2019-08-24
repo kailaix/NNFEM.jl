@@ -14,6 +14,10 @@ fiber_fraction = 0.25
 fiber_fraction = 1.0
 prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>nn)
 
+
+T = 0.05
+NT = 100
+
 # DNS computaional domain
 nx_f, ny_f = 40*2, 20*2
 # nx_f, ny_f = 12, 4
@@ -92,14 +96,12 @@ end
 
 
 
-T = 0.0001
-NT = 100
+
 Δt = T/NT
-stress_scale = 1.0e5
+stress_scale = 1.0
 strain_scale = 1
 
-F0 = 5e7
-nodes, _, _, _, _, _, _ = BoundaryCondition(n_data[1], nx, ny, F0)
+nodes, _, _, _, _, _, _ = BoundaryCondition(n_data[1], nx, ny)
 elements = []
 for j = 1:ny
     for i = 1:nx 
