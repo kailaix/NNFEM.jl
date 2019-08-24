@@ -1,8 +1,8 @@
 # tid = parse(Int64, ARGS[1])
 tid = 300
-# if Sys.MACHINE=="x86_64-pc-linux-gnu"
-#    global tid = parse(Int64, ARGS[1])
-# end
+if Sys.MACHINE=="x86_64-pc-linux-gnu"
+   global tid = parse(Int64, ARGS[1])
+end
 printstyled("tid=$tid\n", color=:green)
 
 include("CommonFuncs.jl")
@@ -35,7 +35,7 @@ T = 0.05
 NT = 100
 
 
-fiber_size = 2
+fiber_size = 10
 nxc, nyc = 40,20
 nx, ny =  nxc*fiber_size, nyc*fiber_size
 #Type 1=> SiC(fiber), type 0=>Ti(matrix), each fiber has size is k by k
