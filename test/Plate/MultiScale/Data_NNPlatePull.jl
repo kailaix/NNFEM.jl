@@ -1,13 +1,15 @@
 # tid = parse(Int64, ARGS[1])
 tid = 100
 if Sys.MACHINE=="x86_64-pc-linux-gnu"
-    global tid = parse(Int64, ARGS[1])
+   global tid = parse(Int64, ARGS[1])
 end
 printstyled("tid=$tid\n", color=:green)
 
 include("CommonFuncs.jl")
-
-# tid = 1
+if Sys.MACHINE=="x86_64-apple-darwin18.6.0"
+    matplotlib.use("macosx")
+end
+np = pyimport("numpy")
 """
 Property:
 The matrix is made of titanium, which are assumed to be elasto-plastic titanium material,  
@@ -20,21 +22,47 @@ https://www.azom.com/properties.aspx?ArticleID=42
 ρ = 3.2 g/cm^3  E = 400GPa =  4*10^6 g/cm/ms^2  ν = 0.35
 length scale cm
 """
-prop0 = Dict("name"=> "PlaneStressPlasticity","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.2,
-"sigmaY"=>0.97e+4, "K"=>10e+5)
-prop1 = Dict("name"=> "PlaneStress", "rho"=> 3.2, "E"=>4e6, "nu"=>0.35)
-prop0 = prop1
-#ps1 = PlaneStress(prop0); H1 = ps1.H
-ps2 = PlaneStress(prop1); H2 = ps2.H
+prop1 = Dict("name"=> "PlaneStressPlasticity","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.2,
+"sigmaY"=>0.97e+4, "K"=>1e+5)
+prop2 = Dict("name"=> "PlaneStress", "rho"=> 3.2, "E"=>4e6, "nu"=>0.35)
+#prop0 = prop1
+
+#ps1 = PlaneStress(prop1); H1 = ps1.H
+ps2 = PlaneStress(prop2); H2 = ps2.H
 
 
-#prop1 = prop0
-# testtype = "PlaneStress"
-# prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45)
-
-include("NNPlatePull_Domain_Data.jl")
+T = 0.05
+NT = 100
 
 
+fiber_size = 2
+nxc, nyc = 40,20
+nx, ny =  nxc*fiber_size, nyc*fiber_size
+#Type 1=> SiC(fiber), type 0=>Ti(matrix), each fiber has size is k by k
+fiber_fraction = 0.25
+fiber_distribution = "Uniform"
+ele_type = generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distribution)
+@show "fiber fraction: ",  sum(ele_type)/(nx*ny)
+# matshow(ele_type)
+# savefig("test.png")
+# error()
+
+F0 = 5e2 #gcm/ms^2
+nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, F0)
+elements = []
+for j = 1:ny
+    for i = 1:nx 
+        n = (nx+1)*(j-1) + i
+        elnodes = [n, n + 1, n + 1 + (nx + 1), n + (nx + 1)]
+        coords = nodes[elnodes,:]
+        # 0=> matrix, 1=> fiber
+        prop = ele_type[i,j] == 0 ? prop1 : prop2
+        push!(elements,SmallStrainContinuum(coords,elnodes, prop, 3))
+    end
+end
+
+
+ndofs = 2
 domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
 state = zeros(domain.neqs)
 ∂u = zeros(domain.neqs)
@@ -43,6 +71,10 @@ globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.n
 assembleMassMatrix!(globdat, domain)
 updateStates!(domain, globdat)
 
+
+Δt = T/NT
+stress_scale = 1
+strain_scale = 1
 
 for i = 1:NT
     @info i, "/" , NT
@@ -62,9 +94,6 @@ for i = 1:NT
     #     visσ(domain)
     #     # visσ(domain,-1.5e9, 4.5e9)
     #     savefig("Debug/terminal$(tid)i=75.png")
-    # end
-    # if i==40
-    #     break
     # end
 end
 
