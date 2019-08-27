@@ -1,7 +1,9 @@
 # tid = parse(Int64, ARGS[1])
+force_scale = 10.0
 tid = 300
 if Sys.MACHINE=="x86_64-pc-linux-gnu"
    global tid = parse(Int64, ARGS[1])
+   global force_scale = parse(Float64, ARGS[2])
 end
 printstyled("tid=$tid\n", color=:green)
 
@@ -100,7 +102,7 @@ end
 
 # error()
 # todo write data
-write_data("$(@__DIR__)/Data/$tid.dat", domain)
+write_data("$(@__DIR__)/Data/$(tid)_$force_scale.dat", domain)
 # plot
 close("all")
 scatter(nodes[:, 1], nodes[:,2], color="red")
@@ -110,12 +112,12 @@ scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
 close("all")
 visσ(domain)
 axis("equal")
-savefig("Debug/terminal$tid.png")
+savefig("Debug/terminal$(tid)_$force_scale.png")
 
 
 close("all")
 u = [reshape(domain.history["state"][i][(nx+1)*(ny+1)+1:end], ny+1, nx+1)[1,end] for i = 1:length(domain.history["state"])]
 plot(u)
-savefig("Debug/u$tid.png")
+savefig("Debug/u$(tid)_$force_scale.png")
 
-@save "Data/domain$tid.jld2" domain
+@save "Data/domain$(tid)_$force_scale.jld2" domain

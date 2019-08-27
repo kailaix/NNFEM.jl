@@ -151,8 +151,8 @@ function BoundaryCondition(tid, nx, ny, Lx = 1.0, Ly = 0.5)
         FBC[collect(2:nx+1), :] .= -2 # force on the bottom
     end
 
-    F1 = 2e2 /10.0 #gcm/ms^2 compress/pull
-    F2 = 2e1 /10.0 #gcm/ms^2 bend 
+    F1 = 2e2 /force_scale #gcm/ms^2 compress/pull
+    F2 = 2e1 /force_scale #gcm/ms^2 bend 
     #Bending or Pulling
     if tid==100
         fext[collect((nx+1)*ny+1:(nx+1)*(ny+1)), 1] .= 0
