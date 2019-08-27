@@ -42,4 +42,5 @@
 *.jld2
 
 
-test/Truss/Data/*
+!deps/build.jl
+deps/build.jl
