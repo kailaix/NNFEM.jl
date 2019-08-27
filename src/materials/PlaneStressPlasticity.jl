@@ -74,8 +74,7 @@ function getStress(self::PlaneStressPlasticity,  strain::Array{Float64},  Dstrai
         dΔσdΔε = H
         #@show "elastic", α, α0, σ, σ0,ε, ε0, σ0 + H*(ε-ε0) , H*ε
     else
-        @show "Plasticity"
-        error()
+        # error()
         σ = σ0 + H*(ε-ε0) 
         function compute(σ, Δγ)
             α = α0 + Δγ
@@ -140,4 +139,7 @@ function commitHistory(self::PlaneStressPlasticity)
     self.α = self.α_
     self.σ0 = self.σ0_
     self.ε0 = self.ε0_
+    if self.α>1e-15
+        error("MATERIAL ERROR: Plasticity")
+    end
 end
