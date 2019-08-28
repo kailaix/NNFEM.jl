@@ -20,9 +20,6 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
         ε0 = constant(ε0)
         σ0 = constant(σ0)
         
-        H0 = [ 2.50784e11  1.12853e11  0.0       
-            1.12853e11  2.50784e11  0.0       
-            0.0         0.0         6.89655e10]/stress_scale
         y = ae(x, [20,20,20,20,6], nntype)
         z = tf.reshape(sym_op(y), (-1,3,3))
         σnn = squeeze(tf.matmul(z, tf.reshape((ε-ε0)/strain_scale, (-1,3,1)))) + σ0/stress_scale
@@ -52,9 +49,6 @@ function nn_helper(ε, ε0, σ0)
         x = reshape([ε;ε0;σ0/stress_scale],1, 9)
         reshape(nnae_scaled(x)*stress_scale,3,1)
     elseif nntype=="piecewise"
-        H0 = [ 2.50784e11  1.12853e11  0.0       
-            1.12853e11  2.50784e11  0.0       
-            0.0         0.0         6.89655e10]
         ε = ε/strain_scale
         ε0 = ε0/strain_scale
         σ0 = σ0/stress_scale

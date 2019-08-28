@@ -60,9 +60,9 @@ do
 for tid in 100 201 202 203 300
 do
 bgxgrp=${group1} 
-bgxlimit 6 julia Data_NNPlatePull.jl $tid $force_scale > Data/${i}_$force_scale.txt 
+bgxlimit 6 julia Data_NNPlatePull.jl $tid $force_scale > Data/${tid}_$force_scale.txt 
 group1=${bgxgrp}
-echo "Data_NNPlatePull.jl $tid $force_scale 2>&1 | tee Data/${i}_$force_scale.txt"
+echo "Data_NNPlatePull.jl $tid $force_scale 2>&1 | tee Data/${tid}_$force_scale.txt"
 done
 done
 # 0.1 0.15 0.2
