@@ -84,7 +84,7 @@ function compute_loss(tid)
     #todo hard code the sy_f, it is on the right hand side
     fine_to_coarse_fext = compute_fine_to_coarse_fext(tid)
     
-    if tid in [100, 250]
+    if tid in [100, 300]
         fscale = sx_f
     elseif tid in [200, 201, 202, 203]
         fscale = sy_f

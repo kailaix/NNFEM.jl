@@ -8,7 +8,7 @@ mutable struct SmallStrainContinuum
     dhdx::Array{Array{Float64}}  # 4nPointsx2 matrix
     weights::Array{Float64} 
     hs::Array{Array{Float64}}
-    strain::Array{Array{Float64}}
+    stress::Array{Array{Float64}}
 end
 
 function SmallStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, props::Dict{String, Any}, ngp::Int64=2)
@@ -68,7 +68,7 @@ function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64}, Dst
 
         # @info "gauss ", k, " E ", E, " S ", S
 
-        self.strain[k] = S
+        self.stress[k] = S
         # @show size(S), size(∂E∂u)
         fint += ∂E∂u * S * self.weights[k] # 1x8
         

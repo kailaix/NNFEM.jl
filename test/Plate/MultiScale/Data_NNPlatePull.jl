@@ -1,10 +1,10 @@
 # tid = parse(Int64, ARGS[1])
-force_scale = 10.0
-tid = 300
-if Sys.MACHINE=="x86_64-pc-linux-gnu"
-   global tid = parse(Int64, ARGS[1])
-   global force_scale = parse(Float64, ARGS[2])
-end
+force_scale = 50.0
+tid = 100
+# if Sys.MACHINE=="x86_64-pc-linux-gnu"
+#    global tid = parse(Int64, ARGS[1])
+#    global force_scale = parse(Float64, ARGS[2])
+# end
 printstyled("tid=$tid\n", color=:green)
 
 include("CommonFuncs.jl")
@@ -32,12 +32,11 @@ prop2 = Dict("name"=> "PlaneStress", "rho"=> 3.2, "E"=>4e6, "nu"=>0.35)
 ps1 = PlaneStress(prop1); H1 = ps1.H
 ps2 = PlaneStress(prop2); H2 = ps2.H
 
-
 T = 0.05
 NT = 100
 
 
-fiber_size = 10
+fiber_size = 2
 nxc, nyc = 40,20
 nx, ny =  nxc*fiber_size, nyc*fiber_size
 #Type 1=> SiC(fiber), type 0=>Ti(matrix), each fiber has size is k by k

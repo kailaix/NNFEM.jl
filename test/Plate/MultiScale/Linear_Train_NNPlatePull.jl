@@ -25,7 +25,7 @@ nx_f, ny_f = 40*10, 20*10
 
 # homogenized computaional domain
 # number of elements in each directions
-nx, ny = 20, 10
+nx, ny = 20, 20
 # number of subelements in one element in each directions
 sx_f, sy_f = div(nx_f,nx), div(ny_f,ny)
 

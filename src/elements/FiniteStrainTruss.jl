@@ -7,7 +7,7 @@ mutable struct FiniteStrainTruss
     coords::Array{Float64}
     weights::Array{Float64}
     hs::Array{Array{Float64}} 
-    strain::Array{Float64}
+    stress::Array{Float64}
     l0::Float64                  # length in the undeformed shape
     A0::Float64                  # cross section area of the undeformed shape
     rot_mat::Array{Float64}      # 4 by 4 rotation matrix
@@ -73,7 +73,7 @@ function getStiffAndForce(self::FiniteStrainTruss, state::Array{Float64}, Dstate
         # #@show E, DE
         S, dS_dE = getStress(self.mat[k], E, DE, Δt)
         
-        self.strain[k] = S
+        self.stress[k] = S
 
         fint += A0 * self.weights[k] * S * ∂E∂u  # 4x1
         

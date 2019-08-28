@@ -24,9 +24,15 @@ u = [reshape(domain.history["state"][i][(nx+1)*(ny+1)+1:end], ny+1, nx+1)[1,end]
 ```
 
 
+```julia
+u = [reshape(domain.history["state"][i][1:(nx+1)*(ny+1)], ny+1, nx+1)[1,end] for i = 1:length(domain.history["state"])]
+```
+
+
 ### Setting Code
 tid               description
-100               fix bottom, pull from top with F = (F1, 0)
+100               fix bottom, pull from top with F = (0, F1)
+101               fix bottom, compress from top with F = (0, -F1)
 200               fix left, pull from right with F = (F1, 0)
 201               fix left, compress from right with F = (-F1, 0)
 202               fix left, bend from right with F = (0, F2)

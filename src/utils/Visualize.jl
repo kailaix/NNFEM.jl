@@ -11,7 +11,7 @@ function visstatic(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
     y1, y2 = minimum(temp[:,2]), maximum(temp[:,2])
     σ =[]
     for e in domain.elements
-        σs = e.strain
+        σs = e.stress
         push!(σ,mean([sqrt(σ[1]^2-σ[1]*σ[2]+σ[2]^2+3*σ[3]^2) for σ in σs]))
     end
     vmin = vmin==nothing ? minimum(σ) : vmin 
@@ -122,9 +122,12 @@ function prepare_strain_stress_data2D(domain::Domain, scale::Float64=1.0)
 end
 
 
+# https://risa.com/risahelp/risa3d/Content/3D_2D_Only_Topics/Plates%20-%20Results.htm
 function helper_(stress::Array{Float64})
-    M = [stress[1] stress[3]; stress[3] stress[2]]
-    λ = eigvals(M)
+    σx = stress[1]; σy = stress[2]; τxy = stress[3]
+    σ1 = (σx+σy)/2+sqrt((σx-σy)^2/4 + τxy^2)
+    σ2 = (σx+σy)/2-sqrt((σx-σy)^2/4 + τxy^2)
+    sqrt(σ1^2-σ1*σ2+σ2^2)
 end
 
 function VisualizeStress2D(domain::Domain)
@@ -190,7 +193,9 @@ function visσ(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
     y1, y2 = minimum(temp[:,2]), maximum(temp[:,2])
     σ =[]
     for e in domain.elements
-        σs = e.strain
+        σs = e.stress
+        # @show σs
+        # error()
         push!(σ,mean([helper_(s)[1] for s in σs]))
     end
     vmin = vmin==nothing ? minimum(σ) : vmin 

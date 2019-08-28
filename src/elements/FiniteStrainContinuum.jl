@@ -8,7 +8,7 @@ mutable struct FiniteStrainContinuum
     dhdx::Array{Array{Float64}}  # 4nPointsx2 matrix
     weights::Array{Float64} 
     hs::Array{Array{Float64}}
-    strain::Array{Array{Float64}}
+    stress::Array{Array{Float64}}
 end
 
 function FiniteStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, props::Dict{String, Any}, ngp::Int64=2)
@@ -56,7 +56,7 @@ function getStiffAndForce(self::FiniteStrainContinuum, state::Array{Float64}, Ds
         # #@show "+++",E, DE
         S, dS_dE = getStress(self.mat[k], E, DE, Δt)
         # error()
-        self.strain[k] = S
+        self.stress[k] = S
 
         fint += ∂E∂u * S * self.weights[k] # 1x8
         

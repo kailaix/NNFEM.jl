@@ -158,7 +158,10 @@ function BoundaryCondition(tid, nx, ny, Lx = 1.0, Ly = 0.5)
         fext[collect((nx+1)*ny+1:(nx+1)*(ny+1)), 1] .= 0
         fext[collect((nx+1)*ny+1:(nx+1)*(ny+1)), 2] .= F1
         fext[[(nx+1)*ny+1,(nx+1)*(ny+1)], :] /= 2.0
-        
+    elseif tid==101
+        fext[collect((nx+1)*ny+1:(nx+1)*(ny+1)), 1] .= 0
+        fext[collect((nx+1)*ny+1:(nx+1)*(ny+1)), 2] .= -2*F1
+        fext[[(nx+1)*ny+1,(nx+1)*(ny+1)], :] /= 2.0    
 
     elseif tid == 200
         fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= F1

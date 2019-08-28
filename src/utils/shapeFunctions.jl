@@ -32,6 +32,8 @@ function getShapeQuad4( ξ::Array{Float64,1} )
     return sData
 end
 
+
+
 function getShapeLine2( ξ::Array{Float64,1} )
     #   gaussian point ordering:
     #   1 ---- 2
