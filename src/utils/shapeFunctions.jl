@@ -32,7 +32,50 @@ function getShapeQuad4( ξ::Array{Float64,1} )
     return sData
 end
 
+function getShapeQuad9( ξ::Array{Float64,1} )
+    #todo!! 
+    #   gaussian point ordering:
+    #   4 --7-- 3
+    #   8   9   6 
+    #   1 --5-- 2
+    #Check the dimension of physical space
+    if length(ξ) != 2
+        error("2D only")
+    end
 
+    sData       = zeros(4,3)
+
+
+
+    #Calculate shape functions
+    sData[1,1] = r * (r - 1) * s * (s - 1) / 4.0
+    sData[2,1] = r * (r + 1) * s * (s - 1) / 4.0
+    sData[3,1] = r * (r + 1) * s * (s + 1) / 4.0
+    sData[4,1] = r * (r - 1) * s * (s + 1) / 4.0
+    sData[5,1] =  -(r * r - 1) * s * (s - 1.) / 2.0
+    sData[6,1] = -r * (r + 1) * (s * s - 1.) / 2.0
+    sData[7,1] = r * (r - 1) * s * (s + 1) / 4.0
+    sData[8,1] = -r * (r - 1) * (s * s - 1.) / 2.0
+    sData[9,1] = (1 - r * r) * (1 - s * s)
+    
+    #Calculate derivatives of shape functions
+    sData[1,2] = -0.25*(1.0-ξ[2])
+    sData[2,2] =  0.25*(1.0-ξ[2])
+    sData[3,2] =  0.25*(1.0+ξ[2])
+    sData[4,2] = -0.25*(1.0+ξ[2])
+    sData[5,2] = -0.25*(1.0-ξ[2])
+    sData[6,2] =  0.25*(1.0-ξ[2])
+    sData[7,2] =  0.25*(1.0+ξ[2])
+    sData[8,2] = -0.25*(1.0+ξ[2])
+    sData[9,2] = -0.25*(1.0+ξ[2])
+    
+    sData[1,3] = -0.25*(1.0-ξ[1])
+    sData[2,3] = -0.25*(1.0+ξ[1])
+    sData[3,3] =  0.25*(1.0+ξ[1])
+    sData[4,3] =  0.25*(1.0-ξ[1])
+    
+    return sData
+end
 
 function getShapeLine2( ξ::Array{Float64,1} )
     #   gaussian point ordering:
@@ -114,8 +157,14 @@ function get2DElemShapeData( elem_coords::Array{Float64} , npoints::Int64 = 0)
     ξ = int_coords[k,:]
     weight = int_weights[k]
     # println(ξ)
-    sData = getShapeQuad4(ξ)
-    
+    if ele_size[1] == 4
+        sData = getShapeQuad4(ξ)
+    elseif ele_size[1] == 9
+        sData = getShapeQuad9(ξ) 
+    else
+        error("not implemented ele_size[1] = ", ele_size[1])
+    end
+
     jac = elem_coords' * sData[:,2:end]
     push!(dhdx, sData[:,2:end] * inv( jac ))
     push!(weights, abs(det(jac)) * weight)

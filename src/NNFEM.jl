@@ -13,6 +13,7 @@ animation = PyNULL()
 colors = PyNULL()
 cmx = PyNULL()
 clb = PyNULL()
+
 function __init__()
     global jet
     copy!(animation, pyimport("matplotlib.animation"))
