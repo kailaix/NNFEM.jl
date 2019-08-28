@@ -130,7 +130,7 @@ savefig("Debug/terminal$(tid)_$force_scale.png")
 
 
 close("all")
-u = [reshape(domain.history["state"][i][(nx+1)*(ny+1)+1:end], ny+1, nx+1)[1,end] for i = 1:length(domain.history["state"])]
+u = [reshape(domain.history["state"][i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
 plot(u)
 savefig("Debug/u$(tid)_$force_scale.png")
 

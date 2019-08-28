@@ -305,7 +305,7 @@ function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5)
 
     P1 = 16000 /force_scale #gcm/ms^2 compress/pull
     P2 = 1600 /force_scale #gcm/ms^2 bend 
-    
+    ngp = 3
     #Bending or Pulling
     if tid==100
         F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Constant",  [0, P1])
