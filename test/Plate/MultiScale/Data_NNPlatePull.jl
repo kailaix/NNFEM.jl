@@ -27,7 +27,7 @@ length scale cm
 prop1 = Dict("name"=> "PlaneStressPlasticity","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.2,
 "sigmaY"=>0.97e+4, "K"=>1e+5)
 prop2 = Dict("name"=> "PlaneStress", "rho"=> 3.2, "E"=>4e6, "nu"=>0.35)
-#prop0 = prop1
+prop1 = prop2
 
 ps1 = PlaneStress(prop1); H1 = ps1.H
 ps2 = PlaneStress(prop2); H2 = ps2.H
@@ -48,14 +48,29 @@ ele_type = generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distribut
 # savefig("test.png")
 # error()
 
+porder = 2
 
-
-nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny)
+nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder)
 elements = []
 for j = 1:ny
     for i = 1:nx 
-        n = (nx+1)*(j-1) + i
-        elnodes = [n, n + 1, n + 1 + (nx + 1), n + (nx + 1)]
+        n = (nx*porder+1)*(j-1)*porder + (i-1)porder+1
+        #element (i,j)
+        if porder == 1
+            #   4 ---- 3
+            #
+            #   1 ---- 2
+
+            elnodes = [n, n + 1, n + 1 + (nx + 1), n + (nx + 1)]
+        elseif porder == 2
+            #   4 --7-- 3
+            #   8   9   6 
+            #   1 --5-- 2
+            elnodes = [n, n + 2, n + 2 + 2*(2*nx+1),  n + 2*(2*nx+1), n+1, n + 2 + (2*nx+1), n + 1 + 2*(2*nx+1), n + (2*nx+1), n+1+(2*nx+1)]
+        else
+            error("polynomial order error, porder= ", porder)
+        end
+
         coords = nodes[elnodes,:]
         # 0=> matrix, 1=> fiber
         prop = ele_type[i,j] == 0 ? prop1 : prop2

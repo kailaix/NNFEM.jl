@@ -121,11 +121,94 @@ function generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distributio
     return ele_type
 end
 
-function BoundaryCondition(tid, nx, ny, Lx = 1.0, Ly = 0.5)
-    nnodes, neles = (nx + 1)*(ny + 1), nx*ny
+# function BoundaryCondition(tid, nx, ny, Lx = 1.0, Ly = 0.5)
+#     nnodes, neles = (nx + 1)*(ny + 1), nx*ny
+#     Lx, Ly = 1.0, 0.5
+#     x = np.linspace(0.0, Lx, nx + 1)
+#     y = np.linspace(0.0, Ly, ny + 1)
+
+
+#     X, Y = np.meshgrid(x, y)
+#     nodes = zeros(nnodes,2)
+#     nodes[:,1], nodes[:,2] = X'[:], Y'[:]
+#     ndofs = 2
+
+#     EBC, g = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
+#     FBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
+#     gt = nothing
+
+#     # setting EBC:
+#     # tid = 1XX   |==|--> 
+#     # tid = 2XX   
+#     if div(tid,100)==1
+#         EBC[collect(1:nx+1), :] .= -1 # fix bottom
+#         FBC[collect((nx+1)*ny+1:(nx+1)*(ny+1)), :] .= -2 # force on the top
+#     elseif div(tid,100)==2
+#         EBC[collect(1:nx+1:(nx+1)*(ny+1)), :] .= -1 # fix left
+#         FBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), :] .= -2 # force on the right        
+#     elseif div(tid,100)==3
+#         EBC[collect(1:nx+1:(nx+1)*(ny+1)), :] .= -1 # fix left
+#         FBC[collect(2:nx+1), :] .= -2 # force on the bottom
+#     end
+
+#     F1 = 2e2 /force_scale #gcm/ms^2 compress/pull
+#     F2 = 2e1 /force_scale #gcm/ms^2 bend 
+#     #Bending or Pulling
+#     if tid==100
+#         fext[collect((nx+1)*ny+1:(nx+1)*(ny+1)), 1] .= 0
+#         fext[collect((nx+1)*ny+1:(nx+1)*(ny+1)), 2] .= F1
+#         fext[[(nx+1)*ny+1,(nx+1)*(ny+1)], :] /= 2.0
+#     elseif tid==101
+#         fext[collect((nx+1)*ny+1:(nx+1)*(ny+1)), 1] .= 0
+#         fext[collect((nx+1)*ny+1:(nx+1)*(ny+1)), 2] .= -2*F1
+#         fext[[(nx+1)*ny+1,(nx+1)*(ny+1)], :] /= 2.0    
+
+#     elseif tid == 200
+#         fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= F1
+#         fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= 0
+#         # fext[]
+#         fext[[nx+1; (nx+1)*(ny+1)], :] /= 2.0
+#     elseif tid == 201
+#         fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= -F1
+#         fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= 0
+#         fext[[nx+1; (nx+1)*(ny+1)], 2] /= 2.0
+#     elseif tid == 202
+#         fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= 0
+#         fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= F2
+#         fext[[nx+1; (nx+1)*(ny+1)], :] /= 2.0
+#     elseif tid == 203
+#         fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= F1/sqrt(2)
+#         fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= F2/sqrt(2)
+#         fext[[nx+1;(nx+1)*(ny+1)], 2] /= 2.0
+
+#     elseif tid == 300
+#         # data_type == "Bending"
+#         # force parameter
+#         function gauss(L, n, x0; σ=0.2)
+#             x = collect(LinRange(0, L, n+1))
+#             return 1.0/(sqrt(2*pi*σ^2)) * exp.(-0.5*(x .- x0).^2/σ^2)
+#         end
+
+#         fext[collect(2:nx+1), 1] .= 0.0
+#         fext[collect(2:nx+1), 2] .= F2 * gauss(Lx, nx, Lx*5.0/6.0)[2:end]
+#         fext[[2;nx+1], :] /= 2.0
+#     else
+#         error("tid = $tid is not understood")
+#     end
+
+#     dof_to_active = findall(FBC[:].==-2)
+#     ft = t->fext[:][dof_to_active]*sin(π*t/(2T))
+#     # @show ft(T)
+#     return nodes, EBC, g, gt, FBC, fext, ft
+# end
+
+
+
+function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5)
+    nnodes, neles = (nx*porder + 1)*(ny*porder + 1), nx*ny
     Lx, Ly = 1.0, 0.5
-    x = np.linspace(0.0, Lx, nx + 1)
-    y = np.linspace(0.0, Ly, ny + 1)
+    x = np.linspace(0.0, Lx, nx*porder + 1)
+    y = np.linspace(0.0, Ly, ny*porder + 1)
 
 
     X, Y = np.meshgrid(x, y)
@@ -137,6 +220,8 @@ function BoundaryCondition(tid, nx, ny, Lx = 1.0, Ly = 0.5)
     FBC, fext = zeros(Int64, nnodes, ndofs), zeros(nnodes, ndofs)
     gt = nothing
 
+    #todo only change 203
+
     # setting EBC:
     # tid = 1XX   |==|--> 
     # tid = 2XX   
@@ -144,8 +229,8 @@ function BoundaryCondition(tid, nx, ny, Lx = 1.0, Ly = 0.5)
         EBC[collect(1:nx+1), :] .= -1 # fix bottom
         FBC[collect((nx+1)*ny+1:(nx+1)*(ny+1)), :] .= -2 # force on the top
     elseif div(tid,100)==2
-        EBC[collect(1:nx+1:(nx+1)*(ny+1)), :] .= -1 # fix left
-        FBC[collect(nx+1:nx+1:(nx+1)*(ny+1)), :] .= -2 # force on the right        
+        EBC[collect(1:nx*porder+1:(nx*porder+1)*(ny*porder+1)), :] .= -1 # fix left
+        FBC[collect(nx*porder+1:nx*porder+1:(nx*porder+1)*(ny*porder+1)), :] .= -2 # force on the right        
     elseif div(tid,100)==3
         EBC[collect(1:nx+1:(nx+1)*(ny+1)), :] .= -1 # fix left
         FBC[collect(2:nx+1), :] .= -2 # force on the bottom
@@ -177,9 +262,9 @@ function BoundaryCondition(tid, nx, ny, Lx = 1.0, Ly = 0.5)
         fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= F2
         fext[[nx+1; (nx+1)*(ny+1)], :] /= 2.0
     elseif tid == 203
-        fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 1] .= F1/sqrt(2)
-        fext[collect(nx+1:nx+1:(nx+1)*(ny+1)), 2] .= F2/sqrt(2)
-        fext[[nx+1;(nx+1)*(ny+1)], 2] /= 2.0
+        fext[collect(nx*porder+1:nx*porder+1:(nx*porder+1)*(ny*porder+1)), 1] .= F1/sqrt(2)
+        fext[collect(nx*porder+1:nx*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2/sqrt(2)
+        fext[[nx*porder+1;(nx*porder+1)*(ny*porder+1)], 2] /= 2.0
 
     elseif tid == 300
         # data_type == "Bending"
