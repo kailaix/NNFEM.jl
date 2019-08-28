@@ -107,6 +107,32 @@ function getShapeLine2( ξ::Array{Float64,1} )
     return sData
 end
 
+function getShapeLine3( ξ::Array{Float64,1} )
+    #   gaussian point ordering:
+    #   1 --3-- 2
+    #Check the dimension of physical space
+    if length(ξ) != 1
+        error("1D only")
+    end
+
+    sData       = zeros(3,2)
+
+
+    #Calculate shape functions
+    sData[1,1] =  ξ[1] * (ξ[1] - 1) / 2.0
+    sData[2,1] =  ξ[1] * (ξ[1] + 1) / 2.0
+    sData[3,1] =-(ξ[1] * ξ[1] - 1) 
+    
+    
+    #Calculate derivatives of shape functions
+    sData[1,2] =  (2*ξ[1] - 1) / 2.0
+    sData[2,2] =  (2*ξ[1] + 1) / 2.0
+    sData[3,2] =  -2* ξ[1] 
+
+    return sData
+end
+
+
 @doc """
     Return the Gauss quadrature points and weights in [-1,1]^n
 """ -> 
@@ -186,7 +212,7 @@ end
 
 
 @doc """
-    :elemCoords nnodesx2, nnodes=4 => Quad4 ; nnodes=2 => Line2
+    :elemCoords nnodesx2, nnodes=3 => Line3 ; nnodes=2 => Line2
     dhdx: list of ngp shape function first order derivatives dphi/dx (nf×ndim) on the Gaussian points
     weights: list of ngp weights,  gaussian point weight and Jacobian determinant
     hs: list of ngp shape function values(nf×1) on the Gaussian points
@@ -207,9 +233,15 @@ function get1DElemShapeData( elem_coords::Array{Float64} , npoints::Int64 = 0)
   for k = 1:length(int_weights)
     ξ = int_coords[k,:]
     weight = int_weights[k]
-    # println(ξ)
-    sData = getShapeLine2(ξ)
     
+    
+    if ele_size[1] == 2
+        sData = getShapeLine2(ξ)
+    elseif ele_size[1] == 3
+        sData = getShapeLine3(ξ)
+    else
+        error("not implemented ele_size[1] = ", ele_size[1])
+    end
     jac = elem_coords' * sData[:,2:end] #2×1
     push!(weights, sqrt(jac[1]^2 + jac[2]^2) * weight)
     push!(hs, sData[:,1])
