@@ -6,7 +6,7 @@ H0 = H0 + H0'
 testtype = "NeuralNetwork2D"
 force_scale = 50
 nntype = "linear"
-n_data = [100, 201, 202, 203]
+n_data = [100]
 
 
 # density 4.5*(1 - 0.25) + 3.2*0.25
