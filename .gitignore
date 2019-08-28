@@ -44,3 +44,5 @@
 
 !deps/build.jl
 deps/build.jl
+*.txt
+*.nfs*
