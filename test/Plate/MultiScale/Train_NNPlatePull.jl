@@ -11,7 +11,7 @@ n_data = [100]
 # density 4.5*(1 - 0.25) + 3.2*0.25
 fiber_fraction = 0.25
 #todo
-fiber_fraction = 1.0
+# fiber_fraction = 1.0
 prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>nn)
 
 
@@ -78,7 +78,7 @@ function compute_loss(tid)
     globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
     assembleMassMatrix!(globdat, domain)
     # @load "Data/domain$tid.jld2" domain
-    full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/$tid.dat")
+    full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/LinearData/$tid.dat")
     #update state history and fext_history on the homogenized domain
     state_history = [x[fine_to_coarse] for x in full_state_history]
     #todo hard code the sy_f, it is on the right hand side
