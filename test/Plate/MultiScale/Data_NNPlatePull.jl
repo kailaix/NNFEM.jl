@@ -48,7 +48,7 @@ ele_type = generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distribut
 # savefig("test.png")
 # error()
 
-porder = 2
+porder = 1
 
 nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder)
 elements = []

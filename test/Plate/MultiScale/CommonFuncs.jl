@@ -303,8 +303,9 @@ function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5)
     # F1 = 2e2 /force_scale #gcm/ms^2 compress/pull
     # F2 = 2e1 /force_scale #gcm/ms^2 bend 
 
-    P1 = 16000 /force_scale #gcm/ms^2 compress/pull
-    P2 = 1600 /force_scale #gcm/ms^2 bend 
+    P1 = 80000 /force_scale #gcm/ms^2 compress/pull
+    P2 = 8000 /force_scale #gcm/ms^2 bend 
+    @show P1, P2
     ngp = 3
     #Bending or Pulling
     if tid==100
@@ -317,22 +318,22 @@ function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5)
         fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2
      
     elseif tid == 200
-        F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Constant",  [P1, 0])
+        F1, F2 = ComputeLoad(Ly, ny, porder, ngp, "Constant",  [P1, 0])
         fext[collect(nx*porder+1:nx*porder+1:(nx*porder+1)*(ny*porder+1)), 1] .= F1
         fext[collect(nx*porder+1:nx*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2
     
     elseif tid == 201
-        F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Constant",  [-P1, 0])
+        F1, F2 = ComputeLoad(Ly, ny, porder, ngp, "Constant",  [-P1, 0])
         fext[collect(nx*porder+1:nx*porder+1:(nx*porder+1)*(ny*porder+1)), 1] .= F1
         fext[collect(nx*porder+1:nx*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2
 
     elseif tid == 202
-        F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Constant",  [0, P2])
+        F1, F2 = ComputeLoad(Ly, ny, porder, ngp, "Constant",  [0, P2])
         fext[collect(nx*porder+1:nx*porder+1:(nx*porder+1)*(ny*porder+1)), 1] .= F1
         fext[collect(nx*porder+1:nx*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2
 
     elseif tid == 203
-        F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Constant",  [P1/sqrt(2), P2/sqrt(2)])
+        F1, F2 = ComputeLoad(Ly, ny, porder, ngp, "Constant",  [P1/sqrt(2), P2/sqrt(2)])
         fext[collect(nx*porder+1:nx*porder+1:(nx*porder+1)*(ny*porder+1)), 1] .= F1
         fext[collect(nx*porder+1:nx*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2
 
