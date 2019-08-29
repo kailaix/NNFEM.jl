@@ -57,6 +57,12 @@ end
 
     M a_{n+0.5} + fint(u_{n+0.f}) = fext_{n+0.5}
 
+    αm = (2\rho_oo - 1)/(\rho_oo + 1)
+    αf = \rho_oo/(\rho_oo + 1)
+    
+    β2 = 0.5*(1 - αm + αf)^2
+    γ = 0.5 - αm + αf
+
     absolution error ε = 1e-8, 
     relative error ε0 = 1e-8   
 """->

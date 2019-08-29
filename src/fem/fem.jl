@@ -1,5 +1,5 @@
 using SparseArrays
-export Domain,GlobalData,updateStates!,updateDomainStateBoundary!,getExternalForce!
+export Domain,GlobalData,updateStates!,updateDomainStateBoundary!,getExternalForce!,convertState
 
 
 mutable struct GlobalData
@@ -226,6 +226,34 @@ function updateStates!(self::Domain, globaldat::GlobalData)
 
     
     self.Dstate = self.state[:]
+end
+
+
+@doc """
+    :param self: Domain
+    :param state : 1D array to convert
+    :param compress_or_expand  : "Compress" or "Expand" 
+
+    "Compress", the state has all freedoms on all nodes, remove these freedoms on EBC
+    "Expand",   the state has only active freedoms on active nodes (active means not prescribed), 
+                set these freedoms on EBC to 0
+
+    :return:
+""" ->
+function convertState(self::Domain, state::Array{Float64}, compress_or_expand::String)
+    
+    if compress_or_expand == "Expand"
+        new_state = zeros(Float64, self.nnodes*self.ndims)
+        new_state[self.eq_to_dof] = state[:]
+        return new_state
+
+    elseif compress_or_expand == "Compress"
+        return state[self.eq_to_dof]
+    
+    else
+        error("convertStats error, compress_or_expand is ", compress_or_expand)
+    end
+
 end
 
 @doc """

@@ -1,10 +1,10 @@
 # tid = parse(Int64, ARGS[1])
 force_scale = 50.0
-tid = 100
-# if Sys.MACHINE=="x86_64-pc-linux-gnu"
-#    global tid = parse(Int64, ARGS[1])
-#    global force_scale = parse(Float64, ARGS[2])
-# end
+tid = 300  
+if Sys.MACHINE=="x86_64-pc-linux-gnu"
+   global tid = parse(Int64, ARGS[1])
+   global force_scale = parse(Float64, ARGS[2])
+end
 printstyled("tid=$tid\n", color=:green)
 
 include("CommonFuncs.jl")
@@ -27,16 +27,16 @@ length scale cm
 prop1 = Dict("name"=> "PlaneStressPlasticity","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.2,
 "sigmaY"=>0.97e+4, "K"=>1e+5)
 prop2 = Dict("name"=> "PlaneStress", "rho"=> 3.2, "E"=>4e6, "nu"=>0.35)
-prop1 = prop2
 
+prop1 = prop2
 ps1 = PlaneStress(prop1); H1 = ps1.H
 ps2 = PlaneStress(prop2); H2 = ps2.H
 
 T = 0.05
-NT = 100
+NT = 200
 
 
-fiber_size = 2
+fiber_size = 10
 nxc, nyc = 40,20
 nx, ny =  nxc*fiber_size, nyc*fiber_size
 #Type 1=> SiC(fiber), type 0=>Ti(matrix), each fiber has size is k by k
@@ -48,7 +48,7 @@ ele_type = generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distribut
 # savefig("test.png")
 # error()
 
-porder = 1
+porder = 2
 
 nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder)
 elements = []
@@ -93,9 +93,16 @@ updateStates!(domain, globdat)
 stress_scale = 1
 strain_scale = 1
 
+
+ρ_oo = 0.0
+αm = (2*ρ_oo - 1)/(ρ_oo + 1)
+αf = ρ_oo/(ρ_oo + 1)
+
 for i = 1:NT
     @info i, "/" , NT
-    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-4, 1e-6, 10)
+
+    
+    solver = NewmarkSolver(Δt, globdat, domain, αm, αf, 1e-4, 1e-6, 10)
     #solver = NewmarkSolver(Δt, globdat, domain, 0.5, 0.5, 1e-4, 1e-6, 10)
     # close("all")
     # visσ(domain)
@@ -117,21 +124,20 @@ end
 # error()
 # todo write data
 write_data("$(@__DIR__)/Data/$(tid)_$force_scale.dat", domain)
-# plot
-close("all")
-scatter(nodes[:, 1], nodes[:,2], color="red")
-u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
-scatter(nodes[:, 1] + u, nodes[:,2] + v, color="blue")
+@save "Data/domain$(tid)_$force_scale.jld2" domain
 
 close("all")
 visσ(domain)
 axis("equal")
 savefig("Debug/terminal$(tid)_$force_scale.png")
 
+close("all")
+ux = [reshape(domain.history["state"][i][1:(nx*porder+1)*(ny*porder+1)], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
+plot(ux)
+savefig("Debug/ux$(tid)_$force_scale.png")
 
 close("all")
-u = [reshape(domain.history["state"][i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
-plot(u)
-savefig("Debug/u$(tid)_$force_scale.png")
+uy = [reshape(domain.history["state"][i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
+plot(uy)
+savefig("Debug/uy$(tid)_$force_scale.png")
 
-@save "Data/domain$(tid)_$force_scale.jld2" domain

@@ -10,7 +10,7 @@ prop = Dict("name"=> "PlaneStress", "rho"=> 3.2, "E"=>4e6, "nu"=>0.35)
 T = 0.05
 NT = 100
 force_scale = 50
-REFINE_SCALES = [1,2,4]#[1,2,4,8]
+REFINE_SCALES = [1]#[1,2,4,8]
 porder = 2
 nxc, nyc = 10,5
 
@@ -61,31 +61,37 @@ updateStates!(domain, globdat)
 stress_scale = 1
 strain_scale = 1
 
+ρ_oo = 0.0
+αm = (2*ρ_oo - 1)/(ρ_oo + 1)
+αf = ρ_oo/(ρ_oo + 1)
+
 for i = 1:NT
     @info i, "/" , NT
-    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-4, 1e-6, 10)
+    solver = NewmarkSolver(Δt, globdat, domain, αm, αf, 1e-4, 1e-6, 10)
 end
 
-write_data("$(@__DIR__)/Data/ConvergentTest_O$porder/ConvergentTest_$refine_scale.dat", domain)
-
+@save "Data/ConvergentTest_O$porder/domain_$refine_scale.jld2" domain
 end
 
 
 close("all")
 for refine_scale in REFINE_SCALES
     nx, ny =  nxc*refine_scale, nyc*refine_scale
-    state, fext = read_data("$(@__DIR__)/Data/ConvergentTest_O$porder/ConvergentTest_$refine_scale.dat")
-    u = [reshape(state[i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(state)]
-    plot(u)
+    @load "Data/ConvergentTest_O$porder/domain_$refine_scale.jld2" domain 
+    uy = [reshape(domain.history["state"][i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
+    ay = [reshape(convertState(domain, domain.history["acc"][i],"Expand")[(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["acc"])]
+    plot(ay)
 
 end
 savefig("Debug/ConvergentTest_uy_O$porder.png")
 close("all")
 for refine_scale in REFINE_SCALES
+    @show refine_scale
     nx, ny =  nxc*refine_scale, nyc*refine_scale
-    state, fext = read_data("$(@__DIR__)/Data/ConvergentTest_O$porder/ConvergentTest_$refine_scale.dat")
-    u = [reshape(state[i][1:(nx*porder+1)*(ny*porder+1)], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(state)]
-    plot(u)
+    @load "Data/ConvergentTest_O$porder/domain_$refine_scale.jld2" domain
+    ux = [reshape(domain.history["state"][i][1:(nx*porder+1)*(ny*porder+1)], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
+    ax = [reshape(convertState(domain, domain.history["acc"][i],"Expand")[1:(nx*porder+1)*(ny*porder+1)], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["acc"])]
+    plot(ax)
 
 end
 savefig("Debug/ConvergentTest_ux_O$porder.png")
