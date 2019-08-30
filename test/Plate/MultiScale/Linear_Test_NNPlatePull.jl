@@ -38,12 +38,12 @@ T = 0.05
 NT = 100
 Δt = T/NT
 
-nx_f, ny_f = 40*10, 20*10
+nx_f, ny_f = 10*2, 5*2
 # nx_f, ny_f = 12, 4
 
 # homogenized computaional domain
 # number of elements in each directions
-nx, ny = 40, 20
+nx, ny = 20, 10
 # number of subelements in one element in each directions
 sx_f, sy_f = div(nx_f,nx), div(ny_f,ny)
 

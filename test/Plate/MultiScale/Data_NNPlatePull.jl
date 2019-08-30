@@ -1,10 +1,10 @@
 # tid = parse(Int64, ARGS[1])
 force_scale = 50.0
-tid = 300  
-if Sys.MACHINE=="x86_64-pc-linux-gnu"
-   global tid = parse(Int64, ARGS[1])
-   global force_scale = parse(Float64, ARGS[2])
-end
+tid = 203  
+# if Sys.MACHINE=="x86_64-pc-linux-gnu"
+#    global tid = parse(Int64, ARGS[1])
+#    global force_scale = parse(Float64, ARGS[2])
+# end
 printstyled("tid=$tid\n", color=:green)
 
 include("CommonFuncs.jl")
@@ -28,7 +28,7 @@ prop1 = Dict("name"=> "PlaneStressPlasticity","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.
 "sigmaY"=>0.97e+4, "K"=>1e+5)
 prop2 = Dict("name"=> "PlaneStress", "rho"=> 3.2, "E"=>4e6, "nu"=>0.35)
 
-# prop1 = prop2
+prop1 = prop2
 # ps1 = PlaneStress(prop1); H1 = ps1.H
 # ps2 = PlaneStress(prop2); H2 = ps2.H
 
@@ -36,8 +36,8 @@ T = 0.05
 NT = 100
 
 
-fiber_size = 10
-nxc, nyc = 40,20
+fiber_size = 2
+nxc, nyc = 10,5
 nx, ny =  nxc*fiber_size, nyc*fiber_size
 #Type 1=> SiC(fiber), type 0=>Ti(matrix), each fiber has size is k by k
 fiber_fraction = 0.25
@@ -48,7 +48,7 @@ ele_type = generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distribut
 # savefig("test.png")
 # error()
 
-porder = 2
+porder = 1
 
 nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder)
 elements = []
@@ -123,21 +123,24 @@ end
 
 # error()
 # todo write data
-write_data("$(@__DIR__)/Data/$(tid)_$force_scale.dat", domain)
-@save "Data/domain$(tid)_$force_scale.jld2" domain
+if !isdir("$(@__DIR__)/Data/order$porder")
+    mkdir("$(@__DIR__)/Data/order$porder")
+end
+write_data("$(@__DIR__)/Data/order$porder/$(tid)_$force_scale.dat", domain)
+@save "Data/order$porder/domain$(tid)_$force_scale.jld2" domain
 
 close("all")
 visσ(domain)
 axis("equal")
-savefig("Debug/terminal$(tid)_$force_scale.png")
+savefig("Debug/order$porder/terminal$(tid)_$force_scale.png")
 
 close("all")
 ux = [reshape(domain.history["state"][i][1:(nx*porder+1)*(ny*porder+1)], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
 plot(ux)
-savefig("Debug/ux$(tid)_$force_scale.png")
+savefig("Debug/order$porder/ux$(tid)_$force_scale.png")
 
 close("all")
 uy = [reshape(domain.history["state"][i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
 plot(uy)
-savefig("Debug/uy$(tid)_$force_scale.png")
+savefig("Debug/order$porder/uy$(tid)_$force_scale.png")
 

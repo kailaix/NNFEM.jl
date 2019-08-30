@@ -206,7 +206,11 @@ function visσ(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
             vmax=vmax)
     scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
     for (k,e) in enumerate(domain.elements)
-        n_ = nodes[getNodes(e),:] + scaling*[u[getNodes(e),:] v[getNodes(e),:]]
+        N = getNodes(e)
+        if length(N)==9
+            N = N[[1;5;2;6;3;7;4;8]]
+        end
+        n_ = nodes[N,:] + scaling*[u[N,:] v[N,:]]
         p = plt.Polygon(n_, facecolor = scalarMap.to_rgba(σ[k]), fill=true)
         ax.add_patch(p)
     end

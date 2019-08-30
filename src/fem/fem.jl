@@ -1,5 +1,6 @@
 using SparseArrays
-export Domain,GlobalData,updateStates!,updateDomainStateBoundary!,getExternalForce!,convertState
+export Domain,GlobalData,updateStates!,updateDomainStateBoundary!,getExternalForce!,convertState,
+    setNeumannBoundary!
 
 
 mutable struct GlobalData

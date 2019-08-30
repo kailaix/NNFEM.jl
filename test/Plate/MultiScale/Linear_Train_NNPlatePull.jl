@@ -6,7 +6,7 @@ H0 = H0 + H0'
 testtype = "NeuralNetwork2D"
 force_scale = 50
 nntype = "linear"
-n_data = [100]
+n_data = [203]
 
 
 # density 4.5*(1 - 0.25) + 3.2*0.25
@@ -20,24 +20,24 @@ T = 0.05
 NT = 100
 
 # DNS computaional domain
-nx_f, ny_f = 40*10, 20*10
+nx_f, ny_f = 10*2, 5*2
 # nx_f, ny_f = 12, 4
 
 # homogenized computaional domain
 # number of elements in each directions
-nx, ny = 10, 5
+nx, ny = 20, 10
 # number of subelements in one element in each directions
 sx_f, sy_f = div(nx_f,nx), div(ny_f,ny)
 
 porder = 2
 
 ndofs = 2
-fine_to_coarse = zeros(Int64, ndofs*(nx+1)*(ny+1))
+fine_to_coarse = zeros(Int64, ndofs*(nx*porder+1)*(ny*porder+1))
 for idof = 1:ndofs
 for iy = 1:ny*porder+1
     for ix = 1:nx*porder+1
-        fine_to_coarse[ix + (iy - 1)*(nx+1) + (idof-1)*(nx+1)*(ny+1)] = 
-        1 + (ix - 1) * sx_f + (iy - 1) * (nx_f + 1) * sy_f + (nx_f + 1)*(ny_f + 1)*(idof - 1)
+        fine_to_coarse[ix + (iy - 1)*(nx*porder+1) + (idof-1)*(nx*porder+1)*(ny*porder+1)] = 
+        1 + (ix - 1) * sx_f + (iy - 1) * (nx_f*porder + 1) * sy_f + (nx_f*porder + 1)*(ny_f*porder + 1)*(idof - 1)
     end
 end
 end
@@ -99,14 +99,14 @@ end
 
 
 function compute_loss(tid)
-    nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny)
+    nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder)
     domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
     state = zeros(domain.neqs)
     ∂u = zeros(domain.neqs)
     globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
     assembleMassMatrix!(globdat, domain)
     # @load "Data/domain$tid.jld2" domain
-    full_state_history, _ = read_data("$(@__DIR__)/Data/LinearData/$(tid)_$force_scale.0.dat")
+    full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$force_scale.0.dat")
     #update state history and fext_history on the homogenized domain
     state_history = [x[fine_to_coarse] for x in full_state_history]
     fext_history = []
@@ -114,7 +114,7 @@ function compute_loss(tid)
     for i = 1:NT
         globdat.time = Δt*i
         updateDomainStateBoundary!(domain, globdat)
-        fext_history.append(domain.fext)
+        push!(fext_history,domain.fext)
     end
     DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
 end
@@ -128,8 +128,22 @@ nodes, _, _, _, _, _, _ = BoundaryCondition(n_data[1], nx, ny)
 elements = []
 for j = 1:ny
     for i = 1:nx 
-        n = (nx+1)*(j-1) + i
-        elnodes = [n, n + 1, n + 1 + (nx + 1), n + (nx + 1)]
+        n = (nx*porder+1)*(j-1)*porder + (i-1)porder+1
+        #element (i,j)
+        if porder == 1
+            #   4 ---- 3
+            #
+            #   1 ---- 2
+
+            elnodes = [n, n + 1, n + 1 + (nx + 1), n + (nx + 1)]
+        elseif porder == 2
+            #   4 --7-- 3
+            #   8   9   6 
+            #   1 --5-- 2
+            elnodes = [n, n + 2, n + 2 + 2*(2*nx+1),  n + 2*(2*nx+1), n+1, n + 2 + (2*nx+1), n + 1 + 2*(2*nx+1), n + (2*nx+1), n+1+(2*nx+1)]
+        else
+            error("polynomial order error, porder= ", porder)
+        end
         coords = nodes[elnodes,:]
         push!(elements,SmallStrainContinuum(coords,elnodes, prop, 3))
     end
