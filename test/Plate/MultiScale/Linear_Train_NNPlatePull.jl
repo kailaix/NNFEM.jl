@@ -25,25 +25,27 @@ nx_f, ny_f = 40*10, 20*10
 
 # homogenized computaional domain
 # number of elements in each directions
-nx, ny = 20, 20
+nx, ny = 10, 5
 # number of subelements in one element in each directions
 sx_f, sy_f = div(nx_f,nx), div(ny_f,ny)
+
+porder = 2
 
 ndofs = 2
 fine_to_coarse = zeros(Int64, ndofs*(nx+1)*(ny+1))
 for idof = 1:ndofs
-for iy = 1:ny+1
-    for ix = 1:nx+1
+for iy = 1:ny*porder+1
+    for ix = 1:nx*porder+1
         fine_to_coarse[ix + (iy - 1)*(nx+1) + (idof-1)*(nx+1)*(ny+1)] = 
         1 + (ix - 1) * sx_f + (iy - 1) * (nx_f + 1) * sy_f + (nx_f + 1)*(ny_f + 1)*(idof - 1)
     end
 end
 end
 
-
+#todo only for first order
 function compute_fine_to_coarse_fext(tid)
+    @assert(porder == 1)
     # Attention fix left
-
     if div(tid,100)==1 # fix bottom
         fine_to_coarse_fext = zeros(Int64, ndofs*(nx + 1)* ny)
         for idof = 1:ndofs
@@ -70,8 +72,33 @@ end
 
 
 
+# function compute_loss(tid)
+#     local fscale
+#     nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny)
+#     domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
+#     state = zeros(domain.neqs)
+#     ∂u = zeros(domain.neqs)
+#     globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
+#     assembleMassMatrix!(globdat, domain)
+#     # @load "Data/domain$tid.jld2" domain
+#     full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/LinearData/$(tid)_$force_scale.0.dat")
+#     #update state history and fext_history on the homogenized domain
+#     state_history = [x[fine_to_coarse] for x in full_state_history]
+#     #todo hard code the sy_f, it is on the right hand side
+#     fine_to_coarse_fext = compute_fine_to_coarse_fext(tid)
+    
+#     if tid in [100, 300]
+#         fscale = sx_f
+#     elseif tid in [200, 201, 202, 203]
+#         fscale = sy_f
+#     end
+#     fext_history = [x[fine_to_coarse_fext] * fscale for x in full_fext_history]
+#     # @show size(hcat(domain.history["state"]...))
+#     DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
+# end
+
+
 function compute_loss(tid)
-    local fscale
     nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny)
     domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
     state = zeros(domain.neqs)
@@ -79,23 +106,18 @@ function compute_loss(tid)
     globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
     assembleMassMatrix!(globdat, domain)
     # @load "Data/domain$tid.jld2" domain
-    full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/LinearData/$(tid)_$force_scale.0.dat")
+    full_state_history, _ = read_data("$(@__DIR__)/Data/LinearData/$(tid)_$force_scale.0.dat")
     #update state history and fext_history on the homogenized domain
     state_history = [x[fine_to_coarse] for x in full_state_history]
-    #todo hard code the sy_f, it is on the right hand side
-    fine_to_coarse_fext = compute_fine_to_coarse_fext(tid)
-    
-    if tid in [100, 300]
-        fscale = sx_f
-    elseif tid in [200, 201, 202, 203]
-        fscale = sy_f
+    fext_history = []
+    setNeumannBoundary!(domain, FBC, fext)
+    for i = 1:NT
+        globdat.time = Δt*i
+        updateDomainStateBoundary!(domain, globdat)
+        fext_history.append(domain.fext)
     end
-    fext_history = [x[fine_to_coarse_fext] * fscale for x in full_fext_history]
-    # @show size(hcat(domain.history["state"]...))
     DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
 end
-
-
 
 
 Δt = T/NT
