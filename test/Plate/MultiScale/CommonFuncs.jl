@@ -12,7 +12,8 @@ using DelimitedFiles
 
 np = pyimport("numpy")
 
-try
+do_load = false
+if do_load
 if Sys.islinux()
 py"""
 import tensorflow as tf
@@ -49,8 +50,6 @@ def sym_op(x):
 end
     
 global sym_op = py"sym_op"
-catch e
-@warn "Sym Op is not properly loaded: $e"
 end
 
 

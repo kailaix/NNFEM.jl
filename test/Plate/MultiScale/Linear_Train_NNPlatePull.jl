@@ -9,10 +9,13 @@ nntype = "linear"
 n_data = [203]
 
 
+# H0 = [4.5584e6   1.59544e6  0.0      
+# 1.59544e6  4.5584e6   0.0      
+# 0.0        0.0        1.48148e6]
 # density 4.5*(1 - 0.25) + 3.2*0.25
-fiber_fraction = 0.25
+# fiber_fraction = 0.25
 #todo
-#fiber_fraction = 1.0
+fiber_fraction = 1.0
 prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>nn)
 
 
@@ -25,7 +28,7 @@ nx_f, ny_f = 10*2, 5*2
 
 # homogenized computaional domain
 # number of elements in each directions
-nx, ny = 20, 10
+nx, ny = 10*2, 5*2
 # number of subelements in one element in each directions
 sx_f, sy_f = div(nx_f,nx), div(ny_f,ny)
 
@@ -74,14 +77,14 @@ end
 
 # function compute_loss(tid)
 #     local fscale
-#     nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny)
+#     nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny,porder)
 #     domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
 #     state = zeros(domain.neqs)
 #     ∂u = zeros(domain.neqs)
 #     globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
 #     assembleMassMatrix!(globdat, domain)
 #     # @load "Data/domain$tid.jld2" domain
-#     full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/LinearData/$(tid)_$force_scale.0.dat")
+#     full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$force_scale.0.dat")
 #     #update state history and fext_history on the homogenized domain
 #     state_history = [x[fine_to_coarse] for x in full_state_history]
 #     #todo hard code the sy_f, it is on the right hand side
@@ -109,12 +112,13 @@ function compute_loss(tid)
     full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$force_scale.0.dat")
     #update state history and fext_history on the homogenized domain
     state_history = [x[fine_to_coarse] for x in full_state_history]
+
     fext_history = []
     setNeumannBoundary!(domain, FBC, fext)
     for i = 1:NT
         globdat.time = Δt*i
         updateDomainStateBoundary!(domain, globdat)
-        push!(fext_history,domain.fext)
+        push!(fext_history, domain.fext[:])
     end
     DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
 end
@@ -124,7 +128,7 @@ end
 stress_scale = 1.0
 strain_scale = 1
 
-nodes, _, _, _, _, _, _ = BoundaryCondition(n_data[1], nx, ny)
+nodes, _, _, _, _, _, _ = BoundaryCondition(n_data[1], nx, ny, porder)
 elements = []
 for j = 1:ny
     for i = 1:nx 

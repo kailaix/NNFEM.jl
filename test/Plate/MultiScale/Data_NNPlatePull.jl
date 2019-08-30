@@ -30,7 +30,7 @@ prop2 = Dict("name"=> "PlaneStress", "rho"=> 3.2, "E"=>4e6, "nu"=>0.35)
 
 prop1 = prop2
 # ps1 = PlaneStress(prop1); H1 = ps1.H
-# ps2 = PlaneStress(prop2); H2 = ps2.H
+#ps2 = PlaneStress(prop2); H2 = ps2.H
 
 T = 0.05
 NT = 100
