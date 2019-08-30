@@ -1,12 +1,15 @@
 # tid = parse(Int64, ARGS[1])
-force_scale = 50.0
-tid = 203  
-# if Sys.MACHINE=="x86_64-pc-linux-gnu"
-#    global tid = parse(Int64, ARGS[1])
-#    global force_scale = parse(Float64, ARGS[2])
-# end
-printstyled("tid=$tid\n", color=:green)
-
+force_scale = 5.0 #50
+tid = 203 
+fiber_size = 2 
+porder = 2
+if Sys.MACHINE=="x86_64-pc-linux-gnu"
+   global tid = parse(Int64, ARGS[1])
+   global force_scale = parse(Float64, ARGS[2])
+   global fiber_size = parse(Int64, ARGS[3])
+   global porder = parse(Int64, ARGS[4])
+end
+printstyled("force_scale=$force_scale, tid=$tid, fiber_size=$fiber_size, porder=$porder\n", color=:green)
 include("CommonFuncs.jl")
 if Sys.MACHINE=="x86_64-apple-darwin18.6.0"
     matplotlib.use("macosx")
@@ -28,16 +31,16 @@ prop1 = Dict("name"=> "PlaneStressPlasticity","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.
 "sigmaY"=>0.97e+4, "K"=>1e+5)
 prop2 = Dict("name"=> "PlaneStress", "rho"=> 3.2, "E"=>4e6, "nu"=>0.35)
 
-prop1 = prop2
-# ps1 = PlaneStress(prop1); H1 = ps1.H
+#prop1 = prop2
+#ps1 = PlaneStress(prop1); H1 = ps1.H
 #ps2 = PlaneStress(prop2); H2 = ps2.H
 
 T = 0.05
 NT = 100
 
 
-fiber_size = 2
-nxc, nyc = 10,5
+
+nxc, nyc = 40,20
 nx, ny =  nxc*fiber_size, nyc*fiber_size
 #Type 1=> SiC(fiber), type 0=>Ti(matrix), each fiber has size is k by k
 fiber_fraction = 0.25
@@ -48,7 +51,7 @@ ele_type = generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distribut
 # savefig("test.png")
 # error()
 
-porder = 1
+
 
 nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder)
 elements = []
@@ -126,21 +129,25 @@ end
 if !isdir("$(@__DIR__)/Data/order$porder")
     mkdir("$(@__DIR__)/Data/order$porder")
 end
-write_data("$(@__DIR__)/Data/order$porder/$(tid)_$force_scale.dat", domain)
-@save "Data/order$porder/domain$(tid)_$force_scale.jld2" domain
+if !isdir("$(@__DIR__)/Debug/order$porder")
+    mkdir("$(@__DIR__)/Debug/order$porder")
+end
+
+write_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat", domain)
+@save "Data/order$porder/domain$(tid)_$(force_scale)_$(fiber_size).jld2" domain
 
 close("all")
 visσ(domain)
 axis("equal")
-savefig("Debug/order$porder/terminal$(tid)_$force_scale.png")
+savefig("Debug/order$porder/terminal$(tid)_$(force_scale)_$(fiber_size).png")
 
 close("all")
 ux = [reshape(domain.history["state"][i][1:(nx*porder+1)*(ny*porder+1)], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
 plot(ux)
-savefig("Debug/order$porder/ux$(tid)_$force_scale.png")
+savefig("Debug/order$porder/ux$(tid)_$(force_scale)_$(fiber_size).png")
 
 close("all")
 uy = [reshape(domain.history["state"][i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
 plot(uy)
-savefig("Debug/order$porder/uy$(tid)_$force_scale.png")
+savefig("Debug/order$porder/uy$(tid)_$(force_scale)_$(fiber_size).png")
 

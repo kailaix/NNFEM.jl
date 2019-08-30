@@ -139,7 +139,7 @@ function commitHistory(self::PlaneStressPlasticity)
     self.α = self.α_
     self.σ0 = self.σ0_
     self.ε0 = self.ε0_
-    if self.α>1e-15
-        error("MATERIAL ERROR: Plasticity")
-    end
+    # if self.α>1e-15
+    #     error("MATERIAL ERROR: Plasticity")
+    # end
 end

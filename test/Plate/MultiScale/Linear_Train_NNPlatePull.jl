@@ -7,6 +7,7 @@ testtype = "NeuralNetwork2D"
 force_scale = 50
 nntype = "linear"
 n_data = [203]
+printstyled("training data: $n_data\n", color=:green)
 
 
 # H0 = [4.5584e6   1.59544e6  0.0      
