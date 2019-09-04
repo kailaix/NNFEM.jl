@@ -2,6 +2,7 @@ using Revise
 using ADCME
 using PyCall
 using Test 
+using MAT
 using NNFEM
 using PyPlot
 using JLD2
