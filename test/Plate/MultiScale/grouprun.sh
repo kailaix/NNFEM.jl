@@ -57,11 +57,11 @@ echo 0 $(date | awk '{print $4}') '[' ${group1} ']'
 echo
 for force_scale in 5 50
 do
-for tid in 100 201 202 203 300
+for tid in 200
 do
-for porder in 1 2
+for porder in 2
 do
-for fiber_size in 5 10
+for fiber_size in 5
 do
 bgxgrp=${group1} 
 bgxlimit 6 julia Data_NNPlatePull.jl $tid $force_scale $fiber_size $porder # > Debug/logs/${tid}_${force_scale}_${fiber_size}_$porder.txt 

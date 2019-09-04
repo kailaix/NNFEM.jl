@@ -1,6 +1,6 @@
 
 include("CommonFuncs.jl")
-threshold = 1e-4
+threshold = 1e-5
 function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
     local y
     global H0
@@ -56,7 +56,7 @@ function nn_helper(ε, ε0, σ0)
         y1 = reshape(σ0, 1, 3) + (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*get_matrix(nnae_scaled(x))
         y1 = reshape(y1, 3, 1)*stress_scale
         y2 = reshape(reshape(ε,1,3)*H0,3,1)
-        i = sigmoid_(1e9*(norm(ε)^2-(threshold)^2))
+        i = sigmoid_(1e6*(norm(ε)^2-threshold))
         y1 * i + y2 * (1-i)
     else
         error("$nntype does not exist")

@@ -4,9 +4,9 @@ H0 = Variable(zeros(3,3))
 H0 = H0 + H0'
 # H0 = constant(H1/stress_scale)
 testtype = "NeuralNetwork2D"
-force_scale = 50
+force_scale = 50.0
 nntype = "linear"
-n_data = [203]
+n_data = [100,201,202,203]
 printstyled("training data: $n_data\n", color=:green)
 
 
@@ -14,22 +14,22 @@ printstyled("training data: $n_data\n", color=:green)
 # 1.59544e6  4.5584e6   0.0      
 # 0.0        0.0        1.48148e6]
 # density 4.5*(1 - 0.25) + 3.2*0.25
-# fiber_fraction = 0.25
+fiber_fraction = 0.25
 #todo
-fiber_fraction = 1.0
+# fiber_fraction = 1.0
 prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>nn)
 
 
 T = 0.05
 NT = 100
-
+fiber_size = 5
 # DNS computaional domain
-nx_f, ny_f = 10*2, 5*2
+nx_f, ny_f = 40*fiber_size, 20*fiber_size
 # nx_f, ny_f = 12, 4
 
 # homogenized computaional domain
 # number of elements in each directions
-nx, ny = 10*2, 5*2
+nx, ny = 20, 10
 # number of subelements in one element in each directions
 sx_f, sy_f = div(nx_f,nx), div(ny_f,ny)
 
@@ -85,7 +85,7 @@ end
 #     globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
 #     assembleMassMatrix!(globdat, domain)
 #     # @load "Data/domain$tid.jld2" domain
-#     full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$force_scale.0.dat")
+#     full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
 #     #update state history and fext_history on the homogenized domain
 #     state_history = [x[fine_to_coarse] for x in full_state_history]
 #     #todo hard code the sy_f, it is on the right hand side
@@ -110,7 +110,7 @@ function compute_loss(tid)
     globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
     assembleMassMatrix!(globdat, domain)
     # @load "Data/domain$tid.jld2" domain
-    full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$force_scale.0.dat")
+    full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
     #update state history and fext_history on the homogenized domain
     state_history = [x[fine_to_coarse] for x in full_state_history]
 
