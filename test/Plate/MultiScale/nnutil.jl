@@ -1,6 +1,14 @@
 
 include("CommonFuncs.jl")
 threshold = 1e-5
+
+function get_matrix(o::AbstractArray)
+    [o[1] o[2] o[3];
+    o[2] o[4] o[5];
+    o[3] o[5] o[6]]
+end
+
+
 function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
     local y
     global H0
