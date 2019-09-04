@@ -54,7 +54,7 @@ function nn_helper(ε, ε0, σ0)
         ε0 = ε0/strain_scale
         σ0 = σ0/stress_scale
         x = reshape([ε;ε0;σ0],1, 9)
-        y1 = reshape(σ0, 1, 3) + (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*get_matrix(nnae_scaled(x))
+        y1 = reshape(σ0, 1, 3) + (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*get_matrix(nnpiecewise(x))
         y1 = reshape(y1, 3, 1)*stress_scale
         y2 = reshape(reshape(ε,1,3)*H0,3,1)
         i = sigmoid_(1e6*(norm(ε)^2-threshold))
