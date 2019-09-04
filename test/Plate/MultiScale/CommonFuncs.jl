@@ -12,7 +12,7 @@ using DelimitedFiles
 
 np = pyimport("numpy")
 
-do_load = false
+do_load = true 
 if do_load
 if Sys.islinux()
 py"""

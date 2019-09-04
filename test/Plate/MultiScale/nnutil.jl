@@ -25,7 +25,8 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
         σnn = squeeze(tf.matmul(z, tf.reshape((ε-ε0)/strain_scale, (-1,3,1)))) + σ0/stress_scale
         σH = (ε-ε0)/strain_scale * H0 + σ0/stress_scale
         z = sum(ε^2,dims=2)
-        i = sigmoid(1e9*(z-(threshold)^2))
+        # i = sigmoid(1e9*(z-(threshold)^2))
+	i = sigmoid(1e6*(z-threshold))        
         i = [i i i]
         out = σnn .* i + σH .* (1-i)
         out*stress_scale
