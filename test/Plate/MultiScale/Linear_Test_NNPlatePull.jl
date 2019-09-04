@@ -18,20 +18,18 @@ H0 = [4.5584e6   1.59544e6  0.0
 0.0        0.0        1.48148e6]
 
 # density 4.5*(1 - 0.25) + 3.2*0.25
-#fiber_fraction = 0.25
+fiber_fraction = 0.25
 #todo
-fiber_fraction = 1.0
+#fiber_fraction = 1.0
 prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>post_nn)
 
 T = 0.05
 NT = 100
 
-
-nx_f, ny_f = 10*2, 5*2
 # nx_f, ny_f = 12, 4
 # homogenized computaional domain
 # number of elements in each directions
-nx, ny = 20, 10
+nx, ny = 10, 5
 
 porder = 2
 
