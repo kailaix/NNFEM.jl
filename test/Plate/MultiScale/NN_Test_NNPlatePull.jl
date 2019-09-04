@@ -13,7 +13,7 @@ testtype = "NeuralNetwork2D"
 nntype = "piecewise"
 include("nnutil.jl")
 
-aedictpiecewise = matread("nn_train.mat"); # using MAT
+aedictpiecewise = matread("Data/nn_train.mat"); # using MAT
 Wkey = "piecewisebackslashfully_connectedbackslashweightscolon0"
 Wkey = "piecewisebackslashfully_connected_1backslashweightscolon0"
 Wkey = "piecewisebackslashfully_connected_2backslashweightscolon0"
