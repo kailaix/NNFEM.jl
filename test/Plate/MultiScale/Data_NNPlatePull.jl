@@ -40,7 +40,7 @@ NT = 100
 
 
 
-nxc, nyc = 40,20
+nxc, nyc = 80,40
 nx, ny =  nxc*fiber_size, nyc*fiber_size
 #Type 1=> SiC(fiber), type 0=>Ti(matrix), each fiber has size is k by k
 fiber_fraction = 0.25

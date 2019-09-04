@@ -29,7 +29,7 @@ NT = 100
 # nx_f, ny_f = 12, 4
 # homogenized computaional domain
 # number of elements in each directions
-nx, ny = 10, 5
+nx, ny = 20, 10
 
 porder = 2
 

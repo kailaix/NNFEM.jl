@@ -106,7 +106,7 @@ strain_scale = 1
 αf = ρ_oo/(ρ_oo + 1)
 for i = 1:NT
     @info i, "/" , NT
-    solver = NewmarkSolver(Δt, globdat, domain, αm, αf, 1e-4, 1e-6, 10)
+    solver = NewmarkSolver(Δt, globdat, domain, αm, αf, 1e-4, 1e-6, 100)
     # close("all")
     # visσ(domain,-1.5e9, 4.5e9)
     # savefig("Debug/$i.png")

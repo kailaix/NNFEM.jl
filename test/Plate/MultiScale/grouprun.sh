@@ -55,9 +55,9 @@ echo 0 $(date | awk '{print $4}') '[' ${group1} ']'
 # done
 
 echo
-for force_scale in 5 50
+for force_scale in 5.0 2.5 10.0
 do
-for tid in 200
+for tid in 100 200 201 202 203
 do
 for porder in 2
 do
