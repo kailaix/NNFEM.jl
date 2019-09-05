@@ -13,30 +13,6 @@ testtype = "NeuralNetwork2D"
 nntype = "piecewise"
 include("nnutil.jl")
 
-aedictpiecewise = matread("Data/nn_train.mat"); # using MAT
-Wkey = "piecewisebackslashfully_connectedbackslashweightscolon0"
-Wkey = "piecewisebackslashfully_connected_1backslashweightscolon0"
-Wkey = "piecewisebackslashfully_connected_2backslashweightscolon0"
-Wkey = "piecewisebackslashfully_connected_3backslashweightscolon0"
-Wkey = "piecewisebackslashfully_connected_4backslashweightscolon0"
-function nnpiecewise(net)
-        W0 = aedictpiecewise["piecewisebackslashfully_connectedbackslashweightscolon0"]; b0 = aedictpiecewise["piecewisebackslashfully_connectedbackslashbiasescolon0"];
-        isa(net, Array) ? (net = net * W0 .+ b0') : (net = net *W0 + b0)
-        isa(net, Array) ? (net = tanh.(net)) : (net=tanh(net))
-        W1 = aedictpiecewise["piecewisebackslashfully_connected_1backslashweightscolon0"]; b1 = aedictpiecewise["piecewisebackslashfully_connected_1backslashbiasescolon0"];
-        isa(net, Array) ? (net = net * W1 .+ b1') : (net = net *W1 + b1)
-        isa(net, Array) ? (net = tanh.(net)) : (net=tanh(net))
-        W2 = aedictpiecewise["piecewisebackslashfully_connected_2backslashweightscolon0"]; b2 = aedictpiecewise["piecewisebackslashfully_connected_2backslashbiasescolon0"];
-        isa(net, Array) ? (net = net * W2 .+ b2') : (net = net *W2 + b2)
-        isa(net, Array) ? (net = tanh.(net)) : (net=tanh(net))
-        W3 = aedictpiecewise["piecewisebackslashfully_connected_3backslashweightscolon0"]; b3 = aedictpiecewise["piecewisebackslashfully_connected_3backslashbiasescolon0"];
-        isa(net, Array) ? (net = net * W3 .+ b3') : (net = net *W3 + b3)
-        isa(net, Array) ? (net = tanh.(net)) : (net=tanh(net))
-        W4 = aedictpiecewise["piecewisebackslashfully_connected_4backslashweightscolon0"]; b4 = aedictpiecewise["piecewisebackslashfully_connected_4backslashbiasescolon0"];
-        isa(net, Array) ? (net = net * W4 .+ b4') : (net = net *W4 + b4)
-        return net
-end
-
 
 H0 = [1.26827e6       3.45169e5   -5187.35
       3.45169e5       1.25272e6  -10791.7
@@ -116,6 +92,7 @@ for i = 1:NT
         visσ(domain)
         # visσ(domain,-1.5e9, 4.5e9)
         savefig("Debug/test$(tid)i=75.png")
+        # break
     end
 end
 

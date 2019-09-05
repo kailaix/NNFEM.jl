@@ -40,3 +40,12 @@ tid               description
 204         
 205
 300               fix left, push from bottom with a Gaussian distributed load
+
+
+
+screen id                   config
+110432.pts-22.icme-share    [50,50,50,50,50,50,50,3]        nn_train
+
+123841.pts-22.icme-share    [50,50,50,50,3]                 nn_train1
+
+125137.pts-22.icme-share    [20,20,20,20,20,20,20,3]        nn_train2

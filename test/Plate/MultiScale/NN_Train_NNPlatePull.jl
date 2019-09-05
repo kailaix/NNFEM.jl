@@ -2,7 +2,7 @@ include("nnutil.jl")
 
 # H0 = constant(H1/stress_scale)
 testtype = "NeuralNetwork2D"
-force_scale = 50.0
+force_scale = 5.0
 nntype = "piecewise"
 
 # ! define H0
@@ -26,7 +26,9 @@ NT = 100
 
 # DNS computaional domain
 fiber_size = 5
-nx_f, ny_f = 40*fiber_size, 20*fiber_size
+# nx_f, ny_f = 40*fiber_size, 20*fiber_size
+nx_f, ny_f = 80*fiber_size, 40*fiber_size
+
 # nx_f, ny_f = 12, 4
 
 # homogenized computaional domain
@@ -82,8 +84,9 @@ function compute_loss(tid)
     ∂u = zeros(domain.neqs)
     globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
     assembleMassMatrix!(globdat, domain)
-    # @load "Data/domain$tid.jld2" domain
-    full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
+    # full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
+    full_state_history, full_fext_history = read_data("$(@__DIR__)/YData/$(tid)_$(force_scale)_$(fiber_size).dat")
+    
     #update state history and fext_history on the homogenized domain
     state_history = [x[fine_to_coarse] for x in full_state_history]
 
@@ -144,5 +147,6 @@ BFGS!(sess, loss, 2000)
 # BFGS!(sess, loss, 5000)
 # ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
 # BFGS!(sess, loss, 5000)
-ADCME.save(sess, "$(@__DIR__)/Data/nn_train.mat")
-error()
+
+
+ADCME.save(sess, "$(@__DIR__)/Data/nn_train$idx.mat")
