@@ -86,12 +86,12 @@ for i = 1:NT
     # visσ(domain,-1.5e9, 4.5e9)
     # savefig("Debug/$i.png")
     # error()
-    if i==75
-        close("all")
-        visσ(domain)
-        # visσ(domain,-1.5e9, 4.5e9)
-        savefig("Debug/test$(tid)i=75.png")
-    end
+    # if i==75
+    #     close("all")
+    #     visσ(domain)
+    #     # visσ(domain,-1.5e9, 4.5e9)
+    #     savefig("Debug/test$(tid)i=75.png")
+    # end
 end
 
 # plot

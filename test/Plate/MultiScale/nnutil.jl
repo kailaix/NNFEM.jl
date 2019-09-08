@@ -13,17 +13,18 @@ if length(ARGS)==1
 else
     global idx = 0
 end
+#idx = 2
 
 if idx == 0
-    global config=[20,20,20,20,3]
+    global config=[20,20,20,20,6]
 elseif idx == 1
-    global config=[50,50,50,50,3] 
+    global config=[50,50,50,50,6] 
 elseif idx == 2
-    global config=[20,20,20,20,20,20,20,3] 
+    global config=[20,20,20,20,20,20,20,6] 
 elseif idx == 3
-    global config=[50,50,50,50,50,50,50,3] 
+    global config=[50,50,50,50,50,50,50,6] 
 end
-printstyled("idx = $idx, config=$config", color=:green)
+printstyled("idx = $idx, config=$config\n", color=:green)
 
 
 function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector

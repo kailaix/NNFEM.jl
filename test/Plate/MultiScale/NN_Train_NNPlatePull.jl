@@ -2,7 +2,7 @@ include("nnutil.jl")
 
 # H0 = constant(H1/stress_scale)
 testtype = "NeuralNetwork2D"
-force_scale = 5.0
+force_scale = 6.0
 nntype = "piecewise"
 
 # ! define H0
@@ -85,7 +85,7 @@ function compute_loss(tid)
     globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
     assembleMassMatrix!(globdat, domain)
     # full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
-    full_state_history, full_fext_history = read_data("$(@__DIR__)/YData/$(tid)_$(force_scale)_$(fiber_size).dat")
+    full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/$(tid)_$(force_scale)_$(fiber_size).dat")
     
     #update state history and fext_history on the homogenized domain
     state_history = [x[fine_to_coarse] for x in full_state_history]
