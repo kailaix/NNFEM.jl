@@ -3,12 +3,12 @@ force_scale = 5.0 #50
 tid = 203 
 fiber_size = 2 
 porder = 2
-# if Sys.MACHINE=="x86_64-pc-linux-gnu"
-#    global tid = parse(Int64, ARGS[1])
-#    global force_scale = parse(Float64, ARGS[2])
-#    global fiber_size = parse(Int64, ARGS[3])
-#    global porder = parse(Int64, ARGS[4])
-# end
+if Sys.MACHINE=="x86_64-pc-linux-gnu"
+   global tid = parse(Int64, ARGS[1])
+   global force_scale = parse(Float64, ARGS[2])
+   global fiber_size = parse(Int64, ARGS[3])
+   global porder = parse(Int64, ARGS[4])
+end
 printstyled("force_scale=$force_scale, tid=$tid, fiber_size=$fiber_size, porder=$porder\n", color=:green)
 include("CommonFuncs.jl")
 if Sys.MACHINE=="x86_64-apple-darwin18.6.0"

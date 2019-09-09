@@ -121,7 +121,7 @@ function compute_loss(tid)
         updateDomainStateBoundary!(domain, globdat)
         push!(fext_history, domain.fext[:])
     end
-    DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
+    DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt; loss_weights=wgt_func)
 end
 
 

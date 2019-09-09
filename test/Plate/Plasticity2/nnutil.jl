@@ -1,6 +1,7 @@
 
 include("CommonFuncs.jl")
 threshold = 1e-5
+wgt_func = x->1. + 100x^3
 
 function get_matrix(o::AbstractArray)
     [o[1] o[2] o[3];
