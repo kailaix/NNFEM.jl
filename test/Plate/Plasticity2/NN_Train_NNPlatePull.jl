@@ -16,19 +16,19 @@ H0 = [1.04167e6  2.08333e5  0.0
 
 
 n_data = [100, 200, 201, 202, 203]
-porder = 2
+porder = 1
 # density 4.5*(1 - 0.25) + 3.2*0.25
 #fiber_fraction = 0.25
 #todo
-fiber_fraction = 0.0
-prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>nn)
+
+prop = Dict("name"=> testtype, "rho"=> 4.5, "nn"=>nn)
 
 
 T = 0.05
-NT = 100
+NT = 200
 
 # DNS computaional domain
-fiber_size = 2
+fiber_size = 1
 # nx_f, ny_f = 40*fiber_size, 20*fiber_size
 nx_f, ny_f = 10*fiber_size, 5*fiber_size
 
@@ -88,7 +88,7 @@ function compute_loss(tid)
     globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
     assembleMassMatrix!(globdat, domain)
     # full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
-    full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order2/$(tid)_$(force_scale)_$(fiber_size).dat")
+    full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
     
     #update state history and fext_history on the homogenized domain
     state_history = [x[fine_to_coarse] for x in full_state_history]
