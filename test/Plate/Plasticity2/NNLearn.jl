@@ -31,9 +31,8 @@ for tid in n_data
 
     loss += sum((y-Y)^2)/stress_scale^2
 end
-variable_scope(nntype) do
-    global opt = AdamOptimizer().minimize(loss)
-end
+
+error()
 
 sess = Session(); init(sess)
 @show run(sess, loss)

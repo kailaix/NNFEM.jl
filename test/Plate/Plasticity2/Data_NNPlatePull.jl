@@ -1,15 +1,9 @@
 # tid = parse(Int64, ARGS[1])
 force_scale = 5.0 #50
 tid = 203 
-<<<<<<< HEAD
-fiber_size = 1 
-porder = 2
-if Sys.MACHINE=="x86_64-pc-linux-gnu" && length(ARGS) == 4
-=======
 fiber_size = 1
 porder = 2
 if Sys.MACHINE=="x86_64-pc-linux-gnu"
->>>>>>> 23dc520e4816209b629081c37fdf3eabec699a49
    global tid = parse(Int64, ARGS[1])
    global force_scale = parse(Float64, ARGS[2])
    global fiber_size = parse(Int64, ARGS[3])
@@ -26,10 +20,6 @@ prop = Dict("name"=> "PlaneStressPlasticity","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.2
 "sigmaY"=>0.97e+4, "K"=>1e+5)
 
 T = 0.05
-<<<<<<< HEAD
-#T = 0.1
-=======
->>>>>>> 23dc520e4816209b629081c37fdf3eabec699a49
 NT = 200
 
 
