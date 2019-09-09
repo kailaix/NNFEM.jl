@@ -56,7 +56,10 @@ H0 = [1.04167e6  2.08333e5  0.0
 # density 4.5*(1 - 0.25) + 3.2*0.25
 #fiber_fraction = 0.25
 #todo
+<<<<<<< HEAD
 fiber_fraction = 0.0
+=======
+>>>>>>> 23dc520e4816209b629081c37fdf3eabec699a49
 prop = Dict("name"=> testtype, "rho"=> 4.5, "nn"=>post_nn)
 
 T = 0.05

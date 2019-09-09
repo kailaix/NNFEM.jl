@@ -16,10 +16,14 @@ H0 = [1.04167e6  2.08333e5  0.0
 
 
 n_data = [100, 200, 201, 202, 203]
+<<<<<<< HEAD
 porder = 1
 # density 4.5*(1 - 0.25) + 3.2*0.25
 #fiber_fraction = 0.25
 #todo
+=======
+porder = 2
+>>>>>>> 23dc520e4816209b629081c37fdf3eabec699a49
 
 prop = Dict("name"=> testtype, "rho"=> 4.5, "nn"=>nn)
 
