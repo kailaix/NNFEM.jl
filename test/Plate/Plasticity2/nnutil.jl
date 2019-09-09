@@ -16,7 +16,7 @@ else
 end
 
 if idx == 0
-    global config=[20,20,20,20,20,20,6]
+    global config=[20,20,20,20,20,6]
 elseif idx == 1
     global config=[50,50,50,50,6] 
 elseif idx == 2
