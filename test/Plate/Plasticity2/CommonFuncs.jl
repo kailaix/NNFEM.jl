@@ -348,7 +348,7 @@ function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5)
     end
 
     dof_to_active = findall(FBC[:].==-2)
-    ft = t->fext[:][dof_to_active]*sin(π*t/(2T))
+    ft = t->fext[:][dof_to_active]*sin(π*t/(T))
     # @show ft(T)
     return nodes, EBC, g, gt, FBC, fext, ft
 end

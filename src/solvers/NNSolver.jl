@@ -1,4 +1,4 @@
-export DynamicMatLawLoss, preprocessing, fitlinear
+export DynamicMatLawLoss, preprocessing, fitlinear, DebugDynamicMatLawLoss
 
 @doc """
     domain   : finite element domain, for data structure
@@ -14,7 +14,7 @@ export DynamicMatLawLoss, preprocessing, fitlinear
     loss = ∑ ||fint(NN, E, DE) - (fext - MIDddu_bc - Mddu)||^2
 """->
 function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all::Array{Float64},
-     F_tot::Array{Float64}, nn::Function)
+     F_tot::Array{Float64}, nn::Function; loss_weights::Union{Function, Missing}=missing)
     # todo, use fint instead of computed F_tot 
     # F_tot =  hcat(domain.history["fint"]...)'
     # define variables
@@ -63,8 +63,67 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all:
     ta_loss = TensorArray(NT+1); ta_loss = write(ta_loss, 1, constant(0.0))
     i = constant(2, dtype=Int32)
     _, out, _ = while_loop(cond0, body, [i,ta_loss, ta_σ]; parallel_iterations=20)
-    total_loss = sum(stack(out)[2:NT])
+
+    if ismissing(loss_weights)
+        loss_weights = x->1.0
+    end
+    weights = loss_weights.((2:NT)/NT)
+
+    total_loss = sum(stack(out)[2:NT] .* weights)
     return total_loss
+end
+
+function DebugDynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all::Array{Float64},
+    F_tot::Array{Float64}, nn::Function)
+   # todo, use fint instead of computed F_tot 
+   # F_tot =  hcat(domain.history["fint"]...)'
+   # define variables
+   neles = domain.neles
+   nGauss = length(domain.elements[1].weights)
+   nstrains = size(E_all,3)
+
+   NT = size(E_all,1)-1
+   @assert size(E_all)==(NT+1, neles*nGauss, nstrains)
+   @assert size(F_tot)==(NT, domain.neqs)
+   # @show E_all[2,:,:]
+   E_all = constant(E_all)
+   F_tot = constant(F_tot)
+   w∂E∂u_all = constant(w∂E∂u_all)
+
+   function cond0(i, ta_loss, ta_σ)
+       i<=NT+1
+       # i<=2
+   end
+
+   function body(i, ta_loss, ta_σ)
+       E = E_all[i]
+       DE = E_all[i-1]
+       w∂E∂u = w∂E∂u_all[i]
+       σ0 = read(ta_σ, i-1)
+       
+       fint, σ = tfAssembleInternalForce(domain,nn,E,DE,w∂E∂u,σ0)
+       
+       # op = tf.print(i, fint, summarize=-1)
+       # fint = bind(fint, op)
+
+       # op = tf.print(i, F_tot[i-1], summarize=-1)
+       # fint = bind(fint, op)
+
+       # op = tf.print("F_tot",F_tot[i-1], summarize=-1)
+       # i = bind(i, op)
+
+
+       ta_σ = write(ta_σ, i, σ)
+       ta_loss = write(ta_loss, i, sum((fint-F_tot[i-1])^2))
+       i+1, ta_loss, ta_σ
+   end
+
+   σ0 = constant(zeros(neles*nGauss, nstrains))
+   ta_σ = TensorArray(NT+1); ta_σ = write(ta_σ, 1, σ0)
+   ta_loss = TensorArray(NT+1); ta_loss = write(ta_loss, 1, constant(0.0))
+   i = constant(2, dtype=Int32)
+   _, out, _ = while_loop(cond0, body, [i,ta_loss, ta_σ]; parallel_iterations=20)
+   stack(out)[2:NT]
 end
 
 
@@ -163,11 +222,19 @@ end
     
     compute loss function from state and external force history 
 """->
-function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{T}, fext_history::Array{S}, nn::Function, Δt::Float64) where {T, S}
+function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{T}, fext_history::Array{S}, nn::Function, Δt::Float64;
+     loss_weights::Union{Function, Missing}=missing) where {T, S}
     # todo convert to E_all, Ftot
     domain.history["state"] = state_history
     F_tot, E_all, w∂E∂u_all = preprocessing(domain, globdat, hcat(fext_history...), Δt)
-    DynamicMatLawLoss(domain, E_all, w∂E∂u_all, F_tot, nn)
+    DynamicMatLawLoss(domain, E_all, w∂E∂u_all, F_tot, nn; loss_weights=loss_weights)
+end
+
+function DebugDynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{T}, fext_history::Array{S}, nn::Function, Δt::Float64) where {T, S}
+    # todo convert to E_all, Ftot
+    domain.history["state"] = state_history
+    F_tot, E_all, w∂E∂u_all = preprocessing(domain, globdat, hcat(fext_history...), Δt)
+    DebugDynamicMatLawLoss(domain, E_all, w∂E∂u_all, F_tot, nn)
 end
 
 function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{T}, fext_history::Array{S}, nn::Function, Δt::Float64, n::Int64) where {T, S}

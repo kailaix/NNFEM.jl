@@ -10,16 +10,11 @@ printstyled("tid=$tid\n", color=:green)
 include("CommonFuncs.jl")
 
 testtype = "NeuralNetwork2D"
-nntype = "piecewise"
+nntype = "linear" # ! change 
 include("nnutil.jl")
 
 if idx==0
     aedictpiecewise = matread("Data/nn_train0.mat"); # using MAT
-    Wkey = "piecewisebackslashfully_connectedbackslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_1backslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_2backslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_3backslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_4backslashweightscolon0"
     function nnpiecewise(net)
             W0 = aedictpiecewise["piecewisebackslashfully_connectedbackslashweightscolon0"]; b0 = aedictpiecewise["piecewisebackslashfully_connectedbackslashbiasescolon0"];
             isa(net, Array) ? (net = net * W0 .+ b0') : (net = net *W0 + b0)
@@ -39,11 +34,6 @@ if idx==0
     end 
 elseif idx==1
     aedictpiecewise = matread("Data/nn_train1.mat"); # using MAT
-    Wkey = "piecewisebackslashfully_connectedbackslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_1backslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_2backslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_3backslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_4backslashweightscolon0"
     function nnpiecewise(net)
             W0 = aedictpiecewise["piecewisebackslashfully_connectedbackslashweightscolon0"]; b0 = aedictpiecewise["piecewisebackslashfully_connectedbackslashbiasescolon0"];
             isa(net, Array) ? (net = net * W0 .+ b0') : (net = net *W0 + b0)
@@ -63,14 +53,6 @@ elseif idx==1
     end 
 elseif idx==2
     aedictpiecewise = matread("Data/nn_train2.mat"); # using MAT
-    Wkey = "piecewisebackslashfully_connectedbackslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_1backslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_2backslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_3backslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_4backslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_5backslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_6backslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_7backslashweightscolon0"
     function nnpiecewise(net)
             W0 = aedictpiecewise["piecewisebackslashfully_connectedbackslashweightscolon0"]; b0 = aedictpiecewise["piecewisebackslashfully_connectedbackslashbiasescolon0"];
             isa(net, Array) ? (net = net * W0 .+ b0') : (net = net *W0 + b0)
@@ -99,14 +81,6 @@ elseif idx==2
     end 
 elseif idx==3
     aedictpiecewise = matread("Data/nn_train3.mat"); # using MAT
-    Wkey = "piecewisebackslashfully_connectedbackslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_1backslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_2backslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_3backslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_4backslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_5backslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_6backslashweightscolon0"
-    Wkey = "piecewisebackslashfully_connected_7backslashweightscolon0"
     function nnpiecewise(net)
             W0 = aedictpiecewise["piecewisebackslashfully_connectedbackslashweightscolon0"]; b0 = aedictpiecewise["piecewisebackslashfully_connectedbackslashbiasescolon0"];
             isa(net, Array) ? (net = net * W0 .+ b0') : (net = net *W0 + b0)

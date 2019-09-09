@@ -48,8 +48,7 @@ end
 # density 4.5*(1 - 0.25) + 3.2*0.25
 #fiber_fraction = 0.25
 #todo
-fiber_fraction = 0.0
-prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>post_nn)
+prop = Dict("name"=> testtype, "rho"=> 4.5, "nn"=>post_nn)
 
 T = 0.05
 NT = 100

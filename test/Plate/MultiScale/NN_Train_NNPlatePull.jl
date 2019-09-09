@@ -85,7 +85,7 @@ function compute_loss(tid)
     globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
     assembleMassMatrix!(globdat, domain)
     # full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
-    full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/$(tid)_$(force_scale)_$(fiber_size).dat")
+    full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
     
     #update state history and fext_history on the homogenized domain
     state_history = [x[fine_to_coarse] for x in full_state_history]
@@ -97,7 +97,9 @@ function compute_loss(tid)
         updateDomainStateBoundary!(domain, globdat)
         push!(fext_history, domain.fext[:])
     end
-    DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
+    loss = DebugDynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
+    sum_loss = DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt; loss_weights=wgt_func)
+    loss, sum_loss
 end
 
 
@@ -131,17 +133,21 @@ for j = 1:ny
 end
 
 losses = Array{PyObject}(undef, length(n_data))
+debug_losses = Array{PyObject}(undef, length(n_data))
 for (k, i) in enumerate(n_data)
-    losses[k] = compute_loss(i)
+    debug_losses[k], losses[k] = compute_loss(i)
 end
 loss = sum(losses)/stress_scale^2
 
 sess = Session(); init(sess)
 # ADCME.load(sess, "$(@__DIR__)/Data/learned_nn.mat")
 # ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
+writedlm("$(@__DIR__)/Debug/order$porder/initial_loss_$(force_scale)_$(fiber_size).dat", hcat(run(sess, debug_losses)...))
 @info run(sess, loss)
 # error()
 BFGS!(sess, loss, 2000)
+writedlm("$(@__DIR__)/Debug/order$porder/terminal_loss_$(force_scale)_$(fiber_size).dat", hcat(run(sess, debug_losses)...))
+
 # ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
 # ADCME.load(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
 # BFGS!(sess, loss, 5000)
