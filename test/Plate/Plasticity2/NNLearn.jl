@@ -6,7 +6,7 @@ using PyCall
 using LinearAlgebra
 reset_default_graph()
 
-stress_scale = 1.0
+stress_scale = 1e5
 strain_scale = 1.0
 force_scale = 5.0
 fiber_size = 1
@@ -17,7 +17,7 @@ include("nnutil.jl")
 nntype = "piecewise"
 H0 = [1.04167e6  2.08333e5  0.0      
       2.08333e5  1.04167e6  0.0      
-      0.0        0.0        4.16667e5]
+      0.0        0.0        4.16667e5]/stress_scale
 
 n_data = [100, 200, 201, 202, 203]
 
@@ -29,7 +29,7 @@ for tid in n_data
     x = constant(X)
     y = nn(X[:,1:3], X[:,4:6], X[:,7:9])
 
-    loss += sum((y-Y)^2)/stress_scale^2
+    loss += mean((y-Y)^2)/stress_scale^2
 end
 
 
@@ -52,7 +52,7 @@ ADCME.load(sess, "Data/order$porder/learned_nn_$(force_scale)_$(fiber_size).mat"
 O = run(sess, y)
 
 using Random; Random.seed!(233)
-VisualizeStress2D(Y, O, 20)
+VisualizeStress2D(Y, O, 200)
 # ADCME.save(sess, "Data/learned_nn.mat")
 
 error("Learning stop!")

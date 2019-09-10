@@ -129,6 +129,8 @@ function postprocess_stress(stress::Array{Float64}, name::String)
         σ1 = (σx+σy)/2+sqrt((σx-σy)^2/4 + τxy^2)
         σ2 = (σx+σy)/2-sqrt((σx-σy)^2/4 + τxy^2)
         sqrt(σ1^2-σ1*σ2+σ2^2)
+
+        #σ[1]^2-σ[1]*σ[2]+σ[2]^2+3*σ[3]^2
     elseif name == "principal"
         σx = stress[1]; σy = stress[2]; τxy = stress[3]
         σ1 = (σx+σy)/2+sqrt((σx-σy)^2/4 + τxy^2)
@@ -159,15 +161,17 @@ function VisualizeStress2D(domain::Domain)
     V
 end
 
-function VisualizeStress2D(σ_ref::Array{Float64}, σ_comp::Array{Float64}, NT::Int64)
+function VisualizeStress2D(σ_ref::Array{Float64}, σ_comp::Array{Float64}, NT::Int64, Nlines::Int64=1)
     ngp = Int64(size(σ_ref,1)/NT)
-    V_ref = zeros(NT, ngp, 2)
-    V_comp = zeros(NT, ngp, 2)
+    V_ref = zeros(NT, ngp, 3)
+    V_comp = zeros(NT, ngp, 3)
     # 2 
     for i = 1:NT
         for j = 1:ngp
-            V_ref[i,j,:] = postprocess_stress(σ_ref[(i-1)*ngp + j,:], "principal")
-            V_comp[i,j,:] = postprocess_stress(σ_comp[(i-1)*ngp + j,:], "principal")
+            V_ref[i,j,1] = postprocess_stress(σ_ref[(i-1)*ngp + j,:], "vonMises")
+            V_ref[i,j,2:3] = postprocess_stress(σ_ref[(i-1)*ngp + j,:], "principal")
+            V_comp[i,j,1] = postprocess_stress(σ_ref[(i-1)*ngp + j,:], "vonMises")
+            V_comp[i,j,2:3] = postprocess_stress(σ_ref[(i-1)*ngp + j,:], "principal")
         end
     end
     close("all")
@@ -175,7 +179,7 @@ function VisualizeStress2D(σ_ref::Array{Float64}, σ_comp::Array{Float64}, NT::
     col2 = "g"
     
     k = 0
-    for i = rand(1:ngp, 1)
+    for i = rand(1:ngp, Nlines)
         k += 1
         x = V_ref[:,i,1][:]
         y = V_ref[:,i,2][:]
@@ -186,6 +190,9 @@ function VisualizeStress2D(σ_ref::Array{Float64}, σ_comp::Array{Float64}, NT::
         plot(x, y, ".--"*col2[1])
     end
 end
+
+
+
 
 function VisualizeStrainStressSurface(X::Array{Float64}, Y::Array{Float64}, seed::Int64=233)
     n = size(X,1)
