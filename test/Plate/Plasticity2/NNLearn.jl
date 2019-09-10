@@ -9,8 +9,8 @@ reset_default_graph()
 stress_scale = 1.0
 strain_scale = 1.0
 force_scale = 5.0
-fiber_size = 2
-porder = 2
+fiber_size = 1
+porder = 1
 
 include("nnutil.jl")
 
@@ -32,7 +32,6 @@ for tid in n_data
     loss += sum((y-Y)^2)/stress_scale^2
 end
 
-error()
 
 sess = Session(); init(sess)
 @show run(sess, loss)
@@ -49,7 +48,7 @@ x = constant(X)
 y = nn(X[:,1:3], X[:,4:6], X[:,7:9])
 
 init(sess)
-ADCME.load(sess, "Data/order$porder/learned_nn$(tid)_$(force_scale)_$(fiber_size).mat")
+ADCME.load(sess, "Data/order$porder/learned_nn_$(force_scale)_$(fiber_size).mat")
 O = run(sess, y)
 
 using Random; Random.seed!(233)

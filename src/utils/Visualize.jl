@@ -123,11 +123,20 @@ end
 
 
 # https://risa.com/risahelp/risa3d/Content/3D_2D_Only_Topics/Plates%20-%20Results.htm
-function helper_(stress::Array{Float64})
-    σx = stress[1]; σy = stress[2]; τxy = stress[3]
-    σ1 = (σx+σy)/2+sqrt((σx-σy)^2/4 + τxy^2)
-    σ2 = (σx+σy)/2-sqrt((σx-σy)^2/4 + τxy^2)
-    sqrt(σ1^2-σ1*σ2+σ2^2)
+function postprocess_stress(stress::Array{Float64}, name::String)
+    if name == "vonMises"
+        σx = stress[1]; σy = stress[2]; τxy = stress[3]
+        σ1 = (σx+σy)/2+sqrt((σx-σy)^2/4 + τxy^2)
+        σ2 = (σx+σy)/2-sqrt((σx-σy)^2/4 + τxy^2)
+        sqrt(σ1^2-σ1*σ2+σ2^2)
+    elseif name == "principal"
+        σx = stress[1]; σy = stress[2]; τxy = stress[3]
+        σ1 = (σx+σy)/2+sqrt((σx-σy)^2/4 + τxy^2)
+        σ2 = (σx+σy)/2-sqrt((σx-σy)^2/4 + τxy^2)
+        [σ1, σ2]
+    else
+        @error("postprocess_stress does not recognize ", name) 
+    end
 end
 
 function VisualizeStress2D(domain::Domain)
@@ -138,7 +147,7 @@ function VisualizeStress2D(domain::Domain)
     V = zeros(NT, ngp, 2)
     for i = 1:NT
         for j = 1:ngp
-            V[i,j,:] = helper_(stress[i][j,:])
+            V[i,j,:] = postprocess_stress(stress[i][j,:], "principal")
         end
     end
     close("all")
@@ -154,10 +163,11 @@ function VisualizeStress2D(σ_ref::Array{Float64}, σ_comp::Array{Float64}, NT::
     ngp = Int64(size(σ_ref,1)/NT)
     V_ref = zeros(NT, ngp, 2)
     V_comp = zeros(NT, ngp, 2)
+    # 2 
     for i = 1:NT
         for j = 1:ngp
-            V_ref[i,j,:] = helper_(σ_ref[(i-1)*ngp + j,:])
-            V_comp[i,j,:] = helper_(σ_comp[(i-1)*ngp + j,:])
+            V_ref[i,j,:] = postprocess_stress(σ_ref[(i-1)*ngp + j,:], "principal")
+            V_comp[i,j,:] = postprocess_stress(σ_comp[(i-1)*ngp + j,:], "principal")
         end
     end
     close("all")
@@ -196,7 +206,7 @@ function visσ(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
         σs = e.stress
         # @show σs
         # error()
-        push!(σ,mean([helper_(s)[1] for s in σs]))
+        push!(σ,mean([postprocess_stress(s, "vonMises")[1] for s in σs]))
     end
     vmin = vmin==nothing ? minimum(σ) : vmin 
     vmax = vmax==nothing ? maximum(σ) : vmax

@@ -3,7 +3,7 @@ force_scale = 5.0 #50
 tid = 203 
 fiber_size = 1
 porder = 2
-if Sys.MACHINE=="x86_64-pc-linux-gnu"
+if length(ARGS) == 4
    global tid = parse(Int64, ARGS[1])
    global force_scale = parse(Float64, ARGS[2])
    global fiber_size = parse(Int64, ARGS[3])
