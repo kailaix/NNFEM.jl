@@ -1,9 +1,9 @@
-stress_scale = 1
+stress_scale = 1.0e+5
 strain_scale = 1
 
 # tid = parse(Int64, ARGS[1])
 force_scale = 5.0
-tid = 200  
+tid = 203 
 # if Sys.MACHINE=="x86_64-pc-linux-gnu"
 #    global tid = parse(Int64, ARGS[1])
 #    global force_scale = parse(Float64, ARGS[2])
@@ -19,17 +19,16 @@ include("nnutil.jl")
 
 H0 = [1.04167e6  2.08333e5  0.0      
       2.08333e5  1.04167e6  0.0      
-      0.0        0.0        4.16667e5]
+      0.0        0.0        4.16667e5]/stress_scale
 
 
-      aedictpiecewise = matread("Data/nn_train0.mat"); # using MAT
+      aedictpiecewise = matread("Data/order1/learned_nn_5.0_1.mat"); # using MAT
       Wkey = "piecewisebackslashfully_connectedbackslashweightscolon0"
       Wkey = "piecewisebackslashfully_connected_1backslashweightscolon0"
       Wkey = "piecewisebackslashfully_connected_2backslashweightscolon0"
       Wkey = "piecewisebackslashfully_connected_3backslashweightscolon0"
       Wkey = "piecewisebackslashfully_connected_4backslashweightscolon0"
       Wkey = "piecewisebackslashfully_connected_5backslashweightscolon0"
-      Wkey = "piecewisebackslashfully_connected_6backslashweightscolon0"
       function nnpiecewise(net)
               W0 = aedictpiecewise["piecewisebackslashfully_connectedbackslashweightscolon0"]; b0 = aedictpiecewise["piecewisebackslashfully_connectedbackslashbiasescolon0"];
               isa(net, Array) ? (net = net * W0 .+ b0') : (net = net *W0 + b0)
@@ -48,18 +47,11 @@ H0 = [1.04167e6  2.08333e5  0.0
               isa(net, Array) ? (net = tanh.(net)) : (net=tanh(net))
               W5 = aedictpiecewise["piecewisebackslashfully_connected_5backslashweightscolon0"]; b5 = aedictpiecewise["piecewisebackslashfully_connected_5backslashbiasescolon0"];
               isa(net, Array) ? (net = net * W5 .+ b5') : (net = net *W5 + b5)
-              isa(net, Array) ? (net = tanh.(net)) : (net=tanh(net))
-              W6 = aedictpiecewise["piecewisebackslashfully_connected_6backslashweightscolon0"]; b6 = aedictpiecewise["piecewisebackslashfully_connected_6backslashbiasescolon0"];
-              isa(net, Array) ? (net = net * W6 .+ b6') : (net = net *W6 + b6)
               return net
       end 
 # density 4.5*(1 - 0.25) + 3.2*0.25
 #fiber_fraction = 0.25
 #todo
-<<<<<<< HEAD
-fiber_fraction = 0.0
-=======
->>>>>>> 23dc520e4816209b629081c37fdf3eabec699a49
 prop = Dict("name"=> testtype, "rho"=> 4.5, "nn"=>post_nn)
 
 T = 0.05

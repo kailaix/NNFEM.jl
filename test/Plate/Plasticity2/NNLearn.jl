@@ -52,12 +52,12 @@ ADCME.load(sess, "Data/order$porder/learned_nn_$(force_scale)_$(fiber_size).mat"
 O = run(sess, y)
 
 using Random; Random.seed!(233)
-VisualizeStress2D(Y, O, 200)
+VisualizeStress2D(Y, O, 200, 20)
 # ADCME.save(sess, "Data/learned_nn.mat")
 
 error("Learning stop!")
 
-ADCME.load(sess, "Data/order$porder/learned_nn$(tid)_$(force_scale)_$(fiber_size).mat")
+ADCME.load(sess, "Data/order$porder/learned_nn_$(force_scale)_$(fiber_size).mat")
 @show run(sess, loss)
 close("all")
 O = run(sess, y)
