@@ -1,4 +1,4 @@
-stress_scale = 1.0
+stress_scale = 1.0e5
 strain_scale = 1
 
 include("nnutil.jl")
@@ -12,7 +12,7 @@ nntype = "piecewise"
 # Trained with nx, ny = 10, 5
 H0 = [1.04167e6  2.08333e5  0.0      
       2.08333e5  1.04167e6  0.0      
-      0.0        0.0        4.16667e5]
+      0.0        0.0        4.16667e5]/stress_scale
 
 
 n_data = [100, 200, 201, 202, 203]
