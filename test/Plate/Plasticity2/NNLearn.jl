@@ -43,7 +43,7 @@ end
 
 # error()
 close("all")
-tid = n_data[1]
+tid = n_data[end]
 @load "Data/order$porder/domain$(tid)_$(force_scale)_$(fiber_size).jld2" domain
 X, Y = prepare_strain_stress_data2D(domain)
 x = constant(X)
@@ -54,7 +54,7 @@ ADCME.load(sess, "Data/order$porder/learned_nn_$(force_scale)_$(fiber_size).mat"
 O = run(sess, y)
 
 using Random; Random.seed!(233)
-VisualizeStress2D(Y, O, 200, 20)
+VisualizeStress2D(Y, O, 200, 200)
 # ADCME.save(sess, "Data/learned_nn.mat")
 
 error("Learning stop!")

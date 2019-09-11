@@ -170,8 +170,8 @@ function VisualizeStress2D(σ_ref::Array{Float64}, σ_comp::Array{Float64}, NT::
         for j = 1:ngp
             V_ref[i,j,1] = postprocess_stress(σ_ref[(i-1)*ngp + j,:], "vonMises")
             V_ref[i,j,2:3] = postprocess_stress(σ_ref[(i-1)*ngp + j,:], "principal")
-            V_comp[i,j,1] = postprocess_stress(σ_ref[(i-1)*ngp + j,:], "vonMises")
-            V_comp[i,j,2:3] = postprocess_stress(σ_ref[(i-1)*ngp + j,:], "principal")
+            V_comp[i,j,1] = postprocess_stress(σ_comp[(i-1)*ngp + j,:], "vonMises")
+            V_comp[i,j,2:3] = postprocess_stress(σ_comp[(i-1)*ngp + j,:], "principal")
         end
     end
     close("all")
