@@ -3,7 +3,7 @@ strain_scale = 1
 
 # tid = parse(Int64, ARGS[1])
 force_scale = 5.0
-tid = 203
+tid = 300
 # if Sys.MACHINE=="x86_64-pc-linux-gnu"
 #    global tid = parse(Int64, ARGS[1])
 #    global force_scale = parse(Float64, ARGS[2])
@@ -55,7 +55,7 @@ H0 = [1.04167e6  2.08333e5  0.0
 prop = Dict("name"=> testtype, "rho"=> 4.5, "nn"=>post_nn)
 
 T = 0.05
-NT = 200
+NT = 400
 
 # nx_f, ny_f = 12, 4
 # homogenized computaional domain
@@ -112,11 +112,12 @@ updateStates!(domain, globdat)
 for i = 1:NT
     @info i, "/" , NT
     solver = NewmarkSolver(Δt, globdat, domain, αm, αf, 1e-4, 1e-6, 100)
+    # error()
     # close("all")
     # visσ(domain,-1.5e9, 4.5e9)
     # savefig("Debug/$i.png")
     # error()
-    if i==75
+    if i==100
         close("all")
         visσ(domain)
         # visσ(domain,-1.5e9, 4.5e9)

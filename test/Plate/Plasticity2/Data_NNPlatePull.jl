@@ -1,6 +1,6 @@
 # tid = parse(Int64, ARGS[1])
 force_scale = 5.0 #50
-tid = 203 
+tid = 300 
 fiber_size = 1
 porder = 2
 if length(ARGS) == 4

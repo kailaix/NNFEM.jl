@@ -54,7 +54,7 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
         σH = (ε-ε0)/strain_scale * H0 + σ0/stress_scale
         z = sum(ε^2,dims=2)
         # i = sigmoid(1e9*(z-(threshold)^2))
-	    i = sigmoid(1e6*(z-threshold))        
+        i = sigmoid(1e6*(z-threshold))        
         i = [i i i]
         out = σnn .* i + σH .* (1-i)
         out*stress_scale
@@ -83,10 +83,13 @@ function nn_helper(ε, ε0, σ0)
         σ0 = σ0/stress_scale
         x = reshape([ε;ε0;σ0],1, 9)
         y1 = reshape(σ0, 1, 3) + (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*get_matrix(nnpiecewise(x))
-        y1 = reshape(y1, 3, 1)*stress_scale
-        y2 = reshape(reshape(ε,1,3)*H0,3,1)
+        y1 = reshape(y1, 3, 1)
+        y2 = reshape(reshape(σ0, 1, 3) + (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*H0, 3,1)
+        # y2 = reshape(reshape(ε,1,3)*H0,3,1)
         i = sigmoid_(1e6*(norm(ε)^2-threshold))
-        y1 * i + y2 * (1-i)
+        # @show y1 * i
+        out = y1 * i + y2 * (1-i)
+        out*stress_scale
     else
         error("$nntype does not exist")
     end

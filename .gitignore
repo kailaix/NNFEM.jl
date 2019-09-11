@@ -46,3 +46,4 @@
 deps/build.jl
 *.txt
 *.nfs*
+*.pkl
