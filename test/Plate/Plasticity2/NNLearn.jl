@@ -36,8 +36,10 @@ end
 sess = Session(); init(sess)
 @show run(sess, loss)
 # ADCME.load(sess, "Data/order$porder/learned_nn.mat")
-BFGS!(sess, loss, 2000)
+for i = 1:8
+BFGS!(sess, loss, 15000)
 ADCME.save(sess, "Data/order$porder/learned_nn_$(force_scale)_$(fiber_size).mat")
+end
 
 # error()
 close("all")
