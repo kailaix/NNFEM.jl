@@ -1,5 +1,5 @@
 using SparseArrays
-export Domain,GlobalData,updateStates!,updateDomainStateBoundary!,getExternalForce!,convertState,
+export Domain,GlobalData,updateStates!,updateDomainStateBoundary!,getExternalForce,convertState,
     setNeumannBoundary!
 
 
@@ -296,7 +296,7 @@ end
 @doc """
     the external force include the Dirichlet boundary condition effect
 """ ->
-function getExternalForce!(self::Domain, globaldat::GlobalData)
+function getExternalForce(self::Domain, globaldat::GlobalData)
     fext = self.fext[:]
     if globaldat.EBC_func != nothing
         MID = globaldat.MID

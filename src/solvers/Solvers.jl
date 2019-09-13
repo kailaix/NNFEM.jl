@@ -1,4 +1,4 @@
-export ExplicitSolver, NewmarkSolver, StaticSolver
+export ExplicitSolver, NewmarkSolver, AdaptiveSolver, StaticSolver
 
 @doc """
 Central Difference Explicit solver for Ma + fint = fext
@@ -64,9 +64,11 @@ end
     γ = 0.5 - αm + αf
 
     absolution error ε = 1e-8, 
-    relative error ε0 = 1e-8   
+    relative error ε0 = 1e-8  
+    
+    return true or false indicating converging or not
 """->
-function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, ε0 = 1e-8, maxiterstep=100, η = 1.0)
+function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, ε0 = 1e-8, maxiterstep=100, η = 1.0, failsafe = false)
     local res0
     # @info maxiterstep
     # error()
@@ -76,12 +78,16 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, �
     γ = 0.5 - αm + αf
 
     # compute solution at uⁿ⁺¹
+    failsafe_time = copy(globdat.time)
     globdat.time  += (1 - αf)*Δt
 
     # domain.Dstate = uⁿ
+    failsafe_Dstate = copy(domain.Dstate)
+    failsafe_state = copy(domain.state)
     domain.Dstate = domain.state[:]
+
+
     updateDomainStateBoundary!(domain, globdat)
-    
     M = globdat.M
     
     ∂∂u = globdat.acce[:] #∂∂uⁿ
@@ -89,7 +95,7 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, �
     ∂u  = globdat.velo[:] #∂uⁿ
 
     
-    fext = getExternalForce!(domain, globdat)
+    fext = getExternalForce(domain, globdat)
 
 
     ∂∂up = ∂∂u[:]
@@ -147,7 +153,14 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, �
         # end
         println("$Newtoniterstep/$maxiterstep, $(norm(res))")
         if (norm(res)< ε || norm(res)< ε0*norm(res0) ||Newtoniterstep > maxiterstep)
+
             if Newtoniterstep > maxiterstep
+                if failsafe 
+                    globdat.time = failsafe_time
+                    domain.state = failsafe_state[:]
+                    domain.Dstate = failsafe_Dstate[:]
+                    return false 
+                end
                 function f(∂∂up)
                     domain.state[domain.eq_to_dof] = (1 - αf)*(u + Δt*∂u + 0.5 * Δt * Δt * ((1 - β2)*∂∂u + β2*∂∂up)) + αf*u
                     fint, stiff = assembleStiffAndForce( globdat, domain )
@@ -156,6 +169,8 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, �
                 gradtest(f, ∂∂up)
                 # error()
                 @warn("Newton iteration cannot converge $(norm(res))"); Newtonconverge = true
+
+                
             else
                 Newtonconverge = true
                 printstyled("[Newmark] Newton converged $Newtoniterstep\n", color=:green)
@@ -188,6 +203,8 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, �
     fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
     push!(domain.history["fint"], fint)
     push!(domain.history["fext"], fext)
+
+    return true
     
 end 
 
@@ -237,3 +254,72 @@ function StaticSolver(globdat, domain, loaditerstep = 10, ε = 1.e-8, maxiterste
         globdat.Dstate = copy(globdat.state)
     end
 end
+
+
+
+@doc """
+    Adaptive Solver, adjust the time step, if this step fails, redo the step with half of
+    the time step size
+    
+    return globdat, domain
+"""->
+function AdaptiveSolver(solvername, globdat, domain, T, NT, args)
+
+    failsafe = true
+    ts = Float64[]
+
+    Δt = T/NT #specified(maximum) time step
+    dt = T/NT #current time step
+    t = 0.0   #current time
+    push!(ts, t)
+
+    if solvername == "NewmarkSolver"
+
+        ρ_oo = args["Newmark_rho"]
+        η = args["damped_Newton_eta"]
+        maxiterstep = args["Newton_maxiter"]
+        ε = args["Newton_Abs_Err"]
+        ε0 = args["Newton_Rel_Err"]
+       
+
+        αm = (2*ρ_oo - 1)/(ρ_oo + 1)
+        αf = ρ_oo/(ρ_oo + 1)
+
+        convergeCounter = 0
+        while t < T
+            if t + dt > T 
+                dt = T - t
+            end
+            printstyled("dt = $dt, t = $t, T=$T\n", color=:cyan)
+            
+            convergeOrNot = NewmarkSolver(dt, globdat, domain, αm, αf, ε, ε0, maxiterstep, η, failsafe)
+            
+            if convergeOrNot
+                convergeCounter += 1
+                t += dt
+                push!(ts, t)
+                @assert globdat.time ≈ t
+                if dt < 0.8*Δt  && convergeCounter >=5
+                    dt = 2*dt
+                end
+
+                
+
+            else
+                @assert globdat.time ≈ t
+                convergeCounter = 0
+                dt /= 2.0
+
+                @warn("Repeat time step with dt = ", dt)
+            end
+        end
+
+    else
+        @error("AdaptiveSolve has not implemented for ", solvername)
+    end
+
+    return globdat, domain, ts
+    
+end
+    
+    
