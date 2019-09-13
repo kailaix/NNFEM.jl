@@ -37,11 +37,11 @@ sess = Session(); init(sess)
 @show run(sess, loss)
 # ADCME.load(sess, "Data/order$porder/learned_nn.mat")
 for i = 1:8
-BFGS!(sess, loss, 15000)
-ADCME.save(sess, "Data/order$porder/learned_nn_$(force_scale)_$(fiber_size).mat")
+    BFGS!(sess, loss, 15000)
+    ADCME.save(sess, "Data/order$porder/learned_nn_$(force_scale)_$(fiber_size).mat")
 end
 
-# error()
+error()
 close("all")
 tid = n_data[end]
 @load "Data/order$porder/domain$(tid)_$(force_scale)_$(fiber_size).jld2" domain
@@ -51,20 +51,22 @@ y = nn(X[:,1:3], X[:,4:6], X[:,7:9])
 
 init(sess)
 ADCME.load(sess, "Data/order$porder/learned_nn_$(force_scale)_$(fiber_size).mat")
+ADCME.load(sess, "Data/nn_train0.mat")
 O = run(sess, y)
-
 using Random; Random.seed!(233)
 VisualizeStress2D(Y, O, 200, 200)
-# ADCME.save(sess, "Data/learned_nn.mat")
 
 error("Learning stop!")
 
 ADCME.load(sess, "Data/order$porder/learned_nn_$(force_scale)_$(fiber_size).mat")
+
 @show run(sess, loss)
 close("all")
 O = run(sess, y)
 using Random; Random.seed!(233)
+close("all")
 VisualizeStress2D(Y, O, 20)
+savefig("test.png")
 
 
 

@@ -3,7 +3,7 @@ strain_scale = 1
 
 # tid = parse(Int64, ARGS[1])
 force_scale = 5.0
-tid = 300
+tid = 203
 # if Sys.MACHINE=="x86_64-pc-linux-gnu"
 #    global tid = parse(Int64, ARGS[1])
 #    global force_scale = parse(Float64, ARGS[2])
@@ -22,40 +22,16 @@ H0 = [1.04167e6  2.08333e5  0.0
       0.0        0.0        4.16667e5]/stress_scale
 
 
-      aedictpiecewise = matread("Data/order1/learned_nn_5.0_1.mat"); # using MAT
-      Wkey = "piecewisebackslashfully_connectedbackslashweightscolon0"
-      Wkey = "piecewisebackslashfully_connected_1backslashweightscolon0"
-      Wkey = "piecewisebackslashfully_connected_2backslashweightscolon0"
-      Wkey = "piecewisebackslashfully_connected_3backslashweightscolon0"
-      Wkey = "piecewisebackslashfully_connected_4backslashweightscolon0"
-      Wkey = "piecewisebackslashfully_connected_5backslashweightscolon0"
-      function nnpiecewise(net)
-              W0 = aedictpiecewise["piecewisebackslashfully_connectedbackslashweightscolon0"]; b0 = aedictpiecewise["piecewisebackslashfully_connectedbackslashbiasescolon0"];
-              isa(net, Array) ? (net = net * W0 .+ b0') : (net = net *W0 + b0)
-              isa(net, Array) ? (net = tanh.(net)) : (net=tanh(net))
-              W1 = aedictpiecewise["piecewisebackslashfully_connected_1backslashweightscolon0"]; b1 = aedictpiecewise["piecewisebackslashfully_connected_1backslashbiasescolon0"];
-              isa(net, Array) ? (net = net * W1 .+ b1') : (net = net *W1 + b1)
-              isa(net, Array) ? (net = tanh.(net)) : (net=tanh(net))
-              W2 = aedictpiecewise["piecewisebackslashfully_connected_2backslashweightscolon0"]; b2 = aedictpiecewise["piecewisebackslashfully_connected_2backslashbiasescolon0"];
-              isa(net, Array) ? (net = net * W2 .+ b2') : (net = net *W2 + b2)
-              isa(net, Array) ? (net = tanh.(net)) : (net=tanh(net))
-              W3 = aedictpiecewise["piecewisebackslashfully_connected_3backslashweightscolon0"]; b3 = aedictpiecewise["piecewisebackslashfully_connected_3backslashbiasescolon0"];
-              isa(net, Array) ? (net = net * W3 .+ b3') : (net = net *W3 + b3)
-              isa(net, Array) ? (net = tanh.(net)) : (net=tanh(net))
-              W4 = aedictpiecewise["piecewisebackslashfully_connected_4backslashweightscolon0"]; b4 = aedictpiecewise["piecewisebackslashfully_connected_4backslashbiasescolon0"];
-              isa(net, Array) ? (net = net * W4 .+ b4') : (net = net *W4 + b4)
-              isa(net, Array) ? (net = tanh.(net)) : (net=tanh(net))
-              W5 = aedictpiecewise["piecewisebackslashfully_connected_5backslashweightscolon0"]; b5 = aedictpiecewise["piecewisebackslashfully_connected_5backslashbiasescolon0"];
-              isa(net, Array) ? (net = net * W5 .+ b5') : (net = net *W5 + b5)
-              return net
-      end 
+s = ae_to_code("Data/order1/learned_nn_5.0_1.mat", "piecewise")
+eval(Meta.parse(s))
+
 # density 4.5*(1 - 0.25) + 3.2*0.25
 #fiber_fraction = 0.25
 #todo
 prop = Dict("name"=> testtype, "rho"=> 4.5, "nn"=>post_nn)
 
 T = 0.05
-NT = 400
+NT = 200
 
 # nx_f, ny_f = 12, 4
 # homogenized computaional domain
@@ -117,11 +93,11 @@ for i = 1:NT
     # visσ(domain,-1.5e9, 4.5e9)
     # savefig("Debug/$i.png")
     # error()
-    if i==100
-        close("all")
-        visσ(domain)
-        # visσ(domain,-1.5e9, 4.5e9)
-        savefig("Debug/test$(tid)i=75.png")
+    if i==150
+        # close("all")
+        # visσ(domain)
+        # # visσ(domain,-1.5e9, 4.5e9)
+        # savefig("Debug/test$(tid)i=75.png")
         # break
     end
 end
