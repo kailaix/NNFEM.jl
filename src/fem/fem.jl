@@ -18,6 +18,7 @@ mutable struct GlobalData
     
 end
 
+
 function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Float64},acce::Array{Float64}, neqs::Int64,
         EBC_func::Union{Function, Nothing}=nothing, FBC_func::Union{Function, Nothing}=nothing)
     time = 0.0
@@ -48,6 +49,12 @@ mutable struct Domain
     fext::Array{Float64}  # Value for Nodal force boundary condition
     time::Float64
     history::Dict{String, Array{Array{Float64}}}
+end
+
+function Base.:copy(g::Union{GlobalData, Domain}) 
+    names = fieldnames(g)
+    args = [copy(getproperty(g, n)) for n in names]
+    GlobalData(args...)
 end
 
 @doc """
