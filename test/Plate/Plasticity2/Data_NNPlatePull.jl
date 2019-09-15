@@ -1,6 +1,6 @@
 # tid = parse(Int64, ARGS[1])
 force_scale = 5.0 #50
-tid = 300 
+tid = 200 
 fiber_size = 1
 porder = 2
 if length(ARGS) == 4
@@ -19,8 +19,8 @@ np = pyimport("numpy")
 prop = Dict("name"=> "PlaneStressPlasticity","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.2,
 "sigmaY"=>0.97e+4, "K"=>1e+5)
 
-
-#prop = Dict("name"=> "PathDependent2D","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.2)
+#σY = (0.1 + 0.3 * ε_equiv^0.4)*10^5
+prop = Dict("name"=> "PlaneStressPlasticityLawBased","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.2, "args"=>[1.0e4; 3.0e4; 0.4])
 
 #prop = Dict("name"=> "PlaneStress","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.2)
 

@@ -1,10 +1,11 @@
-export  PathDependent2D, getStress
+export  PlaneStressPlasticityLawBased, getStress
 
-mutable struct PathDependent2D
+mutable struct PlaneStressPlasticityLawBased
     H::Array{Float64} # tangent matrix for plane stress
     E::Float64 # Young's modulus
     ν::Float64 # Poisson's ratio
     ρ::Float64 # density
+    a::Array{Float64}  # explicit hardening law parameters
     σ0::Array{Float64} # stress at last time step
     σ0_::Array{Float64} # σ0 to be updated in `commitHistory`
     ε0::Array{Float64} # stress at last time step
@@ -13,14 +14,21 @@ end
 
 
 @doc """
-    The power-law hardening law has the the following format
-    σY = (0.1 + 0.3 ε_equiv^0.4)MPa
+    The yield function 
+        \bar{σ} - σY(\bar{\epsilon} ,  a)
+
+    σY is described by a hardening law, for example
+    The power-law:
+            σY = a[1] + a[2] ε_equiv^a[3]
+
+
+    To modify the law, you need to modify both function f(σ, ε, a) and fε(ε, a)
 
 """ -> 
-function f(σ, ε)
+function f(σ, ε, a)
     # von Mises equivalent strain
     ε_equiv = sqrt(4.0/9.0*(ε[1]^2 + ε[2]^2 - ε[1]*ε[2]) + 1.0/3.0*ε[3]^2)
-    σY = (0.1 + 0.3 * ε_equiv^0.4)*10^5
+    σY = a[1] + a[2]*ε_equiv^a[3]
     return sqrt(σ[1]^2-σ[1]*σ[2]+σ[2]^2+3*σ[3]^2)-σY
 end
 
@@ -32,13 +40,13 @@ function fσ(σ)
         3*σ3/J2]
 end
 
-function fε(ε)
+function fε(ε, a)
     ε1, ε2, ε3 = ε[1], ε[2], ε[3]
     ε_equiv = sqrt(4.0/9.0*(ε[1]^2 + ε[2]^2 - ε[1]*ε[2]) + 1.0/3.0*ε[3]^2)
 
-    z = [(4.0/9.0 * ε1 - 2.0/9.0*ε2)/ε_equiv;
-         (4.0/9.0 * ε2 - 2.0/9.0*ε1)/ε_equiv;
-         1.0/3.0*ε3/ε_equiv] *  (0.3 * 0.4 * ε_equiv^(0.4 - 1.0))*10^5
+    z = [(4.0/9.0 * ε1 - 2.0/9.0 * ε2)/ε_equiv;
+         (4.0/9.0 * ε2 - 2.0/9.0 * ε1)/ε_equiv;
+         1.0/3.0 * ε3/ε_equiv] * (a[2]*a[3]*ε_equiv^(a[3] - 1.0))
 
     return z
 end
@@ -52,8 +60,8 @@ function fσσ(σ)
 end
 
 
-function PathDependent2D(prop::Dict{String, Any})
-    E = prop["E"]; ν = prop["nu"]; ρ = prop["rho"];
+function PlaneStressPlasticityLawBased(prop::Dict{String, Any})
+    E = prop["E"]; ν = prop["nu"]; ρ = prop["rho"]; a = prop["args"]
     H = zeros(3,3)
     H[1,1] = E/(1. -ν*ν)
     H[1,2] = H[1,1]*ν
@@ -61,7 +69,7 @@ function PathDependent2D(prop::Dict{String, Any})
     H[2,2] = H[1,1]
     H[3,3] = E/(2.0*(1.0+ν))
     σ0 = zeros(3); σ0_ = zeros(3); ε0 = zeros(3); ε0_ = zeros(3)
-    PathDependent2D(H, E, ν, ρ, σ0, σ0_, ε0, ε0_)
+    PlaneStressPlasticityLawBased(H, E, ν, ρ, a, σ0, σ0_, ε0, ε0_)
 end
 
 
@@ -72,7 +80,7 @@ end
     sigma = sigma0 + (eps - eps0)**2
 
 """ -> 
-function getStress(self::PathDependent2D,  strain::Array{Float64},  Dstrain::Array{Float64}, Δt::Float64 = 0.0)
+function getStress(self::PlaneStressPlasticityLawBased,  strain::Array{Float64},  Dstrain::Array{Float64}, Δt::Float64 = 0.0)
     Newton_maxiter = 10
     Newton_Abs_Err = 1e-8 
     Newton_Rel_Err = 1e-5
@@ -85,11 +93,12 @@ function getStress(self::PathDependent2D,  strain::Array{Float64},  Dstrain::Arr
     
     E = self.E
     H = self.H
+    a = self.a
 
     Δγ = 0.0
     
     σ = σ0 + H*(ε-ε0) 
-    r2 = f(σ, ε)
+    r2 = f(σ, ε, a)
     #@show r2, α, K, σY
     if r2 < 0
         #@show "Elasticity"
@@ -100,7 +109,7 @@ function getStress(self::PathDependent2D,  strain::Array{Float64},  Dstrain::Arr
         # solve for Δγ
         function compute(σ, Δγ)
             r1 = σ - (σ0 + H*(ε - ε0) - Δγ * H* fσ(σ))  
-            r2 = f(σ, ε)
+            r2 = f(σ, ε, a)
             J = [UniformScaling(1.0)+Δγ*H*fσσ(σ)  H*fσ(σ)
                  reshape(fσ(σ),1,3)                  0]
             return [r1;r2], J
@@ -110,7 +119,7 @@ function getStress(self::PathDependent2D,  strain::Array{Float64},  Dstrain::Arr
             J = [UniformScaling(1.0)+Δγ*H*fσσ(σ)  H*fσ(σ)
                  reshape(fσ(σ),1,3)                  0]
             
-            δ = J\[H ;reshape(fε(ε),1,3)]
+            δ = J\[H ;reshape(fε(ε, a),1,3)]
 
             return δ[1:3,:]
         end
@@ -149,11 +158,11 @@ function getStress(self::PathDependent2D,  strain::Array{Float64},  Dstrain::Arr
     return σ, dΔσdΔε
 end
 
-function getTangent(self::PathDependent2D)
+function getTangent(self::PlaneStressPlasticityLawBased)
     error("Not implemented")
 end
 
-function commitHistory(self::PathDependent2D)
+function commitHistory(self::PlaneStressPlasticityLawBased)
     self.σ0 = self.σ0_
     self.ε0 = self.ε0_
 end

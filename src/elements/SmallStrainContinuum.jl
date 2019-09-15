@@ -22,8 +22,8 @@ function SmallStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, pro
         mat = [PlaneStrain(props) for i = 1:nGauss]
     elseif name=="PlaneStress"
         mat = [PlaneStress(props) for i = 1:nGauss]
-    elseif name=="PathDependent2D"
-        mat = [PathDependent2D(props) for i = 1:nGauss]
+    elseif name=="PlaneStressPlasticityLawBased"
+        mat = [PlaneStressPlasticityLawBased(props) for i = 1:nGauss]
     elseif name=="PlaneStressPlasticity"
         mat = [PlaneStressPlasticity(props) for i = 1:nGauss]
     elseif name=="NeuralNetwork2D"
