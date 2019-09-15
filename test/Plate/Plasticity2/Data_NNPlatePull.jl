@@ -19,6 +19,12 @@ np = pyimport("numpy")
 prop = Dict("name"=> "PlaneStressPlasticity","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.2,
 "sigmaY"=>0.97e+4, "K"=>1e+5)
 
+
+#prop = Dict("name"=> "PathDependent2D","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.2)
+
+#prop = Dict("name"=> "PlaneStress","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.2)
+
+
 T = 0.05
 NT = 200
 

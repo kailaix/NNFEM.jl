@@ -52,6 +52,12 @@ function PlaneStressPlasticity(prop::Dict{String, Any})
 end
 
 function getStress(self::PlaneStressPlasticity,  strain::Array{Float64},  Dstrain::Array{Float64}, Δt::Float64 = 0.0)
+
+    Newton_maxiter = 10
+    Newton_Abs_Err = 1e-8 
+    Newton_Rel_Err = 1e-5
+
+
     # #@show "***", strain, Dstrain
     local dΔσdΔε
     ε = strain 
@@ -94,15 +100,15 @@ function getStress(self::PlaneStressPlasticity,  strain::Array{Float64},  Dstrai
             return δ[1:3,:]
         end
         res0, _ = compute(σ, Δγ)
-        for i = 1:10
+        for i = 1:Newton_maxiter
             res, J = compute(σ, Δγ)
             δ = -J\res
             σ += δ[1:3]; Δγ += δ[4]
             # #@show norm(res)/norm(res0)
-            if norm(res)/norm(res0)<1e-5
+            if norm(res)/norm(res0) < Newton_Rel_Err || norm(res) < Newton_Abs_Err
                 break
             end
-            if i==100
+            if i==Newton_maxiter
                 function f(∂∂u)
                     res, J = compute(∂∂u[1:3],∂∂u[4])
                 end
