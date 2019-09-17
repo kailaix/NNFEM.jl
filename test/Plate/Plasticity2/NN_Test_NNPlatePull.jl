@@ -28,7 +28,6 @@ H0 = [1.04167e6  2.08333e5  0.0
       Wkey = "piecewisebackslashfully_connected_2backslashweightscolon0"
       Wkey = "piecewisebackslashfully_connected_3backslashweightscolon0"
       Wkey = "piecewisebackslashfully_connected_4backslashweightscolon0"
-      Wkey = "piecewisebackslashfully_connected_5backslashweightscolon0"
       function nnpiecewise(net)
               W0 = aedictpiecewise["piecewisebackslashfully_connectedbackslashweightscolon0"]; b0 = aedictpiecewise["piecewisebackslashfully_connectedbackslashbiasescolon0"];
               isa(net, Array) ? (net = net * W0 .+ b0') : (net = net *W0 + b0)
@@ -44,9 +43,6 @@ H0 = [1.04167e6  2.08333e5  0.0
               isa(net, Array) ? (net = tanh.(net)) : (net=tanh(net))
               W4 = aedictpiecewise["piecewisebackslashfully_connected_4backslashweightscolon0"]; b4 = aedictpiecewise["piecewisebackslashfully_connected_4backslashbiasescolon0"];
               isa(net, Array) ? (net = net * W4 .+ b4') : (net = net *W4 + b4)
-              isa(net, Array) ? (net = tanh.(net)) : (net=tanh(net))
-              W5 = aedictpiecewise["piecewisebackslashfully_connected_5backslashweightscolon0"]; b5 = aedictpiecewise["piecewisebackslashfully_connected_5backslashbiasescolon0"];
-              isa(net, Array) ? (net = net * W5 .+ b5') : (net = net *W5 + b5)
               return net
       end 
 # density 4.5*(1 - 0.25) + 3.2*0.25
