@@ -3,7 +3,7 @@ strain_scale = 1
 
 # tid = parse(Int64, ARGS[1])
 force_scale = 5.0
-tid = 300
+tid = 200
 # if Sys.MACHINE=="x86_64-pc-linux-gnu"
 #    global tid = parse(Int64, ARGS[1])
 #    global force_scale = parse(Float64, ARGS[2])
@@ -22,7 +22,8 @@ H0 = [1.04167e6  2.08333e5  0.0
       0.0        0.0        4.16667e5]/stress_scale
 
 
-      aedictpiecewise = matread("Data/order1/learned_nn_5.0_1.mat"); # using MAT
+      #aedictpiecewise = matread("Data/order1/learned_nn_5.0_1.mat"); # using MAT
+      aedictpiecewise = matread("Data/nn_train0.mat"); # using MAT
       Wkey = "piecewisebackslashfully_connectedbackslashweightscolon0"
       Wkey = "piecewisebackslashfully_connected_1backslashweightscolon0"
       Wkey = "piecewisebackslashfully_connected_2backslashweightscolon0"

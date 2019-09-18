@@ -71,3 +71,12 @@ linear train 20 by 10
 H0 =  [ 1.04164e6  2.08329e5  0.668159 
         2.08329e5  1.04166e6  0.412084 
         0.668159   0.412084   4.16648e5]
+
+
+
+out = σnn .* i + σH .* (1-i)  + σ0/stress_scale
+[20,20,20,20,6]  NNLearn but not NNTrain
+
+
+out = σnn .* i + σH + σ0/stress_scale
+[20,20,20,20,6]  NNLearn

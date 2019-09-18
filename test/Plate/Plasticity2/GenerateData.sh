@@ -59,9 +59,9 @@ for force_scale in 5.0
 do
 for tid in 100 200 201 202 203 300
 do
-for porder in 1 
+for porder in 1 2
 do
-for fiber_size in 1
+for fiber_size in 1 2
 do
 bgxgrp=${group1} 
 bgxlimit 10 julia Data_NNPlatePull.jl $tid $force_scale $fiber_size $porder # > Debug/logs/${tid}_${force_scale}_${fiber_size}_$porder.txt 
