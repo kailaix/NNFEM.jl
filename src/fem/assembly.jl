@@ -82,6 +82,8 @@ function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, 
   el_eqns_all = constant(el_eqns_all, dtype=Int64)
   # cast to tensorflow variable  
 
+  fints = squeeze(tf.matmul(w∂E∂u_all, tf.expand_dims(σ_all,2)))
+
   # * while loop
   function cond0(i, tensor_array_Fint)
     i<=neles*nGauss+1
@@ -89,7 +91,11 @@ function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, 
   function body(i, tensor_array_Fint)
     x = constant(zeros(Float64, domain.neqs))
     # fint in the ith Gaussian point
-    fint = w∂E∂u_all[i - 1] * σ_all[i - 1]
+    # fint = w∂E∂u_all[i - 1] * σ_all[i - 1]
+
+    fint = fints[i-1]
+    # op = tf.print("error = ", norm(fint-fint0))
+    # fint = bind(fint, op)
 
 
     # set fint entries to 0, when the dof is Dirichlet boundary
