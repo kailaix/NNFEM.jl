@@ -15,7 +15,7 @@ cmx = PyNULL()
 clb = PyNULL()
 
 cpp_fint = nothing
-# sym_op = nothing
+sym_op = nothing
 orthotropic_op = nothing
 function __init__()
     global jet, cpp_fint, orthotropic_op, sym_op
@@ -25,8 +25,33 @@ function __init__()
     jet = plt.get_cmap("jet")
     copy!(clb, pyimport("matplotlib.colorbar"))
     cpp_fint = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/FintComp/build/libFintComp", "fint_comp")
-    orthotropic_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/OrthotropicOp/build/libOrthotropicOp", "orthotropic_op")
-    # sym_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/SymOp/build/libSymOp", "sym_op")
+
+    oplibpath = "$(@__DIR__)/../deps/CustomOp/OrthotropicOp/build/libOrthotropicOp.so"
+py"""
+import tensorflow as tf
+lib1 = tf.load_op_library($oplibpath)
+@tf.custom_gradient
+def orthotropic_op(*args):
+    u = lib1.orthotropic_op(*args)
+    def grad(dy):
+        return lib1.orthotropic_op_grad(dy, u, *args)
+    return u, grad
+"""
+    orthotropic_op = py"orthotropic_op"
+
+
+    oplibpath = "$(@__DIR__)/../deps/CustomOp/SymOp/build/libSymOp.so"
+py"""
+import tensorflow as tf
+lib2 = tf.load_op_library($oplibpath)
+@tf.custom_gradient
+def sym_op(*args):
+    u = lib2.sym_op(*args)
+    def grad(dy):
+        return lib2.sym_op_grad(dy, u, *args)
+    return u, grad
+"""
+    sym_op = py"sym_op"
 end
 
 include("utils/shapeFunctions.jl")

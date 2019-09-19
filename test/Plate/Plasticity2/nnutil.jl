@@ -45,12 +45,8 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
         σ0 = constant(σ0)
         
         y = ae(x, config, nntype)
-        # z = orthotropic_H(y)
-        @show y
-        # y = NNFEM.orthotropic_op(y)
-        y = constant(rand(size(y,1), 9))
-    @show y
-        z = tf.reshape(y, (-1,3,3)) 
+        z = orthotropic_H(y)
+
 
         σnn = squeeze(tf.matmul(z, tf.reshape((ε-ε0)/strain_scale, (-1,3,1)))) 
         σH = (ε-ε0)/strain_scale * H0
