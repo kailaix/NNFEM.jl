@@ -73,8 +73,9 @@ function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, 
   # @info "* ", E_all, DE_all, σ0_all
   σ_all = nn(E_all, DE_all, σ0_all)
   fints = squeeze(tf.matmul(w∂E∂u_all, tf.expand_dims(σ_all,2)))
-  Fint2 = cpp_fint(fints,constant(el_eqns_all, dtype=Int32),constant(domain.neqs, dtype=Int32))
+  Fint = cpp_fint(fints,constant(el_eqns_all, dtype=Int32),constant(domain.neqs, dtype=Int32))
 
+#=
   # @info "* *** "
 
   # cast to tensorflow variable
@@ -133,7 +134,7 @@ function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, 
   
   op = tf.print("Error = ", norm(Fint - Fint2))
   Fint = bind(Fint, op)
-
+=#
   # op = tf.print("E_all", E_all, summarize=-1)
   # Fint = bind(Fint, op)
   # op = tf.print("σ", σ_all, summarize=-1)
