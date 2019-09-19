@@ -49,3 +49,5 @@ deps/build.jl
 *.pkl
 !deps/CustomOp/FintComp/CMakeLists.txt
 !deps/CustomOp/FintComp/customop.txt
+!deps/CustomOp/OrthotropicOp/CMakeLists.txt
+!deps/CustomOp/SymOps/CMakeLists.txt

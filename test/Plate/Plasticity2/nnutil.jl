@@ -3,11 +3,7 @@ include("CommonFuncs.jl")
 threshold = 1e-5
 wgt_func = x->1. + 100x^3
 
-function get_matrix(o::AbstractArray)
-    [o[1] o[2] o[3];
-    o[2] o[4] o[5];
-    o[3] o[5] o[6]]
-end
+
 
 if length(ARGS)==1
     global idx = parse(Int64, ARGS[1])
@@ -16,13 +12,13 @@ else
 end
 
 if idx == 0
-    global config=[20,20,20,20,6]
+    global config=[20,20,20,20,4]
 elseif idx == 1
-    global config=[20,20,20,20,20,6] 
+    global config=[20,20,20,20,20,4] 
 elseif idx == 2
-    global config=[20,20,20,20,20,20,6] 
+    global config=[20,20,20,20,20,20,4] 
 elseif idx == 3
-    global config=[20,20,20,20,20,20,20,6] 
+    global config=[20,20,20,20,20,20,20,4] 
 end
 printstyled("idx = $idx, config=$config", color=:green)
 
@@ -49,7 +45,13 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
         σ0 = constant(σ0)
         
         y = ae(x, config, nntype)
-        z = tf.reshape(sym_op(y), (-1,3,3))
+        # z = orthotropic_H(y)
+        @show y
+        # y = NNFEM.orthotropic_op(y)
+        y = constant(rand(size(y,1), 9))
+    @show y
+        z = tf.reshape(y, (-1,3,3)) 
+
         σnn = squeeze(tf.matmul(z, tf.reshape((ε-ε0)/strain_scale, (-1,3,1)))) 
         σH = (ε-ε0)/strain_scale * H0
         z = sum(ε^2,dims=2)
@@ -83,7 +85,7 @@ function nn_helper(ε, ε0, σ0)
         ε0 = ε0/strain_scale
         σ0 = σ0/stress_scale
         x = reshape([ε;ε0;σ0],1, 9)
-        y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*get_matrix(nnpiecewise(x))
+        y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*orthotropic_H(nnpiecewise(x))
         y1 = reshape(y1, 3, 1)
         y2 = reshape((reshape(ε, 1, 3) - reshape(ε0, 1, 3))*H0, 3,1)
         # y2 = reshape(reshape(ε,1,3)*H0,3,1)

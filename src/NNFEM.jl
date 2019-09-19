@@ -15,17 +15,22 @@ cmx = PyNULL()
 clb = PyNULL()
 
 cpp_fint = nothing
+# sym_op = nothing
+orthotropic_op = nothing
 function __init__()
-    global jet, cpp_fint
+    global jet, cpp_fint, orthotropic_op, sym_op
     copy!(animation, pyimport("matplotlib.animation"))
     copy!(colors, pyimport("matplotlib.colors"))
     copy!(cmx, pyimport("matplotlib.cm"))
     jet = plt.get_cmap("jet")
     copy!(clb, pyimport("matplotlib.colorbar"))
     cpp_fint = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/FintComp/build/libFintComp", "fint_comp")
+    orthotropic_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/OrthotropicOp/build/libOrthotropicOp", "orthotropic_op")
+    # sym_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/SymOp/build/libSymOp", "sym_op")
 end
 
 include("utils/shapeFunctions.jl")
+include("utils/matrix.jl")
 include("materials/PlaneStress.jl")
 include("materials/PlaneStrain.jl")
 include("materials/PlaneStressPlasticity.jl")
