@@ -47,3 +47,5 @@ deps/build.jl
 *.txt
 *.nfs*
 *.pkl
+!deps/CustomOp/FintComp/CMakeLists.txt
+!deps/CustomOp/FintComp/customop.txt
