@@ -21,32 +21,8 @@ H0 = [1.04167e6  2.08333e5  0.0
       2.08333e5  1.04167e6  0.0      
       0.0        0.0        4.16667e5]/stress_scale
 
-s = ae_to_code("Data/nn_train0.mat", "piecewise")
-
-      #aedictpiecewise = matread("Data/order1/learned_nn_5.0_1.mat"); # using MAT
-      aedictpiecewise = matread("Data/nn_train0.mat"); # using MAT
-      Wkey = "piecewisebackslashfully_connectedbackslashweightscolon0"
-      Wkey = "piecewisebackslashfully_connected_1backslashweightscolon0"
-      Wkey = "piecewisebackslashfully_connected_2backslashweightscolon0"
-      Wkey = "piecewisebackslashfully_connected_3backslashweightscolon0"
-      Wkey = "piecewisebackslashfully_connected_4backslashweightscolon0"
-      function nnpiecewise(net)
-              W0 = aedictpiecewise["piecewisebackslashfully_connectedbackslashweightscolon0"]; b0 = aedictpiecewise["piecewisebackslashfully_connectedbackslashbiasescolon0"];
-              isa(net, Array) ? (net = net * W0 .+ b0') : (net = net *W0 + b0)
-              isa(net, Array) ? (net = tanh.(net)) : (net=tanh(net))
-              W1 = aedictpiecewise["piecewisebackslashfully_connected_1backslashweightscolon0"]; b1 = aedictpiecewise["piecewisebackslashfully_connected_1backslashbiasescolon0"];
-              isa(net, Array) ? (net = net * W1 .+ b1') : (net = net *W1 + b1)
-              isa(net, Array) ? (net = tanh.(net)) : (net=tanh(net))
-              W2 = aedictpiecewise["piecewisebackslashfully_connected_2backslashweightscolon0"]; b2 = aedictpiecewise["piecewisebackslashfully_connected_2backslashbiasescolon0"];
-              isa(net, Array) ? (net = net * W2 .+ b2') : (net = net *W2 + b2)
-              isa(net, Array) ? (net = tanh.(net)) : (net=tanh(net))
-              W3 = aedictpiecewise["piecewisebackslashfully_connected_3backslashweightscolon0"]; b3 = aedictpiecewise["piecewisebackslashfully_connected_3backslashbiasescolon0"];
-              isa(net, Array) ? (net = net * W3 .+ b3') : (net = net *W3 + b3)
-              isa(net, Array) ? (net = tanh.(net)) : (net=tanh(net))
-              W4 = aedictpiecewise["piecewisebackslashfully_connected_4backslashweightscolon0"]; b4 = aedictpiecewise["piecewisebackslashfully_connected_4backslashbiasescolon0"];
-              isa(net, Array) ? (net = net * W4 .+ b4') : (net = net *W4 + b4)
-              return net
-      end 
+s = ae_to_code("Data/nn_train2.mat", "piecewise")
+eval(Meta.parse(s))
 # density 4.5*(1 - 0.25) + 3.2*0.25
 #fiber_fraction = 0.25
 #todo

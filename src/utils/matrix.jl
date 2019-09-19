@@ -14,13 +14,13 @@ function orthotropic_H(y::PyObject)
     return z
 end
 
-function sym_H(o::Array{Float64})
+function sym_H(o::Array)
     [o[1] o[2] o[3];
     o[2] o[4] o[5];
     o[3] o[5] o[6]]
 end
 
-function orthotropic_H(o::Array{Float64})
+function orthotropic_H(o::Array)
     [o[1] o[2] 0.0;
     o[2] o[3] 0.0;
     0.0 0.0 o[4]]

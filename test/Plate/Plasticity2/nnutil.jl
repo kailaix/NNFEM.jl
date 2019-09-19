@@ -12,13 +12,11 @@ else
 end
 
 if idx == 0
-    global config=[20,20,20,20,4]
+    global config=[20,20,20,4]
 elseif idx == 1
-    global config=[20,20,20,20,20,4] 
+    global config=[20,20,20,20,4] 
 elseif idx == 2
-    global config=[20,20,20,20,20,20,4] 
-elseif idx == 3
-    global config=[20,20,20,20,20,20,20,4] 
+    global config=[20,20,20,20,20,4] 
 end
 printstyled("idx = $idx, config=$config", color=:green)
 
@@ -54,8 +52,8 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
         # i = sigmoid(1e9*(z-(threshold)^2))
         i = sigmoid(1e6*(z-threshold))        
         i = [i i i]
-        #out = σnn .* i + σH .* (1-i)  + σ0/stress_scale
-        out = σnn .* i + σH + σ0/stress_scale
+        out = σnn .* i + σH .* (1-i)  + σ0/stress_scale
+        # out = σnn .* i + σH + σ0/stress_scale
         out*stress_scale
     else
         error("$nntype does not exist")
@@ -87,8 +85,8 @@ function nn_helper(ε, ε0, σ0)
         # y2 = reshape(reshape(ε,1,3)*H0,3,1)
         i = sigmoid_(1e6*(norm(ε)^2-threshold))
         # @show y1 * i
-        #out = y1 * i + y2 * (1-i)  + reshape(σ0, 3, 1)
-        out = y1 * i + y2 + reshape(σ0, 3, 1)
+        out = y1 * i + y2 * (1-i)  + reshape(σ0, 3, 1)
+        # out = y1 * i + y2 + reshape(σ0, 3, 1)
         out*stress_scale
     else
         error("$nntype does not exist")
