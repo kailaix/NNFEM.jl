@@ -14,3 +14,4 @@ end
 buildops("test/Plate/MultiScale/Ops/Sym")
 buildops("test/Plate/Hyperelasticity/Ops/Sym")
 buildops("test/Plate/Plasticity/Ops/Sym")
+buildops("deps/CustomOp/FintComp")

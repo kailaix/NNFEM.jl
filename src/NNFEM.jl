@@ -14,13 +14,15 @@ colors = PyNULL()
 cmx = PyNULL()
 clb = PyNULL()
 
+cpp_fint = nothing
 function __init__()
-    global jet
+    global jet, cpp_fint
     copy!(animation, pyimport("matplotlib.animation"))
     copy!(colors, pyimport("matplotlib.colors"))
     copy!(cmx, pyimport("matplotlib.cm"))
     jet = plt.get_cmap("jet")
     copy!(clb, pyimport("matplotlib.colorbar"))
+    cpp_fint = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/FintComp/build/libFintComp", "fint_comp")
 end
 
 include("utils/shapeFunctions.jl")

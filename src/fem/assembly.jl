@@ -72,6 +72,8 @@ function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, 
   # get stress at each Gaussian points
   # @info "* ", E_all, DE_all, σ0_all
   σ_all = nn(E_all, DE_all, σ0_all)
+  fints = squeeze(tf.matmul(w∂E∂u_all, tf.expand_dims(σ_all,2)))
+  Fint2 = cpp_fint(fints,constant(el_eqns_all, dtype=Int32),constant(domain.neqs, dtype=Int32))
 
   # @info "* *** "
 
@@ -82,7 +84,8 @@ function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, 
   el_eqns_all = constant(el_eqns_all, dtype=Int64)
   # cast to tensorflow variable  
 
-  fints = squeeze(tf.matmul(w∂E∂u_all, tf.expand_dims(σ_all,2)))
+  
+
 
   # * while loop
   function cond0(i, tensor_array_Fint)
@@ -127,6 +130,9 @@ function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, 
 
   Fint = sum(out, dims=1)
 
+  
+  op = tf.print("Error = ", norm(Fint - Fint2))
+  Fint = bind(Fint, op)
 
   # op = tf.print("E_all", E_all, summarize=-1)
   # Fint = bind(Fint, op)
