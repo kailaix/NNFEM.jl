@@ -5,7 +5,8 @@ include("nnutil.jl")
 
 # H0 = constant(H1/stress_scale)
 testtype = "NeuralNetwork2D"
-force_scale = 5.0
+# force_scale = 5.0
+force_scales = [4.0,5.0,6.0]
 nntype = "piecewise"
 
 # ! define H0
@@ -80,7 +81,7 @@ end
 # end
 
 
-function compute_loss(tid)
+function compute_loss(tid, force_scale)
     nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder)
     domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
     state = zeros(domain.neqs)
@@ -132,16 +133,20 @@ for j = 1:ny
     end
 end
 
-losses = Array{PyObject}(undef, length(n_data))
-for (k, i) in enumerate(n_data)
-    losses[k] = compute_loss(i)
+losses = Array{PyObject}(undef, length(n_data)*length(force_scales))
+k = 1
+for i in n_data
+    global k
+    for force_scale in force_scales
+        losses[k] = compute_loss(i, force_scale)
+        k += 1
+    end
 end
 
 @show stress_scale^2
 loss = sum(losses)/stress_scale^2
 
-config = tf.ConfigProto(device_count=Dict("CPU"=>10))
-sess = Session(config=config); init(sess)
+sess = Session(); init(sess)
 # ADCME.load(sess, "$(@__DIR__)/Data/order1/learned_nn_5.0_1.mat")
 # ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
 @info run(sess, loss)
