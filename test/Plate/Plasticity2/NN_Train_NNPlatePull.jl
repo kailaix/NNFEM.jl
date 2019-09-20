@@ -152,6 +152,7 @@ sess = Session(); init(sess)
 @info run(sess, loss)
 # error()
 for i = 1:100
+    println("************************** Outer Iteration = $i ************************** ")
     BFGS!(sess, loss, 200)
     ADCME.save(sess, "$(@__DIR__)/Data/nn_train$idx.mat")
 end
