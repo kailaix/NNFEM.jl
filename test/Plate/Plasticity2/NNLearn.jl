@@ -10,7 +10,7 @@ stress_scale = 1e5
 strain_scale = 1.0
 force_scale = 5.0
 fiber_size = 1
-porder = 1
+porder = 2
 
 include("nnutil.jl")
 
@@ -36,8 +36,8 @@ end
 sess = Session(); init(sess)
 @show run(sess, loss)
 # ADCME.load(sess, "Data/order$porder/learned_nn.mat")
-for i = 1:8
-    BFGS!(sess, loss, 15000)
+for i = 1:10
+    BFGS!(sess, loss, 1000)
     ADCME.save(sess, "Data/order$porder/learned_nn_$(force_scale)_$(fiber_size).mat")
 end
 

@@ -10,8 +10,6 @@ function buildops(dirname)
     cd(PWD)
 end
 
-
-buildops("test/Plate/MultiScale/Ops/Sym")
-buildops("test/Plate/Hyperelasticity/Ops/Sym")
-buildops("test/Plate/Plasticity/Ops/Sym")
 buildops("deps/CustomOp/FintComp")
+buildops("deps/CustomOp/SymOp")
+buildops("deps/CustomOp/OrthotropicOp")

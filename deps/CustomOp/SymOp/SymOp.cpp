@@ -19,7 +19,7 @@ REGISTER_OP("SymOp")
         // shape_inference::ShapeHandle x_shape;
         // TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &x_shape));
 
-        // c->set_output(0, c->Matrix(c->Dim(c->input(0),0),9));
+        c->set_output(0, c->Vector(-1));
     return Status::OK();
   });
 class SymOpOp : public OpKernel {

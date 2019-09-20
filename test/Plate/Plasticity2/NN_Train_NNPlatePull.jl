@@ -140,13 +140,13 @@ end
 @show stress_scale^2
 loss = sum(losses)/stress_scale^2
 
-config = tf.ConfigProto(device_count=Dict("CPU"=>10))
-sess = Session(config=config); init(sess)
+sess = Session(); init(sess)
 # ADCME.load(sess, "$(@__DIR__)/Data/order1/learned_nn_5.0_1.mat")
 # ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
 @info run(sess, loss)
 # error()
 for i = 1:100
+    println("************************** Outer Iteration = $i ************************** ")
     BFGS!(sess, loss, 200)
     ADCME.save(sess, "$(@__DIR__)/Data/nn_train$idx.mat")
 end
