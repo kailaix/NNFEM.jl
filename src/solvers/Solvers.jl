@@ -286,6 +286,7 @@ function AdaptiveSolver(solvername, globdat, domain, T, NT, args)
         αf = ρ_oo/(ρ_oo + 1)
 
         convergeCounter = 0
+        # error()
         while t < T
             if t + dt > T 
                 dt = T - t

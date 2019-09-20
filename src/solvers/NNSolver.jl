@@ -16,7 +16,7 @@ export DynamicMatLawLoss, preprocessing, fitlinear, DebugDynamicMatLawLoss
 function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all::Array{Float64},
      F_tot::Array{Float64}, nn::Function; loss_weights::Union{Function, Missing}=missing)
     # todo, use fint instead of computed F_tot 
-    # F_tot =  hcat(domain.history["fint"]...)'
+    F_tot =  hcat(domain.history["fint"]...)'
     # define variables
     neles = domain.neles
     nGauss = length(domain.elements[1].weights)
@@ -25,6 +25,13 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all:
     NT = size(E_all,1)-1
     @assert size(E_all)==(NT+1, neles*nGauss, nstrains)
     @assert size(F_tot)==(NT, domain.neqs)
+
+    Stress_tot = zeros(NT+1, size(domain.history["stress"][1])...)
+    for i = 2:NT+1
+        Stress_tot[i,:,:] = domain.history["stress"][i-1]
+    end
+    Stress_tot = constant(Stress_tot)
+
     # @show E_all[2,:,:]
     E_all = constant(E_all)
     F_tot = constant(F_tot)
@@ -39,9 +46,11 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all:
         E = E_all[i]
         DE = E_all[i-1]
         w∂E∂u = w∂E∂u_all[i]
-        σ0 = read(ta_σ, i-1)
+        σ0 = read(ta_σ, i-1) # 450x3
         
-        fint, σ = tfAssembleInternalForce(domain,nn,E,DE,w∂E∂u,σ0)
+        # fint, σ = tfAssembleInternalForce(domain,nn,E,DE,w∂E∂u,σ0)
+        fint, σ = tfAssembleInternalForce(domain,nn,E,DE,w∂E∂u,Stress_tot[i-1])
+        # σ = nn(E, DE, Stress_tot[i-1])
         
         # op = tf.print(i, fint, summarize=-1)
         # fint = bind(fint, op)
@@ -51,10 +60,19 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all:
 
         # op = tf.print("F_tot",F_tot[i-1], summarize=-1)
         # i = bind(i, op)
-
+        
+        
 
         ta_σ = write(ta_σ, i, σ)
         ta_loss = write(ta_loss, i, sum((fint-F_tot[i-1])^2))
+        # ta_loss = write(ta_loss, i, sum((σ-Stress_tot[i])^2))
+        
+        # op = tf.cond(tf.equal(i, 2),
+        #     ()->tf.print(fint-F_tot[i-1], summarize=-1),
+        #     ()->tf.no_op()
+        # )
+        # i = bind(i, op)
+
         i+1, ta_loss, ta_σ
     end
 
@@ -64,14 +82,15 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all:
     i = constant(2, dtype=Int32)
     _, out, _ = while_loop(cond0, body, [i,ta_loss, ta_σ]; parallel_iterations=20)
 
-    if ismissing(loss_weights)
-        loss_weights = x->1.0
-    end
-    weights = loss_weights.((2:NT)/NT)
+    # if ismissing(loss_weights)
+    #     loss_weights = x->1.0
+    # end
+    # weights = loss_weights.((2:NT)/NT)
 
-    total_loss = sum(stack(out)[2:NT] .* weights)
+    total_loss = sum(stack(out)[2:NT])
     return total_loss
 end
+
 
 function DebugDynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all::Array{Float64},
     F_tot::Array{Float64}, nn::Function)

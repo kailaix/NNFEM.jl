@@ -4,24 +4,26 @@ using Random
 using PyCall
 np = pyimport("numpy")
 
+kx = 1
+ky = 2
 function hidden_function(x, x_, y_)
-    y = sin(x^2+x_^2+y_^2)
+    y = [(sum(x)+sum(x_)+sum(y_))/4; (sum(x)+sum(x_)+sum(y_))/4]
     return y
 end
 
 function generate_data(xs, y0)
-    n = length(xs)
-    ys = zeros(n)
-    ys[1] = y0
+    n = size(xs,1)
+    ys = zeros(n,ky)
+    ys[1,:] = y0
     for i = 2:n 
-        ys[i] = hidden_function(xs[i], xs[i-1], ys[i-1])
+        ys[i,:] = hidden_function(xs[i,:], xs[i-1,:], ys[i-1,:])
     end
     ys 
 end
 
 function sample(n)
-    xs = rand(n)
-    y0 = rand()
+    xs = rand(n, kx)
+    y0 = rand(ky)
     ys = generate_data(xs, y0)
     return xs, ys 
 end
@@ -29,11 +31,11 @@ end
 
 function compute_loss(xs, ys, nn)
     loss = constant(0.0)
-    n = length(xs)
-    y = constant(ys[1])
+    n = size(xs,1)
+    y = constant(ys[1,:])
     for i = 2:n
-        y = nn(constant(xs[i]), constant(xs[i-1]), y)
-        loss += (ys[i]-y)^2
+        y = nn(constant(xs[i,:]), constant(xs[i-1,:]), y)
+        loss += sum((ys[i,:]-y)^2)
     end
     return loss
 end
@@ -41,8 +43,9 @@ end
 function nn(x, x_, y_)
     ipt = reshape([x;x_;y_], 1, :)
     # @show ipt
-    out = ae(ipt, [20,20,20,20,1])
+    out = ae(ipt, [20,20,20,20,20,ky])
     squeeze(out)
+    # out = [sin(sum(x)^2+sum(x_)^2+sum(y_)^2); cos(sum(x)^2+sum(x_)^2+sum(y_)^2)]
 end
 
 function train!(sess, nn)
@@ -51,6 +54,7 @@ function train!(sess, nn)
     loss = compute_loss(xs, ys, nn)
     init(sess)
     BFGS!(sess, loss)
+    # @show run(sess, loss)
     xs, ys
 end
 
@@ -73,4 +77,4 @@ end
 
 sess = Session()
 train!(sess, nn)
-verify(sess)
+# verify(sess)

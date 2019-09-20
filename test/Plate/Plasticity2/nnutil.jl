@@ -50,7 +50,11 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
         σH = (ε-ε0)/strain_scale * H0
         z = sum(ε^2,dims=2)
         # i = sigmoid(1e9*(z-(threshold)^2))
-        i = sigmoid(1e6*(z-threshold))        
+        i = sigmoid(1e6*(z-threshold))      
+        
+        # op = tf.print("sigmoid", i, summarize=-1)  
+        # i = bind(i, op)
+
         i = [i i i]
         out = σnn .* i + σH .* (1-i)  + σ0/stress_scale
         # out = σnn .* i + σH + σ0/stress_scale

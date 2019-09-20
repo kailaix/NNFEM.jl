@@ -82,7 +82,8 @@ end
 
 function compute_loss(tid)
     nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder)
-    domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
+    # domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
+    @load  "Data/order$porder/domain$(tid)_$(force_scale)_$(fiber_size).jld2" domain
     state = zeros(domain.neqs)
     ∂u = zeros(domain.neqs)
     globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
@@ -141,9 +142,9 @@ end
 loss = sum(losses)/stress_scale^2
 
 sess = Session(); init(sess)
-# ADCME.load(sess, "$(@__DIR__)/Data/order1/learned_nn_5.0_1.mat")
-# ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
-@info run(sess, loss)
+# ADCME.load(sess, "$(@__DIR__)/Data/order2/learned_nn_5.0_1.mat")
+# ADCME.load(sess, "Data/nn_train$idx.mat")
+# @info run(sess, loss)
 # error()
 for i = 1:100
     println("************************** Outer Iteration = $i ************************** ")

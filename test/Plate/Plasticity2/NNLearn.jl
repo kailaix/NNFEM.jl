@@ -29,12 +29,14 @@ for tid in n_data
     x = constant(X)
     y = nn(X[:,1:3], X[:,4:6], X[:,7:9])
 
-    loss += mean((y-Y)^2)/stress_scale^2
+    loss += sum((y-Y)^2)/stress_scale^2
 end
 
 
 sess = Session(); init(sess)
+ADCME.load(sess, "$(@__DIR__)/Data/order2/learned_nn_5.0_1.mat")
 @show run(sess, loss)
+error()
 # ADCME.load(sess, "Data/order$porder/learned_nn.mat")
 for i = 1:10
     BFGS!(sess, loss, 1000)
