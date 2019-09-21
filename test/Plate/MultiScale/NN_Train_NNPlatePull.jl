@@ -1,8 +1,11 @@
+stress_scale = 1.0e5
+strain_scale = 1
+
 include("nnutil.jl")
 
 # H0 = constant(H1/stress_scale)
 testtype = "NeuralNetwork2D"
-force_scale = 6.0
+force_scales = [5.0]
 nntype = "piecewise"
 
 # ! define H0
@@ -12,7 +15,7 @@ H0 = [1.26827e6       3.45169e5   -5187.35
       -5187.35       -10791.7        536315.0]
 
 
-n_data = [100, 201, 202, 203]
+n_data = [100, 200, 201, 202, 203]
 porder = 2
 # density 4.5*(1 - 0.25) + 3.2*0.25
 fiber_fraction = 0.25
@@ -48,37 +51,37 @@ for idof = 1:ndofs
     end
 end
 
-#todo only for first order
-function compute_fine_to_coarse_fext(tid)
-    @assert(porder == 1)
-    # Attention fix left
-    if div(tid,100)==1 # fix bottom
-        fine_to_coarse_fext = zeros(Int64, ndofs*(nx + 1)* ny)
-        for idof = 1:ndofs
-            for iy = 1:ny
-                for ix = 1:nx + 1
-                    fine_to_coarse_fext[ix + (iy - 1)*(nx + 1) + (idof-1)*(nx + 1)*ny] =
-                     1 + (nx_f + 1) * (sy_f - 1)  + (iy - 1) * (nx_f + 1) * sy_f + (nx_f + 1)*ny_f*(idof - 1)
-                end
-            end
-        end
+# #todo only for first order
+# function compute_fine_to_coarse_fext(tid)
+#     @assert(porder == 1)
+#     # Attention fix left
+#     if div(tid,100)==1 # fix bottom
+#         fine_to_coarse_fext = zeros(Int64, ndofs*(nx + 1)* ny)
+#         for idof = 1:ndofs
+#             for iy = 1:ny
+#                 for ix = 1:nx + 1
+#                     fine_to_coarse_fext[ix + (iy - 1)*(nx + 1) + (idof-1)*(nx + 1)*ny] =
+#                      1 + (nx_f + 1) * (sy_f - 1)  + (iy - 1) * (nx_f + 1) * sy_f + (nx_f + 1)*ny_f*(idof - 1)
+#                 end
+#             end
+#         end
 
-    elseif div(tid,100)==2 # fix left
-        fine_to_coarse_fext = zeros(Int64, ndofs*nx*(ny+1))
-        for idof = 1:ndofs
-            for iy = 1:ny+1
-                for ix = 1:nx
-                    fine_to_coarse_fext[ix + (iy - 1)*(nx) + (idof-1)*(nx)*(ny+1)] = sx_f + (ix - 1) * sx_f + (iy - 1) * (nx_f) * sy_f + (nx_f)*(ny_f + 1)*(idof - 1)
-                end
-            end
-        end
-    end
-    fine_to_coarse_fext
-end
+#     elseif div(tid,100)==2 # fix left
+#         fine_to_coarse_fext = zeros(Int64, ndofs*nx*(ny+1))
+#         for idof = 1:ndofs
+#             for iy = 1:ny+1
+#                 for ix = 1:nx
+#                     fine_to_coarse_fext[ix + (iy - 1)*(nx) + (idof-1)*(nx)*(ny+1)] = sx_f + (ix - 1) * sx_f + (iy - 1) * (nx_f) * sy_f + (nx_f)*(ny_f + 1)*(idof - 1)
+#                 end
+#             end
+#         end
+#     end
+#     fine_to_coarse_fext
+# end
 
 
-function compute_loss(tid)
-    nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder)
+function compute_loss(tid, force_scale)
+    nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder, force_scale)
     domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
     state = zeros(domain.neqs)
     ∂u = zeros(domain.neqs)
@@ -97,15 +100,12 @@ function compute_loss(tid)
         updateDomainStateBoundary!(domain, globdat)
         push!(fext_history, domain.fext[:])
     end
-    loss = DebugDynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
-    sum_loss = DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt; loss_weights=wgt_func)
-    loss, sum_loss
+    sum_loss = DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
 end
 
 
 Δt = T/NT
-stress_scale = 1.0
-strain_scale = 1
+
 
 nodes, _, _, _, _, _, _ = BoundaryCondition(n_data[1], nx, ny, porder)
 elements = []
@@ -132,27 +132,26 @@ for j = 1:ny
     end
 end
 
-losses = Array{PyObject}(undef, length(n_data))
-debug_losses = Array{PyObject}(undef, length(n_data))
-for (k, i) in enumerate(n_data)
-    debug_losses[k], losses[k] = compute_loss(i)
+losses = Array{PyObject}(undef, length(n_data)*length(force_scales))
+k = 1
+for i in n_data
+    global k
+    for force_scale in force_scales
+        losses[k] = compute_loss(i, force_scale)
+        k += 1
+    end
 end
+
+@show stress_scale^2
 loss = sum(losses)/stress_scale^2
 
 sess = Session(); init(sess)
-# ADCME.load(sess, "$(@__DIR__)/Data/learned_nn.mat")
+# ADCME.load(sess, "$(@__DIR__)/Data/order1/learned_nn_5.0_1.mat")
 # ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
-writedlm("$(@__DIR__)/Debug/order$porder/initial_loss_$(force_scale)_$(fiber_size).dat", hcat(run(sess, debug_losses)...))
 @info run(sess, loss)
 # error()
-BFGS!(sess, loss, 2000)
-writedlm("$(@__DIR__)/Debug/order$porder/terminal_loss_$(force_scale)_$(fiber_size).dat", hcat(run(sess, debug_losses)...))
-
-# ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
-# ADCME.load(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
-# BFGS!(sess, loss, 5000)
-# ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
-# BFGS!(sess, loss, 5000)
-
-
-ADCME.save(sess, "$(@__DIR__)/Data/nn_train$idx.mat")
+for i = 1:100
+    println("************************** Outer Iteration = $i ************************** ")
+    BFGS!(sess, loss, 200)
+    ADCME.save(sess, "$(@__DIR__)/Data/nn_train$idx.mat")
+end

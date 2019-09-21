@@ -13,48 +13,6 @@ using DelimitedFiles
 
 np = pyimport("numpy")
 
-do_load = true 
-if do_load
-if Sys.islinux()
-py"""
-import tensorflow as tf
-libSymOp = tf.load_op_library('Ops/Sym/build/libSymOp.so')
-@tf.custom_gradient
-def sym_op(x):
-    y = libSymOp.sym_op(x)
-    def grad(dy):
-        return libSymOp.sym_op_grad(dy, y, x)
-    return y, grad
-"""
-elseif Sys.isapple()
-py"""
-import tensorflow as tf
-libSymOp = tf.load_op_library('Ops/Sym/build/libSymOp.dylib')
-@tf.custom_gradient
-def sym_op(x):
-    y = libSymOp.sym_op(x)
-    def grad(dy):
-        return libSymOp.sym_op_grad(dy, y, x)
-    return y, grad
-"""
-elseif Sys.iswindows()
-py"""
-import tensorflow as tf
-libSymOp = tf.load_op_library('Ops/Sym/build/libSymOp.dll')
-@tf.custom_gradient
-def sym_op(x):
-    y = libSymOp.sym_op(x)
-    def grad(dy):
-        return libSymOp.sym_op_grad(dy, y, x)
-    return y, grad
-"""
-end
-    
-global sym_op = py"sym_op"
-end
-
-
-
 
 
 """
@@ -267,7 +225,7 @@ function ComputeLoad(L, ne, porder, ngp, type,  args)
 end
 
 
-function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5)
+function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5, force_scale=5.0)
     nnodes, neles = (nx*porder + 1)*(ny*porder + 1), nx*ny
     Lx, Ly = 1.0, 0.5
     x = np.linspace(0.0, Lx, nx*porder + 1)
@@ -348,7 +306,7 @@ function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5)
     end
 
     dof_to_active = findall(FBC[:].==-2)
-    ft = t->fext[:][dof_to_active]*sin(π*t/(T))
+    ft = t->fext[:][dof_to_active]*sin(π*t/(2T))
     # @show ft(T)
     return nodes, EBC, g, gt, FBC, fext, ft
 end
