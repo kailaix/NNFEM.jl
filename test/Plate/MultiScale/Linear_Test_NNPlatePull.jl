@@ -1,4 +1,6 @@
-# tid = parse(Int64, ARGS[1])
+stress_scale = 1.0e+5
+strain_scale = 1
+
 force_scale = 50.0
 tid = 203  
 # if Sys.MACHINE=="x86_64-pc-linux-gnu"
@@ -13,9 +15,11 @@ testtype = "NeuralNetwork2D"
 nntype = "linear"
 include("nnutil.jl")
 
-H0 = [1.26827e6       3.45169e5   -5187.35
-      3.45169e5       1.25272e6  -10791.7
-      -5187.35       -10791.7        536315.0]
+# H0 = [1.26827e6       3.45169e5   -5187.35
+#       3.45169e5       1.25272e6  -10791.7
+#       -5187.35       -10791.7        536315.0]
+H0 = readdlm("$(@__DIR__)/Data/H0.txt")
+@info H0
 
 # density 4.5*(1 - 0.25) + 3.2*0.25
 fiber_fraction = 0.25
@@ -29,7 +33,7 @@ NT = 100
 # nx_f, ny_f = 12, 4
 # homogenized computaional domain
 # number of elements in each directions
-nx, ny = 20, 10
+nx, ny = 10, 5
 
 porder = 2
 
@@ -71,46 +75,35 @@ globdat = GlobalData(state,zeros(domain.neqs)
 assembleMassMatrix!(globdat, domain)
 updateStates!(domain, globdat)
 
-Δt = T/NT
-stress_scale = 1
-strain_scale = 1
 
 
-ρ_oo = 0.0
-αm = (2*ρ_oo - 1)/(ρ_oo + 1)
-αf = ρ_oo/(ρ_oo + 1)
-for i = 1:NT
-    @info i, "/" , NT
-    solver = NewmarkSolver(Δt, globdat, domain, αm, αf, 1e-4, 1e-6, 10)
-    # close("all")
-    # visσ(domain,-1.5e9, 4.5e9)
-    # savefig("Debug/$i.png")
-    # error()
-    # if i==75
-    #     close("all")
-    #     visσ(domain)
-    #     # visσ(domain,-1.5e9, 4.5e9)
-    #     savefig("Debug/test$(tid)i=75.png")
-    # end
-end
+ts = LinRange(0, T, NT+1)
+adaptive_solver_args = Dict("Newmark_rho"=> 0.0, 
+                          "Newton_maxiter"=>10, 
+                          "Newton_Abs_Err"=>1e-4, 
+                          "Newton_Rel_Err"=>1e-6, 
+                          "damped_Newton_eta" => 1.0)
+
+globdat, domain, ts = AdaptiveSolver("NewmarkSolver", globdat, domain, T, NT, adaptive_solver_args)
+
 
 # plot
 close("all")
 visσ(domain)
-savefig("Debug/test$tid.png")
+savefig("Debug/linear_test$tid.png")
 
 close("all")
 visσ(domain)
 axis("equal")
-savefig("Debug/order$porder/test_stress$(tid)_$force_scale.png")
+savefig("Debug/order$porder/linear_test_stress$(tid)_$force_scale.png")
 
 close("all")
 ux = [reshape(domain.history["state"][i][1:(nx*porder+1)*(ny*porder+1)], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
-plot(ux)
-savefig("Debug/order$porder/test_ux$(tid)_$force_scale.png")
+plot(ts, ux)
+savefig("Debug/order$porder/linear_test_ux$(tid)_$force_scale.png")
 
 close("all")
 uy = [reshape(domain.history["state"][i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
-plot(uy)
-savefig("Debug/order$porder/test_uy$(tid)_$force_scale.png")
+plot(ts, uy)
+savefig("Debug/order$porder/linear_test_uy$(tid)_$force_scale.png")
 
