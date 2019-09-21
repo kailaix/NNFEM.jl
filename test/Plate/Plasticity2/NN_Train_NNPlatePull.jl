@@ -6,7 +6,7 @@ include("nnutil.jl")
 # H0 = constant(H1/stress_scale)
 testtype = "NeuralNetwork2D"
 # force_scale = 5.0
-force_scales = [4.0,5.0,6.0]
+force_scales = [5.0]
 nntype = "piecewise"
 
 # ! define H0
@@ -26,7 +26,7 @@ prop = Dict("name"=> testtype, "rho"=> 4.5, "nn"=>nn)
 
 
 T = 0.05
-NT = 200
+NT = 100
 
 # DNS computaional domain
 fiber_size = 1
@@ -82,7 +82,7 @@ end
 
 
 function compute_loss(tid, force_scale)
-    nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder)
+    nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder, force_scale )
     domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
     state = zeros(domain.neqs)
     ∂u = zeros(domain.neqs)

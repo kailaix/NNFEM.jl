@@ -3,7 +3,7 @@ strain_scale = 1
 
 # tid = parse(Int64, ARGS[1])
 force_scale = 5.0
-tid = 203
+tid = 200
 # if Sys.MACHINE=="x86_64-pc-linux-gnu"
 #    global tid = parse(Int64, ARGS[1])
 #    global force_scale = parse(Float64, ARGS[2])
@@ -21,7 +21,7 @@ H0 = [1.04167e6  2.08333e5  0.0
       2.08333e5  1.04167e6  0.0      
       0.0        0.0        4.16667e5]/stress_scale
 
-s = ae_to_code("Data/nn_train2.mat", "piecewise")
+s = ae_to_code("Data/nn_train0.mat", "piecewise")
 eval(Meta.parse(s))
 # density 4.5*(1 - 0.25) + 3.2*0.25
 #fiber_fraction = 0.25
@@ -29,7 +29,7 @@ eval(Meta.parse(s))
 prop = Dict("name"=> testtype, "rho"=> 4.5, "nn"=>post_nn)
 
 T = 0.05
-NT = 200
+NT = 100
 
 # nx_f, ny_f = 12, 4
 # homogenized computaional domain

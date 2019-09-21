@@ -12,11 +12,11 @@ else
 end
 
 if idx == 0
-    global config=[20,20,20,4]
+    global config=[20,20,20,6]
 elseif idx == 1
-    global config=[20,20,20,20,4] 
+    global config=[20,20,20,20,6] 
 elseif idx == 2
-    global config=[20,20,20,20,20,4] 
+    global config=[20,20,20,20,20,6] 
 end
 printstyled("idx = $idx, config=$config", color=:green)
 
@@ -43,7 +43,7 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
         σ0 = constant(σ0)
         
         y = ae(x, config, nntype)
-        z = orthotropic_H(y)
+        z = sym_H(y)
 
 
         σnn = squeeze(tf.matmul(z, tf.reshape((ε-ε0)/strain_scale, (-1,3,1)))) 
@@ -79,7 +79,7 @@ function nn_helper(ε, ε0, σ0)
         ε0 = ε0/strain_scale
         σ0 = σ0/stress_scale
         x = reshape([ε;ε0;σ0],1, 9)
-        y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*orthotropic_H(nnpiecewise(x))
+        y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*sym_H(nnpiecewise(x))
         y1 = reshape(y1, 3, 1)
         y2 = reshape((reshape(ε, 1, 3) - reshape(ε0, 1, 3))*H0, 3,1)
         # y2 = reshape(reshape(ε,1,3)*H0,3,1)

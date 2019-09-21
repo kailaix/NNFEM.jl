@@ -26,7 +26,7 @@ prop = Dict("name"=> "PlaneStressPlasticity","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.2
 
 
 T = 0.05
-NT = 200
+NT = 100
 
 
 
