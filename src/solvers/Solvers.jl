@@ -33,7 +33,7 @@ function ExplicitSolver(Δt, globdat, domain)
     domain.state[domain.eq_to_dof] = u[:]
     fint  = assembleInternalForce( globdat, domain, Δt)
 
-    @show fint, fext
+    #@show fint, fext
 
     if length(globdat.M)==0
         error("globalDat is not initialized, call `assembleMassMatrix!(globaldat, domain)`")

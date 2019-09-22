@@ -1,6 +1,6 @@
 # tid = parse(Int64, ARGS[1])
 force_scale = 5.0 #50
-tid = 200 
+tid = 200
 fiber_size = 1
 porder = 2
 if length(ARGS) == 4
@@ -82,8 +82,8 @@ for i = 1:NT
     @info i, "/" , NT
 
     
-    #solver = NewmarkSolver(Δt, globdat, domain, αm, αf, 1e-4, 1e-6, 10)
-    solver = ExplicitSolver(Δt, globdat, domain)
+    solver = NewmarkSolver(Δt, globdat, domain, αm, αf, 1e-4, 1e-6, 10)
+    #solver = ExplicitSolver(Δt, globdat, domain)
     #solver = NewmarkSolver(Δt, globdat, domain, 0.5, 0.5, 1e-4, 1e-6, 10)
     # close("all")
     # visσ(domain)

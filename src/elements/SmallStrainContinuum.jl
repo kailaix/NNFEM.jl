@@ -100,6 +100,8 @@ function getInternalForce(self::SmallStrainContinuum, state::Array{Float64}, Dst
 
         S, dS_dE = getStress(self.mat[k], E, DE, Δt)
 
+        self.stress[k] = S
+
         fint += ∂E∂u * S * self.weights[k] # 1x8
     end
     return fint

@@ -89,6 +89,40 @@ function getStiffAndForce(self::FiniteStrainTruss, state::Array{Float64}, Dstate
 end
 
 function getInternalForce(self::FiniteStrainTruss, state::Array{Float64}, Dstate::Array{Float64}, Δt::Float64)
+    ndofs = dofCount(self); 
+    nnodes = length(self.elnodes)
+    fint = zeros(Float64, ndofs)
+    stiff = zeros(Float64, ndofs,ndofs)
+    
+    
+    rot_mat = self.rot_mat
+    #rotate displacement to the local coordinate
+    lu = rot_mat * state
+    Dlu = rot_mat * Dstate
+
+    A0, l0 = self.A0, self.l0
+
+    E = (lu[2]-lu[1])/l0 + 0.5*((lu[2]-lu[1])/l0)^2 + 0.5*((lu[4]-lu[3])/l0)^2
+    DE = (Dlu[2]-Dlu[1])/l0 + 0.5*((Dlu[2]-Dlu[1])/l0)^2 + 0.5*((Dlu[4]-Dlu[3])/l0)^2
+    # compute  ∂E∂u.T, 4 by 1 array 
+    ∂E∂u =  [-1/l0+(lu[1]-lu[2])/l0;  1/l0+(lu[2]-lu[1])/l0; (lu[3]-lu[4])/l0; (lu[4]-lu[3])/l0]
+
+    for k = 1:length(self.weights)
+
+        # #@show E, DE
+        S, _ = getStress(self.mat[k], E, DE, Δt)
+        
+        self.stress[k] = S
+
+        fint += A0 * self.weights[k] * S * ∂E∂u  # 4x1
+        
+    end
+
+    #rotate back to global coordinate
+
+    fint = rot_mat' * fint
+
+    return fint
 end
 
 function getMassMatrix(self::FiniteStrainTruss)
