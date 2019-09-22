@@ -1,9 +1,10 @@
-import ADCME:sample
 using ADCME
 using PyPlot
 using Random
 using PyCall
 np = pyimport("numpy")
+
+
 
 
 function hidden_function(x, x_, y_)
