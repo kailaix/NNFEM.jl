@@ -21,27 +21,39 @@ Central Difference Explicit solver for Ma + fint = fext
     a_0 = M^{-1}(-Cv_0 - R(u_0) + P_0)
 """->
 function ExplicitSolver(Δt, globdat, domain)
-    state = globdat.state
-    velo = globdat.velo
-    acce = globdat.acce
+    u = globdat.state[:]
+    ∂u  = globdat.velo[:]
+    ∂∂u = globdat.acce[:]
 
     fext = domain.fext
     
-    velo += 0.5*Δt * acce
-    state += Δt * velo
+    ∂u += 0.5*Δt * ∂∂u
+    u += Δt * ∂u
     
+    domain.state[domain.eq_to_dof] = u[:]
     fint  = assembleInternalForce( globdat, domain, Δt)
+
+    @show fint, fext
 
     if length(globdat.M)==0
         error("globalDat is not initialized, call `assembleMassMatrix!(globaldat, domain)`")
     end
 
-    acce = (fext-fint)./globdat.Mlumped
-    velo += 0.5 * Δt * acce
-    globdat.acce[:] = acce[:]
+    ∂∂up = (fext - fint)./globdat.Mlumped
+    ∂u += 0.5 * Δt * ∂∂up
+
+    globdat.Dstate = globdat.state[:]
+    globdat.state = u[:]
+    globdat.velo = ∂u[:]
+    globdat.acce = ∂∂up[:]
 
     globdat.time  += Δt
-    # globdat.elements.commitHistory()
+
+    commitHistory(domain)
+    updateStates!(domain, globdat)
+    fint = assembleInternalForce( globdat, domain, Δt)
+    push!(domain.history["fint"], fint)
+    push!(domain.history["fext"], fext)
 end
 
 

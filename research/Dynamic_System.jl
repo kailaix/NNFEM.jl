@@ -4,9 +4,8 @@ using Random
 using PyCall
 np = pyimport("numpy")
 
-kx = 1
-ky = 2
-function hidden_function(x, x_, y_, model_type = "Plasticity")
+
+function hidden_function(x, x_, y_)
     if model_type == "Plasticity"
         # x  = ε_n+1
         # x_ = ε_n
@@ -67,7 +66,7 @@ function generate_data(xs, y0)
     ys[1,:] = y0
     for i = 2:n 
         ys[i,:] = hidden_function(xs[i,:], xs[i-1,:], ys[i-1,:])
-        @show i, ys[i,:]
+        @show "generate data ", i, ys[i,:]
     end
     ys 
 end
@@ -75,13 +74,24 @@ end
 
 
 
-function compute_loss(xs, ys, nn)
+function compute_loss(xs_set, ys_set, nn)
     loss = constant(0.0)
-    n = size(xs,1)
-    y = constant(ys[1,:])
-    for i = 2:n
-        y = nn(constant(xs[i,:]), constant(xs[i-1,:]), y)
-        loss += (ys[i,:]-y)^2[1]
+    m = length(xs_set)
+
+    for i_set = 1:m
+        xs, ys = xs_set[i_set], ys_set[i_set]
+        n = size(xs,1)
+        y = constant(ys[1,:])
+        for i = 2:n
+            y = nn(constant(xs[i,:]), constant(xs[i-1,:]), y)
+            #todo change the loss function
+            #loss += (ys[i,:] - y)^2[1]
+
+            loss += sum((ys[i,:] - y)^2)
+
+            #loss += (ys[i,1] - y[1])^2
+ 
+        end
     end
     return loss
 end
@@ -91,42 +101,63 @@ function nn(x, x_, y_)
     # @show ipt
     out = ae(ipt, [20,20,20,20,20,ky])
     squeeze(out)
-    # out = [sin(sum(x)^2+sum(x_)^2+sum(y_)^2); cos(sum(x)^2+sum(x_)^2+sum(y_)^2)]
 end
 
-function train!(sess, nn)
-    Random.seed!(2333)
-    xs, ys = sample(200)
-    loss = compute_loss(xs, ys, nn)
-    init(sess)
-    BFGS!(sess, loss)
-    # @show run(sess, loss)
-    xs, ys
-end
 
-function sample(n = 100)
-    # xs = rand(n, kx)
-    # y0 = rand(ky)
-    T = 0.1
-    t = np.linspace(0.0, T, n + 1)
-    A = 0.02
-    xs = A * reshape(sin.(π*t/(T)), :, kx)
-    y0 = zeros(ky) 
-    ys = generate_data(xs, y0)
-    return xs, ys 
-end
+@doc """
+    generate data 
+    m set of data, each is a serial sequency of n time
+"""->
+function sample(m = 2, n = 100)
+    xs_set, ys_set = [], []
 
-function test(sess)
-    n = 100
-    xs, ys = sample(n)
-    ys_pred = zeros(size(ys))
-    
-    for i = 2:n+1
-        ys_pred[i,:] = run(sess,nn(constant(xs[i,:]), constant(xs[i-1,:]), constant(ys_pred[i-1,:])))
-        @show i, ys_pred[i,:]
+    # generate xs_set
+    if model_type == "Plasticity"
+        T = 0.1
+        #
+        t = np.linspace(0.0, T, n)
+        A = 0.02
+        xs = A * reshape(sin.(π*t/(T)), :, kx)
+        push!(xs_set, xs)
+
+        #
+        if m >= 2
+        t = np.linspace(0.0, T, n)
+        A = 0.02
+        xs = A * reshape(sin.(2.0*π*t/(T)), :, kx)
+        push!(xs_set, xs)
+        end
+
+    else
+        error("model_type ", model_type, " have not implemented yet ")
     end
-    plot(xs[:,1], ys[:,1])
-    plot(xs[:,1], ys_pred[:,1])
+
+    # generate ys_set array
+    for i = 1:m
+        y0 = zeros(ky) 
+        ys = generate_data(xs_set[i], y0)
+        push!(ys_set, ys)
+    end
+
+    return xs_set, ys_set 
+end
+
+function test(xs_set, ys_set, sess)
+    m = length(xs_set)
+    ys_pred_set = []
+    for i_set = 1:m
+        xs, ys = xs_set[i_set], ys_set[i_set]
+        n = size(xs,1)
+        ys_pred = zeros((n, ky))
+
+        for i = 2:n
+            ys_pred[i,:] = run(sess,nn(constant(xs[i,:]), constant(xs[i-1,:]), constant(ys_pred[i-1,:])))
+            @show "in test ", i, ys_pred[i,:], " exact ", ys[i,:]
+        end
+        push!(ys_pred_set, ys_pred)
+    end
+
+    return ys_pred_set
 
 end
 
@@ -147,7 +178,20 @@ function verify(sess)
     mesh(x, y, hidden_function.(x,y,y_), color="orange",alpha=0.5)
 end
 
+
+kx = 1
+ky = 2
+model_type = "Plasticity"
+m, n = 1, 100
+xs_set, ys_set = sample(m, n)
 sess = Session()
-train!(sess, nn)
-test(sess)
+Random.seed!(2333)  
+loss = compute_loss(xs_set, ys_set, nn)
+init(sess)
+BFGS!(sess, loss)
+ys_pred_set = test(xs_set, ys_set, sess)
+for i = 1:m
+    plot(xs_set[i], ys_set[i])
+    plot(xs_set[i], ys_pred_set[i])
+end
 # verify(sess)

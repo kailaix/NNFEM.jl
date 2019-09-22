@@ -1,6 +1,6 @@
 using SparseArrays
 export assembleStiffAndForce,assembleInternalForce,assembleMassMatrix!,tfAssembleInternalForce
-function assembleInternalForce(globdat::GlobalData, domain::Domain)
+function assembleInternalForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
     Fint = zeros(Float64, domain.neqs)
     neles = domain.neles
   
@@ -21,7 +21,7 @@ function assembleInternalForce(globdat::GlobalData, domain::Domain)
       el_Dstate = getDstate(domain,el_dofs)
   
       # Get the element contribution by calling the specified action
-      fint = getInternalForce(element, el_state, el_Dstate)
+      fint = getInternalForce(element, el_state, el_Dstate, Δt)
   
       # Assemble in the global array
       el_eqns_active = (el_eqns .>= 1)
