@@ -1,3 +1,4 @@
+import ADCME:sample
 using ADCME
 using PyPlot
 using Random
@@ -87,7 +88,7 @@ function compute_loss(xs_set, ys_set, nn)
             #todo change the loss function
             #loss += (ys[i,:] - y)^2[1]
 
-            loss += sum((ys[i,:] - y)^2)
+            loss += ((ys[i,:] - y)^2)[1]
 
             #loss += (ys[i,1] - y[1])^2
  
@@ -99,7 +100,7 @@ end
 function nn(x, x_, y_)
     ipt = reshape([x;x_;y_], 1, :)
     # @show ipt
-    out = ae(ipt, [20,20,20,20,20,ky])
+    out = ae(ipt, [20,20,20,20,ky])
     squeeze(out)
 end
 
@@ -122,10 +123,24 @@ function sample(m = 2, n = 100)
 
         #
         if m >= 2
-        t = np.linspace(0.0, T, n)
-        A = 0.02
-        xs = A * reshape(sin.(2.0*π*t/(T)), :, kx)
-        push!(xs_set, xs)
+            t = np.linspace(0.0, T, n)
+            A = 0.02
+            xs = A * reshape(sin.(2.0*π*t/(T)), :, kx)
+            push!(xs_set, xs)
+        end
+
+        if m >= 3
+            t = np.linspace(0.0, T, n)
+            A = 0.01
+            xs = A * reshape(sin.(π*t/(T)), :, kx)
+            push!(xs_set, xs)
+        end
+
+        if m >= 3
+            t = np.linspace(0.0, T, n)
+            A = 0.01
+            xs = A * reshape(sin.(π*t/(2T)), :, kx)
+            push!(xs_set, xs)
         end
 
     else
@@ -150,9 +165,18 @@ function test(xs_set, ys_set, sess)
         n = size(xs,1)
         ys_pred = zeros((n, ky))
 
+        plx = placeholder([1.0])
+        plx_ = placeholder([1.0])
+        ply = placeholder(zeros(2))
+        res = nn(plx, plx_, ply)
+
         for i = 2:n
-            ys_pred[i,:] = run(sess,nn(constant(xs[i,:]), constant(xs[i-1,:]), constant(ys_pred[i-1,:])))
-            @show "in test ", i, ys_pred[i,:], " exact ", ys[i,:]
+            ys_pred[i,:] = run(sess,res, feed_dict = Dict(
+            plx=>xs[i,:],
+            plx_=>xs[i-1,:],
+            ply=>ys_pred[i-1,:]
+        ))
+        @show i, ys_pred[i,:]
         end
         push!(ys_pred_set, ys_pred)
     end
@@ -182,7 +206,7 @@ end
 kx = 1
 ky = 2
 model_type = "Plasticity"
-m, n = 1, 100
+m, n = 4, 201
 xs_set, ys_set = sample(m, n)
 sess = Session()
 Random.seed!(2333)  
