@@ -71,7 +71,7 @@ function hidden_function(model_type, x, x_, y_)
 
         #trial stress
         σ = σ0 + E*(ε - ε0) 
-        ε_vm = 2.0/3.0 * abs(ε)
+        ε_vm = α + β*2.0/3.0 * abs(ε)
         r2 = abs(σ) - ε_vm
         if r2 <= 0
             σ = σ0 + E*(ε - ε0)
@@ -140,7 +140,7 @@ function generate_data(model_type, m = 2, n = 100)
             push!(xs_set, xs)
         end
 
-        if m >= 3
+        if m >= 4
             t = np.linspace(0.0, T, n)
             A = 0.01
             xs = A * reshape(sin.(π*t/(2T)), :, kx)
@@ -255,7 +255,8 @@ function nn(x, x_, y_)
     
     ipt = reshape([x;x_;y_], :, 2*kx + ky_nn)
     # @show ipt
-    out = ae(ipt, [20,20,20,20,ky_nn])
+    out = ae(ipt, [20,ky_nn])
+    #out = ae(ipt, [20,20,20,20,ky_nn])
     squeeze(out, dims=1)
 end
 
@@ -265,5 +266,6 @@ function nn_all(x, x_, y_)
     
     ipt = [x x_ y_]
     
-    out = ae(ipt, [20,20,20,20,ky_nn])
+    out = ae(ipt, [20,ky_nn])
+    #out = ae(ipt, [20,20,20,20,ky_nn])
 end
