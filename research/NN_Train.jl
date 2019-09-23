@@ -1,8 +1,8 @@
 
 # Choose model and dimension of x array and y array, and nn output 
 #model_type, kx, ky, ky_nn = "Plasticity", 1, 2, 1
-model_type, kx, ky, ky_nn = "Plasticity", 1, 2, 2
-#model_type, kx, ky  = "PlasticityLawBased", 1, 1
+#model_type, kx, ky, ky_nn = "Plasticity", 1, 2, 2
+model_type, kx, ky, ky_nn  = "PlasticityLawBased", 1, 1, 1
 
 
 

@@ -62,15 +62,17 @@ function hidden_function(model_type, x, x_, y_)
         #      f = σ_vm - (α + β * ε_vm^pow)
         # D_eps_p = gamma df/dsigma        
         # f  = 0    or f  < 0
-        #trial stress
+        
 
         E, α, β, pow =  1.0, 0.006, 0.018, 0.4
-        σ0 = y[1]
+        σ0 = y_[1]
         ε, ε0 = x[1], x_[1]
         Δγ = 0.0
-        σ_tr = σ0 + E*(ε - ε0) 
+
+        #trial stress
+        σ = σ0 + E*(ε - ε0) 
         ε_vm = 2.0/3.0 * abs(ε)
-        r2 = abs(σ_tr) - ε_vm
+        r2 = abs(σ) - ε_vm
         if r2 <= 0
             σ = σ0 + E*(ε - ε0)
             dΔσdΔε = E
@@ -78,7 +80,7 @@ function hidden_function(model_type, x, x_, y_)
         else
         
             Δγ = r2/E
-            σ -= Δγ * E * sign(σ_tr)
+            σ -= Δγ * E * sign(σ)
         end
          
         y = [σ]
@@ -115,7 +117,7 @@ function generate_data(model_type, m = 2, n = 100)
     xs_set, ys_set = [], []
 
     # generate xs_set
-    if model_type == "Plasticity"
+    if model_type == "Plasticity" || model_type == "PlasticityLawBased"
         T = 0.1
         #
         t = np.linspace(0.0, T, n)
@@ -168,9 +170,9 @@ function sequence_test(xs_set, sess)
         n = size(xs,1)
         ys_pred = zeros((n, ky))
 
-        plx = placeholder([1.0])
-        plx_ = placeholder([1.0])
-        ply = placeholder(zeros(2))
+        plx = placeholder(zeros(kx))
+        plx_ = placeholder(zeros(kx))
+        ply = placeholder(zeros(ky))
         res = nn(plx, plx_, ply)
 
         for i = 2:n
