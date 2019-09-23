@@ -122,28 +122,28 @@ function generate_data(model_type, m = 2, n = 100)
         #
         t = np.linspace(0.0, T, n)
         A = 0.02
-        xs = A * reshape(sin.(π*t/(T)), :, kx)
+        xs = A * reshape(sin.(π*t/(3.0*T)), :, kx)
         push!(xs_set, xs)
 
         #
         if m >= 2
             t = np.linspace(0.0, T, n)
             A = 0.02
-            xs = A * reshape(sin.(2.0*π*t/(T)), :, kx)
+            xs = A * reshape(sin.(π*t/(2.5*T)), :, kx)
             push!(xs_set, xs)
         end
 
         if m >= 3
             t = np.linspace(0.0, T, n)
             A = 0.01
-            xs = A * reshape(sin.(π*t/(T)), :, kx)
+            xs = A * reshape(sin.(π*t/(2.5*T)), :, kx)
             push!(xs_set, xs)
         end
 
         if m >= 4
             t = np.linspace(0.0, T, n)
             A = 0.01
-            xs = A * reshape(sin.(π*t/(2T)), :, kx)
+            xs = A * reshape(sin.(π*t/(3.0*T)), :, kx)
             push!(xs_set, xs)
         end
 
@@ -224,7 +224,7 @@ function compute_sequence_loss(xs_set, ys_set, nn)
 
             @show i, size(y)
 
-            loss += ((ys[i,:] - y)^2)[1]
+            loss += 100000.0* ((ys[i,:] - y)^2)[1]
 
             #loss += (ys[i,1] - y[1])^2
  
@@ -250,22 +250,71 @@ function compute_point2point_loss(xs_set, ys_set, nn)
 end
 
 
+
+
+config=[20,20,20,ky_nn]
 function nn(x, x_, y_)
-    #ipt = reshape([x;x_;y_], 1, :)
     
-    ipt = reshape([x;x_;y_], :, 2*kx + ky_nn)
-    # @show ipt
-    out = ae(ipt, [20,ky_nn])
-    #out = ae(ipt, [20,20,20,20,ky_nn])
-    squeeze(out, dims=1)
+
+    #ipt = reshape([x;x_;y_], 1, :)
+    if nn_type == "ae"  
+        ipt = reshape([x;x_;y_], :, 2*kx + ky_nn)
+    
+        out = ae(ipt, config)
+        squeeze(out, dims=1)
+
+    elseif nn_type=="piecewise"
+    
+        
+        E = 1.0
+        threshold = 1.e-5
+        ipt = reshape([x;x_;y_], :, 2*kx + ky_nn)
+
+        σnn = ae(ipt, config)
+        σH = E * (x - x_)
+        z = sum(x^2)
+        
+        i = sigmoid(1e6*(z-threshold))        
+        
+        out = σnn * i + σH * (1-i)  + y_
+
+        squeeze(out, dims=1)
+    else
+        error("$nn_type does not exist")
+    end
 end
 
 
+
+function sigmoid_(z)
+
+    return 1.0 ./ (1.0 .+ exp.(-z))
+  
+end
+
 function nn_all(x, x_, y_)
-    #ipt = reshape([x;x_;y_], 1, :)
+    if nn_type == "ae"  
     
-    ipt = [x x_ y_]
+        ipt = [x x_ y_]
     
-    out = ae(ipt, [20,ky_nn])
-    #out = ae(ipt, [20,20,20,20,ky_nn])
+        #out = ae(ipt, [20,ky_nn])
+        out = ae(ipt, config)
+    elseif nn_type=="piecewise"
+    
+        
+        E = 1.0
+        threshold = 1.e-5
+        ipt = [x x_ y_]
+
+        σnn = ae(ipt, config)
+        σH = E * (x - x_)
+        z = x.^2
+        
+        i = sigmoid_(1e6*(z.-threshold))        
+        
+        out = σnn .* i + σH .* (1 .- i)  .+ y_
+
+    else
+        error("$nn_type does not exist")
+    end
 end

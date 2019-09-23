@@ -5,10 +5,13 @@
 model_type, kx, ky, ky_nn  = "PlasticityLawBased", 1, 1, 1
 
 
+nn_type = "piecewise"
+
+#nn_type = "ae"
 
 include("CommonFuncs.jl")
 # m set of data, each has n time steps(including initial points)
-m, n = 4, 201
+m, n = 1, 201
 
 
 xs_set, ys_set = generate_data(model_type, m, n)
