@@ -288,7 +288,7 @@ function nn(x, x_, y_)
         σnn = reshape(ae(ipt, config)* (x - x_), 1, 1)
         
         σH = E * (x - x_)
-        z = sum(x^2)
+        z = sum(y_^2)
         
         
         i = sigmoid(1e6*(z-threshold))        
@@ -339,9 +339,9 @@ function nn_all(x, x_, y_)
         ipt = [x x_ y_]
 
         σnn = ae(ipt, config) .* (x - x_)
-         
+
         σH = E * (x - x_)
-        z = x.^2
+        z = y_.^2
         
         i = sigmoid_(1e6*(z.-threshold))        
         

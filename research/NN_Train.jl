@@ -5,9 +5,9 @@ model_type, kx, ky, ky_nn = "Plasticity", 1, 2, 1
 #model_type, kx, ky, ky_nn  = "PlasticityLawBased", 1, 1, 1
 
 
-#nn_type = "piecewise"
+nn_type = "piecewise2"
 
-nn_type = "ae"
+#nn_type = "ae"
 
 include("CommonFuncs.jl")
 # m set of data, each has n time steps(including initial points)
