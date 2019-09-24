@@ -129,21 +129,21 @@ function generate_data(model_type, m = 2, n = 100)
         if m >= 2
             t = np.linspace(0.0, T, n)
             A = 0.02
-            xs = A * reshape(sin.(π*t/(2.5*T)), :, kx)
+            xs = A * reshape(sin.(π*t/(T)), :, kx)
             push!(xs_set, xs)
         end
 
         if m >= 3
             t = np.linspace(0.0, T, n)
             A = 0.01
-            xs = A * reshape(sin.(π*t/(2.5*T)), :, kx)
+            xs = A * reshape(sin.(π*t/(1.2*T)), :, kx)
             push!(xs_set, xs)
         end
 
         if m >= 4
             t = np.linspace(0.0, T, n)
             A = 0.01
-            xs = A * reshape(sin.(π*t/(3.0*T)), :, kx)
+            xs = A * reshape(sin.(π*t/(1.0*T)), :, kx)
             push!(xs_set, xs)
         end
 
