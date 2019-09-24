@@ -7,17 +7,17 @@ tid = 200
 #    global tid = parse(Int64, ARGS[1])
 #    global force_scale = parse(Float64, ARGS[2])
 # end
-printstyled("tid=$tid\n", color=:green)
+printstyled("force_scale=$force_scale, tid=$tid\n", color=:green)
 
 include("CommonFuncs.jl")
 
 testtype = "NeuralNetwork2D"
-nntype = "piecewise"
+nntype = "linear"
 include("nnutil.jl")
 
 H0 = [1.26827e6       3.45169e5   -5187.35
       3.45169e5       1.25272e6  -10791.7
-      -5187.35       -10791.7        536315.0]
+      -5187.35       -10791.7        536315.0]/stress_scale
       
 s = ae_to_code("Data/nn_train$idx.mat", "piecewise")
 eval(Meta.parse(s))
@@ -87,6 +87,12 @@ adaptive_solver_args = Dict("Newmark_rho"=> 0.0,
                           "damped_Newton_eta" => 1.0)
 
 globdat, domain, ts = AdaptiveSolver("NewmarkSolver", globdat, domain, T, NT, adaptive_solver_args)
+
+# Δt = T/NT
+# for i = 1:NT
+#     @info i, "/" , NT
+#     ExplicitSolver(Δt, globdat, domain)
+# end
 
 # plot
 close("all")

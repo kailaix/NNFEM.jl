@@ -1,8 +1,6 @@
 
 include("CommonFuncs.jl")
 threshold = 1e-5
-wgt_func = x->1. + 100x^3
-
 
 
 if length(ARGS)==1
@@ -16,7 +14,7 @@ if idx == 0
 elseif idx == 1
     global config=[20,20,20,20,6] 
 elseif idx == 2
-    global config=[20,20,20,20,20,6] 
+    global config=[20,6] 
 end
 printstyled("idx = $idx, config=$config", color=:green)
 
@@ -54,6 +52,7 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
         i = [i i i]
         out = σnn .* i + σH .* (1-i)  + σ0/stress_scale
         # out = σnn .* i + σH + σ0/stress_scale
+        # @info "OK"
         out*stress_scale
     else
         error("$nntype does not exist")

@@ -5,17 +5,17 @@ include("nnutil.jl")
 
 # H0 = constant(H1/stress_scale)
 testtype = "NeuralNetwork2D"
-force_scales = [5.0]
+force_scales = [4.0,5.0]
 nntype = "piecewise"
 
 # ! define H0
 # Trained with nx, ny = 10, 5
 H0 = [1.26827e6       3.45169e5   -5187.35
       3.45169e5       1.25272e6  -10791.7
-      -5187.35       -10791.7        536315.0]
+      -5187.35       -10791.7        536315.0]/stress_scale
 
 
-n_data = [100, 200, 201, 202, 203]
+n_data = [202,100, 200,201,203]
 porder = 2
 # density 4.5*(1 - 0.25) + 3.2*0.25
 fiber_fraction = 0.25
@@ -100,6 +100,10 @@ function compute_loss(tid, force_scale)
         updateDomainStateBoundary!(domain, globdat)
         push!(fext_history, domain.fext[:])
     end
+
+    # domain.state = state_history[end]
+    # visσ(domain)
+    # error()
     sum_loss = DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
 end
 

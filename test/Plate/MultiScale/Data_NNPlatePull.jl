@@ -11,9 +11,6 @@ if length(ARGS) == 4
 end
 printstyled("force_scale=$force_scale, tid=$tid, fiber_size=$fiber_size, porder=$porder\n", color=:green)
 include("CommonFuncs.jl")
-if Sys.MACHINE=="x86_64-apple-darwin18.6.0"
-    matplotlib.use("macosx")
-end
 np = pyimport("numpy")
 """
 Property:
@@ -53,7 +50,7 @@ ele_type = generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distribut
 
 
 
-nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder)
+nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder, force_scale)
 elements = []
 for j = 1:ny
     for i = 1:nx 
