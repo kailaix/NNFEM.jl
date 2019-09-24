@@ -1,6 +1,6 @@
 include("nnutil.jl")
 using PyPlot
-for force_scale in [4.0,5.0,6.0,50.0]
+for force_scale in [5.0]
     close("all")
     for k in [100, 200, 201, 202, 203, 300]
         @info force_scale, k

@@ -5,7 +5,7 @@ include("nnutil.jl")
 
 # H0 = constant(H1/stress_scale)
 testtype = "NeuralNetwork2D"
-force_scales = [4.0,5.0]
+force_scales = [5.0]
 nntype = "piecewise"
 
 # ! define H0
@@ -147,7 +147,7 @@ for i in n_data
 end
 
 @show stress_scale^2
-loss = sum(losses)/stress_scale^2
+loss = sum(losses)
 
 sess = Session(); init(sess)
 # ADCME.load(sess, "$(@__DIR__)/Data/order1/learned_nn_5.0_1.mat")

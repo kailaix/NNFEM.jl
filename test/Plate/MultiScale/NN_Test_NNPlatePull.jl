@@ -12,7 +12,7 @@ printstyled("force_scale=$force_scale, tid=$tid\n", color=:green)
 include("CommonFuncs.jl")
 
 testtype = "NeuralNetwork2D"
-nntype = "linear"
+nntype = "piecewise"
 include("nnutil.jl")
 
 H0 = [1.26827e6       3.45169e5   -5187.35
