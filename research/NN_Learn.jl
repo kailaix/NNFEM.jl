@@ -1,6 +1,6 @@
 # Choose model and dimension of x array and y array
-#model_type, kx, ky, ky_nn = "Plasticity", 1, 2, 2
-model_type, kx, ky, ky_nn  = "PlasticityLawBased", 1, 1, 1
+model_type, kx, ky, ky_nn = "Plasticity", 1, 2, 2
+#model_type, kx, ky, ky_nn  = "PlasticityLawBased", 1, 1, 1
 
 
 
@@ -27,7 +27,7 @@ for i = 1:m
     plot(xs_set[i], ys_set[i][:,1], color=colors[i])
     plot(xs_set[i], ys_pred_set[i][:,1], color=colors[i], ".-")
 end
-savefig("P2P_Train_P2P_Test$(model_type)_ky_nn$(ky_nn).png")
+savefig("P2P_Train_P2P_Test_NN$(nn_type)_Prob$(model_type)_ky_nn$(ky_nn).png")
 
 
 
@@ -40,4 +40,4 @@ for i = 1:m
     plot(xs_set[i], ys_set[i][:,1], color=colors[i])
     plot(xs_set[i], ys_pred_set[i][:,1], color=colors[i], ".-")
 end
-savefig("P2P_Train_S_Test$(model_type)_ky_nn$(ky_nn).png")
+savefig("P2P_Train_S_Test_NN$(nn_type)_Prob$(model_type)_ky_nn$(ky_nn).png")

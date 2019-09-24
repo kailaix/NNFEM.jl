@@ -168,20 +168,19 @@ function sequence_test(xs_set, sess)
     for i_set = 1:m
         xs = xs_set[i_set]
         n = size(xs,1)
-        ys_pred = zeros((n, ky))
+        ys_pred = zeros((n, ky_nn))
 
-        plx = placeholder(zeros(kx))
-        plx_ = placeholder(zeros(kx))
-        ply = placeholder(zeros(ky))
-        res = nn(plx, plx_, ply)
+        plx = placeholder(zeros(kx), shape=kx)
+        plx_ = placeholder(zeros(kx), shape=kx)
+        ply_ = placeholder(zeros(ky_nn), shape=ky_nn)
+        res = nn(plx, plx_, ply_)
 
         for i = 2:n
             ys_pred[i,:] = run(sess,res, feed_dict = Dict(
             plx=>xs[i,:],
             plx_=>xs[i-1,:],
-            ply=>ys_pred[i-1,:]
-        ))
-        @show i, ys_pred[i,:]
+            ply_=>ys_pred[i-1,:]))
+            @show i, ys_pred[i,:]
         end
         push!(ys_pred_set, ys_pred)
     end
@@ -252,7 +251,7 @@ end
 
 
 
-config=[20,20,20,ky_nn]
+config=[20,ky_nn]
 function nn(x, x_, y_)
     
 
@@ -265,14 +264,32 @@ function nn(x, x_, y_)
 
     elseif nn_type=="piecewise"
     
-        
         E = 1.0
         threshold = 1.e-5
         ipt = reshape([x;x_;y_], :, 2*kx + ky_nn)
 
-        σnn = ae(ipt, config)
+        σnn = ae(ipt, config) 
         σH = E * (x - x_)
         z = sum(x^2)
+        
+        i = sigmoid(1e6*(z-threshold))        
+        
+        out = σnn * i + σH * (1-i)  + y_
+
+        squeeze(out, dims=1)
+
+    elseif nn_type=="piecewise2"
+    
+        @assert(ky_nn == 1)
+        E = 1.0
+        threshold = 1.e-5
+        ipt = reshape([x;x_;y_], :, 2*kx + ky_nn)
+
+        σnn = reshape(ae(ipt, config)* (x - x_), 1, 1)
+        
+        σH = E * (x - x_)
+        z = sum(x^2)
+        
         
         i = sigmoid(1e6*(z-threshold))        
         
@@ -307,6 +324,22 @@ function nn_all(x, x_, y_)
         ipt = [x x_ y_]
 
         σnn = ae(ipt, config)
+        σH = E * (x - x_)
+        z = x.^2
+        
+        i = sigmoid_(1e6*(z.-threshold))        
+        
+        out = σnn .* i + σH .* (1 .- i)  .+ y_
+
+    elseif nn_type=="piecewise2"
+    
+        
+        E = 1.0
+        threshold = 1.e-5
+        ipt = [x x_ y_]
+
+        σnn = ae(ipt, config) .* (x - x_)
+         
         σH = E * (x - x_)
         z = x.^2
         
