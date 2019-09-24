@@ -1,0 +1,24 @@
+Compare different training strategies
+
+1. 1D Plasticity with internal variables
+2. 1D Plasticity without internal variables
+
+
+1. time serials training 
+2. point to point training
+
+1. training with considering internal variables
+2. training without considering internal variables
+
+
+
+PlasticityLawBased
+m=1
+loss += ((ys[i,:] - y)^2)[1] *10000.0
+can improve 
+
+m=4
+[20,20,20,20,20,20,ky_nn])
+loss += 100000.0* ((ys[i,:] - y)^2)[1]
+can improve
+
