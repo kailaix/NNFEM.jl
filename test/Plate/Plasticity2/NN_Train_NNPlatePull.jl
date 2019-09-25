@@ -29,7 +29,7 @@ T = 0.05
 NT = 100
 
 # DNS computaional domain
-fiber_size = 1
+fiber_size = 2
 # nx_f, ny_f = 40*fiber_size, 20*fiber_size
 nx_f, ny_f = 10*fiber_size, 5*fiber_size
 
@@ -144,7 +144,7 @@ for i in n_data
 end
 
 @show stress_scale^2
-loss = sum(losses)/stress_scale^2
+loss = sum(losses)
 
 sess = Session(); init(sess)
 # ADCME.load(sess, "$(@__DIR__)/Data/order1/learned_nn_5.0_1.mat")
