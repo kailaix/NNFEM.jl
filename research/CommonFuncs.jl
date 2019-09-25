@@ -170,9 +170,9 @@ function sequence_test(xs_set, sess)
         n = size(xs,1)
         ys_pred = zeros((n, ky_nn))
 
-        plx = placeholder(zeros(kx), shape=kx)
-        plx_ = placeholder(zeros(kx), shape=kx)
-        ply_ = placeholder(zeros(ky_nn), shape=ky_nn)
+        plx = placeholder(zeros(kx))
+        plx_ = placeholder(zeros(kx))
+        ply_ = placeholder(zeros(ky_nn))
         res = nn(plx, plx_, ply_)
 
         for i = 2:n
@@ -252,6 +252,7 @@ end
 
 
 config=[20,ky_nn]
+
 function nn(x, x_, y_)
     
 
