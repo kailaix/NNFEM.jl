@@ -42,7 +42,6 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all:
         σ0 = read(ta_σ, i-1)
         
         fint, σ = tfAssembleInternalForce(domain,nn,E,DE,w∂E∂u,σ0)
-        
         # op = tf.print(i, fint, summarize=-1)
         # fint = bind(fint, op)
 
@@ -63,7 +62,6 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all:
     ta_loss = TensorArray(NT+1); ta_loss = write(ta_loss, 1, constant(0.0))
     i = constant(2, dtype=Int32)
     _, out, _ = while_loop(cond0, body, [i,ta_loss, ta_σ]; parallel_iterations=20)
-
     if ismissing(loss_weights)
         loss_weights = x->1.0
     end

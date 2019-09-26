@@ -1,5 +1,5 @@
 export visstatic, visdynamic, show_strain_stress, prepare_strain_stress_data1D, prepare_strain_stress_data2D,
-    VisualizeStress2D,visσ, VisualizeStrainStressSurface
+    VisualizeStress2D,visσ, VisualizeStrainStressSurface, visstate
 import PyPlot:scatter3D
 using Random
 function visstatic(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
@@ -12,6 +12,9 @@ function visstatic(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
     σ =[]
     for e in domain.elements
         σs = e.stress
+        if σs[1]==undef
+            σs = ones(length(e.stress))
+        end
         push!(σ,mean([sqrt(σ[1]^2-σ[1]*σ[2]+σ[2]^2+3*σ[3]^2) for σ in σs]))
     end
     vmin = vmin==nothing ? minimum(σ) : vmin 
@@ -211,8 +214,7 @@ function visσ(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
     σ =[]
     for e in domain.elements
         σs = e.stress
-        # @show σs
-        # error()
+        # σs = [ones(3) for i = 1:length(e.stress)] # ! remove me
         push!(σ,mean([postprocess_stress(s, "vonMises")[1] for s in σs]))
     end
     vmin = vmin==nothing ? minimum(σ) : vmin 
@@ -235,4 +237,28 @@ function visσ(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
     colorbar(scalarMap)
     xlim(x1 .-0.1,x2 .+0.1)
     ylim(y1 .-0.1,y2 .+0.1)
+end
+
+function visstate(domain::Domain, state::Array{Float64}; kwargs...)
+    u,v = state[1:domain.nnodes], state[domain.nnodes+1:end]
+    nodes = domain.nodes
+    fig,ax = subplots()
+    temp = nodes + [u v]
+    x1, x2 = minimum(temp[:,1]), maximum(temp[:,1])
+    y1, y2 = minimum(temp[:,2]), maximum(temp[:,2])
+    for (k,e) in enumerate(domain.elements)
+        N = getNodes(e)
+        if length(N)==9
+            N = N[[1;5;2;6;3;7;4;8]]
+        end
+        n_ = nodes[N,:] + [u[N,:] v[N,:]]
+        p = plt.Polygon(n_; kwargs...)
+        ax.add_patch(p)
+    end
+    xlim(x1 .-0.1,x2 .+0.1)
+    ylim(y1 .-0.1,y2 .+0.1)
+end
+
+function visstate(domain::Domain; kwargs...)
+    visstate(domain, domain.state; kwargs...)
 end

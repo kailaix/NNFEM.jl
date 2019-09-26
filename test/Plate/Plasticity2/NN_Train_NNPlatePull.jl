@@ -154,7 +154,7 @@ sess = Session(); init(sess)
 for i = 1:100
     println("************************** Outer Iteration = $i ************************** ")
     BFGS!(sess, loss, 200)
-    ADCME.save(sess, "$(@__DIR__)/Data/nn_train$idx.mat")
+    ADCME.save(sess, "$(@__DIR__)/Data/nn_train$(idx)_$(fiber_size).mat")
 end
 # ADCME.load(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
 # BFGS!(sess, loss, 5000)

@@ -6,7 +6,6 @@ using MAT
 using PyCall
 using Statistics
 using LinearAlgebra
-using PyCall:PyObject
 using ADCME
 using SparseArrays
 animation = PyNULL()
@@ -25,9 +24,9 @@ function __init__()
     jet = plt.get_cmap("jet")
     copy!(clb, pyimport("matplotlib.colorbar"))
     cpp_fint = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/FintComp/build/libFintComp", "fint_comp")
-
-    orthotropic_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/OrthotropicOp/build/libOrthotropicOp", "orthotropic_op")
     sym_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/SymOp/build/libSymOp", "sym_op")
+    orthotropic_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/OrthotropicOp/build/libOrthotropicOp", "orthotropic_op")
+    
 end
 
 include("utils/shapeFunctions.jl")

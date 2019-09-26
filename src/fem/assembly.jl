@@ -74,7 +74,6 @@ function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, 
   σ_all = nn(E_all, DE_all, σ0_all)
   fints = squeeze(tf.matmul(w∂E∂u_all, tf.expand_dims(σ_all,2)))
   Fint = cpp_fint(fints,constant(el_eqns_all, dtype=Int32),constant(domain.neqs, dtype=Int32))
-
 #=
   # @info "* *** "
 

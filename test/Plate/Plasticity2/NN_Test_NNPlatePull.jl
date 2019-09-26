@@ -21,7 +21,9 @@ H0 = [1.04167e6  2.08333e5  0.0
       2.08333e5  1.04167e6  0.0      
       0.0        0.0        4.16667e5]/stress_scale
 
-s = ae_to_code("Data/nn_train$idx.mat", "piecewise")
+# s = ae_to_code("Data/nn_train$(idx).mat", "piecewise")
+s = ae_to_code("Data/nn_train0_2.mat", "piecewise")
+
 eval(Meta.parse(s))
 # density 4.5*(1 - 0.25) + 3.2*0.25
 #fiber_fraction = 0.25

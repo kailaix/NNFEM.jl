@@ -43,7 +43,6 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 450x3
         
         y = ae(x, config, nntype)
         z = sym_H(y)
-        z = H0 - z*z
 
 
         σnn = squeeze(tf.matmul(z, tf.reshape((ε-ε0)/strain_scale, (-1,3,1)))) 
@@ -79,7 +78,6 @@ function nn_helper(ε, ε0, σ0)
         σ0 = σ0/stress_scale
         x = reshape([ε;ε0;σ0],1, 9)
         H = sym_H(nnpiecewise(x))
-        H = H0 - H*H
         y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*H
         y1 = reshape(y1, 3, 1)
         y2 = reshape((reshape(ε, 1, 3) - reshape(ε0, 1, 3))*H0, 3,1)
