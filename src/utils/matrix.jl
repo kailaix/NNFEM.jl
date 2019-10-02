@@ -14,7 +14,9 @@ function orthotropic_H(y::PyObject)
     return z
 end
 
-function spd_H(o::Array, H0::Array{Float64,2})
+function spd_H(o::Array, H0::Array)
+    # @show size(o'*H0*o)
+    o = o[:]
     H0 - H0*(o*o')*H0/(1+o'*H0*o)
 end
 

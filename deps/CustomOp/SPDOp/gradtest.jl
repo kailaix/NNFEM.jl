@@ -101,3 +101,22 @@ plt.gca().invert_xaxis()
 legend()
 xlabel("\$\\gamma\$")
 ylabel("Error")
+
+
+fwd = 0.0
+bwd = 0.0
+m_ = constant(rand(500,3))
+v_ = rand(500,3)
+r = spd_op(constant(h0),m_)
+y_ = sum(r)
+dy_ = gradients(y_, m_)
+for i = 1:1000
+    init(sess)
+    run(sess, r)
+end
+
+for i = 1:1000
+    init(sess)
+    run(sess, dy_)
+end
+# println("fwd=$fwd, bwd=$bwd")
