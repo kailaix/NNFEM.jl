@@ -1,0 +1,4 @@
+SPDOp
+double h0(3,3)
+double y(?,3)
+double out(?,3,3) -> output

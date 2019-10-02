@@ -9,57 +9,68 @@ Random.seed!(233)
 if Sys.islinux()
 py"""
 import tensorflow as tf
-libTestFun = tf.load_op_library('build/libTestFun.so')
+libSPDOp = tf.load_op_library('build/libSPDOp.so')
 @tf.custom_gradient
-def test_fun(u,v):
-    g,w,s = libTestFun.test_fun(u,v)
+def spd_op(h0,y):
+    out = libSPDOp.spd_op(h0,y)
     def grad(dy):
-        return libTestFun.test_fun_grad(dy, g,w,s, u,v)
-    return g, grad
+        return libSPDOp.spd_op_grad(dy, out, h0,y)
+    return out, grad
 """
 elseif Sys.isapple()
 py"""
 import tensorflow as tf
-libTestFun = tf.load_op_library('build/libTestFun.dylib')
+libSPDOp = tf.load_op_library('build/libSPDOp.dylib')
 @tf.custom_gradient
-def test_fun(u,v):
-    g,w,s = libTestFun.test_fun(u,v)
+def spd_op(h0,y):
+    out = libSPDOp.spd_op(h0,y)
     def grad(dy):
-        return libTestFun.test_fun_grad(dy, g,w,s, u,v)
-    return g, grad
+        return libSPDOp.spd_op_grad(dy, out, h0,y)
+    return out, grad
 """
 elseif Sys.iswindows()
 py"""
 import tensorflow as tf
-libTestFun = tf.load_op_library('build/libTestFun.dll')
+libSPDOp = tf.load_op_library('build/libSPDOp.dll')
 @tf.custom_gradient
-def test_fun(u,v):
-    g,w,s = libTestFun.test_fun(u,v)
+def spd_op(h0,y):
+    out = libSPDOp.spd_op(h0,y)
     def grad(dy):
-        return libTestFun.test_fun_grad(dy, g,w,s, u,v)
-    return g, grad
+        return libSPDOp.spd_op_grad(dy, out, h0,y)
+    return out, grad
 """
 end
 
-test_fun = py"test_fun"
+spd_op = py"spd_op"
 ################## End Load Operator ##################
 
+h0 = rand(3,3)
+h0 = h0'*h0
+y = rand(2, 3)
+
+yi = y[1,:]
+out1 = h0 - h0*(yi*yi')*h0/(1+yi'*h0*yi)
+yi = y[2,:]
+out2 = h0 - h0*(yi*yi')*h0/(1+yi'*h0*yi)
+
+
 # TODO: specify your input parameters
-u = test_fun(u,v)
+u = spd_op(constant(h0),constant(y))
 sess = Session()
 init(sess)
-run(sess, u)
-
+@show run(sess, u)[1,:,:]-out1
+@show run(sess, u)[2,:,:]-out2
+# error()
 
 # TODO: change your test parameter to `m`
 # gradient check -- v
 function scalar_function(m)
-    return sum(tanh(test_fun(u,v)))
+    return sum(spd_op(constant(h0),m))
 end
 
 # TODO: change `m_` and `v_` to appropriate values
-m_ = constant(rand(10,20))
-v_ = rand(10,20)
+m_ = constant(rand(10,3))
+v_ = rand(10,3)
 y_ = scalar_function(m_)
 dy_ = gradients(y_, m_)
 ms_ = Array{Any}(undef, 5)

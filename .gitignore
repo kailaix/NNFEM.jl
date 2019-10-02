@@ -51,3 +51,5 @@ deps/build.jl
 !deps/CustomOp/FintComp/customop.txt
 !deps/CustomOp/OrthotropicOp/CMakeLists.txt
 !deps/CustomOp/SymOps/CMakeLists.txt
+!deps/CustomOp/SPDOp/CMakeLists.txt
+!deps/CustomOp/SPDOp/custom_op.txt
