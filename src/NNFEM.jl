@@ -16,8 +16,9 @@ clb = PyNULL()
 cpp_fint = nothing
 sym_op = nothing
 orthotropic_op = nothing
+spd_op = nothing
 function __init__()
-    global jet, cpp_fint, orthotropic_op, sym_op
+    global jet, cpp_fint, orthotropic_op, sym_op, spd_op
     copy!(animation, pyimport("matplotlib.animation"))
     copy!(colors, pyimport("matplotlib.colors"))
     copy!(cmx, pyimport("matplotlib.cm"))
@@ -26,7 +27,7 @@ function __init__()
     cpp_fint = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/FintComp/build/libFintComp", "fint_comp")
     sym_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/SymOp/build/libSymOp", "sym_op")
     orthotropic_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/OrthotropicOp/build/libOrthotropicOp", "orthotropic_op")
-    
+    spd_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/SPDOp/build/libSPDOp", "spd_op")
 end
 
 include("utils/shapeFunctions.jl")

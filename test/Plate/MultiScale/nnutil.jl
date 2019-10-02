@@ -9,13 +9,13 @@ else
 end
 
 if idx == 0
-    global config=[20,6]
+    global config=[20,3]
 elseif idx == 1
-    global config=[40,6] 
+    global config=[40,3] 
 elseif idx == 2
-    global config=[20,20,20,6] 
+    global config=[20,20,20,3] 
 elseif idx == 3
-    global config=[6]
+    global config=[3]
 end
 printstyled("idx = $idx, config=$config", color=:green)
 
@@ -42,7 +42,8 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 450x3
         σ0 = constant(σ0)
         
         y = ae(x, config, nntype)
-        z = sym_H(y)
+        z = spd_H(y, H0)
+        @info z
 
 
         σnn = squeeze(tf.matmul(z, tf.reshape((ε-ε0)/strain_scale, (-1,3,1)))) 
