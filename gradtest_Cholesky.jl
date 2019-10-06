@@ -46,13 +46,15 @@ spd_op = py"spd_op"
 
 h0 = rand(3,3)
 h0 = h0'*h0
-y = rand(2, 3)
+ny = 6
+y = rand(2, ny)
 
 yi = y[1,:]
-out1 = h0 - h0*(yi*yi')*h0/(1+yi'*h0*yi)
+L = [yi[1] 0.0 0.0;yi[2] yi[4] 0.0; yi[3] yi[5] yi[6]]
+out1 = L * L'
 yi = y[2,:]
-out2 = h0 - h0*(yi*yi')*h0/(1+yi'*h0*yi)
-
+L =  [yi[1] 0.0 0.0;yi[2] yi[4] 0.0; yi[3] yi[5] yi[6]]
+out2 = L * L'
 
 # TODO: specify your input parameters
 u = spd_op(constant(h0),constant(y))
@@ -69,8 +71,8 @@ function scalar_function(m)
 end
 
 # TODO: change `m_` and `v_` to appropriate values
-m_ = constant(rand(10,3))
-v_ = rand(10,3)
+m_ = constant(rand(10,ny))
+v_ = rand(10,ny)
 y_ = scalar_function(m_)
 dy_ = gradients(y_, m_)
 ms_ = Array{Any}(undef, 5)
@@ -102,21 +104,3 @@ legend()
 xlabel("\$\\gamma\$")
 ylabel("Error")
 
-
-# fwd = 0.0
-# bwd = 0.0
-# m_ = constant(rand(500,3))
-# v_ = rand(500,3)
-# r = spd_op(constant(h0),m_)
-# y_ = sum(r)
-# dy_ = gradients(y_, m_)
-# for i = 1:1000
-#     init(sess)
-#     run(sess, r)
-# end
-
-# for i = 1:1000
-#     init(sess)
-#     run(sess, dy_)
-# end
-# println("fwd=$fwd, bwd=$bwd")

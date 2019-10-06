@@ -6,7 +6,7 @@ include("nnutil.jl")
 # H0 = constant(H1/stress_scale)
 testtype = "NeuralNetwork2D"
 force_scales = [5.0]
-nntype = "piecewise"
+nntype = "doublenn"
 
 # ! define H0
 # Trained with nx, ny = 10, 5

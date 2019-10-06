@@ -18,14 +18,14 @@ REGISTER_OP("FintComp")
   .Output("out : double")
 .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
     
-        shape_inference::ShapeHandle fints_shape;
-        TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &fints_shape));
-        shape_inference::ShapeHandle el_shape;
-        TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 2, &el_shape));
-        shape_inference::ShapeHandle neqs_shape;
-        TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 0, &neqs_shape));
+        // shape_inference::ShapeHandle fints_shape;
+        // TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &fints_shape));
+        // shape_inference::ShapeHandle el_shape;
+        // TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 2, &el_shape));
+        // shape_inference::ShapeHandle neqs_shape;
+        // TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 0, &neqs_shape));
 
-        c->set_output(0, c->Vector(-1));
+        // c->set_output(0, c->Vector(-1));
     return Status::OK();
   });
 class FintCompOp : public OpKernel {

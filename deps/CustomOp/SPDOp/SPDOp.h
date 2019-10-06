@@ -1,9 +1,3 @@
-#include <eigen3/Eigen/Sparse>
-#include <eigen3/Eigen/IterativeLinearSolvers>
-#include <eigen3/Eigen/Core>
-#include <eigen3/Eigen/LU>
-#include <eigen3/Eigen/SparseQR>
-
 void forward(double *out, const double *y, const double *H0, int n){
   double V[3];
   for(int i=0;i<n;i++){

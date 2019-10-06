@@ -7,19 +7,22 @@ tid = 200
 #    global tid = parse(Int64, ARGS[1])
 #    global force_scale = parse(Float64, ARGS[2])
 # end
-printstyled("force_scale=$force_scale, tid=$tid\n", color=:green)
 
 include("CommonFuncs.jl")
 
 testtype = "NeuralNetwork2D"
-nntype = "piecewise"
+# nntype = "piecewise"
+nntype = "doublenn"
 include("nnutil.jl")
+printstyled("force_scale=$force_scale, tid=$tid\n", color=:green)
 
 H0 = [1.26827e6       3.45169e5   -5187.35
       3.45169e5       1.25272e6  -10791.7
       -5187.35       -10791.7        536315.0]/stress_scale
       
-s = ae_to_code("Data/nn_train$idx.mat", "piecewise")
+s = ae_to_code("Data/nn_train$idx.mat", "doublenn")
+eval(Meta.parse(s))
+s = ae_to_code("Data/nn_train$idx.mat", "doublenni")
 eval(Meta.parse(s))
 
 

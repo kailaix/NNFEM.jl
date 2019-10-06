@@ -13,3 +13,4 @@ end
 buildops("deps/CustomOp/FintComp")
 buildops("deps/CustomOp/SymOp")
 buildops("deps/CustomOp/OrthotropicOp")
+buildops("deps/CustomOp/CholOp")

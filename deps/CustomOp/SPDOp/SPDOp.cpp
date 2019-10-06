@@ -2,6 +2,7 @@
 #include "tensorflow/core/framework/tensor_shape.h"
 #include "tensorflow/core/platform/default/logging.h"
 #include "tensorflow/core/framework/shape_inference.h"
+
 #include<cmath>
 #include<string> 
 using std::string;
@@ -11,18 +12,17 @@ using namespace tensorflow;
 #include "SPDOp.h"
 
 REGISTER_OP("SPDOp")
-
 .Input("h0 : double")
   .Input("y : double")
   .Output("out : double")
 .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
     
-        shape_inference::ShapeHandle h0_shape;
-        TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &h0_shape));
-        shape_inference::ShapeHandle y_shape;
-        TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 2, &y_shape));
+        // shape_inference::ShapeHandle h0_shape;
+        // TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &h0_shape));
+        // shape_inference::ShapeHandle y_shape;
+        // TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 2, &y_shape));
 
-        c->set_output(0, c->MakeShape({-1, 3, 3}));
+        // c->set_output(0, c->MakeShape({-1, 3, 3}));
     return Status::OK();
   });
 class SPDOpOp : public OpKernel {
