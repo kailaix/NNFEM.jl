@@ -102,7 +102,7 @@ legend()
 xlabel("\$\\gamma\$")
 ylabel("Error")
 
-
+@show("finishes")
 # fwd = 0.0
 # bwd = 0.0
 # m_ = constant(rand(500,3))
