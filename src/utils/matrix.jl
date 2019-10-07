@@ -1,4 +1,4 @@
-export sym_H, orthotropic_H, spd_H, spd_Cholesky
+export sym_H, orthotropic_H, spd_H, spd_Cholesky, spd_Chol_Orth
 
 function sym_H(y::PyObject)
     y = sym_op(y)
@@ -52,10 +52,30 @@ function spd_Cholesky(o::Array)
 end
 function spd_Cholesky(o::PyObject)
     if size(o,2)!=6
-        error("NNFEM: second dimension of `o` must be 2")
+        error("NNFEM: second dimension of `o` must be 6")
     end
     @show o
     ret = chol_op(o)
+    @show ret
+    tf.reshape(ret, (-1,3,3))
+end
+
+
+
+function spd_Chol_Orth(o::Array)
+    # @show size(o'*H0*o)
+    [o[1]*o[1] o[1]*o[2] 0;
+     o[1]*o[2] o[2]*o[2]+o[3]*o[3] 0.0;
+     0.0       0.0                 o[4]*o[4]]
+end
+
+
+function spd_Chol_Orth(o::PyObject)
+    if size(o,2)!=4
+        error("NNFEM: second dimension of `o` must be 4")
+    end
+    @show o
+    ret = chol_orth_op(o)
     @show ret
     tf.reshape(ret, (-1,3,3))
 end

@@ -11,13 +11,16 @@ else
     global idx = 0
 end
 
-H_function = spd_Cholesky
-ny = 6
+# H_function = spd_Cholesky
+# ny = 6
+
+H_function = spd_Chol_Orth
+ny = 4
 
 if idx == 0
-    global config=[20,ny]
+    global config=[80, ny]
 elseif idx == 1
-    global config=[100,ny] 
+    global config=[80, 80, ny] 
 elseif idx == 2
     global config=[20,20,20,ny] 
 elseif idx == 3
