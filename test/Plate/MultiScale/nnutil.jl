@@ -11,8 +11,8 @@ else
     global idx = 0
 end
 
-H_function = spd_Cholesky
-ny = 6
+H_function = spd_H
+ny = 3
 
 if idx == 0
     global config=[20,ny]
