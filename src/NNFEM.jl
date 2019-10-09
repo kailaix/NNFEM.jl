@@ -18,8 +18,9 @@ sym_op = nothing
 orthotropic_op = nothing
 spd_op = nothing
 chol_op = nothing
+chol_orth_op = nothing
 function __init__()
-    global jet, cpp_fint, orthotropic_op, sym_op, spd_op, chol_op
+    global jet, cpp_fint, orthotropic_op, sym_op, spd_op, chol_op, chol_orth_op
     copy!(animation, pyimport("matplotlib.animation"))
     copy!(colors, pyimport("matplotlib.colors"))
     copy!(cmx, pyimport("matplotlib.cm"))
@@ -30,6 +31,7 @@ function __init__()
     orthotropic_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/OrthotropicOp/build/libOrthotropicOp", "orthotropic_op")
     spd_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/SPDOp/build/libSPDOp", "spd_op")
     chol_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/CholOp/build/libCholOp.so", "chol_op")
+    chol_orth_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/CholOrthOp/build/libCholOrthOp.so", "chol_orth_op")
 end
 
 include("utils/shapeFunctions.jl")
