@@ -1,7 +1,7 @@
 stress_scale = 1.0e5
 strain_scale = 1
 
-include("nnutil.jl")
+include("nnutilInternalVariable.jl")
 
 # H0 = constant(H1/stress_scale)
 testtype = "NeuralNetwork2D"
