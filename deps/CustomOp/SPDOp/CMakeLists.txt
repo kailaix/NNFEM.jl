@@ -31,7 +31,22 @@ link_directories(${TF_LIB})
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_FLAGS_RELEASE "-march=native -O3 -DNDEBUG")
 
+find_package(CUDA QUIET)
+SET(CUDA_PROPAGATE_HOST_FLAGS ON)
 
-add_library(SPDOp SHARED SPDOp.cpp)
+
+# C++11 required for tensorflow
+SET(CUDA_PROPAGATE_HOST_FLAGS ON)
+
+find_program(_nvidia_smi "nvidia-smi")
+if (_nvidia_smi)
+  cuda_add_library(SPDOp SHARED SPDOp.cpp)
+else()
+  add_library(SPDOp SHARED SPDOp.cpp)
+  add_definitions(-DNOGPU)
+endif()
+
 set_property(TARGET SPDOp PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(SPDOp ${TF_LIB_FILE} "${TORCH_LIBRARIES}")
+
+
