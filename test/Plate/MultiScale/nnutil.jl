@@ -12,18 +12,18 @@ else
 end
 
 H_function = spd_H
-ny = 3
+nout = 3
 
 if idx == 0
-    global config=[20,20,20,ny] 
+    global config=[20,20,20,nout] 
 elseif idx == 1
-    global config=[100,ny] 
+    global config=[100,nout] 
 elseif idx == 2
-    global config=[20,ny]
+    global config=[20,nout]
 elseif idx == 3
-    global config=[20,20,20,20,20,20,ny]
+    global config=[20,20,20,20,20,20,nout]
 elseif idx == 5
-    global config=[ny]
+    global config=[nout]
 end
 printstyled("idx = $idx, config=$config, H_function=$H_function\n", color=:green)
 
@@ -50,7 +50,7 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 450x3
         σ0 = constant(σ0)
         
         y = ae(x, config, nntype)
-        # op = tf.print("call spd_H")
+	@show y, size(H0)
         if H_function==spd_H
             z = spd_H(y, H0)
         else
