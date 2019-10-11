@@ -40,7 +40,7 @@ SET(CUDA_PROPAGATE_HOST_FLAGS ON)
 
 find_program(_nvidia_smi "nvidia-smi")
 if (_nvidia_smi)
-  cuda_add_library(SPDOp SHARED SPDOp.cpp)
+  cuda_add_library(SPDOp SHARED SPDOp.cpp SPDOp.cu)
 else()
   add_library(SPDOp SHARED SPDOp.cpp)
   add_definitions(-DNOGPU)
