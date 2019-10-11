@@ -93,7 +93,6 @@ function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, 
   el_eqns_all = zeros(Int32, neles*nGauss, neqns_per_elem)
   # el_eqns_active_all = el_eqns_all > 0
   el_eqns_active_all = zeros(Bool, neles*nGauss, neqns_per_elem)
-  
   # Loop over the elements in the elementGroup to construct el_eqns_active_all , el_eqns_all and w∂E∂u_all
   for iele  = 1:neles
     # Get the element nodes

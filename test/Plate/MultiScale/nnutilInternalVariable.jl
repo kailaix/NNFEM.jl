@@ -12,19 +12,19 @@ else
 end
 
 H_function = spd_H
-n_internal = 128
-ny = 3 + n_internal
+n_internal = 4
+nn_out = 3 
 
 if idx == 0
-    global config=[20,ny]
+    global config=[20,20,20,nn_out+ n_internal] 
 elseif idx == 1
-    global config=[100,ny] 
+    global config=[100,nn_out+ n_internal] 
 elseif idx == 2
-    global config=[20,20,20,ny] 
+    global config=[20,nn_out+ n_internal]
 elseif idx == 3
-    global config=[20,20,20,20,20,20,ny]
+    global config=[20,20,20,20,20,20,nn_out+ n_internal]
 elseif idx == 5
-    global config=[ny]
+    global config=[nn_out+ n_internal]
 end
 printstyled("idx = $idx, config=$config, H_function=$H_function\n", color=:green)
 
@@ -44,28 +44,35 @@ function nn(ε, ε0, σ0, α) # ε, ε0, σ0 450x3
         # y = ae(x, [50,50,50,50,50,50,50,3], nntype)*stress_scale
         y = ae(x, config, nntype)*stress_scale
     elseif nntype=="piecewise"
-        α = repeat(α', size(ε,1), 1)
+        # α ? x n_internal
         x = [ε/strain_scale ε0/strain_scale σ0/stress_scale α]
         x = constant(x)
         ε = constant(ε)
         ε0 = constant(ε0)
         σ0 = constant(σ0)
+        # @show x
         
         y = ae(x, config, nntype)
-        α = y[ny+1:end]
-        y = y[1:ny]
+        # @show y
+        α = y[:, nn_out+1:end]
+        y = y[:, 1:nn_out]
+        # @show y 
         # op = tf.print("call spd_H")
         if H_function==spd_H
             z = spd_H(y, H0)
         else
             z = H_function(y)
         end
+        # @show z
         # z = bind(z, op)
         # z = sym_H(y)
 
         σnn = squeeze(tf.matmul(z, tf.reshape((ε-ε0)/strain_scale, (-1,3,1)))) 
+
+        # @show σnn
         σH = (ε-ε0)/strain_scale * H0
         s = σ0[:,1]^2-σ0[:,1]*σ0[:,2]+σ0[:,2]^2+3*σ0[:,3]^2 
+        # @show s
 
         i = sigmoid(1000*(s-threshold)/1e9)        
         i = [i i i]
@@ -88,18 +95,16 @@ function nn_helper(ε, ε0, σ0, α)
     local y1
     if nntype=="linear"
         x = reshape(reshape(ε,1,3)*H0,3,1)
-    elseif nntype=="ae_scaled"
-        x = reshape([ε;ε0;σ0/stress_scale],1, 9)
-        reshape(nnae_scaled(x)*stress_scale,3,1)
     elseif nntype=="piecewise"
+        # @show α
         ε = ε/strain_scale
         ε0 = ε0/strain_scale
         σ0 = σ0/stress_scale
-        x = reshape([ε;ε0;σ0;α],1, 9)
+        x = reshape([ε;ε0;σ0;α],1, 9+n_internal)
         # y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*sym_H(nnpiecewise(x))
         out = nnpiecewise(x)
-        α = out[1:3]
-        out = out[4:end]
+        α = out[nn_out+1:end]
+        out = out[1:nn_out]
         if H_function==spd_H
             y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*spd_H(out, H0)
         else
@@ -116,9 +121,11 @@ function nn_helper(ε, ε0, σ0, α)
     end
 end
 
-function post_nn(ε, ε0, σ0, α, Δt)
+function post_nn(ε, ε0, σ0, Δt, α)
+    # @show α
     f = x -> nn_helper(x, ε0, σ0, α)[1]
     df = ForwardDiff.jacobian(f, ε)
-    val = nn_helper(ε, ε0, σ0, α)
-    return val[1:ny], df, val[ny+1:end]
+    # @show "postnn", α
+    stress, α_new = nn_helper(ε, ε0, σ0, α)
+    return stress, df, α_new
 end

@@ -12,14 +12,14 @@ else
 end
 
 H_function = spd_H
-ny = 6
+ny = 3
 
 if idx == 0
-    global config=[20,ny]
+    global config=[20,20,20,ny] 
 elseif idx == 1
     global config=[100,ny] 
 elseif idx == 2
-    global config=[20,20,20,ny] 
+    global config=[20,ny]
 elseif idx == 3
     global config=[20,20,20,20,20,20,ny]
 elseif idx == 5

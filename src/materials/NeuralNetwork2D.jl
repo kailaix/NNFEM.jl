@@ -21,6 +21,7 @@ function NeuralNetwork2D(prop::Dict{String, Any})
         n_internal = prop["n_internal"]
         @assert isa(n_internal, Integer) && n_internal>0
         α0 = zeros(n_internal); α0_ = zeros(n_internal)
+        # @show α0
     end
     σ0 = zeros(3); σ0_ = zeros(3); ε0 = zeros(3); ε0_ = zeros(3); 
     NeuralNetwork2D(ρ, σ0, σ0_,ε0,ε0_, α0, α0_, nn)
@@ -31,11 +32,19 @@ function getStress(self::NeuralNetwork2D,  strain::Array{Float64},  Dstrain::Arr
     ε = strain 
     ε0 = Dstrain 
     σ0 = self.σ0 
-    σ, dΔσdΔε, α = self.nn(ε, ε0, σ0, Δt, self.α0)
-    self.σ0_ = σ
-    self.ε0_ = ε
-    self.α0_ = α
-    return σ, dΔσdΔε
+    if ismissing(self.α0_)
+        σ, dΔσdΔε = self.nn(ε, ε0, σ0, Δt)
+        self.σ0_ = σ
+        self.ε0_ = ε
+        return σ, dΔσdΔε
+    else
+        # @show self.α0
+        σ, dΔσdΔε, α = self.nn(ε, ε0, σ0, Δt, self.α0)
+        self.σ0_ = σ
+        self.ε0_ = ε
+        self.α0_ = α
+        return σ, dΔσdΔε
+    end
 end
 
 function getTangent(self::NeuralNetwork2D)

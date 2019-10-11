@@ -75,13 +75,17 @@ function DynamicMatLawLossInternalVariable(domain::Domain, E_all::Array{Float64}
    end
 
    function body(i, ta_loss, ta_σ, ta_α)
+        @show "here"
        E = E_all[i]
        DE = E_all[i-1]
        w∂E∂u = w∂E∂u_all[i]
        σ0 = read(ta_σ, i-1)
        α0 = read(ta_α, i-1)
+       @show "here"
        fint, σ, α = tfAssembleInternalForce(domain,nn,E,DE,w∂E∂u,σ0, α0)
+       @show "here"
        ta_σ = write(ta_σ, i, σ)
+       @show "here"
        ta_loss = write(ta_loss, i, sum((fint-F_tot[i-1])^2))
        ta_α = write(ta_α, i, α)
        i+1, ta_loss, ta_σ, ta_α
@@ -90,7 +94,7 @@ function DynamicMatLawLossInternalVariable(domain::Domain, E_all::Array{Float64}
    σ0 = constant(zeros(neles*nGauss, nstrains))
    ta_σ = TensorArray(NT+1); ta_σ = write(ta_σ, 1, σ0)
    ta_loss = TensorArray(NT+1); ta_loss = write(ta_loss, 1, constant(0.0))
-   ta_α = TensorArray(NT+1);  ta_α = write(ta_loss, 1, constant(zeros(n_internal)))
+   ta_α = TensorArray(NT+1);  ta_α = write(ta_α, 1, constant(zeros(neles*nGauss, n_internal)))
    i = constant(2, dtype=Int32)
    _, out, _ = while_loop(cond0, body, [i,ta_loss, ta_σ, ta_α]; parallel_iterations=20)
 
@@ -116,12 +120,11 @@ end
     
     compute loss function from state and external force history 
 """->
-function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{T}, fext_history::Array{S}, nn::Function, Δt::Float64;
-     loss_weights::Union{Function, Missing}=missing) where {T, S}
+function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{T}, fext_history::Array{S}, nn::Function, Δt::Float64) where {T, S}
     # todo convert to E_all, Ftot
     domain.history["state"] = state_history
     F_tot, E_all, w∂E∂u_all = preprocessing(domain, globdat, hcat(fext_history...), Δt)
-    DynamicMatLawLoss(domain, E_all, w∂E∂u_all, F_tot, nn; loss_weights=loss_weights)
+    DynamicMatLawLoss(domain, E_all, w∂E∂u_all, F_tot, nn)
 end
 
 
@@ -129,6 +132,12 @@ function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::A
     domain.history["state"] = state_history
     F_tot, E_all, w∂E∂u_all = preprocessing(domain, globdat, hcat(fext_history...), Δt, n)
     DynamicMatLawLoss(domain, E_all, w∂E∂u_all, F_tot, nn)
+end
+
+function DynamicMatLawLossInternalVariable(domain::Domain, globdat::GlobalData, state_history::Array{T}, fext_history::Array{S}, nn::Function, Δt::Float64, n_internal::Int64) where {T, S}
+    domain.history["state"] = state_history
+    F_tot, E_all, w∂E∂u_all = preprocessing(domain, globdat, hcat(fext_history...), Δt)
+    DynamicMatLawLossInternalVariable(domain, E_all, w∂E∂u_all, F_tot, nn, n_internal)
 end
 
 @doc """
