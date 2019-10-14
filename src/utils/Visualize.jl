@@ -1,5 +1,5 @@
 export visstatic, visdynamic, show_strain_stress, prepare_strain_stress_data1D, prepare_strain_stress_data2D,
-    VisualizeStress2D,visσ, VisualizeStrainStressSurface, visstate
+prepare_sequence_strain_stress_data2D, VisualizeStress2D,visσ, VisualizeStrainStressSurface, visstate
 import PyPlot:scatter3D
 using Random
 function visstatic(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
@@ -122,6 +122,24 @@ function prepare_strain_stress_data2D(domain::Domain, scale::Float64=1.0)
         end
     end
     X,y
+end
+
+# Return strain_seq[ngp, NT+1, 3], stress_seq[ngp, NT+1, 3]
+function prepare_sequence_strain_stress_data2D(domain::Domain, scale::Float64=1.0)
+    strain = domain.history["strain"]
+    stress = domain.history["stress"]
+    ngp = size(strain[1],1)
+    nt = length(strain)
+    strain_seq = zeros(nt+1, ngp, 3)
+    stress_seq = zeros(nt+1, ngp, 3)
+    
+    
+    for j = 2:nt+1
+            #@show nt, ngp, size(strain[j-1])
+            strain_seq[j,:,:] = strain[j-1]
+            stress_seq[j,:,:] = stress[j-1]
+    end
+    strain_seq, stress_seq
 end
 
 

@@ -144,25 +144,17 @@ for i in n_data
 end
 
 @show stress_scale^2
-loss = sum(losses)
+opt = Array{PyObject}(undef, 5)
+opt[1] = AdamOptimizer().minimize(losses[1])
+opt[2] = AdamOptimizer().minimize(losses[2])
+opt[3] = AdamOptimizer().minimize(losses[3])
+opt[4] = AdamOptimizer().minimize(losses[4])
+opt[5] = AdamOptimizer().minimize(losses[5])
 
-tf.debugging.set_log_device_placement(true)
-sess = tf.Session(); init(sess)
-# ADCME.load(sess, "$(@__DIR__)/Data/order1/learned_nn_5.0_1.mat")
-# ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
-run(sess, loss)
-run_profile(sess, loss)
-save_profile("test.json")
-# error()
-for i = 1:100
-    println("************************** Outer Iteration = $i ************************** ")
-    BFGS!(sess, loss, 200)
-    ADCME.save(sess, "$(@__DIR__)/Data/nn_train$(idx)_$(fiber_size).mat")
+sess = Session(); init(sess)
+for i = 1:1000
+    for j in randperm(5)
+        _, l = run(sess, [opt[i], losses[i]])
+        @show i, j, l
+    end
 end
-# ADCME.load(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
-# BFGS!(sess, loss, 5000)
-# ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
-# BFGS!(sess, loss, 5000)
-
-
-# ADCME.save(sess, "$(@__DIR__)/Data/nn_train$idx.mat")
