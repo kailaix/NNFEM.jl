@@ -24,11 +24,15 @@ namespace tensorflow{
       Fint[i] = 0.0;
   }
 
-  void forward(double *Fint, const double *fints, const int32*el_eqns, int32 ngs, 
-      int32 neqns_per_elem, int32 *neqs, const GPUDevice& d){
+  int32 getInt32(const int32* i){
+    int32 I;
+    cudaMemcpy(&I, i, sizeof(int32), cudaMemcpyDeviceToHost);
+    return I;
+  }
+
+  void forwardGPU(double *Fint, const double *fints, const int32*el_eqns, int32 ngs, 
+      int32 neqns_per_elem, int32 NEQS, const GPUDevice& d){
   
-      int32 NEQS;
-      cudaMemcpy(&NEQS, neqs, sizeof(int32), cudaMemcpyDeviceToHost);
       GpuLaunchConfig config1 = GetGpuLaunchConfig(NEQS, d);
       GpuLaunchConfig config2 = GetGpuLaunchConfig(ngs, d);
 
@@ -57,8 +61,8 @@ namespace tensorflow{
   }
   
 
-  void backward(double *fint_grad, const double *Fint_grad, const double *Fint, const double *fints, 
-          const int32*el_eqns, int32 ngs, int32 neqns_per_elem, int32 *neqs){
+  void backwardGPU(double *fint_grad, const double *Fint_grad, const double *Fint, const double *fints, 
+          const int32*el_eqns, int32 ngs, int32 neqns_per_elem, int32 *neqs, const GPUDevice& d){
     int32 NEQS;
     cudaMemcpy(&NEQS, neqs, sizeof(int32), cudaMemcpyDeviceToHost);
     GpuLaunchConfig config1 = GetGpuLaunchConfig(ngs*neqns_per_elem, d);

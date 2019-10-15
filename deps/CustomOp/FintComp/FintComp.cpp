@@ -11,10 +11,11 @@ using std::string;
 
 namespace tensorflow{
   typedef Eigen::GpuDevice GPUDevice;
-  void backward(double *fint_grad, const double *Fint_grad, const double *Fint, const double *fints, 
+  void backwardGPU(double *fint_grad, const double *Fint_grad, const double *Fint, const double *fints, 
           const int32*el_eqns, int32 ngs, int32 neqns_per_elem, int32 *neqs);
-  void forward(double *Fint, const double *fints, const int32*el_eqns, int32 ngs, 
+  void forwardGPU(double *Fint, const double *fints, const int32*el_eqns, int32 ngs, 
       int32 neqns_per_elem, int32 *neqs, const GPUDevice& d);
+  int32 getInt32(const int32* i);
 }
 
 using namespace tensorflow;
@@ -206,8 +207,11 @@ public:
     // extra check
         
     // create output shape
-    
-    TensorShape out_shape({-1});
+    int32 ngs = fints_shape.dim_size(0);
+    int32 neqns_per_elem = fints_shape.dim_size(1);
+    TensorShape out_shape({*neqs.flat<int32>().data()});
+    int32 NEQS = getInt32(neqs);
+    TensorShape out_shape({NEQS});
             
     // create output tensor
     
@@ -224,7 +228,8 @@ public:
     // implement your forward function here 
 
     // TODO:
-
+    forwardGPU(out_tensor, fints_tensor, el_tensor,  ngs, 
+       neqns_per_elem, NEQS, context->eigen_device<Eigen::GpuDevice>());
   }
 };
 REGISTER_KERNEL_BUILDER(Name("FintComp").Device(DEVICE_GPU), FintCompOpGPU);
@@ -266,6 +271,8 @@ public:
     // int m = Example.dim_size(0);
         
     // create output shape
+    int32 ngs = fints_shape.dim_size(0);
+    int32 neqns_per_elem = fints_shape.dim_size(1);
     
     TensorShape grad_fints_shape(fints_shape);
     TensorShape grad_el_shape(el_shape);
@@ -294,6 +301,8 @@ public:
     // implement your backward function here 
 
     // TODO:
+    backwardGPU(grad_fints_tensor, grad_out_tensor, out_tensor, fints_tensor, el_tensor, 
+          ngs, neqns_per_elem, neqs_tensor);
     
   }
 };
