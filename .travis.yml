@@ -16,7 +16,7 @@ before_install:
   - julia -e 'using Conda; PIP = joinpath(Conda.BINDIR, "pip"); run(`$PIP install matplotlib scipy`)'
 notifications:
   email: false
-coveralls: true
+coveralls: false
 jobs:
   include:
     - stage: "Documentation"
@@ -27,8 +27,6 @@ jobs:
                                                Pkg.instantiate()'
         - julia --project=docs/ docs/make.jl
       after_success: skip
-after_success:
-  - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())';
 cache:
   directories:
   - /home/travis/.julia/conda/3/
