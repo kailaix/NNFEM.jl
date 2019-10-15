@@ -159,7 +159,7 @@ sess = tf.Session(); init(sess)
 @info run(sess, loss)
 @info run(sess, tail_loss)
 
-loss = loss + 1e8*tail_loss
+loss = loss + 1e7*tail_loss
 # error()
 for i = 1:100
     println("************************** Outer Iteration = $i ************************** ")
