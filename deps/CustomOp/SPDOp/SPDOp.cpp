@@ -17,12 +17,12 @@ REGISTER_OP("SPDOp")
   .Output("out : double")
 .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
     
-        // shape_inference::ShapeHandle h0_shape;
-        // TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &h0_shape));
-        // shape_inference::ShapeHandle y_shape;
-        // TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 2, &y_shape));
+        shape_inference::ShapeHandle h0_shape;
+        TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 2, &h0_shape));
+        shape_inference::ShapeHandle y_shape;
+        TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 2, &y_shape));
 
-        // c->set_output(0, c->MakeShape({-1, 3, 3}));
+        c->set_output(0, c->MakeShape({-1, 3, 3}));
     return Status::OK();
   });
 class SPDOpOp : public OpKernel {

@@ -37,7 +37,7 @@ function spd_H(o::PyObject, H0::Array{Float64,2})
         error("NNFEM: second dimension of `o` must be 2")
     end
     ret = spd_op(constant(H0), o)
-    ret.set_shape((-1,3,3))
+    # ret = reshape(-1,3,3)
     return ret
 end
 

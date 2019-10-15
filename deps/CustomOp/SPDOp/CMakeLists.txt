@@ -9,6 +9,12 @@ project(TFApp)
 # set(CMAKE_PREFIX_PATH ${PREFIX})
 # find_package(Torch REQUIRED)
 
+execute_process(COMMAND julia -e "using Conda; print(joinpath(Conda.BINDIR, \"x86_64-unknown-linux-gnu-gcc-4.8.5\"))" OUTPUT_VARIABLE BINCXX)
+set(CMAKE_CXX_COMPILER ${BINCXX})
+
+execute_process(COMMAND julia -e "using Conda; print(joinpath(Conda.BINDIR, \"x86_64-unknown-linux-gnu-gcc-4.8.5\"))" OUTPUT_VARIABLE BINCXX)
+set(CMAKE_C_COMPILER ${BINCXX})
+
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 set (CMAKE_CXX_STANDARD 11)
 
