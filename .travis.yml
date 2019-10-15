@@ -1,0 +1,34 @@
+sudo: required
+language: julia
+dist: xenial
+python:
+  - "3.7"
+git:
+  depth: 3
+  quiet: true
+julia:
+  - 1.2
+os:
+  - linux
+before_install:
+  - julia -e 'using Pkg; Pkg.add("NLopt"); Pkg.add("Optim"); Pkg.add("Statistics"); Pkg.add("LinearAlgebra"); Pkg.add("PyCall"); Pkg.add("SparseArrays"); Pkg.add("Test")'
+  - julia -e 'using Pkg; Pkg.add("Conda"); using Conda; PYTHON = joinpath(Conda.BINDIR, "python"); ENV["PYTHON"]=PYTHON; Pkg.build("PyCall")'
+  - julia -e 'using Conda; PIP = joinpath(Conda.BINDIR, "pip"); run(`$PIP install matplotlib scipy`)'
+notifications:
+  email: true
+coveralls: true
+jobs:
+  include:
+    - stage: "Documentation"
+      julia: 1.2
+      os: linux
+      script:
+        - julia --project=docs/ -e 'using Pkg;Pkg.add("Documenter");  Pkg.add("PyCall");  Pkg.add("LinearAlgebra"); Pkg.develop(PackageSpec(path=pwd()));
+                                               Pkg.instantiate()'
+        - julia --project=docs/ docs/make.jl
+      after_success: skip
+after_success:
+  - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())';
+cache:
+  directories:
+  - /home/travis/.julia/conda/3/

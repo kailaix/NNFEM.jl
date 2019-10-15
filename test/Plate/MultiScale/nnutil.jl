@@ -8,11 +8,11 @@ elseif length(ARGS)==2
     global idx = parse(Int64, ARGS[1])
     global tid = parse(Int64, ARGS[2])
 else
-    global idx = 1
+    global idx = 0
 end
 
-H_function = spd_H
-nout = 3
+H_function = spd_Cholesky
+nout = 6
 
 if idx == 0
     global config=[20,20,20,nout] 
