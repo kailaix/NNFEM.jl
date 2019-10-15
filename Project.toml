@@ -1,0 +1,12 @@
+name = "NNFEM"
+uuid = "9fbee185-08cf-5df3-934a-20f446aa0bf6"
+
+[deps]
+ADCME = "07b341a0-ce75-57c6-b2de-414ffdc00be5"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
+PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
+PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
