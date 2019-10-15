@@ -56,7 +56,8 @@ out2 = h0 - h0*(yi*yi')*h0/(1+yi'*h0*yi)
 
 # TODO: specify your input parameters
 u = spd_op(constant(h0),constant(y))
-sess = Session()
+tf.debugging.set_log_device_placement(true)
+sess = tf.Session()
 init(sess)
 @show run(sess, u)[1,:,:]-out1
 @show run(sess, u)[2,:,:]-out2

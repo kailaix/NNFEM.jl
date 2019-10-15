@@ -17,9 +17,6 @@ void forward(double *out, const double *y, const double *H0, int n){
     yi << y[3*i], y[3*i+1], y[3*i+2];
     auto yit = yi.transpose();
     double v = yi.dot(M*yi);
-    // std::cout << "v" << v << std::endl;
-    // std::cout << "yi*yit" << yi*yit << std::endl;
-    // std::cout << "M*(yi*yit)*M" << yi*yit << std::endl;
     O = M - M*(yi*yit)*M/(1.0+v);
     for(int l=0;l<3;l++){
       for(int j=0;j<3;j++){

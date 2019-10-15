@@ -1,12 +1,12 @@
 stress_scale = 1.0e5
 strain_scale = 1
 
-include("nnutil.jl")
+include("nnutilInternalVariable.jl")
 
 # H0 = constant(H1/stress_scale)
 testtype = "NeuralNetwork2D"
 force_scales = [5.0]
-nntype = "doublenn"
+nntype = "piecewise"
 
 # ! define H0
 # Trained with nx, ny = 10, 5
@@ -21,7 +21,8 @@ porder = 2
 fiber_fraction = 0.25
 #todo
 #fiber_fraction = 1.0
-prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>nn)
+prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>nn,
+            "n_internal"=>n_internal)
 
 
 T = 0.05
@@ -104,7 +105,7 @@ function compute_loss(tid, force_scale)
     # domain.state = state_history[end]
     # visσ(domain)
     # error()
-    sum_loss = DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
+    sum_loss = DynamicMatLawLossInternalVariable(domain, globdat, state_history, fext_history, nn,Δt, n_internal)
 end
 
 
@@ -149,7 +150,7 @@ end
 @show stress_scale^2
 loss = sum(losses)
 
-sess = tf.Session(); init(sess)
+sess = Session(); init(sess)
 # ADCME.load(sess, "$(@__DIR__)/Data/order1/learned_nn_5.0_1.mat")
 # ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
 @info run(sess, loss)

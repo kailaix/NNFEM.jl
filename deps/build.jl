@@ -1,3 +1,4 @@
+using ADCME
 function buildops(dirname)
     PWD = pwd()
     cd(joinpath("$(@__DIR__)/../", dirname))
@@ -5,8 +6,8 @@ function buildops(dirname)
         mkdir("build")
     end
     cd("build")
-    run(`cmake ..`)
-    run(`make -j`)
+    ADCME.cmake()
+    run(`$(ADCME.MAKE) -j`)
     cd(PWD)
 end
 

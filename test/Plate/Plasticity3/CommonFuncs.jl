@@ -225,7 +225,7 @@ function ComputeLoad(L, ne, porder, ngp, type,  args)
 end
 
 
-function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5, force_scale=5.0)
+function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5; force_scale=5.0)
     nnodes, neles = (nx*porder + 1)*(ny*porder + 1), nx*ny
     Lx, Ly = 1.0, 0.5
     x = np.linspace(0.0, Lx, nx*porder + 1)

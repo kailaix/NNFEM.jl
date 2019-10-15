@@ -1,36 +1,37 @@
 stress_scale = 1.0e5
 strain_scale = 1
 
-include("nnutil.jl")
+include("../MultiScale/nnutil.jl")
 
 # H0 = constant(H1/stress_scale)
 testtype = "NeuralNetwork2D"
+# force_scale = 5.0
 force_scales = [5.0]
-nntype = "doublenn"
+nntype = "piecewise"
 
 # ! define H0
 # Trained with nx, ny = 10, 5
-H0 = [1.26827e6       3.45169e5   -5187.35
-      3.45169e5       1.25272e6  -10791.7
-      -5187.35       -10791.7        536315.0]/stress_scale
+H0 = [1.04167e6  2.08333e5  0.0      
+      2.08333e5  1.04167e6  0.0      
+      0.0        0.0        4.16667e5]/stress_scale
 
 
-n_data = [202,100, 200,201,203]
-porder = 2
+n_data = [100, 200, 201, 202, 203]
+
 # density 4.5*(1 - 0.25) + 3.2*0.25
-fiber_fraction = 0.25
+#fiber_fraction = 0.25
 #todo
-#fiber_fraction = 1.0
-prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>nn)
+porder = 2
+prop = Dict("name"=> testtype, "rho"=> 4.5, "nn"=>nn)
 
 
-T = 0.05
-NT = 100
+T = 0.1
+NT = 200
 
 # DNS computaional domain
-fiber_size = 5
+fiber_size = 2
 # nx_f, ny_f = 40*fiber_size, 20*fiber_size
-nx_f, ny_f = 80*fiber_size, 40*fiber_size
+nx_f, ny_f = 10*fiber_size, 5*fiber_size
 
 # nx_f, ny_f = 12, 4
 
@@ -81,7 +82,7 @@ end
 
 
 function compute_loss(tid, force_scale)
-    nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder; force_scale=force_scale)
+    nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder; force_scale=force_scale )
     domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
     state = zeros(domain.neqs)
     ∂u = zeros(domain.neqs)
@@ -100,11 +101,7 @@ function compute_loss(tid, force_scale)
         updateDomainStateBoundary!(domain, globdat)
         push!(fext_history, domain.fext[:])
     end
-
-    # domain.state = state_history[end]
-    # visσ(domain)
-    # error()
-    sum_loss = DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
+    DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
 end
 
 
@@ -147,15 +144,17 @@ for i in n_data
 end
 
 @show stress_scale^2
-loss = sum(losses)
+opt = Array{PyObject}(undef, 5)
+opt[1] = AdamOptimizer().minimize(losses[1])
+opt[2] = AdamOptimizer().minimize(losses[2])
+opt[3] = AdamOptimizer().minimize(losses[3])
+opt[4] = AdamOptimizer().minimize(losses[4])
+opt[5] = AdamOptimizer().minimize(losses[5])
 
-sess = tf.Session(); init(sess)
-# ADCME.load(sess, "$(@__DIR__)/Data/order1/learned_nn_5.0_1.mat")
-# ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
-@info run(sess, loss)
-# error()
-for i = 1:100
-    println("************************** Outer Iteration = $i ************************** ")
-    BFGS!(sess, loss, 200)
-    ADCME.save(sess, "$(@__DIR__)/Data/nn_train$idx.mat")
+sess = Session(); init(sess)
+for i = 1:1000
+    for j in randperm(5)
+        _, l = run(sess, [opt[i], losses[i]])
+        @show i, j, l
+    end
 end

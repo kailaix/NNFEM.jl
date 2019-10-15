@@ -11,19 +11,19 @@ else
     global idx = 0
 end
 
-H_function = spd_Cholesky
-nout = 6
+H_function = spd_H
+nn_out = 3
 
 if idx == 0
-    global config=[20,20,20,nout] 
+    global config=[20,20,20,nn_out]
 elseif idx == 1
-    global config=[100,nout] 
+    global config=[80, 80, nn_out] 
 elseif idx == 2
-    global config=[20,nout]
+    global config=[20,20,20,nn_out] 
 elseif idx == 3
-    global config=[20,20,20,20,20,20,nout]
+    global config=[20,20,20,20,20,20,nn_out]
 elseif idx == 5
-    global config=[nout]
+    global config=[nn_out]
 end
 printstyled("idx = $idx, config=$config, H_function=$H_function\n", color=:green)
 
@@ -50,13 +50,15 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 450x3
         σ0 = constant(σ0)
         
         y = ae(x, config, nntype)
-	@show y, size(H0)
+        
         if H_function==spd_H
             z = spd_H(y, H0)
         else
             z = H_function(y)
         end
-        # z = bind(z, op)
+        
+	    # op = tf.print(z)
+	    # z = bind(z, op)
         # z = sym_H(y)
 
         σnn = squeeze(tf.matmul(z, tf.reshape((ε-ε0)/strain_scale, (-1,3,1)))) 

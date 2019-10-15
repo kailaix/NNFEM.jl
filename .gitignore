@@ -55,3 +55,5 @@ deps/build.jl
 !deps/CustomOp/SPDOp/custom_op.txt
 !deps/CustomOp/CholOp/CMakeLists.txt
 !deps/CustomOp/CholOp/custom_op.txt
+*test.json
+*.fuse*

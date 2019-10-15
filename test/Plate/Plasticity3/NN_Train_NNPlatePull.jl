@@ -1,7 +1,7 @@
 stress_scale = 1.0e5
 strain_scale = 1
 
-include("../Plasticity2/nnutil.jl")
+include("../MultiScale/nnutil.jl")
 
 # H0 = constant(H1/stress_scale)
 testtype = "NeuralNetwork2D"
@@ -82,7 +82,7 @@ end
 
 
 function compute_loss(tid, force_scale)
-    nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder, force_scale )
+    nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder; force_scale=force_scale )
     domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
     state = zeros(domain.neqs)
     ∂u = zeros(domain.neqs)
@@ -146,10 +146,13 @@ end
 @show stress_scale^2
 loss = sum(losses)
 
-sess = Session(); init(sess)
+tf.debugging.set_log_device_placement(true)
+sess = tf.Session(); init(sess)
 # ADCME.load(sess, "$(@__DIR__)/Data/order1/learned_nn_5.0_1.mat")
 # ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
-@info run(sess, loss)
+run(sess, loss)
+run_profile(sess, loss)
+save_profile("test.json")
 # error()
 for i = 1:100
     println("************************** Outer Iteration = $i ************************** ")

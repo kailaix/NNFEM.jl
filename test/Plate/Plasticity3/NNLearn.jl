@@ -9,10 +9,10 @@ reset_default_graph()
 stress_scale = 1e5
 strain_scale = 1.0
 force_scale = 5.0
-fiber_size = 1
+fiber_size = 2
 porder = 2
 
-include("nnutil.jl")
+include("../MultiScale/nnutil.jl")
 
 nntype = "piecewise"
 H0 = [1.04167e6  2.08333e5  0.0      
