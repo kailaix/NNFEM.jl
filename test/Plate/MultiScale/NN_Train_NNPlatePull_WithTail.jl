@@ -105,7 +105,7 @@ function compute_loss(tid, force_scale)
     # visσ(domain)
     # error()
     sum_loss, tail_loss = DynamicMatLawLoss(domain, globdat, state_history, 
-                            fext_history, nn,Δt, H0, 20)
+                            fext_history, nn,Δt, H0, 20, stress_scale)
 end
 
 

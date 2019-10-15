@@ -57,7 +57,7 @@ end
 
 
 function DynamicMatLawLossWithTailLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all::Array{Float64},
-    F_tot::Array{Float64}, nn::Function, H0::Array{Float64}, n_tail::Int64)
+    F_tot::Array{Float64}, nn::Function, H0::Array{Float64}, n_tail::Int64, stress_scale::Float64)
    # todo, use fint instead of computed F_tot 
    # F_tot =  hcat(domain.history["fint"]...)'
    # define variables
@@ -88,7 +88,7 @@ function DynamicMatLawLossWithTailLoss(domain::Domain, E_all::Array{Float64}, w�
             ()->constant(0.0),
             ()->begin
                 σ_all = nn(E, DE, σ0)
-                norm( (E-DE)*H0 + σ0 - σ_all )
+                norm( (E-DE)*H0 + σ0/stress_scale - σ_all/stress_scale )
             end
        )
        ta_tail = write(ta_tail, i, tail_loss)
@@ -177,11 +177,11 @@ function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::A
 end
 
 function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{T}, 
-    fext_history::Array{S}, nn::Function, Δt::Float64, H0::Array{Float64}, n_tail::Int64) where {T, S}
+    fext_history::Array{S}, nn::Function, Δt::Float64, H0::Array{Float64}, n_tail::Int64, stress_scale::Float64) where {T, S}
     # todo convert to E_all, Ftot
     domain.history["state"] = state_history
     F_tot, E_all, w∂E∂u_all = preprocessing(domain, globdat, hcat(fext_history...), Δt)
-    DynamicMatLawLossWithTailLoss(domain, E_all, w∂E∂u_all, F_tot, nn, H0, n_tail)
+    DynamicMatLawLossWithTailLoss(domain, E_all, w∂E∂u_all, F_tot, nn, H0, n_tail, stress_scale)
 end
 
 function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{T}, fext_history::Array{S}, nn::Function, Δt::Float64, n::Int64) where {T, S}
