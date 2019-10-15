@@ -8,7 +8,7 @@ elseif length(ARGS)==2
     global idx = parse(Int64, ARGS[1])
     global tid = parse(Int64, ARGS[2])
 else
-    global idx = 0
+    global idx = 1
 end
 
 H_function = spd_H

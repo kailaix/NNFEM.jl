@@ -59,42 +59,10 @@ end
 loss = compute_sequence_loss(strain_seq_tot, stress_seq_tot, nn) #/stress_scale^2
 
 
-sess = Session(); init(sess)
+sess = tf.Session(); init(sess)
 @show run(sess, loss)
 # ADCME.load(sess, "Data/order$porder/learned_nn.mat")
 for i = 1:10
     BFGS!(sess, loss, 1000)
     ADCME.save(sess, "Data/order$porder/learned_rnn_$(force_scale)_$(fiber_size).mat")
 end
-
-error()
-close("all")
-tid = n_data[end]
-@load "Data/order$porder/domain$(tid)_$(force_scale)_$(fiber_size).jld2" domain
-X, Y = prepare_strain_stress_data2D(domain)
-x = constant(X)
-y = nn(X[:,1:3], X[:,4:6], X[:,7:9])
-
-init(sess)
-ADCME.load(sess, "Data/order$porder/learned_nn_$(force_scale)_$(fiber_size).mat")
-ADCME.load(sess, "Data/nn_train0.mat")
-O = run(sess, y)
-using Random; Random.seed!(233)
-VisualizeStress2D(Y, O, 200, 200)
-
-error("Learning stop!")
-
-ADCME.load(sess, "Data/order$porder/learned_nn_$(force_scale)_$(fiber_size).mat")
-
-@show run(sess, loss)
-close("all")
-O = run(sess, y)
-using Random; Random.seed!(233)
-close("all")
-VisualizeStress2D(Y, O, 20)
-savefig("test.png")
-
-
-
-VisualizeStrainStressSurface(X, Y)
-VisualizeStrainStressSurface(X, O)

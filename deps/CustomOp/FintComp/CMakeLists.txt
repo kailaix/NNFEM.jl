@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(TFApp)
 set (CMAKE_CXX_STANDARD 11)
 
+
 execute_process(COMMAND julia -e "using Conda; print(joinpath(Conda.LIBDIR, \"Libraries\"))" OUTPUT_VARIABLE EIGEN_INC)
 execute_process(COMMAND julia -e "using Conda; print(joinpath(Conda.PYTHONDIR, \"python\"))" OUTPUT_VARIABLE PYTHON)
 execute_process(COMMAND ${PYTHON} -c "import tensorflow as tf; import sys; \
@@ -35,14 +36,21 @@ include_directories(${TF_INC} ${HEADERS} ${EIGEN_INC} ${TORCH_INC})
 link_directories(${TF_LIB})
 
 find_package(CUDA QUIET)
+set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-O3 ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-shared ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-fPIC ${CMAKE_CXX_FLAGS}")
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};--expt-relaxed-constexpr)
 SET(CUDA_PROPAGATE_HOST_FLAGS ON)
 
 find_program(_nvidia_smi "nvidia-smi")
 if (_nvidia_smi)
+  message("Compiling GPU-compatible custom operator!")
+  add_definitions(-DUSE_GPU)
   cuda_add_library(FintComp SHARED FintComp.cpp FintComp.cu)
 else()
   add_library(FintComp SHARED FintComp.cpp)
-  add_definitions(-DNOGPU)
+  
 endif()
 
 set_property(TARGET FintComp PROPERTY POSITION_INDEPENDENT_CODE ON)

@@ -6,13 +6,19 @@
 #include<cmath>
 #include<string> 
 using std::string;
+
+namespace tensorflow{
+  typedef Eigen::GpuDevice GPUDevice;
+  void forwardGPU(double *out, const double *y, const double *H0, int n, const GPUDevice &d);
+  void backwardGPU(double *d_y, const double *d_out, const double *y, const double *H0, int n, const GPUDevice &d);
+}
+
 using namespace tensorflow;
 // If you want to use the PyTorch feature, uncomment the following line
 // #include "la.h" 
 #include "SPDOp.h"
 
-void forwardGPU(double *out, const double *y, const double *H0, int n);
-void backwardGPU(double *d_y, const double *d_out, const double *y, const double *H0, int n);
+
 
 REGISTER_OP("SPDOp")
 .Input("h0 : double")
@@ -199,7 +205,7 @@ public:
     // implement your forward function here 
 
     // TODO:
-    forwardGPU(out_tensor, y_tensor, h0_tensor, n);
+    forwardGPU(out_tensor, y_tensor, h0_tensor, n, context->eigen_gpu_device());
   }
 };
 REGISTER_KERNEL_BUILDER(Name("SPDOp").Device(DEVICE_GPU), SPDOpOpGPU);
@@ -260,7 +266,7 @@ public:
     // implement your backward function here 
 
     // TODO:
-    backwardGPU(grad_y_tensor, grad_out_tensor, y_tensor, h0_tensor, n);
+    backwardGPU(grad_y_tensor, grad_out_tensor, y_tensor, h0_tensor, n, context->eigen_gpu_device());
   }
 };
 REGISTER_KERNEL_BUILDER(Name("SPDOpGrad").Device(DEVICE_GPU), SPDOpGradOpGPU);

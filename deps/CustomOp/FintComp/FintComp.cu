@@ -9,7 +9,7 @@
 namespace tensorflow{
   typedef Eigen::GpuDevice GPUDevice;
 
-  __global__ void forward_(const int nthreads, double *Fint, const double *fints, const int32*el_eqns, int32 ngs, int32 neqns_per_elem, int32 *neqs){
+  __global__ void forward_(const int nthreads, double *Fint, const double *fints, const int32*el_eqns, int32 ngs, int32 neqns_per_elem, int32 neqs){
     for(int i : CudaGridRangeX(nthreads)) 
       for(int32 j=0;j<neqns_per_elem; j++){
           auto fint = fints + i*neqns_per_elem;
@@ -62,7 +62,7 @@ namespace tensorflow{
   
 
   void backwardGPU(double *fint_grad, const double *Fint_grad, const double *Fint, const double *fints, 
-          const int32*el_eqns, int32 ngs, int32 neqns_per_elem, int32 *neqs, const GPUDevice& d){
+          const int32*el_eqns, int32 ngs, int32 neqns_per_elem, const int32 *neqs, const GPUDevice& d){
     int32 NEQS;
     cudaMemcpy(&NEQS, neqs, sizeof(int32), cudaMemcpyDeviceToHost);
     GpuLaunchConfig config1 = GetGpuLaunchConfig(ngs*neqns_per_elem, d);
@@ -73,7 +73,7 @@ namespace tensorflow{
       d.stream(), config1.virtual_thread_count, fint_grad));
 
     TF_CHECK_OK(GpuLaunchKernel(
-      zero_, config2.block_count, config2.thread_per_block, 0,
+      backward_, config2.block_count, config2.thread_per_block, 0,
       d.stream(), config2.virtual_thread_count, fint_grad, Fint_grad,
       Fint, fints, el_eqns, ngs, neqns_per_elem));
     

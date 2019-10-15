@@ -16,10 +16,10 @@ el = constant(rand(0:neqs_, 10, 3), dtype=Int32)
 neqs = constant(neqs_, dtype=Int32)
 # TODO: specify your input parameters
 u = fint_comp(fints,el,neqs)
-sess = Session()
+sess = tf.Session()
 init(sess)
 run(sess, u)
-
+error()
 
 # TODO: change your test parameter to `m`
 # gradient check -- v

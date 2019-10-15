@@ -149,7 +149,7 @@ end
 @show stress_scale^2
 loss = sum(losses)
 
-sess = Session(); init(sess)
+sess = tf.Session(); init(sess)
 # ADCME.load(sess, "$(@__DIR__)/Data/order1/learned_nn_5.0_1.mat")
 # ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
 @info run(sess, loss)

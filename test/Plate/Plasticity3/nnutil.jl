@@ -11,8 +11,8 @@ else
     global idx = 0
 end
 
-H_function = spd_Chol_Orth
-nn_out = 4
+H_function = spd_H
+nn_out = 3
 
 if idx == 0
     global config=[20,20,20,nn_out]

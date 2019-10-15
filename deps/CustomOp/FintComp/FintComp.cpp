@@ -7,18 +7,20 @@
 using std::string;
 // If you want to use the PyTorch feature, uncomment the following line
 // #include "la.h" 
-#include "FintComp.h"
-
 namespace tensorflow{
   typedef Eigen::GpuDevice GPUDevice;
-  void backwardGPU(double *fint_grad, const double *Fint_grad, const double *Fint, const double *fints, 
-          const int32*el_eqns, int32 ngs, int32 neqns_per_elem, int32 *neqs);
   void forwardGPU(double *Fint, const double *fints, const int32*el_eqns, int32 ngs, 
-      int32 neqns_per_elem, int32 *neqs, const GPUDevice& d);
+      int32 neqns_per_elem, int32 neqs, const GPUDevice& d);
+  void backwardGPU(double *fint_grad, const double *Fint_grad, const double *Fint, const double *fints, 
+          const int32*el_eqns, int32 ngs, int32 neqns_per_elem, const int32 *neq, const GPUDevice& d);
+  
   int32 getInt32(const int32* i);
 }
 
 using namespace tensorflow;
+
+#include "FintComp.h"
+
 
 REGISTER_OP("FintComp")
 
@@ -209,8 +211,7 @@ public:
     // create output shape
     int32 ngs = fints_shape.dim_size(0);
     int32 neqns_per_elem = fints_shape.dim_size(1);
-    TensorShape out_shape({*neqs.flat<int32>().data()});
-    int32 NEQS = getInt32(neqs);
+    int32 NEQS = getInt32(neqs.flat<int32>().data());
     TensorShape out_shape({NEQS});
             
     // create output tensor
@@ -228,8 +229,11 @@ public:
     // implement your forward function here 
 
     // TODO:
+    // void forwardGPU(double *Fint, const double *fints, const int32*el_eqns, int32 ngs, 
+    //   int32 neqns_per_elem, int32 *neqs, const GPUDevice& d);
+
     forwardGPU(out_tensor, fints_tensor, el_tensor,  ngs, 
-       neqns_per_elem, NEQS, context->eigen_device<Eigen::GpuDevice>());
+       neqns_per_elem, NEQS, context->eigen_device<GPUDevice>());
   }
 };
 REGISTER_KERNEL_BUILDER(Name("FintComp").Device(DEVICE_GPU), FintCompOpGPU);
@@ -302,7 +306,7 @@ public:
 
     // TODO:
     backwardGPU(grad_fints_tensor, grad_out_tensor, out_tensor, fints_tensor, el_tensor, 
-          ngs, neqns_per_elem, neqs_tensor);
+          ngs, neqns_per_elem, neqs_tensor, context->eigen_device<GPUDevice>());
     
   }
 };
