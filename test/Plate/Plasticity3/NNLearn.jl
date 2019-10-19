@@ -12,7 +12,7 @@ force_scale = 5.0
 fiber_size = 2
 porder = 2
 
-include("../MultiScale/nnutil.jl")
+include("nnutil.jl")
 
 nntype = "piecewise"
 H0 = [1.04167e6  2.08333e5  0.0      

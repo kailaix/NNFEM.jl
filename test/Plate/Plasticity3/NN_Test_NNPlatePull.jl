@@ -14,20 +14,23 @@ include("CommonFuncs.jl")
 
 testtype = "NeuralNetwork2D"
 nntype = "piecewise"
-include("../Plasticity2/nnutil.jl")
+include("nnutil.jl")
 
 
 H0 = [1.04167e6  2.08333e5  0.0      
       2.08333e5  1.04167e6  0.0      
       0.0        0.0        4.16667e5]/stress_scale
 
-#s = ae_to_code("Data/order2/learned_nn_5.0_1.mat", "piecewise")
-s = ae_to_code("Data/nn_train0_1.mat", "piecewise")
+porder, fiber_size = 2, 2
+s = ae_to_code("Data/order$porder/learned_rnn_weighted1.5_$(force_scale)_$(fiber_size).mat", "piecewise")
+#s = ae_to_code("Data/order$porder/learned_rnn_$(force_scale)_$(fiber_size).mat", "piecewise")
+#s = ae_to_code("Data/nn_train0_2.mat", "piecewise")
+#s = ae_to_code("../../../../NNFEM_backup.jl/test/Plate/Plasticity3/Data/order2/learned_nn_5.0_2.mat", "piecewise")
+#s = ae_to_code("Data/nn_train_0_0_2.mat", "piecewise")
+#s = ae_to_code("Data/nn_train_sgd_0_2.mat", "piecewise")
 
 eval(Meta.parse(s))
-# density 4.5*(1 - 0.25) + 3.2*0.25
-#fiber_fraction = 0.25
-#todo
+
 prop = Dict("name"=> testtype, "rho"=> 4.5, "nn"=>post_nn)
 
 T = 0.1
@@ -82,8 +85,8 @@ updateStates!(domain, globdat)
 ts = LinRange(0, T, NT+1)
 adaptive_solver_args = Dict("Newmark_rho"=> 0.0, 
                           "Newton_maxiter"=>10, 
-                          "Newton_Abs_Err"=>1e-4, 
-                          "Newton_Rel_Err"=>1e-6, 
+                          "Newton_Abs_Err"=>1e-6, 
+                          "Newton_Rel_Err"=>1e-8, 
                           "damped_Newton_eta" => 1.0)
 
 globdat, domain, ts = AdaptiveSolver("NewmarkSolver", globdat, domain, T, NT, adaptive_solver_args)
