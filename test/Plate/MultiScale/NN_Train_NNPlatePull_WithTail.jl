@@ -105,7 +105,7 @@ function compute_loss(tid, force_scale)
     # visσ(domain)
     # error()
     sum_loss, tail_loss = DynamicMatLawLoss(domain, globdat, state_history, 
-                            fext_history, nn,Δt, H0, 20, stress_scale)
+                            fext_history, nn,Δt, H0, 10, stress_scale)
 end
 
 
@@ -159,7 +159,7 @@ sess = tf.Session(); init(sess)
 @info run(sess, loss)
 @info run(sess, tail_loss)
 
-loss = loss + 1e7*tail_loss
+loss = loss + 1e8*tail_loss
 # error()
 for i = 1:100
     println("************************** Outer Iteration = $i ************************** ")

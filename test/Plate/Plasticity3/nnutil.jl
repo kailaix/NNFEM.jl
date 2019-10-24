@@ -95,6 +95,15 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 450x3
         i = [i i i]
         out = σnn .* i + σH .* (1-i)  + σ0/stress_scale
         out*stress_scale
+    elseif nntype=="stress"
+        x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
+        x = constant(x)
+        ε = constant(ε)
+        ε0 = constant(ε0)
+        σ0 = constant(σ0)
+        
+        y = ae(x, config, nntype)
+        y*stress_scale
     else
         error("$nntype does not exist")
     end
@@ -150,6 +159,13 @@ function nn_helper(ε, ε0, σ0)
         i = sigmoid_(nndoublenni(x)[1,1])
         out = y1 * i + y2 * (1-i)  + reshape(σ0, 3, 1)
         out*stress_scale
+    elseif nntype=="stress"
+        ε = ε/strain_scale
+        ε0 = ε0/strain_scale
+        σ0 = σ0/stress_scale
+        x = reshape([ε;ε0;σ0],1, 9)
+        out = nnstress(x)
+        reshape(out*stress_scale,3,1)
     else
         error("$nntype does not exist")
     end

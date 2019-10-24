@@ -1,13 +1,13 @@
 stress_scale = 1.0e5
 strain_scale = 1
 
-include("../MultiScale/nnutil.jl")
+include("nnutil.jl")
 
 # H0 = constant(H1/stress_scale)
 testtype = "NeuralNetwork2D"
 # force_scale = 5.0
 force_scales = [5.0]
-nntype = "piecewise"
+nntype = "stress"
 
 # ! define H0
 # Trained with nx, ny = 10, 5
@@ -101,7 +101,7 @@ function compute_loss(tid, force_scale)
         updateDomainStateBoundary!(domain, globdat)
         push!(fext_history, domain.fext[:])
     end
-    DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
+    DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn, Δt)
 end
 
 
@@ -146,13 +146,13 @@ end
 @show stress_scale^2
 loss = sum(losses)
 
-tf.debugging.set_log_device_placement(true)
+# tf.debugging.set_log_device_placement(true)
 sess = tf.Session(); init(sess)
 # ADCME.load(sess, "$(@__DIR__)/Data/order1/learned_nn_5.0_1.mat")
 # ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
-run(sess, loss)
-run_profile(sess, loss)
-save_profile("test.json")
+# run(sess, loss)
+# run_profile(sess, loss)
+# save_profile("test.json")
 # error()
 for i = 1:100
     println("************************** Outer Iteration = $i ************************** ")

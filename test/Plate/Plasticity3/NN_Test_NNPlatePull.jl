@@ -13,8 +13,8 @@ printstyled("tid=$tid\n", color=:green)
 include("CommonFuncs.jl")
 
 testtype = "NeuralNetwork2D"
-nntype = "piecewise"
-include("../Plasticity2/nnutil.jl")
+nntype = "stress"
+include("nnutil.jl")
 
 
 H0 = [1.04167e6  2.08333e5  0.0      
@@ -22,7 +22,7 @@ H0 = [1.04167e6  2.08333e5  0.0
       0.0        0.0        4.16667e5]/stress_scale
 
 #s = ae_to_code("Data/order2/learned_nn_5.0_1.mat", "piecewise")
-s = ae_to_code("Data/nn_train0_1.mat", "piecewise")
+s = ae_to_code("Data/nn_train0_2.mat", nntype)
 
 eval(Meta.parse(s))
 # density 4.5*(1 - 0.25) + 3.2*0.25
