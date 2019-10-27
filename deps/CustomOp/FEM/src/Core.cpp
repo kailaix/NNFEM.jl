@@ -126,8 +126,8 @@ void FEM::compute_jacobian(){
     // exit(0);
     // debug_print();
     for(int i=0;i<neqs;i++){
-        // printf("Jacobian %d/%d\n", i, neqs);
-        residual[i].backward();
+        printf("Jacobian %d/%d\n", i, neqs);
+        residual[i].backward(torch::ones({1,}, optd), true, false);
         // printf("%d\n", __LINE__);
         // debug_print();
         // cout << "grad" <<endl<< oa_.grad() << endl;
@@ -142,21 +142,23 @@ void FEM::compute_jacobian(){
 
 void FEM::Newton(int max_iter, double tol){
     printf("%d\n", __LINE__);
+
+    auto res = a.clone();
     oa_ = torch::zeros({a.size(0)}, optd.requires_grad(true));
-    oa = oa_ + a;
     for(int i=0;i<max_iter;i++){
+        oa = oa_ + res;
         printf("Newton %d/%d\n", i, max_iter);
         compute_residual();
         printf("%d\n", __LINE__);
         compute_jacobian();
         printf("%d\n", __LINE__);
-        auto delta = -get<0>(torch::solve(J, torch::reshape(residual, {residual.size(0), 1})));
+        auto delta = -get<0>(torch::solve(torch::reshape(residual, {residual.size(0), 1}), J));
         printf("%d\n", __LINE__);
         delta = torch::reshape(delta, {delta.size(0)});
         if(torch::norm(delta).item<double>()<tol){
             return;
         }
-        oa += delta;
+        res = res + delta;
     }
     printf("Newton does not converge in %d iterations!\n", max_iter);
 }
