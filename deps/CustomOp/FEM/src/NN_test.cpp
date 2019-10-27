@@ -1,6 +1,4 @@
-#include "Core.h"
-#include "NN.h"
-
+#include "FEM.h"
 
 int main(){
     // auto nn = std::make_shared<Net>(3);
@@ -30,7 +28,9 @@ int main(){
     cout << A.clone() << endl;
 
 
-    cout << torch::cat({A,A,A},0) << endl;
-    cout << torch::le(torch::norm(A),10.0)<<endl;
+    // cout << torch::cat({A,A,A},0) << endl;
+    // cout << torch::le(torch::norm(A),10.0)<<endl;
+    float *temp = (float *)A.data_ptr();
+    cout << temp[1] << endl;
     return 1;
 }

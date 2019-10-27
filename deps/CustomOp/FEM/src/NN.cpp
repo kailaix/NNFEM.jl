@@ -1,5 +1,7 @@
 #ifndef __NN_H__
 #define __NN_H__
+
+
 #include "FEM.h"
 /*
 
@@ -85,5 +87,6 @@ void FEM::nn_init(){
 	if (w != nullptr) torch::nn::init::xavier_uniform_(*w);
 	if (b != nullptr) torch::nn::init::constant_(*b, 0.01);
 }
+
 
 #endif

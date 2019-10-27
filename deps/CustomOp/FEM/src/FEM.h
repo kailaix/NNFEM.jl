@@ -1,9 +1,15 @@
 #ifndef __FEN_H__
 #define __FEN_H__
 
-#include "la.h"
+#include <functional>
+#include <cmath>
+#include <iostream>
+#include <torch/torch.h>
 #include <vector>
 #include <string>
+
+static auto optd = torch::TensorOptions().dtype(torch::kDouble).layout(torch::kStrided).requires_grad(false);
+static auto optf = torch::TensorOptions().dtype(torch::kFloat).layout(torch::kStrided).requires_grad(false);
 
 using namespace std;
 
@@ -21,16 +27,16 @@ public:
     /* data */
     int neqs, neqns_per_elem, nelems, ngps_per_elem, ngp;
     double dt;
-    int *el_eqns_row;
-    double *dhdx, *weights;
+    const double *theta; 
+    const long long *el_eqns_row;
+    const double *dhdx, *weights;
     int max_iter; double tol;
-    torch::Tensor d, v, a;
-    torch::Tensor S, fext, M;
-    torch::Tensor od, oa, osigma, oeps, eps, sigma;
+    torch::Tensor d, v, a, eps, sigma;
+    torch::Tensor Fext, M;
+    torch::Tensor od, ov, oa, osigma, oeps;
     
-    double *theta; 
-    torch::Tensor gtheta, gw ;
-    torch::Tensor residual, J, Fext, Fint;
+    
+    torch::Tensor residual, J, Fint;
     shared_ptr<Net> nn;
 
     /* neural network */
@@ -43,16 +49,28 @@ public:
     FEM(int n_layer){
         nn = std::make_shared<Net>(n_layer);
     };
+
+    FEM(): FEM(3){};
     ~FEM(){};
-    
+
+    void initialization(int neqs, int neqns_per_elem, int nelems, int ngps_per_elem, int ngp,
+        double dt,
+        const double *theta, 
+        const long long *el_eqns_row,
+        const double *dhdx, const double*weights,
+        int max_iter, double tol,
+        const double* d, const double*v, const double*a, const double*eps, const double*sigma,
+        const double* Fext, const double*M,
+        const double* od, const double*ov, const double*oa, const double*oeps, const double*osigma);
+
     void compute_residual();
     void compute_gradient_theta();
     void compute_gradient_w();
     void compute_jacobian();
     void compute_fint();
 
-    void forward();
-    void backward(double *g, double *gsigma, double *gd, double *gv, double *ga, double* theta_t);
+    void forward(double *oa, double *ov, double *od, double *osigma, double *oeps);
+    void backward(const double *g, double *ga, double *gv, double *gd, double *gsigma, double *geps, double* gtheta);
 
     void Newton(int max_iter, double tol);
 private:

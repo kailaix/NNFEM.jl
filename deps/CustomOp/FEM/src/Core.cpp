@@ -1,6 +1,7 @@
 #ifndef __CORE_H__
 #define __CORE_H__
 
+
 #include "FEM.h"
 
 //fint(d^n, S^n)
@@ -82,6 +83,7 @@ void FEM::compute_fint(){
             }
         }
     }
+    ov = v + dt*((1.0-gamma)*a + gamma*oa);
     delete[] pE_pu_tran;
 
 }
@@ -95,7 +97,7 @@ void FEM::Newton(int max_iter, double tol){
         if(torch::norm(delta).item<double>()<tol){
             return;
         }
-        a += delta;
+        oa += delta;
     }
     printf("Newton does not converge in %d iterations!\n", max_iter);
 }
@@ -114,13 +116,18 @@ void FEM::compute_residual(){
     residual = torch::mm(M,((1-am)*oa + am*a)) + Fint - Fext;
 }
 
-void FEM::forward(){
+void FEM::forward(double *poa, double *pov, double *pod, double *posigma, double *poeps){
     Newton(max_iter, tol);
+    memcpy(poa, (double *)oa.data_ptr(), oa.size(0));
+    memcpy(pov, (double *)ov.data_ptr(), ov.size(0));
+    memcpy(pod, (double *)od.data_ptr(), od.size(0));
+    memcpy(posigma, (double *)osigma.data_ptr(), osigma.size(0)*osigma.size(1));
+    memcpy(poeps, (double *)oeps.data_ptr(), oeps.size(0)*oeps.size(1));
 }
 
-void FEM::backward(double *g, double *gsigma, double *gd, double *gv, double *ga, double* theta_t){
+void FEM::backward(const double *g, double *ga, double *gv, double *gd, double *gsigma, double *geps, double* gtheta){
     int n = a.size(0);
-    auto G = torch::from_blob(g, {n,1}, optd);
+    auto G = torch::from_blob(const_cast<double*>(g), {n,1}, optd);
     compute_residual();
     compute_jacobian();
     auto x = -torch::detach(torch::reshape(get<0>(torch::solve(J.transpose(0,1), G)), {n}));
@@ -151,12 +158,12 @@ void FEM::backward(double *g, double *gsigma, double *gd, double *gv, double *ga
         auto accessor_bias = nn->fc[i]->bias.grad().accessor<double,1>();
         for(int p=0;p<nn->fc[i]->weight.size(0);p++){
             for(int q=0;q<nn->fc[i]->weight.size(1);q++){
-                theta_t[k] = accessor_weight[p][q];
+                gtheta[k] = accessor_weight[p][q];
                 k += 1;
             }
         }
         for(int p=0;p<nn->fc[i]->bias.size(0);p++){
-            theta_t[k] = accessor_bias[p];
+            gtheta[k] = accessor_bias[p];
             k += 1;
         }
 
@@ -165,5 +172,42 @@ void FEM::backward(double *g, double *gsigma, double *gd, double *gv, double *ga
     }
     
 }
+
+
+void FEM::initialization(int neqs, int neqns_per_elem, int nelems, int ngps_per_elem, int ngp,
+        double dt,
+        const double *theta, 
+        const long long *el_eqns_row,
+        const double *dhdx, const double*weights,
+        int max_iter, double tol,
+        const double* d, const double*v, const double*a, const double*eps, const double*sigma,
+        const double* Fext, const double*M,
+        const double* od, const double*ov, const double*oa, const double*oeps, const double*osigma){
+    FEM::neqs = neqs;
+    FEM::neqns_per_elem = neqns_per_elem;
+    FEM::nelems = nelems;
+    FEM::ngps_per_elem = ngps_per_elem;
+    FEM::ngp = ngp;
+    FEM::dt = dt;
+    FEM::theta = theta;
+    FEM::el_eqns_row = el_eqns_row;
+    FEM::dhdx = dhdx;
+    FEM::weights = weights;
+    FEM::max_iter = max_iter;
+    FEM::tol = tol;
+    FEM::d = torch::from_blob(const_cast<double*>(d), {neqs}, optd);
+    FEM::v = torch::from_blob(const_cast<double*>(v), {neqs}, optd);
+    FEM::a = torch::from_blob(const_cast<double*>(a), {neqs}, optd);
+    FEM::eps = torch::from_blob(const_cast<double*>(eps), {neqns_per_elem*nelems, 3}, optd);
+    FEM::sigma = torch::from_blob(const_cast<double*>(sigma), {neqns_per_elem*nelems, 3}, optd);
+    FEM::Fext = torch::from_blob(const_cast<double*>(Fext), {neqs}, optd);
+    FEM::M = torch::from_blob(const_cast<double*>(M), {neqs, neqs}, optd);
+    FEM::od = torch::from_blob(const_cast<double*>(od), {neqs}, optd);
+    FEM::ov = torch::from_blob(const_cast<double*>(ov), {neqs}, optd);
+    FEM::oa = torch::from_blob(const_cast<double*>(oa), {neqs}, optd);
+    FEM::oeps = torch::from_blob(const_cast<double*>(oeps), {neqns_per_elem*nelems, 3}, optd);
+    FEM::osigma = torch::from_blob(const_cast<double*>(osigma), {neqns_per_elem*nelems, 3}, optd);
+}
+
 
 #endif
