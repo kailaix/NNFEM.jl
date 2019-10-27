@@ -57,3 +57,5 @@ deps/build.jl
 !deps/CustomOp/CholOp/custom_op.txt
 *test.json
 *.fuse*
+
+*libtorch/
