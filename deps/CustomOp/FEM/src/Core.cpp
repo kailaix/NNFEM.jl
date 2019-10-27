@@ -16,31 +16,32 @@ void FEM::compute_fint(){
     printf("%d\n", __LINE__);
     double am = -1.0;
     double beta2 = 0.5*(1 - am)*(1 - am), gamma = 0.5 - am;
+    if (neqns_per_elem%2!=0){
+        printf("neqns_per_elem must be a multiple of 2");
+        exit(0);
+    }
     int nnodes_per_elem = neqns_per_elem/2, nstrain = 3;
     // compute nn_input, compute oeps based on od
-    auto ux = torch::zeros({nnodes_per_elem}, optd);
-    auto uy = torch::zeros({nnodes_per_elem}, optd);
-    printf("%d\n", __LINE__);
+    auto ux = torch::zeros({nelems, nnodes_per_elem}, optd);
+    auto uy = torch::zeros({nelems, nnodes_per_elem}, optd);
+    // printf("%d\n", __LINE__);
 
     Fint = torch::zeros({neqs}, optd);
-    printf("%d\n", __LINE__);
-    cout << d.sizes() << endl;
-    cout << v.sizes() << endl;
-    cout << a.sizes() << endl;
-    cout << oa.sizes() << endl;
     oeps.fill_(0.0);
     od = d + dt*v + dt*dt/2.0*((1-beta2)*a + beta2*oa);
 
-    printf("%d\n", __LINE__);
+    // printf("%d\n", __LINE__);
     for(int e =0; e < nelems; e++){
         printf("compute fint %d/%d\n", e, nelems);
-        ux.fill_(0.0);
-        uy.fill_(0.0);
+        // auto ux = torch::zeros({nnodes_per_elem}, optd);
+        // auto uy = torch::zeros({nnodes_per_elem}, optd);
+        // ux.fill_(0.0);
+        // uy.fill_(0.0);
         for(int i=0; i < nnodes_per_elem; i++){
             if (el_eqns_row[e*neqns_per_elem + i] > 0)
-                ux[i] = od[el_eqns_row[e*neqns_per_elem + i] - 1];
+                ux[e][i] += od[el_eqns_row[e*neqns_per_elem + i] - 1];
             if  (el_eqns_row[e*neqns_per_elem + nnodes_per_elem + i] > 0)
-                uy[i] = od[el_eqns_row[e*neqns_per_elem + nnodes_per_elem + i] - 1]; 
+                uy[e][i] += od[el_eqns_row[e*neqns_per_elem + nnodes_per_elem + i] - 1]; 
         }
         printf("%d\n", __LINE__);
             
@@ -51,13 +52,13 @@ void FEM::compute_fint(){
             //g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
             //ux = u'*g1; uy = u'*g2; vx = v'*g1; vy = v'*g2
             for(int i = 0; i < nnodes_per_elem; i++){
-                oeps[glo_igp][0] += ux[i]*dhdx[glo_igp*neqns_per_elem + i]; //ux
-                oeps[glo_igp][1] += uy[i]*dhdx[glo_igp*neqns_per_elem + nnodes_per_elem + i]; //vx
-                oeps[glo_igp][2] += ux[i]*dhdx[glo_igp*neqns_per_elem + nnodes_per_elem + i] + uy[i]*dhdx[glo_igp*neqns_per_elem + i]; //uy+vx]
+                oeps[glo_igp][0] += ux[e][i]*dhdx[glo_igp*neqns_per_elem + i]; //ux
+                oeps[glo_igp][1] += uy[e][i]*dhdx[glo_igp*neqns_per_elem + nnodes_per_elem + i]; //vx
+                oeps[glo_igp][2] += ux[e][i]*dhdx[glo_igp*neqns_per_elem + nnodes_per_elem + i] + uy[e][i]*dhdx[glo_igp*neqns_per_elem + i]; //uy+vx]
             }
         }
     }
-    cout << oeps << endl;
+    // cout << oeps << endl;
 
     printf("%d\n", __LINE__);
 
@@ -68,14 +69,19 @@ void FEM::compute_fint(){
 
     printf("%d\n", __LINE__);
 
-    auto fint = torch::zeros({neqns_per_elem}, optd);
+    
     double* pE_pu_tran = new double[neqns_per_elem*nstrain];
+    // todo temporary workaround
+    for(int i=0;i<neqns_per_elem*nstrain;i++) pE_pu_tran[i] = 0.0;
     for(int e =0; e < nelems; e++){
+        auto fint = torch::zeros({neqns_per_elem}, optd);
+        
+        
         for(int igp = 0; igp<ngps_per_elem; igp++){
             
             int glo_igp = e*ngps_per_elem + igp;
             //comput only SmallStrainContinuum fint, associated with the Gaussin point
-            fint.fill_(0.0);
+            
 
             //g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
             // compute  pE_pu_tran, neqns_per_elem by nstrain array  
@@ -92,14 +98,15 @@ void FEM::compute_fint(){
             for(int i = 0;  i<neqns_per_elem; i++){
                 for(int j =0; j< nstrain; j++) {
                     fint[i] += pE_pu_tran[i*nstrain + j]* osigma[glo_igp][j] * weights[igp]; // 1x8
+                    // printf("--->%d, %d, %f\n",i, j, pE_pu_tran[i*nstrain + j]);
                 }
             }
+        }
             //loop all equations associated with the Gaussian points
 
-            for(int j=0; j< neqns_per_elem; j++){
-                if(el_eqns_row[e*neqns_per_elem + j] > 0)
-                    Fint[el_eqns_row[e*neqns_per_elem + j] - 1] += fint[j];
-            }
+        for(int j=0; j< neqns_per_elem; j++){
+            if(el_eqns_row[e*neqns_per_elem + j] > 0)
+                Fint[el_eqns_row[e*neqns_per_elem + j] - 1] += fint[j];
         }
     }
     printf("%d\n", __LINE__);
@@ -108,9 +115,35 @@ void FEM::compute_fint(){
     printf("Success!\n");
 }
 
+void FEM::compute_residual(){
+    compute_fint();
+    double am = -1.0;
+    residual = torch::mv(M,((1.0-am)*oa + am*a)) + Fint - Fext;
+}
+
+void FEM::compute_jacobian(){
+    //cout << residual << endl;
+    // exit(0);
+    // debug_print();
+    for(int i=0;i<neqs;i++){
+        // printf("Jacobian %d/%d\n", i, neqs);
+        residual[i].backward();
+        // printf("%d\n", __LINE__);
+        // debug_print();
+        // cout << "grad" <<endl<< oa_.grad() << endl;
+        // cout << "grad" <<endl<< oa_.grad() << endl;
+        // printf("%d\n", __LINE__);
+        // cout << J[i] << endl;
+        J[i] = oa_.grad();
+        oa_.grad().fill_(0.0);
+    }
+    printf("Jacobian Success!\n");
+}
+
 void FEM::Newton(int max_iter, double tol){
     printf("%d\n", __LINE__);
-    oa = a.clone();
+    oa_ = torch::zeros({a.size(0)}, optd.requires_grad(true));
+    oa = oa_ + a;
     for(int i=0;i<max_iter;i++){
         printf("Newton %d/%d\n", i, max_iter);
         compute_residual();
@@ -128,28 +161,9 @@ void FEM::Newton(int max_iter, double tol){
     printf("Newton does not converge in %d iterations!\n", max_iter);
 }
 
-void FEM::compute_jacobian(){
-    cout << residual << endl;
-    debug_print();
-    for(int i=0;i<neqs;i++){
-        printf("Jacobian %d/%d\n", i, neqs);
-        residual[i].backward();
-        J[i] = a.grad();
-        a.grad().fill_(0.0);
-    }
-}
 
-void FEM::compute_residual(){
-    compute_fint();
-    double am = -1.0;
-    // cout << torch::mm(M,((1.0-am)*oa + am*a)) << endl;
-    // cout << Fint.sizes() << endl;
-    // cout << Fext.sizes() << endl;
-    // cout << Fint << endl;
-    // cout << Fint << endl;
-    // cout << torch::mv(M,((1.0-am)*oa + am*a)) << endl;
-    residual = torch::mv(M,((1.0-am)*oa + am*a)) + Fint - Fext;
-}
+
+
 
 void FEM::forward(double *poa, double *pov, double *pod, double *posigma, double *poeps){
     Newton(max_iter, tol);
@@ -233,16 +247,16 @@ void FEM::initialization(int neqs, int neqns_per_elem, int nelems, int ngps_per_
     FEM::d = torch::from_blob(const_cast<double*>(d), {neqs}, optd);
     FEM::v = torch::from_blob(const_cast<double*>(v), {neqs}, optd);
     FEM::a = torch::from_blob(const_cast<double*>(a), {neqs}, optd);
-    FEM::eps = torch::from_blob(const_cast<double*>(eps), {neqns_per_elem*nelems, 3}, optd);
-    FEM::sigma = torch::from_blob(const_cast<double*>(sigma), {neqns_per_elem*nelems, 3}, optd);
+    FEM::eps = torch::from_blob(const_cast<double*>(eps), {ngps_per_elem*nelems, 3}, optd);
+    FEM::sigma = torch::from_blob(const_cast<double*>(sigma), {ngps_per_elem*nelems, 3}, optd);
     FEM::Fext = torch::from_blob(const_cast<double*>(Fext), {neqs}, optd);
     FEM::M = torch::from_blob(const_cast<double*>(M), {neqs, neqs}, optd);
+    FEM::oa = torch::from_blob(const_cast<double*>(oa), {neqs}, optd);
     FEM::od = torch::from_blob(const_cast<double*>(od), {neqs}, optd);
     FEM::ov = torch::from_blob(const_cast<double*>(ov), {neqs}, optd);
-    FEM::oa = torch::from_blob(const_cast<double*>(oa), {neqs}, optd);
-    FEM::oeps = torch::from_blob(const_cast<double*>(oeps), {neqns_per_elem*nelems, 3}, optd);
-    FEM::osigma = torch::from_blob(const_cast<double*>(osigma), {neqns_per_elem*nelems, 3}, optd);
-    // FEM::J = torch::zeros({neqs, neqs}, optd);
+    FEM::oeps = torch::from_blob(const_cast<double*>(oeps), {ngps_per_elem*nelems, 3}, optd);
+    FEM::osigma = torch::from_blob(const_cast<double*>(osigma), {ngps_per_elem*nelems, 3}, optd);
+    FEM::J = torch::zeros({neqs, neqs}, optd);
 }
 
 

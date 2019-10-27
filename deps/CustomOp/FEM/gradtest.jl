@@ -9,7 +9,7 @@ fem_op = load_op_and_grad("./build/libFemOp","fem_op", multiple=true)
 
 theta = constant(rand(584))
 neqns = 10;
-neqns_per_elem = 9;
+neqns_per_elem = 18;
 nelems = 10;
 ngps_per_elem = 9;
 ngp = constant(450)
@@ -26,7 +26,7 @@ dhdx = constant(ones(neqns_per_elem*ngps_per_elem*nelems));
 fext = constant(ones(neqns));
 # error()
 # 
-el_eqns_row = constant(rand(0:neqns, nelems*ngps_per_elem));
+el_eqns_row = constant(rand(0:neqns, nelems*neqns_per_elem));
 max_iter = constant(10)
 tol = constant(1e-6)
 

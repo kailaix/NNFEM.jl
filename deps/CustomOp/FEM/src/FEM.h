@@ -33,7 +33,7 @@ public:
     int max_iter; double tol;
     torch::Tensor d, v, a, eps, sigma;
     torch::Tensor Fext, M;
-    torch::Tensor od, ov, oa, osigma, oeps;
+    torch::Tensor od, ov, oa, osigma, oeps, oa_;
     
     
     torch::Tensor residual, J, Fint;
