@@ -7,11 +7,41 @@ Random.seed!(233)
 
 fem_op = load_op_and_grad("./build/libFemOp","fem_op", multiple=true)
 
+theta = constant(rand(584))
+neqns = 10;
+neqns_per_elem = 9;
+nelems = 10;
+ngps_per_elem = 9;
+ngp = constant(450)
+dt = constant(0.1)
+d = constant(ones(neqns));
+v = constant(ones(neqns));
+a = constant(ones(neqns));
+sigma = constant(ones(nelems*ngps_per_elem, 3));
+eps = constant(ones(nelems*ngps_per_elem, 3));
+m = constant(ones(neqns,neqns));
+weights = constant(ones(ngps_per_elem));
+dhdx = constant(ones(neqns_per_elem*ngps_per_elem*nelems));
+@show dhdx
+fext = constant(ones(neqns));
+# error()
+# 
+el_eqns_row = constant(rand(0:neqns, nelems*ngps_per_elem));
+max_iter = constant(10)
+tol = constant(1e-6)
+
+neqns = constant(neqns)
+neqns_per_elem = constant(neqns_per_elem)
+nelems = constant(nelems)
+ngps_per_elem = constant(ngps_per_elem);
 # TODO: specify your input parameters
-u = fem_op(theta,d,v,a,fext,eps,sigma,m,neqs,neqns_per_elem,nelems,ngps_per_elem,ngp,dt,el_eqns_row,dhdx,weights,max_iter,tol)
+u = fem_op(theta,d,v,a,fext,eps,sigma,m,neqns,neqns_per_elem,nelems,
+            ngps_per_elem,ngp,dt,el_eqns_row,dhdx,weights,max_iter,tol)
 sess = Session()
 init(sess)
 run(sess, u)
+
+error()
 
 
 # TODO: change your test parameter to `m`

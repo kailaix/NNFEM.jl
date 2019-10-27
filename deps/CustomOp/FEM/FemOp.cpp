@@ -95,66 +95,73 @@ private:
     FEM fem;
 public:
   explicit FemOpOp(OpKernelConstruction* context) : OpKernel(context) {
-     fem = FEM(3);
   }
 
   void Compute(OpKernelContext* context) override {    
     DCHECK_EQ(19, context->num_inputs());
     
-    
+    printf("%d\n", __LINE__);
     const tensorflow::Tensor& theta = context->input(0);
     const tensorflow::Tensor& d = context->input(1);
     const tensorflow::Tensor& v = context->input(2);
     const tensorflow::Tensor& a = context->input(3);
+    printf("%d\n", __LINE__);
     const tensorflow::Tensor& fext = context->input(4);
     const tensorflow::Tensor& eps = context->input(5);
     const tensorflow::Tensor& sigma = context->input(6);
     const tensorflow::Tensor& m = context->input(7);
     const tensorflow::Tensor& neqs = context->input(8);
+    printf("%d\n", __LINE__);
     const tensorflow::Tensor& neqns_per_elem = context->input(9);
     const tensorflow::Tensor& nelems = context->input(10);
     const tensorflow::Tensor& ngps_per_elem = context->input(11);
     const tensorflow::Tensor& ngp = context->input(12);
     const tensorflow::Tensor& dt = context->input(13);
+    printf("%d\n", __LINE__);
     const tensorflow::Tensor& el_eqns_row = context->input(14);
     const tensorflow::Tensor& dhdx = context->input(15);
     const tensorflow::Tensor& weights = context->input(16);
     const tensorflow::Tensor& max_iter = context->input(17);
     const tensorflow::Tensor& tol = context->input(18);
-    
+    printf("%d\n", __LINE__);
     
     const tensorflow::TensorShape& theta_shape = theta.shape();
     const tensorflow::TensorShape& d_shape = d.shape();
     const tensorflow::TensorShape& v_shape = v.shape();
     const tensorflow::TensorShape& a_shape = a.shape();
+    printf("%d\n", __LINE__);
     const tensorflow::TensorShape& fext_shape = fext.shape();
     const tensorflow::TensorShape& eps_shape = eps.shape();
     const tensorflow::TensorShape& sigma_shape = sigma.shape();
     const tensorflow::TensorShape& m_shape = m.shape();
     const tensorflow::TensorShape& neqs_shape = neqs.shape();
+    printf("%d\n", __LINE__);
     const tensorflow::TensorShape& neqns_per_elem_shape = neqns_per_elem.shape();
     const tensorflow::TensorShape& nelems_shape = nelems.shape();
     const tensorflow::TensorShape& ngps_per_elem_shape = ngps_per_elem.shape();
     const tensorflow::TensorShape& ngp_shape = ngp.shape();
     const tensorflow::TensorShape& dt_shape = dt.shape();
+    printf("%d\n", __LINE__);
     const tensorflow::TensorShape& el_eqns_row_shape = el_eqns_row.shape();
     const tensorflow::TensorShape& dhdx_shape = dhdx.shape();
     const tensorflow::TensorShape& weights_shape = weights.shape();
     const tensorflow::TensorShape& max_iter_shape = max_iter.shape();
     const tensorflow::TensorShape& tol_shape = tol.shape();
-    
+    printf("%d\n", __LINE__);
     
     DCHECK_EQ(theta_shape.dims(), 1);
     DCHECK_EQ(d_shape.dims(), 1);
     DCHECK_EQ(v_shape.dims(), 1);
     DCHECK_EQ(a_shape.dims(), 1);
     DCHECK_EQ(fext_shape.dims(), 1);
+    printf("%d\n", __LINE__);
     DCHECK_EQ(eps_shape.dims(), 2);
     DCHECK_EQ(sigma_shape.dims(), 2);
     DCHECK_EQ(m_shape.dims(), 2);
     DCHECK_EQ(neqs_shape.dims(), 0);
     DCHECK_EQ(neqns_per_elem_shape.dims(), 0);
     DCHECK_EQ(nelems_shape.dims(), 0);
+    printf("%d\n", __LINE__);
     DCHECK_EQ(ngps_per_elem_shape.dims(), 0);
     DCHECK_EQ(ngp_shape.dims(), 0);
     DCHECK_EQ(dt_shape.dims(), 0);
@@ -163,16 +170,19 @@ public:
     DCHECK_EQ(weights_shape.dims(), 1);
     DCHECK_EQ(max_iter_shape.dims(), 0);
     DCHECK_EQ(tol_shape.dims(), 0);
+    printf("%d\n", __LINE__);
 
     // extra check
         
     // create output shape
-    
-    tensorflow::TensorShape oa_shape({-1});
-    tensorflow::TensorShape ov_shape({-1});
-    tensorflow::TensorShape od_shape({-1});
-    tensorflow::TensorShape osigma_shape({-1,3});
-    tensorflow::TensorShape oeps_shape({-1,3});
+    int n = a_shape.dim_size(0);
+    int p = sigma_shape.dim_size(0);
+    tensorflow::TensorShape oa_shape({n});
+    tensorflow::TensorShape ov_shape({n});
+    tensorflow::TensorShape od_shape({n});
+    tensorflow::TensorShape osigma_shape({p,3});
+    tensorflow::TensorShape oeps_shape({p,3});
+    printf("%d\n", __LINE__);
             
     // create output tensor
     
@@ -186,7 +196,7 @@ public:
     OP_REQUIRES_OK(context, context->allocate_output(3, osigma_shape, &osigma));
     tensorflow::Tensor* oeps = NULL;
     OP_REQUIRES_OK(context, context->allocate_output(4, oeps_shape, &oeps));
-    
+    printf("%d\n", __LINE__);
     // get the corresponding Eigen tensors for data access
     
     auto theta_tensor = theta.flat<double>().data();
@@ -215,7 +225,7 @@ public:
     auto oeps_tensor = oeps->flat<double>().data();   
 
     // implement your forward function here 
-
+printf("%d\n", __LINE__);
     // TODO:
     fem.initialization(
         *neqs_tensor, 
@@ -242,7 +252,9 @@ public:
         oa_tensor, 
         oeps_tensor, 
         osigma_tensor);
+        printf("%d\n", __LINE__);
     fem.forward(oa_tensor, ov_tensor, od_tensor, osigma_tensor, oeps_tensor);
+    printf("%d\n", __LINE__);
 
   }
 };

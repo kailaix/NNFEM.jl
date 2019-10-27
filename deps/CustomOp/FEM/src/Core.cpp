@@ -13,25 +13,36 @@ void FEM::compute_fint(){
     //todo only SmallStrainContinuum elem.fill_(0.0);
     //loop all Gauss
     //compute stress
+    printf("%d\n", __LINE__);
     double am = -1.0;
     double beta2 = 0.5*(1 - am)*(1 - am), gamma = 0.5 - am;
     int nnodes_per_elem = neqns_per_elem/2, nstrain = 3;
     // compute nn_input, compute oeps based on od
-    auto u = torch::zeros({nnodes_per_elem}, optd);
-    auto v = torch::zeros({nnodes_per_elem}, optd);
+    auto ux = torch::zeros({nnodes_per_elem}, optd);
+    auto uy = torch::zeros({nnodes_per_elem}, optd);
+    printf("%d\n", __LINE__);
 
-    Fint.fill_(0.0);
+    Fint = torch::zeros({neqs}, optd);
+    printf("%d\n", __LINE__);
+    cout << d.sizes() << endl;
+    cout << v.sizes() << endl;
+    cout << a.sizes() << endl;
+    cout << oa.sizes() << endl;
     oeps.fill_(0.0);
     od = d + dt*v + dt*dt/2.0*((1-beta2)*a + beta2*oa);
+
+    printf("%d\n", __LINE__);
     for(int e =0; e < nelems; e++){
-        u.fill_(0.0);
-        v.fill_(0.0);
+        printf("compute fint %d/%d\n", e, nelems);
+        ux.fill_(0.0);
+        uy.fill_(0.0);
         for(int i=0; i < nnodes_per_elem; i++){
             if (el_eqns_row[e*neqns_per_elem + i] > 0)
-                u[i] = od[el_eqns_row[e*neqns_per_elem + i] - 1];
+                ux[i] = od[el_eqns_row[e*neqns_per_elem + i] - 1];
             if  (el_eqns_row[e*neqns_per_elem + nnodes_per_elem + i] > 0)
-                v[i] = od[el_eqns_row[e*neqns_per_elem + nnodes_per_elem + i] - 1]; 
+                uy[i] = od[el_eqns_row[e*neqns_per_elem + nnodes_per_elem + i] - 1]; 
         }
+        printf("%d\n", __LINE__);
             
         for(int igp = 0; igp<ngps_per_elem; igp++){
             int glo_igp = e*ngps_per_elem + igp;
@@ -40,20 +51,28 @@ void FEM::compute_fint(){
             //g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
             //ux = u'*g1; uy = u'*g2; vx = v'*g1; vy = v'*g2
             for(int i = 0; i < nnodes_per_elem; i++){
-                oeps[glo_igp][0] += u[i]*dhdx[glo_igp*neqns_per_elem + i]; //ux
-                oeps[glo_igp][1] += v[i]*dhdx[glo_igp*neqns_per_elem + nnodes_per_elem + i]; //vx
-                oeps[glo_igp][2] += u[i]*dhdx[glo_igp*neqns_per_elem + nnodes_per_elem + i] + v[i]*dhdx[glo_igp*neqns_per_elem + i]; //uy+vx]
+                oeps[glo_igp][0] += ux[i]*dhdx[glo_igp*neqns_per_elem + i]; //ux
+                oeps[glo_igp][1] += uy[i]*dhdx[glo_igp*neqns_per_elem + nnodes_per_elem + i]; //vx
+                oeps[glo_igp][2] += ux[i]*dhdx[glo_igp*neqns_per_elem + nnodes_per_elem + i] + uy[i]*dhdx[glo_igp*neqns_per_elem + i]; //uy+vx]
             }
         }
     }
+    cout << oeps << endl;
+
+    printf("%d\n", __LINE__);
 
     auto nn_input = torch::cat({oeps, eps, sigma}, 1);
     osigma = nn_predict(nn_input);
+
+    // cout << osigma << endl;
+
+    printf("%d\n", __LINE__);
 
     auto fint = torch::zeros({neqns_per_elem}, optd);
     double* pE_pu_tran = new double[neqns_per_elem*nstrain];
     for(int e =0; e < nelems; e++){
         for(int igp = 0; igp<ngps_per_elem; igp++){
+            
             int glo_igp = e*ngps_per_elem + igp;
             //comput only SmallStrainContinuum fint, associated with the Gaussin point
             fint.fill_(0.0);
@@ -83,16 +102,23 @@ void FEM::compute_fint(){
             }
         }
     }
+    printf("%d\n", __LINE__);
     ov = v + dt*((1.0-gamma)*a + gamma*oa);
     delete[] pE_pu_tran;
-
+    printf("Success!\n");
 }
 
 void FEM::Newton(int max_iter, double tol){
+    printf("%d\n", __LINE__);
+    oa = a.clone();
     for(int i=0;i<max_iter;i++){
+        printf("Newton %d/%d\n", i, max_iter);
         compute_residual();
+        printf("%d\n", __LINE__);
         compute_jacobian();
+        printf("%d\n", __LINE__);
         auto delta = -get<0>(torch::solve(J, torch::reshape(residual, {residual.size(0), 1})));
+        printf("%d\n", __LINE__);
         delta = torch::reshape(delta, {delta.size(0)});
         if(torch::norm(delta).item<double>()<tol){
             return;
@@ -103,7 +129,10 @@ void FEM::Newton(int max_iter, double tol){
 }
 
 void FEM::compute_jacobian(){
+    cout << residual << endl;
+    debug_print();
     for(int i=0;i<neqs;i++){
+        printf("Jacobian %d/%d\n", i, neqs);
         residual[i].backward();
         J[i] = a.grad();
         a.grad().fill_(0.0);
@@ -113,7 +142,13 @@ void FEM::compute_jacobian(){
 void FEM::compute_residual(){
     compute_fint();
     double am = -1.0;
-    residual = torch::mm(M,((1-am)*oa + am*a)) + Fint - Fext;
+    // cout << torch::mm(M,((1.0-am)*oa + am*a)) << endl;
+    // cout << Fint.sizes() << endl;
+    // cout << Fext.sizes() << endl;
+    // cout << Fint << endl;
+    // cout << Fint << endl;
+    // cout << torch::mv(M,((1.0-am)*oa + am*a)) << endl;
+    residual = torch::mv(M,((1.0-am)*oa + am*a)) + Fint - Fext;
 }
 
 void FEM::forward(double *poa, double *pov, double *pod, double *posigma, double *poeps){
@@ -207,7 +242,46 @@ void FEM::initialization(int neqs, int neqns_per_elem, int nelems, int ngps_per_
     FEM::oa = torch::from_blob(const_cast<double*>(oa), {neqs}, optd);
     FEM::oeps = torch::from_blob(const_cast<double*>(oeps), {neqns_per_elem*nelems, 3}, optd);
     FEM::osigma = torch::from_blob(const_cast<double*>(osigma), {neqns_per_elem*nelems, 3}, optd);
+    // FEM::J = torch::zeros({neqs, neqs}, optd);
 }
 
+
+void FEM::debug_print(){
+    ofstream ofile("debug.txt");
+
+    ofile << "neqs" << endl << neqs << endl << endl;
+    ofile << "neqns_per_elem" << endl << neqns_per_elem << endl << endl;
+    ofile << "nelems" << endl << nelems << endl << endl;
+    ofile << "ngps_per_elem" << endl << ngps_per_elem << endl << endl;
+    ofile << "ngp" << endl << ngp << endl << endl;
+    ofile << "dt" << endl << dt << endl << endl;
+    ofile << "max_iter" << endl << max_iter << endl << endl;
+    ofile << "tol" << endl << tol << endl << endl;
+    ofile << "d" << endl << d << endl << endl;
+    ofile << "v" << endl << v << endl << endl;
+    ofile << "a" << endl << a << endl << endl;
+    ofile << "eps" << endl << eps << endl << endl;
+    ofile << "sigma" << endl << sigma << endl << endl;
+    ofile << "Fext" << endl << Fext << endl << endl;
+    ofile << "M" << endl << M << endl << endl;
+    ofile << "od" << endl << od << endl << endl;
+    ofile << "ov" << endl << ov << endl << endl;
+    ofile << "oa" << endl << oa << endl << endl;
+    ofile << "osigma" << endl << osigma << endl << endl;
+    ofile << "oeps" << endl << oeps << endl << endl;
+    ofile << "residual" << endl << residual << endl << endl;
+    ofile << "J" << endl << J << endl << endl;
+    ofile << "Fint" << endl << Fint << endl << endl;
+
+    ofile << "dhdx" << endl << torch::from_blob(const_cast<double*>(dhdx), {neqns_per_elem*ngps_per_elem*nelems}, optd) << endl << endl;
+    ofile << "weights" << endl << torch::from_blob(const_cast<double*>(weights), {ngps_per_elem}, optd) << endl << endl;
+    // ofile << "el_eqns_row" << endl << torch::from_blob(const_cast<long long*>(el_eqns_row), {nelems*ngps_per_elem}) << endl << endl;
+
+    // ofile << "theta" << endl << torch::from_blob(const_cast<double*>theta, {}) << endl << endl;
+
+
+    ofile.close();
+   
+}
 
 #endif

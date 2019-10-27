@@ -75,6 +75,7 @@ public:
     void Newton(int max_iter, double tol);
 private:
     void disp_to_strain();
+    void debug_print();
 };
 
 
