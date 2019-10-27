@@ -91,7 +91,7 @@ void FEM::compute_fint(){
         
             for(int i = 0;  i<neqns_per_elem; i++){
                 for(int j =0; j< nstrain; j++) {
-                    fint[i] += pE_pu_tran[i*neqns_per_elem + j]* osigma[glo_igp][j] * weights[igp]; // 1x8
+                    fint[i] += pE_pu_tran[i*nstrain + j]* osigma[glo_igp][j] * weights[igp]; // 1x8
                 }
             }
             //loop all equations associated with the Gaussian points
