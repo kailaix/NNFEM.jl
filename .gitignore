@@ -59,3 +59,4 @@ deps/build.jl
 *.fuse*
 
 *libtorch/
+*Adept-2*
