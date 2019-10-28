@@ -60,3 +60,5 @@ deps/build.jl
 
 *libtorch/
 *Adept-2*
+
+!deps/CustomOp/ADLaw/CMakeLists.txt
