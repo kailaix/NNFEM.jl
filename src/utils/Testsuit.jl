@@ -14,10 +14,11 @@ function gradtest(f, x0, n=nothing)
         # push!(err2, norm((f1-f2)/(2γs[i])-J*v0))
         # #@show "test ", f1, f2, f1-f2
     end
-    loglog(γs, err2)
-    loglog(γs, err1)
+    loglog(γs, err2, label="AD")
+    loglog(γs, err1, label="FD")
     loglog(γs, γs.^3 * 0.5*abs(err2[1])/γs[1]^3, "--",label="\$\\mathcal{O}(\\gamma^3)\$")
     loglog(γs, γs * 0.5*abs(err1[1])/γs[1], "--",label="\$\\mathcal{O}(\\gamma)\$")
     plt.gca().invert_xaxis()
     legend()
+    err1, err2
 end

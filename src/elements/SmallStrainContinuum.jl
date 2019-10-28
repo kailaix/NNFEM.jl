@@ -175,7 +175,7 @@ function getStrainState(self::SmallStrainContinuum, state::Array{Float64})
         E[k,:] = [ux; vy; uy+vx]
 
         # compute  ∂E∂u
-        ∂E∂u[k*nStrain+1:(k+1)*nStrain, :] = 
+        ∂E∂u[(k-1)*nStrain+1:k*nStrain, :] = 
                 [g1   zeros(nnodes)    g2;
                 zeros(nnodes)    g2   g1;]'
         
@@ -184,13 +184,13 @@ function getStrainState(self::SmallStrainContinuum, state::Array{Float64})
 end
 
 
-function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64}, Dstate::Array{Float64}, 
+function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64},
                           stress::Array{Float64,2}, dstress_dstrain::Array{Float64,3})
     ndofs = dofCount(self); 
     nnodes = length(self.elnodes)
     fint = zeros(Float64, ndofs)
     stiff = zeros(Float64, ndofs,ndofs)
-    out = Array{Float64}[]
+
     u = state[1:nnodes]; v = state[nnodes+1:2*nnodes]
 
     for k = 1:length(self.weights)
@@ -212,13 +212,14 @@ function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64}, Dst
     return fint, stiff
 end
 
-function  getStiffAndDforceDstress(self::SmallStrainContinuum, state::Array{Float64}, Dstate::Array{Float64}, 
+function  getStiffAndDforceDstress(self::SmallStrainContinuum, state::Array{Float64},  
     stress::Array{Float64,2}, dstress_dstrain::Array{Float64,3})
     ndofs = dofCount(self); 
     nnodes = length(self.elnodes)
     nStrain = 3
+    nGauss = length(self.weights)
     stiff = zeros(Float64, ndofs,ndofs)
-    dfint_dstress = zeros(Float64, 2nnodes, ndofs)
+    dfint_dstress = zeros(Float64,  ndofs, nGauss * nStrain)
 
     u = state[1:nnodes]; v = state[nnodes+1:2*nnodes]
 
@@ -228,16 +229,18 @@ function  getStiffAndDforceDstress(self::SmallStrainContinuum, state::Array{Floa
         
         # compute  ∂E∂u, 3 by 2nnodes array 
         ∂E∂u = [g1   zeros(nnodes)    g2;
-                zeros(nnodes)    g2   g1;]' 
+                zeros(nnodes)    g2   g1;]
 
         # #@show E, DE
         S, dS_dE = stress[k, :], dstress_dstrain[k,:,:]
 
         self.stress[k] = S
+
+        #fint += ∂E∂u * S * self.weights[k] # 1x8
         
-        dfint_dstress[:, k*nStrain+1:(k+1)*nStrain] = ∂E∂u * self.weights[k]
-        
-        
+        dfint_dstress[:, (k-1)*nStrain+1:k*nStrain] = ∂E∂u * self.weights[k]
+
+
         stiff += (∂E∂u * dS_dE * ∂E∂u')*self.weights[k] # 8x8
     end
     return stiff , dfint_dstress

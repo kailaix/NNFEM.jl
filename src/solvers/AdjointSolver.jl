@@ -31,7 +31,7 @@ function AdjointAssembleStrain(domain)
 
     # Get strain{ngps_per_elem, nstrain} 
     #     dstrain_dstate{ngps_per_elem*nstrain, neqs_per_elem}  
-    strain[iele*ngps_per_elem+1 : iele*ngps_per_elem+ngps_per_elem,:], ldstrain_dstate = 
+    strain[(iele-1)*ngps_per_elem+1 : iele*ngps_per_elem,:], ldstrain_dstate = 
     getStrainState(element, el_state)
 
 
@@ -43,13 +43,15 @@ function AdjointAssembleStrain(domain)
     
       for i = 1:ngps_per_elem*nstrain
         for j = 1:length(el_eqns_active_idx)
-          push!(ii, iele*ngps_per_elem*nstrain+i)
+          push!(ii, (iele-1)*ngps_per_elem*nstrain+i)
           push!(jj, el_eqns_active_idx[j])
           push!(vv, ldstrain_dstate_active[i,j])
         end
       end
   end
-   
+  # @show maximum(jj)
+  # @show maximum(ii) 
+  # @show neqs, neles*ngps_per_elem*nstrain
   dstrain_dstate_tran = sparse(jj, ii, vv, neqs, neles*ngps_per_elem*nstrain)
   return strain, dstrain_dstate_tran
 end
@@ -86,10 +88,9 @@ function AssembleStiffAndForce(domain, stress::Array{Float64}, dstress_dstrain::
 
     el_state  = getState(domain,el_dofs)
 
-    el_Dstate = getDstate(domain,el_dofs)
-
-    gp_ids = iele*ngps_per_elem+1 : iele*ngps_per_elem+ngps_per_elem
-    lfint, lstiff  = getStiffAndForce(element, el_state, el_Dstate, stress[gp_ids,:], dstress_dstrain[gp_ids,:,:])
+    gp_ids = (iele-1)*ngps_per_elem+1 : iele*ngps_per_elem
+    
+    lfint, lstiff  = getStiffAndForce(element, el_state, stress[gp_ids,:], dstress_dstrain[gp_ids,:,:])
 
     # Assemble in the global array
     el_eqns_active = el_eqns .>= 1
@@ -118,7 +119,7 @@ end
 Compute the stiff and dfint_dstress, based on the state in domain
 and dstrain_dstate
 """->
-function adjointAssembleStiff(domain, stress::Array{Float64}, dstress_dstrain::Array{Float64})
+function AdjointAssembleStiff(domain, stress::Array{Float64}, dstress_dstrain::Array{Float64})
     neles = domain.neles
     eledim = domain.elements[1].eledim
     nstrain = div((eledim + 1)*eledim, 2)
@@ -147,10 +148,11 @@ function adjointAssembleStiff(domain, stress::Array{Float64}, dstress_dstrain::A
       el_state  = getState(domain, el_dofs)
   
 
-      gp_ids = iele*ngps_per_elem : iele*ngps_per_elem+ngps_per_elem-1
+      gp_ids = (iele-1)*ngps_per_elem+1 : iele*ngps_per_elem
       # Get the element contribution by calling the specified action
-      stiff, dfint_dstress = getStiffAndDforceDstress(element, el_state, el_Dstate, stress[gp_ids,:], dstress_dstrain[gp_ids,:,:])
-  
+      stiff, dfint_dstress = getStiffAndDforceDstress(element, el_state, stress[gp_ids,:], dstress_dstrain[gp_ids,:,:])
+      
+   
       # Assemble in the global array
       el_eqns_active = el_eqns .>= 1
       el_eqns_active_idx = el_eqns[el_eqns_active]
@@ -171,7 +173,7 @@ function adjointAssembleStiff(domain, stress::Array{Float64}, dstress_dstrain::A
       for i = 1:length(el_eqns_active_idx)
         for j = 1:ngps_per_elem*nstrain
           push!(ii_dfint_dstress, el_eqns_active_idx[i])
-          push!(jj_dfint_dstress, iele*ngps_per_elem*nstrain+j)
+          push!(jj_dfint_dstress, (iele-1)*ngps_per_elem*nstrain+j)
           push!(vv_dfint_dstress, dfint_dstress_active[i,j])
         end
       end
@@ -179,7 +181,7 @@ function adjointAssembleStiff(domain, stress::Array{Float64}, dstress_dstrain::A
      
     end
 
-    stiff_tran = sparse(jj_stiff, jj_stiff, vv_stiff, neqs, neqs) 
+    stiff_tran = sparse(jj_stiff, ii_stiff, vv_stiff, neqs, neqs) 
     dfint_dstress_tran =  sparse(jj_dfint_dstress, ii_dfint_dstress, vv_dfint_dstress, neles*ngps_per_elem*nstrain, neqs)
   
     return stiff_tran, dfint_dstress_tran
