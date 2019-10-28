@@ -1,16 +1,17 @@
 
+
 tid = 200
 porder = 2
 T = 0.1
-NT = 1000
+NT = 10
 
 include("CommonFuncs.jl")
-
-
-prop = Dict("name"=> "PlaneStressPlasticity","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.2,
-"sigmaY"=>0.97e+4, "K"=>1e+5)
-
 np = pyimport("numpy")
+
+prop = Dict("name"=> "PlaneStress","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.2,
+"sigmaY"=>0.97e+4, "K"=>1e+5)
+H = PlaneStress(prop).H
+
 
 
 nx, ny = 10,5
@@ -41,27 +42,81 @@ for j = 1:ny
     end
 end
 
+############################################
+
+function ForwardAdjoint(theta,  obs_state)
+    ndofs = 2
+    domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
+    neqs = domain.neqs
+    globdat = GlobalData(zeros(domain.neqs),zeros(domain.neqs), zeros(domain.neqs),zeros(domain.neqs), neqs, gt, ft)
+    assembleMassMatrix!(globdat, domain)
+    updateStates!(domain, globdat)
+
+    J, state = ForwardNewmarkSolver(globdat, domain, theta, T, NT, obs_state)
+end
+
+
+function BackwardAdjoint(theta,  state, obs_state)
+    ndofs = 2
+    domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
+    neqs = domain.neqs
+    globdat = GlobalData(zeros(domain.neqs),zeros(domain.neqs), zeros(domain.neqs),zeros(domain.neqs), neqs, gt, ft)
+    assembleMassMatrix!(globdat, domain)
+    updateStates!(domain, globdat)
+ 
+    dJ = BackwardNewmarkSolver(globdat, domain, theta, T, NT, state, obs_state)
+
+end
+
+################################3
+
+function ForwardSolve(theta,  obs_state)
+    ndofs = 2
+    domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
+    neqs = domain.neqs
+    globdat = GlobalData(zeros(domain.neqs),zeros(domain.neqs), zeros(domain.neqs),zeros(domain.neqs), neqs, gt, ft)
+    assembleMassMatrix!(globdat, domain)
+    updateStates!(domain, globdat)
+
+    adaptive_solver_args = Dict("Newmark_rho"=> 0.0, 
+                          "Newton_maxiter"=>10, 
+                          "Newton_Abs_Err"=>1e-4, 
+                          "Newton_Rel_Err"=>1e-6, 
+                          "damped_Newton_eta" => 1.0)
+    globdat, domain, ts = AdaptiveSolver("NewmarkSolver", globdat, domain, T, NT, adaptive_solver_args)
+
+    state2 = zeros(NT+1, neqs)
+    for i=2:NT+1
+        state2[i,:] = domain.history["state"][i][domain.dof_to_eq]
+    end
+
+    return state2
+end
+
 
 ndofs = 2
 domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
-state = zeros(domain.neqs)
-∂u = zeros(domain.neqs)
-neqs = domain.neqs
-
-globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
-
-assembleMassMatrix!(globdat, domain)
-updateStates!(domain, globdat)
+obs_state = rand(Float64, NT+1, domain.neqs)
+theta = [H[1,1], H[1,2], H[1,3], H[2,2], H[2,3], H[3,3]]
 
 
+# J1, state1 = ForwardAdjoint(theta,  obs_state)
+# state2 = ForwardSolve(theta,  obs_state)
+# @show "Forward state error is ", norm(state2 - state1)
+# @show "Forward J error is ", J1 - norm(state1[2:end,:] - obs_state[2:end,:])^2
 
 
 
-theta = rand(Float64, 704)
-obs_state = rand(Float64, NT+1, neqs)
-#ForwardNewmarkSolver(globdat, domain, theta, T, NT, obs_state)
-  
+function AdjointFunc(theta)
+    J, state = ForwardAdjoint(theta,  obs_state)
+    dJ = BackwardAdjoint(theta,  state, obs_state)
+    return J, dJ'
+end
 
 
-state = rand(Float64, NT+1, neqs)
-BackwardNewmarkSolver(globdat, domain, theta, T, NT, state, obs_state)
+theta = [H[1,1], H[1,2], H[1,3], H[2,2], H[2,3], H[3,3]]
+
+
+gradtest(AdjointFunc, theta)
+
+

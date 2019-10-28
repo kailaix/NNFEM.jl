@@ -48,7 +48,6 @@ include("materials/PathDependent1D.jl")
 include("materials/PlaneStressPlasticityLawBased.jl")
 include("materials/PlaneStressIncompressibleRivlinSaunders.jl")
 include("solvers/Solvers.jl")
-include("solvers/AdjointSolver.jl")
 include("elements/FiniteStrainContinuum.jl")
 include("elements/SmallStrainContinuum.jl")
 include("elements/FiniteStrainTruss.jl")
@@ -58,7 +57,9 @@ include("utils/Visualize.jl")
 include("utils/io.jl")
 include("utils/Testsuit.jl")
 include("utils/nnconstitutivelaw.jl")
+include("utils/linearConstitutiveLaw.jl")
 include("solvers/NNSolver.jl")
+include("solvers/AdjointSolver.jl")
 
 
 end

@@ -1,4 +1,7 @@
 export AdjointAssembleStrain, AssembleStiffAndForce, AdjointAssembleStiff,ForwardNewmarkSolver, BackwardNewmarkSolver
+
+constitutive_law = linear_constitutive_law
+
 @doc """
 Compute the strain, based on the state in domain
 and dstrain_dstate
@@ -227,10 +230,10 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
     neles, ngps_per_elem, neqs = domain.neles, length(domain.elements[1].weights), domain.neqs
     nstrain = 3
 
-    adj_lambda = zeros(NT+2,neqs)
-    adj_tau = zeros(NT+2,neqs)
-    adj_kappa = zeros(NT+2,neqs)
-    adj_sigma = zeros(NT+2,neles*ngps_per_elem, nstrain)
+    adj_lambda = zeros(NT+1,neqs)
+    adj_tau = zeros(NT+1,neqs)
+    adj_kappa = zeros(NT+1,neqs)
+    adj_sigma = zeros(NT+1,neles*ngps_per_elem, nstrain)
 
     MT = (globdat.M)'
     J = 0.0 
@@ -242,15 +245,37 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
     stress = zeros(neles*ngps_per_elem, nstrain) 
     strain = zeros(neles*ngps_per_elem, nstrain)
 
+
+
+    # dstrain_dstate_tran = dE_i/d d_i
+    # dstrain_dstate_tran_p = dE_{i+1}/d d_{i+1}
+
+    # pnn_pstrain_tran = pnn(E^i, E^{i-1}, S^{i-1})/pE^i
+    # pnn_pstrain0_tran = pnn(E^i, E^{i-1}, S^{i-1})/pE^{i-1}
+    # pnn_pstress0_tran = pnn(E^i, E^{i-1}, S^{i-1})/pS^{i-1}
+
+    # pnn_pstrain_tran_p = pnn(E^{i+1}, E^{i}, S^{i})/pE^{i+1}
+    # pnn_pstrain0_tran_p = pnn(E^{i+1}, E^{i}, S^{i})/pE^{i}
+    # pnn_pstress0_tran_p = pnn(E^{i+1}, E^{i}, S^{i})/pS^{i}
+
+    #todo sparse matrix 
+    dstrain_dstate_tran_p = sparse([1],[1], [0.0], neqs, neles*ngps_per_elem*nstrain) 
+    dstrain_dstate_tran = sparse([1],[1], [0.0], neqs, neles*ngps_per_elem*nstrain)
+
+    pnn_pstrain0_tran_p = zeros(neles*ngps_per_elem*nstrain, nstrain, nstrain) 
+    pnn_pstrain0_tran = zeros(neles*ngps_per_elem*nstrain, nstrain, nstrain) 
+    pnn_pstress0_tran_p = zeros(neles*ngps_per_elem*nstrain, nstrain, nstrain) 
+    pnn_pstress0_tran = zeros(neles*ngps_per_elem*nstrain, nstrain, nstrain) 
+
     for i = NT:-1:1
         @show "i = ", i
         # get strain
         strain, dstrain_dstate_tran = AdjointAssembleStrain(domain)
         
 
-        stress, output, _ =  nn_constitutive_law([strain strain_p stress_p], theta, nothing, true, false)
+        stress, output, _ =  constitutive_law([strain strain_p stress_p], theta, nothing, true, false)
 
-        pnn_pstrain_tran, pnn_pstrain_p_tran, pnn_pstress_p_tran = output[:,1:3,:], output[:,4:6,:], output[:,7:9,:]
+        pnn_pstrain_tran, pnn_pstrain0_tran, pnn_pstress0_tran = output[:,1:3,:], output[:,4:6,:], output[:,7:9,:]
 
         stiff_tran, dfint_dstress_tran = AdjointAssembleStiff(domain, stress, permutedims(pnn_pstrain_tran,[1,3,2]))
 
@@ -260,24 +285,19 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
         #compute kappa^i
         temp = (Δt*Δt*(1-β2)/2.0*adj_lambda[i+1,:] + adj_tau[i,:]*Δt*γ + adj_tau[i+1,:]*Δt*(1.0-γ)) - MT*(αm*adj_kappa[i+1,:]) 
 
-        # dstrain_dstate_tran = dE_i/d d_i
-        # dstrain_dstate_tran_p = dE_{i+1}/d d_{i+1}
-
-        # pnn_pstrain_tran = pnn(E^i, E^{i-1}, S^{i-1})/pE^i
-        # pnn_pdstrain_tran = pnn(E^i, E^{i-1}, S^{i-1})/pE^{i-1}
-        # pnn_pstress_tran = pnn(E^i, E^{i-1}, S^{i-1})/pS^{i-1}
+        
 
         rhs = computDJDstate(state[i, :], obs_state[i,:]) + adj_lambda[i+1,:] 
 
         tempmult = Array{Float64}(undef, nstrain, neles*ngps_per_elem)
         for j = 1:neles*ngps_per_elem
-          tempmult[:,j] = pnn_pstrain_p_tran[j,:,:]*adj_sigma[i+1,j,:] 
+          tempmult[:,j] = pnn_pstrain0_tran_p[j,:,:]*adj_sigma[i+1,j,:] 
         end
 
         rhs +=  dstrain_dstate_tran* tempmult[:]
 
         for j = 1:neles*ngps_per_elem
-          tempmult[:,j] = pnn_pstrain_tran[j, :, :] *(pnn_pstress_p_tran[j,:,:]*adj_sigma[i+1,j,:])
+          tempmult[:,j] = pnn_pstrain_tran[j, :, :] *(pnn_pstress0_tran_p[j,:,:]*adj_sigma[i+1,j,:])
         end
 
         rhs +=  dstrain_dstate_tran*tempmult[:]
@@ -292,26 +312,28 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
 
 
         for j = 1:neles*ngps_per_elem
-          tempmult[:,j] = pnn_pstress_p_tran[j,:,:]*adj_sigma[i+1,j,:]
+          tempmult[:,j] = pnn_pstress0_tran_p[j,:,:]*adj_sigma[i+1,j,:]
         end
 
         adj_sigma[i,:,:] = (reshape(-dfint_dstress_tran*adj_kappa[i,:], nstrain, neles*ngps_per_elem) + tempmult)'
 
-        _, _, sigmaTdstressdtheta =  nn_constitutive_law([strain strain_p stress_p], theta, adj_sigma[i,:,:], false, true)
+        _, _, sigmaTdstressdtheta =  constitutive_law([strain strain_p stress_p], theta, adj_sigma[i,:,:], false, true)
 
+        
         dJ -= sigmaTdstressdtheta
         
 
         dstrain_dstate_tran_p = dstrain_dstate_tran
-        pnn_pstrain_p_tran_p = pnn_pstrain_p_tran
-        pnn_pstress_p_tran_p = pnn_pstress_p_tran
+        pnn_pstrain0_tran_p = pnn_pstrain0_tran
+        pnn_pstress0_tran_p = pnn_pstress0_tran
 
         strain_p = strain
         stress_p = stress
 
     end
 
-    
+
+    return dJ
 end 
 
 
@@ -338,6 +360,7 @@ end
 function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
                   T::Float64, NT::Int64, obs_state::Array{Float64},
                   αm::Float64 = -1.0, αf::Float64 = 0.0, ε::Float64 = 1e-8, ε0::Float64 = 1e-8, maxiterstep::Int64=100, η::Float64 = 1.0)
+  
   local res0
   Δt = T/NT
   β2 = 0.5*(1 - αm + αf)^2
@@ -383,7 +406,7 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
       domain.state[domain.eq_to_dof] = (1 - αf)*(u + Δt*∂u + 0.5 * Δt * Δt * ((1 - β2)*∂∂u + β2*∂∂up)) + αf*u
 
       strain[:,:], dstrain_dstate_tran = AdjointAssembleStrain(domain)
-      stress[:,:], output, _ =  nn_constitutive_law([strain strain_p stress_p], theta, nothing, true, false)
+      stress[:,:], output, _ =  constitutive_law([strain strain_p stress_p], theta, nothing, true, false)
       pnn_pstrain_tran = output[:,1:3,:]
       
       fint, stiff = AssembleStiffAndForce(domain, stress, permutedims(pnn_pstrain_tran,[1,3,2]))
@@ -443,6 +466,7 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
 
   #update J 
   J += computeJ(state[i+1,:], obs_state[i+1,:])
-
   end
+
+  return J, state
 end

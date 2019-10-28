@@ -15,6 +15,7 @@ function gradtest(f::Function, x0::Array{Float64}; scale::Float64 = 1.0)
         f1, _ = f(x0+γs[i]*v0)
         f2, _ = f(x0-γs[i]*v0)
         push!(err1, norm(f1-f2))
+        @show f1, f2, 2γs[i]*J*v0
         push!(err2, norm(f1-f2-2γs[i]*J*v0))
         # push!(err2, norm((f1-f2)/(2γs[i])-J*v0))
         # #@show "test ", f1, f2, f1-f2
