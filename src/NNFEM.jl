@@ -57,6 +57,7 @@ include("fem/assembly.jl")
 include("utils/Visualize.jl")
 include("utils/io.jl")
 include("utils/Testsuit.jl")
+include("utils/nnconstitutivelaw.jl")
 include("solvers/NNSolver.jl")
 
 
