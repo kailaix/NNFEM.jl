@@ -55,9 +55,6 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all:
     return total_loss
 end
 
-function TotalLoss()
-    
-end
 
 function DynamicMatLawLossWithTailLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all::Array{Float64},
     F_tot::Array{Float64}, nn::Function, H0::Array{Float64}, n_tail::Int64, stress_scale::Float64)

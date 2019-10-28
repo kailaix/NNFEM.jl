@@ -59,55 +59,64 @@ function f1(u)
     strain'[:], dstrain_dstate_tran'
 end
 
+
 u = rand(neqs)
-gradtest(f1, u)
+# gradtest(f1, u)
 
 
-#=
+
 neles = domain.neles
 ngps_per_elem = length(domain.elements[1].weights)
 
 stress = zeros(ngps_per_elem*neles, 3)
 dstress_dstrain = zeros(ngps_per_elem*neles, 3, 3)
-mat = PlaneStress(props)
-strain, dstrain_dstate_tran = AdjointAssembleStrain(domain)
-for i = 1:ngps_per_elem*neles
-    stress[i,:], dstress_dstrain[i,:,:] = getStress(mat, strain[i,:], strain[i,:], Δt)
-end
+mat = PlaneStress(prop)
+
 
 
 
 # test AssembleStiffAndForce(domain, stress::Array{Float64}, dstress_dstrain::Array{Float64})
 function f2(u)
     domain.state[domain.eq_to_dof] = u
+
+    strain, dstrain_dstate_tran = AdjointAssembleStrain(domain)
+    for i = 1:ngps_per_elem*neles
+        stress[i,:], dstress_dstrain[i,:,:] = getStress(mat, strain[i,:], strain[i,:], 1.0)
+    end
+    
     fint, stiff = AssembleStiffAndForce(domain, stress, dstress_dstrain)
     fint, stiff
 end
 
 u = rand(neqs)
-gradtest(f2, u)
-
-=#
+#err1, err2 = gradtest(f2, u); @show err1, err2
 
 
-#=
+
+
+
 
 # test stiff_tran, dfint_dstress_tran = adjointAssembleStiff(domain, stress::Array{Float64}, dstress_dstrain::Array{Float64})
+domain.state[domain.eq_to_dof] = u
+strain, dstrain_dstate_tran = AdjointAssembleStrain(domain)
+for i = 1:ngps_per_elem*neles
+    stress[i,:], dstress_dstrain[i,:,:] = getStress(mat, strain[i,:], strain[i,:], 1.0)
+end
 
 fint, stiff = AssembleStiffAndForce(domain, stress, dstress_dstrain)
-stiff_tran, dfint_dstress_tran = adjointAssembleStiff(domain, stress, dstress_dstrain)
-
+stiff_tran, dfint_dstress_tran = AdjointAssembleStiff(domain, stress, dstress_dstrain)
+@show norm(stiff - stiff_tran')
 
 function f3(stress)
-    stress = reshape(stress, ngps_per_elem*neles, 3)
+    stress = reshape(stress, 3, ngps_per_elem*neles)'|>Array
     domain.state[domain.eq_to_dof] = u
     fint, _ = AssembleStiffAndForce(domain, stress, dstress_dstrain)
-    _, dfint_dstress_tran = AssembleStiffAndForce(domain, stress, dstress_dstrain)
+    _, dfint_dstress_tran = AdjointAssembleStiff(domain, stress, dstress_dstrain)
     fint, dfint_dstress_tran'
 end
 
-stress = rand(neqs)
-gradtest(f3, u)
-=#
+stress = rand(ngps_per_elem*neles*3)
+gradtest(f3, stress)
+
 
 
