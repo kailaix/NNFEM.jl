@@ -7,11 +7,13 @@
 #include<string> 
 using std::string;
 
+#ifdef USE_GPU
 namespace tensorflow{
   typedef Eigen::GpuDevice GPUDevice;
   void forwardGPU(double *out, const double *y, const double *H0, int n, const GPUDevice &d);
   void backwardGPU(double *d_y, const double *d_out, const double *y, const double *H0, int n, const GPUDevice &d);
 }
+#endif
 
 using namespace tensorflow;
 // If you want to use the PyTorch feature, uncomment the following line
@@ -160,7 +162,7 @@ REGISTER_KERNEL_BUILDER(Name("SPDOpGrad").Device(DEVICE_CPU), SPDOpGradOp);
 
 
 
-#ifndef NOGPU
+#ifdef USE_GPU
 
  class SPDOpOpGPU : public OpKernel {
 private:

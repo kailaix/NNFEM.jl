@@ -4,6 +4,6 @@ fi
 cd Adept-2
 autoreconf -i
 ./configure
-make
+make -j
 make check
 make install
