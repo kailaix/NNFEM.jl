@@ -152,3 +152,93 @@ function commitHistory(self::SmallStrainContinuum)
         commitHistory(m)
     end
 end
+
+
+# for the adjoint solver
+
+
+# Return: 
+#    strain{ngps_per_elem, nstrain} 
+#    dstrain_dstate_tran{neqs_per_elem, ngps_per_elem*nstrain}  
+function getStrainState(self::SmallStrainContinuum, state::Array{Float64})
+    n = dofCount(self)
+    nnodes = length(self.elnodes)
+    u = state[1:nnodes]; v = state[nnodes+1:end]
+    nGauss = length(self.weights)
+    nStrain = 3
+    E = zeros(nGauss, nStrain)
+    ∂E∂u = zeros(nGauss * nStrain, 2nnodes)
+
+    for k = 1:nGauss
+        g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
+        ux = u'*g1; uy = u'*g2; vx = v'*g1; vy = v'*g2
+        E[k,:] = [ux; vy; uy+vx]
+
+        # compute  ∂E∂u
+        ∂E∂u[k*nStrain+1:(k+1)*nStrain, :] = 
+                [g1   zeros(nnodes)    g2;
+                zeros(nnodes)    g2   g1;]'
+        
+    end
+    return E, ∂E∂u
+end
+
+
+function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64}, Dstate::Array{Float64}, 
+                          stress::Array{Float64,2}, dstress_dstrain::Array{Float64,3})
+    ndofs = dofCount(self); 
+    nnodes = length(self.elnodes)
+    fint = zeros(Float64, ndofs)
+    stiff = zeros(Float64, ndofs,ndofs)
+    out = Array{Float64}[]
+    u = state[1:nnodes]; v = state[nnodes+1:2*nnodes]
+
+    for k = 1:length(self.weights)
+        g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
+        
+        # compute  ∂E∂u.T, 8 by 3 array 
+        ∂E∂u = [g1   zeros(nnodes)    g2;
+                zeros(nnodes)    g2   g1;]  
+
+        S, dS_dE = stress[k, :], dstress_dstrain[k,:,:]
+
+
+        self.stress[k] = S
+        # @show size(S), size(∂E∂u)
+        fint += ∂E∂u * S * self.weights[k] # 1x8
+        
+        stiff += (∂E∂u * dS_dE * ∂E∂u')*self.weights[k] # 8x8
+    end
+    return fint, stiff
+end
+
+function  getStiffAndDforceDstress(self::SmallStrainContinuum, state::Array{Float64}, Dstate::Array{Float64}, 
+    stress::Array{Float64,2}, dstress_dstrain::Array{Float64,3})
+    ndofs = dofCount(self); 
+    nnodes = length(self.elnodes)
+    nStrain = 3
+    stiff = zeros(Float64, ndofs,ndofs)
+    dfint_dstress = zeros(Float64, 2nnodes, ndofs)
+
+    u = state[1:nnodes]; v = state[nnodes+1:2*nnodes]
+
+    for k = 1:length(self.weights)
+        g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
+
+        
+        # compute  ∂E∂u, 3 by 2nnodes array 
+        ∂E∂u = [g1   zeros(nnodes)    g2;
+                zeros(nnodes)    g2   g1;]' 
+
+        # #@show E, DE
+        S, dS_dE = stress[k, :], dstress_dstrain[k,:,:]
+
+        self.stress[k] = S
+        
+        dfint_dstress[:, k*nStrain+1:(k+1)*nStrain] = ∂E∂u * self.weights[k]
+        
+        
+        stiff += (∂E∂u * dS_dE * ∂E∂u')*self.weights[k] # 8x8
+    end
+    return stiff , dfint_dstress
+end
