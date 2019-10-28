@@ -266,6 +266,7 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
     for i = NT:-1:1
         @show "i = ", i
         # get strain
+        domain.state[dof_to_eq] = state[i+1,:]
         strain, dstrain_dstate_tran = AdjointAssembleStrain(domain)
         
 
@@ -284,6 +285,8 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
         
 
         rhs = computDJDstate(state[i, :], obs_state[i,:]) + adj_lambda[i+1,:] 
+
+        @show norm(rhs)
 
         tempmult = Array{Float64}(undef, nstrain, neles*ngps_per_elem)
         for j = 1:neles*ngps_per_elem
