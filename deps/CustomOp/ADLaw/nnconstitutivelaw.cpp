@@ -104,7 +104,6 @@ void constitutive_law(
         Array2D G(n, 3);
         setv(G, g);
         adouble L = sum(G * out);
-        stack.clear_gradients();
         L.set_gradient(1.0);
         stack.compute_adjoint();
         getg(W1, dtheta);
@@ -113,6 +112,92 @@ void constitutive_law(
         getg(b2, dtheta+180+20+400);
         getg(W3, dtheta+180+20+400+20);
         getg(b3, dtheta+180+20+400+20+80);
+    }
+
+    if(grad_input){
+        auto out_ = sum(out, 0);
+        // cout << out_ << endl;
+        for(int i=0;i<3;i++){
+            stack.clear_gradients();
+            out_[i].set_gradient(1.0);
+            stack.compute_adjoint();
+            getg(X, dinput + i*n*9);
+        }
+    }
+}
+
+
+
+void constitutive_law_generic(
+    double *osigma,
+    const double*input,
+    const double*theta,
+    const double*g, 
+    double*dinput,
+    double*dtheta,
+    const int *config,
+    int n_layer,
+    int n,
+    int grad_input,
+    int grad_theta
+){
+    Stack stack;
+    std::vector<Array2D> weight(n_layer-1);
+    std::vector<Array1D> bias(n_layer-1);
+    std::vector<Array2D> x(n_layer);
+    std::vector<Array2D> y(n_layer-1);
+
+    // for(int i=0;i<n_layer;i++){
+    //     printf("%d : %d\n", i, config[i]);
+    // }
+
+    Array2D X(n,9);
+    setv(X, input);
+    for(int i=0;i<n_layer-1;i++){
+        weight[i] = Array2D(config[i], config[i+1]);
+        bias[i] = Array1D(config[i+1]);
+        setv(weight[i], theta); theta += config[i]*config[i+1];
+        setv(bias[i], theta); theta += config[i+1];
+    }    
+    stack.new_recording();
+
+    x[0] = X;
+    for(int l=0;l<n_layer-1;l++){
+        x[l+1] = x[l]**weight[l];
+        y[l] = Array2D(x[l+1].size(0),x[l+1].size(1));
+        for(int i=0;i<x[l+1].size(0);i++) 
+            for(int j=0;j<x[l+1].size(1);j++){
+                if(l==n_layer-2)
+                    y[l](i,j) = x[l+1](i,j)+bias[l](j);
+                else
+                    y[l](i,j) = tanh(x[l+1](i,j)+bias[l](j));
+            }           
+    }
+
+    Array2D out(n, 3);
+    cholorthop(out, X, y[n_layer-2]);
+
+    for(int i=0;i<n;i++){
+        osigma[3*i] = out(i,0).value();
+        osigma[3*i+1] = out(i,1).value();
+        osigma[3*i+2] = out(i,2).value();
+    }
+
+    // auto out = sum(y3, 0);
+    // out[0].set_gradient(1.0);
+    // stack.compute_adjoint();
+
+    if(grad_theta){
+        Array2D G(n, 3);
+        setv(G, g);
+        adouble L = sum(G * out);
+        stack.clear_gradients();
+        L.set_gradient(1.0);
+        stack.compute_adjoint();
+        for(int i=0;i<n_layer-1;i++){
+            getg(weight[i], dtheta); dtheta += config[i]*config[i+1];
+            getg(bias[i], dtheta); dtheta += config[i+1];
+        }    
     }
 
     if(grad_input){

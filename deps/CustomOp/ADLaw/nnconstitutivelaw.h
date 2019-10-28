@@ -4,6 +4,8 @@
 #include "adept_arrays.h"
 #include <iostream>
 #include <vector>
+#include<functional>
+
 using namespace adept;
 using namespace std;
 
@@ -17,6 +19,20 @@ extern "C" void constitutive_law(
     const double*g, 
     double*dinput,
     double*dtheta,
+    int n,
+    int grad_input,
+    int grad_theta
+);
+
+extern "C" void constitutive_law_generic(
+    double *osigma,
+    const double*input,
+    const double*theta,
+    const double*g, 
+    double*dinput,
+    double*dtheta,
+    const int *config,
+    int n_layer,
     int n,
     int grad_input,
     int grad_theta
