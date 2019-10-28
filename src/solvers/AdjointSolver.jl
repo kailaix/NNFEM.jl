@@ -1,4 +1,4 @@
-export AdjointAssembleStrain, AssembleStiffAndForce, AdjointAssembleStiff
+export AdjointAssembleStrain, AssembleStiffAndForce, AdjointAssembleStiff,ForwardNewmarkSolver, BackwardNewmarkSolver
 @doc """
 Compute the strain, based on the state in domain
 and dstrain_dstate
@@ -194,7 +194,7 @@ function computDJDstate(state, obs_state)
   2.0*state
 end
 
-function computJ(state, obs_state)
+function computeJ(state, obs_state)
   sum((state - obs_state).^2)
 end
 
@@ -234,9 +234,16 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
 
     MT = (globdat.M)'
     J = 0.0 
-    dJ = zeros(length(theta)) 
+    dJ = zeros(length(theta))
+    
+    
+    strain_p = zeros(neles*ngps_per_elem, nstrain) 
+    stress_p = zeros(neles*ngps_per_elem, nstrain)
+    stress = zeros(neles*ngps_per_elem, nstrain) 
+    strain = zeros(neles*ngps_per_elem, nstrain)
 
     for i = NT:-1:1
+        @show "i = ", i
         # get strain
         strain, dstrain_dstate_tran = AdjointAssembleStrain(domain)
         
@@ -273,7 +280,7 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
           tempmult[:,j] = pnn_pstrain_tran[j, :, :] *(pnn_pstress_p_tran[j,:,:]*adj_sigma[i+1,j,:])
         end
 
-        rhs +=  dstrain_dstate_tran*tempmult
+        rhs +=  dstrain_dstate_tran*tempmult[:]
 
         rhs = rhs*(Δt*Δt/2.0*β2) + temp
 
@@ -288,11 +295,9 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
           tempmult[:,j] = pnn_pstress_p_tran[j,:,:]*adj_sigma[i+1,j,:]
         end
 
-        adj_sigma[i,:] = -dfint_dstress_tran*adj_kappa[i,:] + tempmult
+        adj_sigma[i,:,:] = (reshape(-dfint_dstress_tran*adj_kappa[i,:], nstrain, neles*ngps_per_elem) + tempmult)'
 
-
-
-        _, _, sigmaTdstressdtheta =  nn_constitutive_law([strain strain_p stress_p], theta, adj_sigma[i,:], false, true)
+        _, _, sigmaTdstressdtheta =  nn_constitutive_law([strain strain_p stress_p], theta, adj_sigma[i,:,:], false, true)
 
         dJ -= sigmaTdstressdtheta
         
@@ -331,9 +336,9 @@ end
     return true or false indicating converging or not
 """->
 function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
-                  T::Float64, NT::Int64, state::Array{Float64}, obs_state::Array{Float64},
+                  T::Float64, NT::Int64, obs_state::Array{Float64},
                   αm::Float64 = -1.0, αf::Float64 = 0.0, ε::Float64 = 1e-8, ε0::Float64 = 1e-8, maxiterstep::Int64=100, η::Float64 = 1.0)
-  
+  local res0
   Δt = T/NT
   β2 = 0.5*(1 - αm + αf)^2
   γ = 0.5 - αm + αf
@@ -381,7 +386,7 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
       stress[:,:], output, _ =  nn_constitutive_law([strain strain_p stress_p], theta, nothing, true, false)
       pnn_pstrain_tran = output[:,1:3,:]
       
-      fint, stiff = AssembleStiffAndForce(domain, stress, pnn_pstrain_tran'|->Arrary)
+      fint, stiff = AssembleStiffAndForce(domain, stress, permutedims(pnn_pstrain_tran,[1,3,2]))
 
       res = M * (∂∂up *(1 - αm) + αm*∂∂u)  + fint - fext
       # @show fint, fext
@@ -429,7 +434,7 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
 
   #save data 
   state[i+1,:] = globdat.state
-  vel[i+1,:] = globdat.vel
+  vel[i+1,:] = globdat.velo
   acce[i+1,:] = globdat.acce
   
   stress_p = stress[:,:]
