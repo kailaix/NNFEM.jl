@@ -258,10 +258,6 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
     # pnn_pstrain0_tran_p = pnn(E^{i+1}, E^{i}, S^{i})/pE^{i}
     # pnn_pstress0_tran_p = pnn(E^{i+1}, E^{i}, S^{i})/pS^{i}
 
-    #todo sparse matrix 
-    dstrain_dstate_tran_p = sparse([1],[1], [0.0], neqs, neles*ngps_per_elem*nstrain) 
-    dstrain_dstate_tran = sparse([1],[1], [0.0], neqs, neles*ngps_per_elem*nstrain)
-
     pnn_pstrain0_tran_p = zeros(neles*ngps_per_elem*nstrain, nstrain, nstrain) 
     pnn_pstrain0_tran = zeros(neles*ngps_per_elem*nstrain, nstrain, nstrain) 
     pnn_pstress0_tran_p = zeros(neles*ngps_per_elem*nstrain, nstrain, nstrain) 
@@ -322,8 +318,6 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
         
         dJ -= sigmaTdstressdtheta
         
-
-        dstrain_dstate_tran_p = dstrain_dstate_tran
         pnn_pstrain0_tran_p = pnn_pstrain0_tran
         pnn_pstress0_tran_p = pnn_pstress0_tran
 
