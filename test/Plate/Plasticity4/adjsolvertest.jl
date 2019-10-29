@@ -46,24 +46,11 @@ end
 ############################################
 
 function ForwardAdjoint(theta,  obs_state)
-    ndofs = 2
-    domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
-    neqs = domain.neqs
-    globdat = GlobalData(zeros(domain.neqs),zeros(domain.neqs), zeros(domain.neqs),zeros(domain.neqs), neqs, gt, ft)
-    assembleMassMatrix!(globdat, domain)
-    updateStates!(domain, globdat)
-
     J, state,strain, stress = ForwardNewmarkSolver(globdat, domain, theta, T, NT, strain_scale, stress_scale, obs_state)
 end
 
 
 function BackwardAdjoint(theta,  state, strain, stress, obs_state)
-    ndofs = 2
-    domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
-    neqs = domain.neqs
-    globdat = GlobalData(zeros(domain.neqs),zeros(domain.neqs), zeros(domain.neqs),zeros(domain.neqs), neqs, gt, ft)
-    assembleMassMatrix!(globdat, domain)
-    updateStates!(domain, globdat)
  
     dJ = BackwardNewmarkSolver(globdat, domain, theta, T, NT, state, strain, stress, strain_scale, stress_scale, obs_state)
 
@@ -97,6 +84,10 @@ end
 
 ndofs = 2
 domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
+neqs = domain.neqs
+globdat = GlobalData(zeros(domain.neqs),zeros(domain.neqs), zeros(domain.neqs),zeros(domain.neqs), neqs, gt, ft)
+assembleMassMatrix!(globdat, domain)
+
 obs_state = rand(Float64, NT+1, domain.neqs)
 theta = [H[1,1], H[1,2], H[1,3], H[2,2], H[2,3], H[3,3]]/stress_scale
 

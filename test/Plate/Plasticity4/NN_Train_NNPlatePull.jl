@@ -1,10 +1,11 @@
 stress_scale = 1.0e5
-strain_scale = 1
+strain_scale = 1.0
 
 include("CommonFuncs.jl")
 
 force_scales = [5.0]
 
+force_scale = 5.0
 
 # ! define H0
 # Trained with nx, ny = 10, 5
@@ -83,64 +84,61 @@ end
 
 
 
-
-
-function compute_loss(tid, force_scale)
-    nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder; force_scale=force_scale )
-    domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
-    state = zeros(domain.neqs)
-    ∂u = zeros(domain.neqs)
-    globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
-    assembleMassMatrix!(globdat, domain)
-    # full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
-    full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
+#####################Step 1 preprocess data
+function PreprocessData(n_data, NT)
+    globdat_arr = []
+    domain_arr = []
+    obs_state_arr = []
     
-    #update state history and fext_history on the homogenized domain
-    state_history = [x[fine_to_coarse] for x in full_state_history]
+    for (id, tid) in enumerate(n_data)
 
-    fext_history = []
-    setNeumannBoundary!(domain, FBC, fext)
-    for i = 1:NT
-        globdat.time = Δt*i
-        updateDomainStateBoundary!(domain, globdat)
-        push!(fext_history, domain.fext[:])
+        
+         
+
+        nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder)
+        domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
+        neqs = domain.neqs
+        globdat = GlobalData(zeros(domain.neqs),zeros(domain.neqs), zeros(domain.neqs),zeros(domain.neqs), neqs, gt, ft)
+        assembleMassMatrix!(globdat, domain)
+
+
+        obs_state = zeros(Float64, NT+1, domain.neqs)
+        full_state_history, _ = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
+        @assert length(full_state_history) == NT+1
+        for i = 1:NT+1
+            obs_state[i,:] = (full_state_history[i][fine_to_coarse])[domain.dof_to_eq]
+        end
+
+
+        push!(domain_arr, domain)
+        push!(globdat_arr, globdat)
+        push!(obs_state_arr, obs_state)
     end
-    DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn, Δt)
+
+    return globdat_arr, domain_arr, obs_state_arr
 end
 
 
 
+# function AdjointFunc(theta, globdat, domain, obs_state)
+#     J, state,strain, stress = ForwardNewmarkSolver(globdat, domain, theta, T, NT, strain_scale, stress_scale, obs_state)
+#     dJ = BackwardNewmarkSolver(globdat, domain, theta, T, NT, state, strain, stress, strain_scale, stress_scale, obs_state)
+#     return J, dJ'
+# end
 
-losses = Array{PyObject}(undef, length(n_data)*length(force_scales))
-k = 1
-for i in n_data
-    global k
-    for force_scale in force_scales
-        losses[k] = compute_loss(i, force_scale)
-        k += 1
-    end
+
+
+globdat_arr, domain_arr, obs_state_arr = PreprocessData(n_data, NT)
+theta = rand(704) * 1.e-3
+
+
+function AdjointFunc(theta)
+    J, state,strain, stress = ForwardNewmarkSolver(globdat_arr[1], domain_arr[1], theta, T, NT, strain_scale, stress_scale, obs_state_arr[1])
+    dJ = BackwardNewmarkSolver(globdat_arr[1], domain_arr[1], theta, T, NT, state, strain, stress, strain_scale, stress_scale, obs_state_arr[1])
+    return J, dJ'
 end
 
-@show stress_scale^2
-loss = sum(losses)
-
-# tf.debugging.set_log_device_placement(true)
-sess = tf.Session(); init(sess)
-# ADCME.load(sess, "$(@__DIR__)/Data/order1/learned_nn_5.0_1.mat")
-# ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
-# run(sess, loss)
-# run_profile(sess, loss)
-# save_profile("test.json")
-# error()
-for i = 1:100
-    println("************************** Outer Iteration = $i ************************** ")
-    BFGS!(sess, loss, 200)
-    ADCME.save(sess, "$(@__DIR__)/Data/nn_train$(idx)_$(fiber_size).mat")
-end
-# ADCME.load(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
-# BFGS!(sess, loss, 5000)
-# ADCME.save(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
-# BFGS!(sess, loss, 5000)
+gradtest(AdjointFunc, theta, scale=1.e-4)
 
 
-# ADCME.save(sess, "$(@__DIR__)/Data/nn_train$idx.mat")
+
