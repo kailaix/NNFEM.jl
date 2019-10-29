@@ -28,4 +28,5 @@ function gradtest(f::Function, x0::Array{Float64}; scale::Float64 = 1.0)
     legend()
     println("Finite difference: $err1")
     println("Automatic differentiation: $err2")
+    return err1, err2
 end
