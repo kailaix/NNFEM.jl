@@ -441,8 +441,8 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
       
 
       println("$Newtoniterstep/$maxiterstep, $(norm(res))")
-      if (norm(res)< ε || norm(res)< ε0*norm(res0) ||Newtoniterstep > maxiterstep)
-          if Newtoniterstep > maxiterstep
+      if (norm(res)< ε || norm(res)< ε0*norm(res0) ||Newtoniterstep > maxiterstep) 
+          if Newtoniterstep > maxiterstep 
 
             function f(∂∂up)
               domain.state[domain.eq_to_dof] = (1 - αf)*(u + Δt*∂u + 0.5 * Δt * Δt * ((1 - β2)*∂∂u + β2*∂∂up)) + αf*u
