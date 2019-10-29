@@ -1,3 +1,4 @@
+export linear_constitutive_law
 """
     nn_constitutive_law(input::Array{Float64,2}, θ::Array{Float64,1}, grad_input::Int64, grad_θ::Int64)
 
