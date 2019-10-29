@@ -23,7 +23,7 @@ end
 Compute the strain, based on the state in domain
 and dstrain_dstate
 """->
-function AdjointAssembleStrain(domain)
+function AdjointAssembleStrain(domain, computeDstrain::Bool=true)
   neles = domain.neles
   eledim = domain.elements[1].eledim
   nstrain = div((eledim + 1)*eledim, 2)
@@ -54,7 +54,7 @@ function AdjointAssembleStrain(domain)
     strain[(iele-1)*ngps_per_elem+1 : iele*ngps_per_elem,:], ldstrain_dstate = 
     getStrainState(element, el_state)
 
-
+    if computeDstrain
       # Assemble in the global array
       el_eqns_active = el_eqns .>= 1
       el_eqns_active_idx = el_eqns[el_eqns_active]
@@ -68,6 +68,7 @@ function AdjointAssembleStrain(domain)
           push!(vv, ldstrain_dstate_active[i,j])
         end
       end
+    end
   end
   # @show maximum(jj)
   # @show maximum(ii) 
@@ -270,10 +271,10 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
     # pnn_pstrain0_tran_p = pnn(E^{i+1}, E^{i}, S^{i})/pE^{i}
     # pnn_pstress0_tran_p = pnn(E^{i+1}, E^{i}, S^{i})/pS^{i}
 
-    pnn_pstrain0_tran_p = zeros(neles*ngps_per_elem*nstrain, nstrain, nstrain) 
-    pnn_pstrain0_tran = zeros(neles*ngps_per_elem*nstrain, nstrain, nstrain) 
+    pnn_pstrain0_tran_p = zeros(neles*ngps_per_elem, nstrain, nstrain) 
+    pnn_pstrain0_tran = zeros(neles*ngps_per_elem, nstrain, nstrain) 
     pnn_pstress0_tran_p = zeros(neles*ngps_per_elem*nstrain, nstrain, nstrain) 
-    pnn_pstress0_tran = zeros(neles*ngps_per_elem*nstrain, nstrain, nstrain) 
+    pnn_pstress0_tran = zeros(neles*ngps_per_elem, nstrain, nstrain) 
 
     for i = NT:-1:1
         @show "i = ", i
@@ -422,7 +423,7 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
       
       domain.state[domain.eq_to_dof] = (1 - αf)*(u + Δt*∂u + 0.5 * Δt * Δt * ((1 - β2)*∂∂u + β2*∂∂up)) + αf*u
 
-      strain[i+1, :,:], dstrain_dstate_tran = AdjointAssembleStrain(domain)
+      strain[i+1, :,:], _ = AdjointAssembleStrain(domain, false)
       stress[i+1, :,:], output, _ =  constitutive_law([strain[i+1,:,:] strain[i,:,:] stress[i,:,:]], theta, nothing, true, false, strain_scale=strain_scale, stress_scale=stress_scale)
       pnn_pstrain_tran = output[:,1:3,:]
       
