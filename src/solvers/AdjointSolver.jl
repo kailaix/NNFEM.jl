@@ -236,7 +236,6 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
     adj_sigma = zeros(NT+1,neles*ngps_per_elem, nstrain)
 
     MT = (globdat.M)'
-    J = 0.0 
     dJ = zeros(length(theta))
     
     
@@ -284,20 +283,22 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
 
         
 
-        rhs = computDJDstate(state[i, :], obs_state[i,:]) + adj_lambda[i+1,:] 
+        rhs = computDJDstate(state[i+1, :], obs_state[i+1,:]) + adj_lambda[i+1,:] 
 
-        @show norm(rhs)
+        #@show norm(rhs)
 
         tempmult = Array{Float64}(undef, nstrain, neles*ngps_per_elem)
         for j = 1:neles*ngps_per_elem
           tempmult[:,j] = pnn_pstrain0_tran_p[j,:,:]*adj_sigma[i+1,j,:] 
         end
+        #@assert norm(tempmult)==0.0
 
         rhs +=  dstrain_dstate_tran* tempmult[:]
 
         for j = 1:neles*ngps_per_elem
           tempmult[:,j] = pnn_pstrain_tran[j, :, :] *(pnn_pstress0_tran_p[j,:,:]*adj_sigma[i+1,j,:])
         end
+        #@assert norm(tempmult)==0.0
 
         rhs +=  dstrain_dstate_tran*tempmult[:]
 
@@ -314,12 +315,14 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
           tempmult[:,j] = pnn_pstress0_tran_p[j,:,:]*adj_sigma[i+1,j,:]
         end
 
+        #@assert norm(tempmult)==0.0
+
         adj_sigma[i,:,:] = (reshape(-dfint_dstress_tran*adj_kappa[i,:], nstrain, neles*ngps_per_elem) + tempmult)'
 
         _, _, sigmaTdstressdtheta =  constitutive_law([strain strain_p stress_p], theta, adj_sigma[i,:,:], false, true)
 
         
-        dJ -= sigmaTdstressdtheta
+        dJ += sigmaTdstressdtheta
         
         pnn_pstrain0_tran_p = pnn_pstrain0_tran
         pnn_pstress0_tran_p = pnn_pstress0_tran
