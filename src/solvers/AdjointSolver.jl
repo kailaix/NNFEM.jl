@@ -389,6 +389,15 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
   neles, ngps_per_elem, neqs = domain.neles, length(domain.elements[1].weights), domain.neqs
   nstrain = 3
 
+
+  # initialize globdat and domain
+  fill!(globdat.state, 0.0)
+  fill!(globdat.velo, 0.0)
+  fill!(globdat.acce, 0.0)
+  globdat.time = 0.0
+
+
+
   # 1: initial condition, compute 2, 3, 4 ... NT+1
   state = zeros(NT+1,neqs)
 
@@ -402,7 +411,7 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
 
   for i = 1:NT
     globdat.time  += (1 - αf)*Δt
-    domain.Dstate = domain.state[:]
+    
     updateDomainStateBoundary!(domain, globdat)
 
   
@@ -478,10 +487,10 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
   
 
 
-  globdat.Dstate = globdat.state[:]
+  
   globdat.state += Δt * ∂u + Δt^2/2 * ((1 - β2) * ∂∂u + β2 * ∂∂up)
   globdat.velo += Δt * ((1 - γ) * ∂∂u + γ * ∂∂up)
-  globdat.acce = ∂∂up[:]
+  globdat.acce[:] = ∂∂up
   globdat.time  += αf*Δt
 
 
