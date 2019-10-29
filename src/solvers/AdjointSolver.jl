@@ -233,10 +233,11 @@ end
     β2 = 0.5*(1 - αm + αf)^2
     γ = 0.5 - αm + αf
 
-    absolution error ε = 1e-8, 
-    relative error ε0 = 1e-8  
+    make sure
+    state[NT+1, neqs], strain[NT+1, ngps_per_elem*neles, nstrain], stress[NT+1, ngps_per_elem*neles, nstrain]
+    state, obs_state strain, stress have NT+1 frames, the first time step corresponds to the initial condition
     
-    return true or false indicating converging or not
+    return dJ
 """->
 function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
      T::Float64, NT::Int64, state::Array{Float64}, strain::Array{Float64}, stress::Array{Float64},
@@ -363,7 +364,16 @@ end
     absolution error ε = 1e-8, 
     relative error ε0 = 1e-8  
     
-    return true or false indicating converging or not
+    make sure
+    globdat.time  = 0.0
+    domain.state, domain.velo, and domain.acce neqs parts are the initial conditions
+    globdat.acce, globdat.state, globdat.velo are the intial conditions
+
+    obs_state has NT+1, the first time step corresponds to the initial condition
+    
+    return J
+    state[NT+1, neqs], strain[NT+1, ngps_per_elem*neles, nstrain], stress[NT+1, ngps_per_elem*neles, nstrain]
+    the first time step corresponds to the initial condition
 """->
 function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
                   T::Float64, NT::Int64, strain_scale::Float64, stress_scale::Float64, 
@@ -380,8 +390,6 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
 
   # 1: initial condition, compute 2, 3, 4 ... NT+1
   state = zeros(NT+1,neqs)
-  vel = zeros(NT+1,neqs)
-  acce = zeros(NT+1,neqs)
 
 
   M = globdat.M
@@ -478,8 +486,6 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
 
   #save data 
   state[i+1,:] = globdat.state
-  vel[i+1,:] = globdat.velo
-  acce[i+1,:] = globdat.acce
 
   domain.state[domain.eq_to_dof] = globdat.state
   strain[i+1, :,:], _ = AdjointAssembleStrain(domain)
