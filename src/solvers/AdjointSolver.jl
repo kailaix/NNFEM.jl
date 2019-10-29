@@ -194,7 +194,7 @@ function AdjointAssembleStiff(domain, stress::Array{Float64}, dstress_dstrain::A
 
 function computDJDstate(state, obs_state)
   #J = (state - obs_state).^2
-  2.0*state
+  2.0*(state - obs_state)
 end
 
 function computeJ(state, obs_state)
@@ -266,7 +266,7 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
     for i = NT:-1:1
         @show "i = ", i
         # get strain
-        domain.state[dof_to_eq] = state[i+1,:]
+        domain.state[domain.dof_to_eq] = state[i+1,:]
         strain, dstrain_dstate_tran = AdjointAssembleStrain(domain)
         
 
