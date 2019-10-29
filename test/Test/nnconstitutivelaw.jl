@@ -1,7 +1,10 @@
-include("NNConstitutiveLaw.jl")
+using Revise
+using NNFEM
+using ADCME
 using PyPlot
 n = 1
 p = 9*20+20+20*20+20+20*4+4
+# p = 6
 config = [9,20,20,4]
 θ = 0.01*rand(p)
 input = 0.1*rand(n,9)
@@ -41,12 +44,12 @@ error()
 
 @assert n==1
 v = rand(1,9)
-A0, B0, C0 = nn_constitutive_law(input, θ, nothing, 1, 0)
+A0, B0, C0 = constitutive_law(input, θ, nothing, true, false, stress_scale=1e5, strain_scale=1.0)
 g = rand(1, 3)
 γs = [1.,1e-1,1e-2,1e-3,1e-4]
 L = zeros(5); Δ = zeros(5); δ = zeros(5)
 for i = 1:5
-    A, B, C = nn_constitutive_law(γs[i]*v +input,  θ)
+    A, B, C = constitutive_law(γs[i]*v +input,  θ, stress_scale=1e5, strain_scale=1.0)
     L[i] = sum(A.*g)
     Δ[i] = L[i] - sum(A0.*g)
     δ[i] = L[i] - sum(A0.*g) - γs[i]*sum(v[:].*(B0[1,:,:]*g[:]))

@@ -1,9 +1,10 @@
 
-
+strain_scale = 1.0
+stress_scale = 1.0e5;
 tid = 200
 porder = 2
 T = 0.1
-NT = 10
+NT = 50
 
 include("CommonFuncs.jl")
 np = pyimport("numpy")
@@ -52,7 +53,7 @@ function ForwardAdjoint(theta,  obs_state)
     assembleMassMatrix!(globdat, domain)
     updateStates!(domain, globdat)
 
-    J, state,strain, stress = ForwardNewmarkSolver(globdat, domain, theta, T, NT, obs_state)
+    J, state,strain, stress = ForwardNewmarkSolver(globdat, domain, theta, T, NT, strain_scale, stress_scale, obs_state)
 end
 
 
@@ -64,7 +65,7 @@ function BackwardAdjoint(theta,  state, strain, stress, obs_state)
     assembleMassMatrix!(globdat, domain)
     updateStates!(domain, globdat)
  
-    dJ = BackwardNewmarkSolver(globdat, domain, theta, T, NT, state, strain, stress, obs_state)
+    dJ = BackwardNewmarkSolver(globdat, domain, theta, T, NT, state, strain, stress, strain_scale, stress_scale, obs_state)
 
 end
 
@@ -97,15 +98,14 @@ end
 ndofs = 2
 domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
 obs_state = rand(Float64, NT+1, domain.neqs)
-theta = [H[1,1], H[1,2], H[1,3], H[2,2], H[2,3], H[3,3]]
+theta = [H[1,1], H[1,2], H[1,3], H[2,2], H[2,3], H[3,3]]/stress_scale
 
 
 # J1, state1,_,_ = ForwardAdjoint(theta,  obs_state)
-# state2 = ForwardSolve(theta,  obs_state)
+# state2 = ForwardSolve([H[1,1], H[1,2], H[1,3], H[2,2], H[2,3], H[3,3]],  obs_state)
 # @show "Forward state error is ", norm(state2 - state1)
 # @show "Forward J error is ", J1 - norm(state1[2:end,:] - obs_state[2:end,:])^2
-
-
+# error()
 
 function AdjointFunc(theta)
     J, state, strain, stress = ForwardAdjoint(theta,  obs_state)
@@ -114,10 +114,12 @@ function AdjointFunc(theta)
 end
 
 
-theta = [H[1,1], H[1,2], H[1,3], H[2,2], H[2,3], H[3,3]]
 
+
+theta = rand(704) *1.e-3
+# ForwardAdjoint(theta,  obs_state)
 # J, state = ForwardAdjoint(theta,  obs_state)
 # dJ = BackwardAdjoint(theta,  state, obs_state)
-gradtest(AdjointFunc, theta)
+gradtest(AdjointFunc, theta, scale=1.e-4)
 
 
