@@ -15,47 +15,7 @@ output:
 """
 function nn_constitutive_law(input::Array{Float64,2}, θ::Array{Float64,1}, 
     g::Union{Array{Float64,2}, Nothing}=nothing, grad_input::Bool=false, grad_θ::Bool=false)
-    n = size(input,1)
-    @assert size(input,2)==9
-
-    lib = joinpath(@__DIR__, "build/libnnlaw")
-    σ = zeros(n*3)
-    input = input'[:]
-
-    dinput = zeros()
-    if(grad_input)
-        dinput = zeros(n*9*3)
-        grad_input = 1
-    else
-        grad_input = 0
-    end
-
-    dθ = zeros()
-    if(grad_θ)
-        @assert size(g,1)==n && size(g,2)==3
-        g = g'[:]
-        dθ = zeros(length(θ))
-        grad_θ = 1
-    else
-        g = zeros()
-        grad_θ = 0
-    end
-
-    @eval begin
-        ccall((:constitutive_law, $lib), Cvoid,
-            (Ptr{Cdouble},Ptr{Cdouble},Ptr{Cdouble},Ptr{Cdouble},Ptr{Cdouble},Ptr{Cdouble},
-            Cint, Cint, Cint), $σ, $input, $θ, $g, $dinput, $dθ, $n, $grad_input, $grad_θ)
-    end
-
-    σ = reshape(σ, 3, n)'|>Array
-    if grad_input>0
-        # @show "here"
-        dinput = permutedims(reshape(dinput,9,3,n),[3,1,2])
-        # dinput[:,:,3] -= dinput[:,:,2]
-        # dinput[:,:,2] -= dinput[:,:,1]
-    end
-    
-    return σ, dinput, dθ
+    nn_constitutive_law(input, θ, [9,20,20,4], g, grad_input, grad_θ)
 end
 
 function nn_constitutive_law(input::Array{Float64,2}, θ::Array{Float64,1}, 
@@ -74,7 +34,6 @@ function nn_constitutive_law(input::Array{Float64,2}, θ::Array{Float64,1},
     n = size(input,1)
     @assert size(input,2)==9
 
-    lib = joinpath(@__DIR__, "build/libnnlaw")
     σ = zeros(n*3)
     input = input'[:]
 
@@ -97,6 +56,7 @@ function nn_constitutive_law(input::Array{Float64,2}, θ::Array{Float64,1},
         grad_θ = 0
     end
 
+    lib = joinpath(@__DIR__, "../../deps/CustomOp/ADLaw/build/libnnlaw")
     @eval begin
         ccall((:constitutive_law_generic, $lib), Cvoid,
             (Ptr{Cdouble},Ptr{Cdouble},Ptr{Cdouble},Ptr{Cdouble},Ptr{Cdouble},Ptr{Cdouble},
@@ -108,28 +68,14 @@ function nn_constitutive_law(input::Array{Float64,2}, θ::Array{Float64,1},
 
     σ = reshape(σ, 3, n)'|>Array
     if grad_input>0
-        # @show "here"
-        dinput = permutedims(reshape(dinput,9,3,n),[3,1,2])
-        # dinput[:,:,3] -= dinput[:,:,2]
-        # dinput[:,:,2] -= dinput[:,:,1]
+        new_input = zeros(n, 9, 3)
+        for i = 1:3
+            o = dinput[(i-1)*9*n+1:i*9*n]
+            new_input[:,:,i] = reshape(o, 9, n)'
+        end
+        dinput = new_input
     end
     
     return σ, dinput, dθ
 end
 
-
-function jl_nn_constitutive_law(input::Array{Float64,2}, θ::Array{Float64,1}, g::Union{Array{Float64,2}, Nothing}=nothing, grad_input::Int64=0, grad_θ::Int64=0)
-    x = input
-    k = 0
-    
-    w = reshape(θ[k+1:k+180], 20, 9)'; k+=180
-    x = tanh.(x*w) .+ reshape(θ[k+1:k+20], 1, :); k+= 20
-
-    w = reshape(θ[k+1:k+400], 20, 20)'; k+=400
-    x = tanh.(x*w) .+ reshape(θ[k+1:k+20], 1, :); k+= 20
-
-    w = reshape(θ[k+1:k+60], 3, 20)'; k+=60
-    x = tanh.(x*w) .+ reshape(θ[k+1:k+3], 1, :); k+= 3
-
-    return x
-end

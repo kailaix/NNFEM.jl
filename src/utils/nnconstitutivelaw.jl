@@ -69,7 +69,12 @@ function nn_constitutive_law(input::Array{Float64,2}, θ::Array{Float64,1},
 
     σ = reshape(σ, 3, n)'|>Array
     if grad_input>0
-        dinput = permutedims(reshape(dinput,9,3,n),[3,1,2])
+        new_input = zeros(n, 9, 3)
+        for i = 1:3
+            o = dinput[(i-1)*9*n+1:i*9*n]
+            new_input[:,:,i] = reshape(o, 9, n)'
+        end
+        dinput = new_input
     end
     
     return σ, dinput, dθ
