@@ -1,6 +1,7 @@
 stress_scale = 1.0e5
 strain_scale = 1.0
-
+T = 0.1
+NT = 200
 include("CommonFuncs.jl")
 
 force_scales = [5.0]
@@ -15,6 +16,10 @@ H0 = [1.04167e6  2.08333e5  0.0
 
 
 n_data = [100, 200, 201, 202, 203]
+n_data = [100]
+
+@info "Thread number is ", Threads.nthreads() 
+@info "Mulithreading requires: export JULIA_NUM_THREADS=", length(n_data)
 
 # density 4.5*(1 - 0.25) + 3.2*0.25
 #fiber_fraction = 0.25
@@ -24,8 +29,7 @@ prop = Dict("name"=> "PlaneStressPlasticity","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.2
 "sigmaY"=>0.97e+4, "K"=>1e+5)
 
 
-T = 0.1
-NT = 200
+
 
 # DNS computaional domain
 fiber_size = 2
@@ -120,11 +124,7 @@ end
 
 
 
-# function AdjointFunc(theta, globdat, domain, obs_state)
-#     J, state,strain, stress = ForwardNewmarkSolver(globdat, domain, theta, T, NT, strain_scale, stress_scale, obs_state)
-#     dJ = BackwardNewmarkSolver(globdat, domain, theta, T, NT, state, strain, stress, strain_scale, stress_scale, obs_state)
-#     return J, dJ'
-# end
+
 
 
 
@@ -134,26 +134,35 @@ theta = rand(704) * 1.e-3
 
 
 function f(theta)
-    J = zero(Float64, length(n_data))
-    for i = 1:length(n_data)
+    J = zeros(Float64, length(n_data))
+    Threads.@threads for i = 1:length(n_data)
+        @show Threads.threadid()
         J[i], _, _ = ForwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, strain_scale, stress_scale, obs_state_arr[i])
     end
     return sum(J)
 end
 
-function g(theta)
-    J = zero(Float64, length(n_data))
-    dJ= zero(Float64, length(n_data), length(theta))
+function g!(storage, theta)
+    J = zeros(Float64, length(n_data))
+    dJ= zeros(Float64, length(n_data), length(theta))
     state = Array{Any}(undef, length(n_data))
     strain = Array{Any}(undef, length(n_data))
     stress = Array{Any}(undef, length(n_data))
 
-    for i = 1:length(n_data)
+    Threads.@threads for i = 1:length(n_data)
         J[i], state[i],strain[i], stress[i] = ForwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, strain_scale, stress_scale, obs_state_arr[i])
         dJ[i,:] = BackwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, state[i], strain[i], stress[i], strain_scale, stress_scale, obs_state_arr[i])
     end
+    storage[:] = sum(dJ, dims=1)
+    
+end
 
-    return sum(dJ, dims=1)
+
+function AdjointFunc(theta)
+    J = f(theta)
+    dJ = zeros(Float64, length(theta))
+    g!(dJ, theta)
+    return J, dJ'
 end
 
 gradtest(AdjointFunc, theta, scale=1.e-4)

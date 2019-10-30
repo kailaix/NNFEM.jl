@@ -458,7 +458,7 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
 
       
 
-      println("$Newtoniterstep/$maxiterstep, $(norm(res))")
+      #println("$Newtoniterstep/$maxiterstep, $(norm(res))")
       if (norm(res)< ε || norm(res)< ε0*norm(res0) ||Newtoniterstep > maxiterstep) 
           if Newtoniterstep > maxiterstep 
 
@@ -476,7 +476,7 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
          
           else
               Newtonconverge = true
-              printstyled("[Newmark] Newton converged $Newtoniterstep\n", color=:green)
+              printstyled("[Newmark] $i Newton converged $Newtoniterstep\n", color=:green)
           end
       end
 
