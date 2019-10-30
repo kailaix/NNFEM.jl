@@ -165,7 +165,9 @@ function AdjointFunc(theta)
     return J, dJ'
 end
 
-gradtest(AdjointFunc, theta, scale=1.e-4)
+i=1
+@time ForwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, strain_scale, stress_scale, obs_state_arr[i])
+#gradtest(AdjointFunc, theta, scale=1.e-4)
 
 
 

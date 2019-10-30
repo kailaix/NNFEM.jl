@@ -40,9 +40,6 @@ function AdjointAssembleStrain(domain, computeDstrain::Bool=true)
     element = domain.elements[iele]
 
     # Get the element nodes
-    el_nodes = getNodes(element)
-
-    # Get the element nodes
     el_eqns = getEqns(domain,iele)
 
     el_dofs = getDofs(domain,iele)
@@ -94,9 +91,6 @@ function AssembleStiffAndForce(domain, stress::Array{Float64}, dstress_dstrain::
   # Loop over the elements in the elementGroup
   for iele  = 1:neles
     element = domain.elements[iele]
-
-    # Get the element nodes
-    el_nodes = getNodes(element)
 
     # Get the element nodes
     el_eqns = getEqns(domain,iele)
@@ -157,9 +151,6 @@ function AdjointAssembleStiff(domain, stress::Array{Float64}, dstress_dstrain::A
     # Loop over the elements in the elementGroup
     for iele  = 1:neles
       element = domain.elements[iele]
-  
-      # Get the element nodes
-      el_nodes = getNodes(element)
   
       # Get the element nodes
       el_eqns = getEqns(domain,iele)
@@ -382,7 +373,7 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
                   αm::Float64 = -1.0, αf::Float64 = 0.0, ε::Float64 = 1e-8, 
                   ε0::Float64 = 1e-8, maxiterstep::Int64=10, η::Float64 = 1.0)
   
-  local res0
+  local norm_res0
   Δt = T/NT
   β2 = 0.5*(1 - αm + αf)^2
   γ = 0.5 - αm + αf
@@ -398,58 +389,59 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
 
 
 
-  # 1: initial condition, compute 2, 3, 4 ... NT+1
-  state = zeros(NT+1,neqs)
+  
 
 
   M = globdat.M
   J = 0.0 
 
-  strain = zeros(NT+1, neles*ngps_per_elem, nstrain)
-  stress = zeros(NT+1, neles*ngps_per_elem, nstrain) 
-  
+  # 1: initial condition, compute 2, 3, 4 ... NT+1
+  state = zeros(Float64, NT+1,neqs)
+  strain = zeros(Float64, NT+1, neles*ngps_per_elem, nstrain)
+  stress = zeros(Float64, NT+1, neles*ngps_per_elem, nstrain) 
+
+  # temporal variables
+  ∂∂up = zeros(Float64, neqs)
+  Δ∂∂u = zeros(Float64, neqs)
 
   for i = 1:NT
     globdat.time  += (1 - αf)*Δt
     
     updateDomainStateBoundary!(domain, globdat)
 
-  
-    ∂∂u = globdat.acce[:] #∂∂uⁿ
-    u = globdat.state[:]  #uⁿ
-    ∂u  = globdat.velo[:] #∂uⁿ
     fext = getExternalForce(domain, globdat)
 
-    ∂∂up = ∂∂u[:]
+    ∂∂up[:] = globdat.acce
 
     Newtoniterstep, Newtonconverge = 0, false
 
-    norm0 = Inf
+    norm_Δ∂∂u0 = Inf
 
     while !Newtonconverge
       
       Newtoniterstep += 1
       
-      domain.state[domain.eq_to_dof] = (1 - αf)*(u + Δt*∂u + 0.5 * Δt * Δt * ((1 - β2)*∂∂u + β2*∂∂up)) + αf*u
+      domain.state[domain.eq_to_dof] = (1 - αf)*(Δt*globdat.velo + 0.5 * Δt * Δt * ((1 - β2)*globdat.acce + β2*∂∂up)) + globdat.state
 
       strain[i+1, :,:], _ = AdjointAssembleStrain(domain, false)
-      stress[i+1, :,:], output, _ =  constitutive_law([strain[i+1,:,:] strain[i,:,:] stress[i,:,:]], theta, nothing, true, false, strain_scale=strain_scale, stress_scale=stress_scale)
+      @time stress[i+1, :,:], output, _ =  constitutive_law([strain[i+1,:,:] strain[i,:,:] stress[i,:,:]], theta, nothing, true, false, strain_scale=strain_scale, stress_scale=stress_scale)
       pnn_pstrain_tran = output[:,1:3,:]
       
-      fint, stiff = AssembleStiffAndForce(domain, stress[i+1, :,:], permutedims(pnn_pstrain_tran,[1,3,2]))
+      @time fint, stiff = AssembleStiffAndForce(domain, stress[i+1, :,:], permutedims(pnn_pstrain_tran,[1,3,2]))
 
-      res = M * (∂∂up *(1 - αm) + αm*∂∂u)  + fint - fext
-      # @show fint, fext
+      res = M * (∂∂up *(1 - αm) + αm*globdat.acce)  + fint - fext
+      
+      norm_res = norm(res)
       if Newtoniterstep==1
-          res0 = res 
+          norm_res0 = norm_res 
       end
 
-      A = M*(1 - αm) + (1 - αf) * 0.5 * β2 * Δt^2 * stiff
+      @time A = (M*(1 - αm) + (1 - αf) * 0.5 * β2 * Δt^2 * stiff)
       
-      Δ∂∂u = A\res
+      @time Δ∂∂u[:] = A\res
 
-      #@info " norm(Δ∂∂u) ", norm(Δ∂∂u) 
-      while η * norm(Δ∂∂u) > norm0
+      norm_Δ∂∂u = norm(Δ∂∂u) 
+      while η * norm_Δ∂∂u > norm_Δ∂∂u0
           η /= 2.0
           @info "η", η
       end
@@ -459,11 +451,11 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
       
 
       #println("$Newtoniterstep/$maxiterstep, $(norm(res))")
-      if (norm(res)< ε || norm(res)< ε0*norm(res0) ||Newtoniterstep > maxiterstep) 
+      if (norm_res < ε || norm_res < ε0*norm_res0 ||Newtoniterstep > maxiterstep) 
           if Newtoniterstep > maxiterstep 
 
             function f(∂∂up)
-              domain.state[domain.eq_to_dof] = (1 - αf)*(u + Δt*∂u + 0.5 * Δt * Δt * ((1 - β2)*∂∂u + β2*∂∂up)) + αf*u
+              domain.state[domain.eq_to_dof] = (1 - αf)*(Δt*globdat.velo + 0.5 * Δt * Δt * ((1 - β2)*globdat.acce + β2*∂∂up)) + globdat.state
               cur_strain, dstrain_dstate_tran = AdjointAssembleStrain(domain)
               cur_stress, output, _ =  constitutive_law([cur_strain strain[i,:,:] stress[i,:,:]], theta, nothing, true, false, strain_scale=strain_scale, stress_scale=stress_scale)
               pnn_pstrain_tran = output[:,1:3,:]
@@ -472,7 +464,7 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
             end
             gradtest(f, ∂∂up)
             
-            error("Newton iteration cannot converge $(norm(res))");
+            error("Newton iteration cannot converge $(norm_res)");
          
           else
               Newtonconverge = true
@@ -481,15 +473,15 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
       end
 
       η = min(1.0, 2η)
-      norm0 = norm(Δ∂∂u)
+      norm_Δ∂∂u0 = norm_Δ∂∂u
       # println("================ time = $(globdat.time) $Newtoniterstep =================")
   end
   
 
 
   
-  globdat.state += Δt * ∂u + Δt^2/2 * ((1 - β2) * ∂∂u + β2 * ∂∂up)
-  globdat.velo += Δt * ((1 - γ) * ∂∂u + γ * ∂∂up)
+  globdat.state += Δt * globdat.velo + Δt^2/2 * ((1 - β2) * globdat.acce + β2 * ∂∂up)
+  globdat.velo += Δt * ((1 - γ) * globdat.acce + γ * ∂∂up)
   globdat.acce[:] = ∂∂up
   globdat.time  += αf*Δt
 
@@ -498,7 +490,7 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
   state[i+1,:] = globdat.state
 
   domain.state[domain.eq_to_dof] = globdat.state
-  strain[i+1, :,:], _ = AdjointAssembleStrain(domain)
+  strain[i+1, :,:], _ = AdjointAssembleStrain(domain, false)
   stress[i+1, :,:], _, _ =  constitutive_law([strain[i+1,:,:] strain[i,:,:] stress[i,:,:]], theta, nothing, false, false, strain_scale=strain_scale, stress_scale=stress_scale)
 
 
