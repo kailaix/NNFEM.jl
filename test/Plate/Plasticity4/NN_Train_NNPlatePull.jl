@@ -132,10 +132,28 @@ globdat_arr, domain_arr, obs_state_arr = PreprocessData(n_data, NT)
 theta = rand(704) * 1.e-3
 
 
-function AdjointFunc(theta)
-    J, state,strain, stress = ForwardNewmarkSolver(globdat_arr[1], domain_arr[1], theta, T, NT, strain_scale, stress_scale, obs_state_arr[1])
-    dJ = BackwardNewmarkSolver(globdat_arr[1], domain_arr[1], theta, T, NT, state, strain, stress, strain_scale, stress_scale, obs_state_arr[1])
-    return J, dJ'
+
+function f(theta)
+    J = zero(Float64, length(n_data))
+    for i = 1:length(n_data)
+        J[i], _, _ = ForwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, strain_scale, stress_scale, obs_state_arr[i])
+    end
+    return sum(J)
+end
+
+function g(theta)
+    J = zero(Float64, length(n_data))
+    dJ= zero(Float64, length(n_data), length(theta))
+    state = Array{Any}(undef, length(n_data))
+    strain = Array{Any}(undef, length(n_data))
+    stress = Array{Any}(undef, length(n_data))
+
+    for i = 1:length(n_data)
+        J[i], state[i],strain[i], stress[i] = ForwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, strain_scale, stress_scale, obs_state_arr[i])
+        dJ[i,:] = BackwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, state[i], strain[i], stress[i], strain_scale, stress_scale, obs_state_arr[i])
+    end
+
+    return sum(dJ, dims=1)
 end
 
 gradtest(AdjointFunc, theta, scale=1.e-4)
