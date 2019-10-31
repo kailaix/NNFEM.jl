@@ -153,8 +153,9 @@ end
 
 
 function calculate_common!(theta, last_theta, buffer)
+    @show " theta norm ", norm(theta), " last_theta norm ", norm(last_theta)
     if theta != last_theta
-        @show " theta norm ", norm(theta), " last_theta norm ", norm(last_theta)
+        
         copy!(last_theta, theta)
 
         for i = 1:length(n_data)
@@ -166,10 +167,13 @@ function calculate_common!(theta, last_theta, buffer)
 end
 
 function f(theta, buffer, last_theta)   
-    
     calculate_common!(theta, last_theta, buffer)
-    @show "function norm: ", norm( sum(buffer.J))
-    return sum(buffer.J)
+
+    J = sum(buffer.J)
+    
+    @show "start function evaluation: |J|=", norm(J)
+    
+    return J
 end
 
 function g!(theta, storage, buffer, last_theta)
@@ -179,8 +183,10 @@ function g!(theta, storage, buffer, last_theta)
         # todo: inplace 
         buffer.dJ[i] = BackwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, buffer.state[i], buffer.strain[i], buffer.stress[i], strain_scale, stress_scale, obs_state_arr[i])
     end
-    @show "gradient norm: ", norm( sum(buffer.dJ))
+    
     storage[:] = sum(buffer.dJ)
+
+    @show "start gradient evaluation: |dJ/dtheta|=", norm( storage )
 
     storage[:] ./= max(1.0, norm(storage))
 end
@@ -212,7 +218,7 @@ last_theta = similar(initial_theta)
 
 algo = LBFGS(alphaguess = InitialPrevious(), linesearch=LineSearches.BackTracking(order=3))
 
-optimize(x -> f(x, buffer, initial_theta), 
+optimize(x -> f(x, buffer, last_theta), 
         (stor, x) -> g!(x, stor, buffer, last_theta), 
         initial_theta, 
         algo)
