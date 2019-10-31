@@ -1,3 +1,4 @@
+using Optim
 stress_scale = 1.0e5
 strain_scale = 1.0
 T = 0.1
@@ -129,45 +130,87 @@ end
 
 
 globdat_arr, domain_arr, obs_state_arr = PreprocessData(n_data, NT)
-theta = rand(704) * 1.e-3
 
 
 
-function f(theta)
-    J = zeros(Float64, length(n_data))
-    Threads.@threads for i = 1:length(n_data)
-        @show Threads.threadid()
-        J[i], _, _ = ForwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, strain_scale, stress_scale, obs_state_arr[i])
+mutable struct Buffer
+    J::Array{Float64}
+    dJ::Array{Array{Float64}}
+    state::Array{Array{Float64}}
+    strain::Array{Array{Float64}}
+    stress::Array{Array{Float64}}
+
+    function Buffer(n::Int64, ntheta::Int64, neqs::Array{Int64}, ngps::Int64, nstrain::Int64)
+        J = zeros(n)
+        dJ = [zeros(ntheta) for i = 1:n]
+        state = [zeros(Float64, neqs[i]) for i = 1:n]
+        strain = [zeros(Float64, ngps, nstrain) for i = 1:n]
+        stress = [zeros(Float64, ngps, nstrain) for i = 1:n]
+        new(J, dJ, state, strain, stress)
     end
-    return sum(J)
 end
 
-function g!(storage, theta)
-    J = zeros(Float64, length(n_data))
-    dJ= zeros(Float64, length(n_data), length(theta))
-    state = Array{Any}(undef, length(n_data))
-    strain = Array{Any}(undef, length(n_data))
-    stress = Array{Any}(undef, length(n_data))
 
-    Threads.@threads for i = 1:length(n_data)
-        J[i], state[i],strain[i], stress[i] = ForwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, strain_scale, stress_scale, obs_state_arr[i])
-        dJ[i,:] = BackwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, state[i], strain[i], stress[i], strain_scale, stress_scale, obs_state_arr[i])
+
+function calculate_common!(theta, last_theta, buffer)
+    if theta != last_theta
+        @show theta
+        copy!(last_theta, theta)
+
+        for i = 1:length(n_data)
+            #@show Threads.threadid()
+            # todo: inplace 
+            buffer.J[i], buffer.state[i], buffer.strain[i], buffer.stress[i] = ForwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, strain_scale, stress_scale, obs_state_arr[i])
+        end
     end
-    storage[:] = sum(dJ, dims=1)
+end
+
+function f(theta, buffer, last_theta)   
     
+    calculate_common!(theta, last_theta, buffer)
+    return sum(buffer.J)
+end
+
+function g!(theta, storage, buffer, last_theta)
+    calculate_common!(theta, last_theta, buffer)
+
+    for i = 1:length(n_data)
+        # todo: inplace 
+        buffer.dJ[i] = BackwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, buffer.state[i], buffer.strain[i], buffer.stress[i], strain_scale, stress_scale, obs_state_arr[i])
+    end
+    storage[:] = sum(buffer.dJ)
 end
 
 
-function AdjointFunc(theta)
-    J = f(theta)
-    dJ = zeros(Float64, length(theta))
-    g!(dJ, theta)
-    return J, dJ'
-end
 
-i=1
-@time ForwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, strain_scale, stress_scale, obs_state_arr[i])
-#gradtest(AdjointFunc, theta, scale=1.e-4)
+nstrain = 3
+ngps_per_elem = length(domain_arr[1].elements[1].weights)
+neles = domain_arr[1].neles
+initial_theta = rand(704) * 1.e-3
+neqs_arr = [domain_arr[i].neqs for i = 1:length(n_data)]
+buffer = Buffer(length(n_data), length(initial_theta), neqs_arr, neles*ngps_per_elem, nstrain) # Preallocate an appropriate buffer
+last_theta = similar(initial_theta)
+# df = TwiceDifferentiable(x -> f(x, buffer, initial_theta),
+#                                 (stor, x) -> g!(x, stor, buffer, last_theta))
+# optimize(df, initial_theta, LBFGS())
+
+
+
+# function AdjointFunc(theta)
+#     dJ = similar(theta)
+#     J = f(theta, buffer, last_theta)  
+#     g!(theta, dJ, buffer, last_theta)
+    
+#     return J, dJ' 
+
+# end
+# gradtest(AdjointFunc, initial_theta, scale=1.e-4)
+
+
+optimize(x -> f(x, buffer, initial_theta), 
+        (stor, x) -> g!(x, stor, buffer, last_theta), 
+        initial_theta, 
+        LBFGS())
 
 
 

@@ -333,7 +333,7 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
 
     end
 
-
+    @info size(dJ)
     return dJ
 end 
 
