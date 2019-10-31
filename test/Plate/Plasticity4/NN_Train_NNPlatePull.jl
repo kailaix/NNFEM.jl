@@ -1,4 +1,4 @@
-using Optim
+using Optim, LineSearches
 stress_scale = 1.0e5
 strain_scale = 1.0
 T = 0.1
@@ -154,7 +154,7 @@ end
 
 function calculate_common!(theta, last_theta, buffer)
     if theta != last_theta
-        @show theta
+        @show " theta norm ", norm(theta)
         copy!(last_theta, theta)
 
         for i = 1:length(n_data)
@@ -168,6 +168,7 @@ end
 function f(theta, buffer, last_theta)   
     
     calculate_common!(theta, last_theta, buffer)
+    @show "function norm: ", norm( sum(buffer.J))
     return sum(buffer.J)
 end
 
@@ -178,7 +179,10 @@ function g!(theta, storage, buffer, last_theta)
         # todo: inplace 
         buffer.dJ[i] = BackwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, buffer.state[i], buffer.strain[i], buffer.stress[i], strain_scale, stress_scale, obs_state_arr[i])
     end
+    @show "gradient norm: ", norm( sum(buffer.dJ))
     storage[:] = sum(buffer.dJ)
+
+    storage[:] ./= max(1.0, norm(storage))
 end
 
 
@@ -206,11 +210,12 @@ last_theta = similar(initial_theta)
 # end
 # gradtest(AdjointFunc, initial_theta, scale=1.e-4)
 
+algo = LBFGS(alphaguess = InitialPrevious(), linesearch=LineSearches.BackTracking(order=3))
 
 optimize(x -> f(x, buffer, initial_theta), 
         (stor, x) -> g!(x, stor, buffer, last_theta), 
         initial_theta, 
-        LBFGS())
+        algo)
 
 
 

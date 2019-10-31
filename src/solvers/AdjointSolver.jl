@@ -203,10 +203,13 @@ function AdjointAssembleStiff(domain, stress::Array{Float64}, dstress_dstrain_T:
 
 function computDJDstate(state, obs_state)
   #J = (state - obs_state).^2
+  #@show  norm(2.0*(state - obs_state))
   2.0*(state - obs_state)
 end
 
 function computeJ(state, obs_state)
+
+  #@show sum((state - obs_state).^2)
   sum((state - obs_state).^2)
 end
 
@@ -268,7 +271,7 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
     pnn_pstress0_tran = zeros(neles*ngps_per_elem, nstrain, nstrain) 
 
     for i = NT:-1:1
-        @show "i = ", i
+        #@show "i = ", i
         # get strain
         domain.state[domain.dof_to_eq] = state[i+1,:]
         _, dstrain_dstate_tran = AdjointAssembleStrain(domain)
@@ -332,8 +335,6 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
         pnn_pstress0_tran_p = pnn_pstress0_tran
 
     end
-
-    @info size(dJ)
     return dJ
 end 
 
@@ -418,17 +419,16 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
     norm_Δ∂∂u0 = Inf
 
     while !Newtonconverge
-      @info "Newton converge"
       
       Newtoniterstep += 1
       
       domain.state[domain.eq_to_dof] = (1 - αf)*(Δt*globdat.velo + 0.5 * Δt * Δt * ((1 - β2)*globdat.acce + β2*∂∂up)) + globdat.state
 
       strain[i+1, :,:], _ = AdjointAssembleStrain(domain, false)
-      @time stress[i+1, :,:], output, _ =  constitutive_law([strain[i+1,:,:] strain[i,:,:] stress[i,:,:]], theta, nothing, true, false, strain_scale=strain_scale, stress_scale=stress_scale)
+      stress[i+1, :,:], output, _ =  constitutive_law([strain[i+1,:,:] strain[i,:,:] stress[i,:,:]], theta, nothing, true, false, strain_scale=strain_scale, stress_scale=stress_scale)
       pnn_pstrain_tran = output[:,1:3,:]
       
-      @time fint, stiff = AssembleStiffAndForce(domain, stress[i+1, :,:], pnn_pstrain_tran)
+      fint, stiff = AssembleStiffAndForce(domain, stress[i+1, :,:], pnn_pstrain_tran)
 
       res = M * (∂∂up *(1 - αm) + αm*globdat.acce)  + fint - fext
       
@@ -439,7 +439,7 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
 
       A = (M*(1 - αm) + (1 - αf) * 0.5 * β2 * Δt^2 * stiff)
       
-      @time  Δ∂∂u[:] = A\res
+      Δ∂∂u[:] = A\res
 
       norm_Δ∂∂u = norm(Δ∂∂u) 
       while η * norm_Δ∂∂u > norm_Δ∂∂u0
@@ -455,21 +455,23 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
       if (norm_res < ε || norm_res < ε0*norm_res0 ||Newtoniterstep > maxiterstep) 
           if Newtoniterstep > maxiterstep 
 
-            function f(∂∂up)
-              domain.state[domain.eq_to_dof] = (1 - αf)*(Δt*globdat.velo + 0.5 * Δt * Δt * ((1 - β2)*globdat.acce + β2*∂∂up)) + globdat.state
-              cur_strain, dstrain_dstate_tran = AdjointAssembleStrain(domain)
-              cur_stress, output, _ =  constitutive_law([cur_strain strain[i,:,:] stress[i,:,:]], theta, nothing, true, false, strain_scale=strain_scale, stress_scale=stress_scale)
-              pnn_pstrain_tran = output[:,1:3,:]
-              fint, stiff = AssembleStiffAndForce(domain, cur_stress, permutedims(pnn_pstrain_tran,[1,3,2]))
-              fint, (1 - αf) * 0.5 * β2 * Δt^2 * stiff
-            end
-            gradtest(f, ∂∂up)
+            # function f(∂∂up)
+            #   domain.state[domain.eq_to_dof] = (1 - αf)*(Δt*globdat.velo + 0.5 * Δt * Δt * ((1 - β2)*globdat.acce + β2*∂∂up)) + globdat.state
+            #   cur_strain, dstrain_dstate_tran = AdjointAssembleStrain(domain)
+            #   cur_stress, output, _ =  constitutive_law([cur_strain strain[i,:,:] stress[i,:,:]], theta, nothing, true, false, strain_scale=strain_scale, stress_scale=stress_scale)
+            #   pnn_pstrain_tran = output[:,1:3,:]
+            #   fint, stiff = AssembleStiffAndForce(domain, cur_stress, permutedims(pnn_pstrain_tran,[1,3,2]))
+            #   fint, (1 - αf) * 0.5 * β2 * Δt^2 * stiff
+            # end
+            # gradtest(f, ∂∂up)
             
-            error("Newton iteration cannot converge $(norm_res)");
+            @error("Newton iteration cannot converge $(norm_res)");
+            J = Inf
+            return J, state, strain, stress
          
           else
               Newtonconverge = true
-              printstyled("[Newmark] $i Newton converged $Newtoniterstep\n", color=:green)
+              #printstyled("[Newmark] $i Newton converged $Newtoniterstep\n", color=:green)
           end
       end
 
@@ -492,7 +494,7 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
 
   domain.state[domain.eq_to_dof] = globdat.state
   strain[i+1, :,:], _ = AdjointAssembleStrain(domain, false)
-  @time stress[i+1, :,:], _, _ =  constitutive_law([strain[i+1,:,:] strain[i,:,:] stress[i,:,:]], theta, nothing, false, false, strain_scale=strain_scale, stress_scale=stress_scale)
+  stress[i+1, :,:], _, _ =  constitutive_law([strain[i+1,:,:] strain[i,:,:] stress[i,:,:]], theta, nothing, false, false, strain_scale=strain_scale, stress_scale=stress_scale)
 
 
 
