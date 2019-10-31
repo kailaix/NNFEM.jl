@@ -243,13 +243,13 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
     neles, ngps_per_elem, neqs = domain.neles, length(domain.elements[1].weights), domain.neqs
     nstrain = 3
 
-    adj_lambda = zeros(NT+1,neqs)
-    adj_tau = zeros(NT+1,neqs)
-    adj_kappa = zeros(NT+1,neqs)
-    adj_sigma = zeros(NT+1,neles*ngps_per_elem, nstrain)
+    adj_lambda = zeros(Float64, NT+1,neqs)
+    adj_tau = zeros(Float64,NT+1,neqs)
+    adj_kappa = zeros(Float64,NT+1,neqs)
+    adj_sigma = zeros(Float64,NT+1,neles*ngps_per_elem, nstrain)
 
     MT = (globdat.M)'
-    dJ = zeros(length(theta))
+    dJ = zeros(Float64,length(theta))
   
 
 
@@ -265,10 +265,10 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
     # pnn_pstrain0_tran_p = pnn(E^{i+1}, E^{i}, S^{i})/pE^{i}
     # pnn_pstress0_tran_p = pnn(E^{i+1}, E^{i}, S^{i})/pS^{i}
 
-    pnn_pstrain0_tran_p = zeros(neles*ngps_per_elem, nstrain, nstrain) 
-    pnn_pstrain0_tran = zeros(neles*ngps_per_elem, nstrain, nstrain) 
-    pnn_pstress0_tran_p = zeros(neles*ngps_per_elem*nstrain, nstrain, nstrain) 
-    pnn_pstress0_tran = zeros(neles*ngps_per_elem, nstrain, nstrain) 
+    pnn_pstrain0_tran_p = zeros(Float64, neles*ngps_per_elem, nstrain, nstrain) 
+    pnn_pstrain0_tran = zeros(Float64, neles*ngps_per_elem, nstrain, nstrain) 
+    pnn_pstress0_tran_p = zeros(Float64, neles*ngps_per_elem*nstrain, nstrain, nstrain) 
+    pnn_pstress0_tran = zeros(Float64, neles*ngps_per_elem, nstrain, nstrain) 
 
     for i = NT:-1:1
         #@show "i = ", i
@@ -281,7 +281,7 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
 
         pnn_pstrain_tran, pnn_pstrain0_tran, pnn_pstress0_tran = output[:,1:3,:], output[:,4:6,:], output[:,7:9,:]
 
-        stiff_tran, dfint_dstress_tran = AdjointAssembleStiff(domain, stress[i+1,:,:], pnn_pstrain_tran)
+        @time stiff_tran, dfint_dstress_tran = AdjointAssembleStiff(domain, stress[i+1,:,:], pnn_pstrain_tran)
 
         #compute tau^i
         adj_tau[i,:] = Δt * adj_lambda[i+1,:] + adj_tau[i+1,:]
