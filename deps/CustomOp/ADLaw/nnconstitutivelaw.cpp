@@ -159,7 +159,8 @@ void constitutive_law_generic(
         setv(weight[i], theta); theta += config[i]*config[i+1];
         setv(bias[i], theta); theta += config[i+1];
     }    
-    stack.new_recording();
+    if (grad_input!=0 || grad_theta!=0)
+        stack.new_recording();
 
     x[0] = X;
     for(int l=0;l<n_layer-1;l++){
