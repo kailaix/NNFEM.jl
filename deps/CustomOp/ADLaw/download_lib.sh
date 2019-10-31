@@ -3,7 +3,7 @@ if [ ! -d "Adept-2" ]; then
 fi
 cd Adept-2
 autoreconf -i
-./configure
+./configure  --with-blas=openblas  CXXFLAGS="-g -O3"
 make -j
 make check
 make install

@@ -418,6 +418,7 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
     norm_Δ∂∂u0 = Inf
 
     while !Newtonconverge
+      @info "Newton converge"
       
       Newtoniterstep += 1
       
@@ -436,9 +437,9 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
           norm_res0 = norm_res 
       end
 
-      @time A = (M*(1 - αm) + (1 - αf) * 0.5 * β2 * Δt^2 * stiff)
+      A = (M*(1 - αm) + (1 - αf) * 0.5 * β2 * Δt^2 * stiff)
       
-      @time Δ∂∂u[:] = A\res
+      @time  Δ∂∂u[:] = A\res
 
       norm_Δ∂∂u = norm(Δ∂∂u) 
       while η * norm_Δ∂∂u > norm_Δ∂∂u0
@@ -491,7 +492,7 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
 
   domain.state[domain.eq_to_dof] = globdat.state
   strain[i+1, :,:], _ = AdjointAssembleStrain(domain, false)
-  stress[i+1, :,:], _, _ =  constitutive_law([strain[i+1,:,:] strain[i,:,:] stress[i,:,:]], theta, nothing, false, false, strain_scale=strain_scale, stress_scale=stress_scale)
+  @time stress[i+1, :,:], _, _ =  constitutive_law([strain[i+1,:,:] strain[i,:,:] stress[i,:,:]], theta, nothing, false, false, strain_scale=strain_scale, stress_scale=stress_scale)
 
 
 
