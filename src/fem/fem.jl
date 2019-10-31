@@ -48,7 +48,24 @@ mutable struct Domain
     FBC::Array{Int64}  # Nodal force boundary condition
     fext::Array{Float64}  # Value for Nodal force boundary condition
     time::Float64
+    
+
+    ii_stiff::Array{Int64} 
+    jj_stiff::Array{Int64} 
+    vv_stiff::Array{Float64} 
+
+    ii_dfint_dstress::Array{Int64}  
+    jj_dfint_dstress::Array{Int64}   
+    vv_dfint_dstress::Array{Float64}   
+
+    ii_dstrain_dstate::Array{Int64}
+    jj_dstrain_dstate::Array{Int64}
+    vv_dstrain_dstate::Array{Float64}   
+
     history::Dict{String, Array{Array{Float64}}}
+
+
+
 end
 
 function Base.:copy(g::Union{GlobalData, Domain}) 
@@ -83,9 +100,11 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array
     
     history = Dict("state"=>Array{Float64}[], "acc"=>Array{Float64}[], "fint"=>Array{Float64}[],
                 "fext"=>Array{Float64}[], "strain"=>[], "stress"=>[])
-    domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, LM, DOF, ID, neqs, eq_to_dof, dof_to_eq, EBC, g, FBC, fext, 0.0, history)
+    domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, LM, DOF, ID, neqs, eq_to_dof, dof_to_eq, 
+    EBC, g, FBC, fext, 0.0, Int64[], Int64[], Float64[], Int64[], Int64[], Float64[], Int64[], Int64[], Float64[], history)
     setDirichletBoundary!(domain, EBC, g)
     setNeumannBoundary!(domain, FBC, f)
+    assembleSparseMatrixPattern!(domain)
     domain
 end
 
@@ -338,3 +357,79 @@ end
 function getDstate(self::Domain, el_dofs::Array{Int64})
     return self.Dstate[el_dofs]
 end
+
+
+
+@doc """
+    compute constant stiff matrix pattern
+   
+"""->
+function assembleSparseMatrixPattern!(self::Domain)
+    
+    neles = self.neles
+    eledim = self.elements[1].eledim
+    nstrain = div((eledim + 1)*eledim, 2)
+    ngps_per_elem = length(self.elements[1].weights)
+    neqs = self.neqs
+
+
+    ii_stiff = Int64[]; jj_stiff = Int64[];
+    ii_dfint_dstress = Int64[]; jj_dfint_dstress = Int64[]; 
+    ii_dstrain_dstate = Int64[]; jj_dstrain_dstate = Int64[]; 
+
+
+    neles = self.neles
+  
+    # Loop over the elements in the elementGroup
+    for iele  = 1:neles
+      element = self.elements[iele]
+
+      el_eqns = getEqns(self,iele)
+  
+      el_dofs = getDofs(self,iele)
+  
+      el_state  = getState(self, el_dofs)
+  
+      gp_ids = (iele-1)*ngps_per_elem+1 : iele*ngps_per_elem
+      
+   
+      # Assemble in the global array
+      el_eqns_active = el_eqns .>= 1
+      el_eqns_active_idx = el_eqns[el_eqns_active]
+      # K[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += stiff[el_eqns_active,el_eqns_active]
+
+      el_eqns_active_idx = el_eqns[el_eqns_active]
+
+      for j = 1:length(el_eqns_active_idx)
+        for i = 1:length(el_eqns_active_idx)
+          push!(ii_stiff, el_eqns_active_idx[i])
+          push!(jj_stiff, el_eqns_active_idx[j])
+          #push!(vv_stiff, stiff_active[i,j])
+        end
+      end
+
+      for j = 1:ngps_per_elem*nstrain
+        for i = 1:length(el_eqns_active_idx) 
+          push!(ii_dfint_dstress, el_eqns_active_idx[i])
+          push!(jj_dfint_dstress, (iele-1)*ngps_per_elem*nstrain+j)
+          #push!(vv_dfint_dstress, dfint_dstress_active[i,j])
+        end
+      end
+
+      for j = 1:length(el_eqns_active_idx)
+        for i = 1:ngps_per_elem*nstrain
+        
+          push!(ii_dstrain_dstate, (iele-1)*ngps_per_elem*nstrain+i)
+          push!(jj_dstrain_dstate, el_eqns_active_idx[j])
+          #push!(vv_dstrain_dstate, dstrain_dstate_active[i,j])
+        end
+      end
+
+     
+    end
+
+    self.ii_stiff = ii_stiff; self.jj_stiff = jj_stiff;
+    self.ii_dfint_dstress = ii_dfint_dstress; self.jj_dfint_dstress = jj_dfint_dstress;
+    self.ii_dstrain_dstate = ii_dstrain_dstate; self.jj_dstrain_dstate = jj_dstrain_dstate;
+
+  end

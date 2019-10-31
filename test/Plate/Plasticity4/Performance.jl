@@ -134,5 +134,5 @@ i = 1
 
 @time J, state, strain, stress = ForwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, strain_scale, stress_scale, obs_state_arr[i])
 
-@time BackwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, state, strain, stress, strain_scale, stress_scale, obs_state_arr[i])
+#@time BackwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, state, strain, stress, strain_scale, stress_scale, obs_state_arr[i])
    
