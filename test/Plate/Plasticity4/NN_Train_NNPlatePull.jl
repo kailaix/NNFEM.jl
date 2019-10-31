@@ -154,7 +154,7 @@ end
 
 function calculate_common!(theta, last_theta, buffer)
     if theta != last_theta
-        @show " theta norm ", norm(theta)
+        @show " theta norm ", norm(theta), " last_theta norm ", norm(last_theta)
         copy!(last_theta, theta)
 
         for i = 1:length(n_data)
