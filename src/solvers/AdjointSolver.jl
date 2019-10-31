@@ -78,7 +78,7 @@ end
 @doc """
 Compute the fint and stiff, based on the state and Dstate in domain
 """->
-function AssembleStiffAndForce(domain, stress::Array{Float64}, dstress_dstrain::Array{Float64})
+function AssembleStiffAndForce(domain, stress::Array{Float64}, dstress_dstrain_T::Array{Float64})
   neles = domain.neles
   ngps_per_elem = length(domain.elements[1].weights)
   neqs = domain.neqs
@@ -105,7 +105,7 @@ function AssembleStiffAndForce(domain, stress::Array{Float64}, dstress_dstrain::
 
     gp_ids = (iele-1)*ngps_per_elem+1 : iele*ngps_per_elem
     
-    lfint, lstiff  = getStiffAndForce(element, el_state, stress[gp_ids,:], dstress_dstrain[gp_ids,:,:])
+    lfint, lstiff  = getStiffAndForce(element, el_state, stress[gp_ids,:], dstress_dstrain_T[gp_ids,:,:])
 
     # Assemble in the global array
     el_eqns_active = el_eqns .>= 1
@@ -134,7 +134,7 @@ end
 Compute the stiff and dfint_dstress, based on the state in domain
 and dstrain_dstate
 """->
-function AdjointAssembleStiff(domain, stress::Array{Float64}, dstress_dstrain::Array{Float64})
+function AdjointAssembleStiff(domain, stress::Array{Float64}, dstress_dstrain_T::Array{Float64})
     neles = domain.neles
     eledim = domain.elements[1].eledim
     nstrain = div((eledim + 1)*eledim, 2)
@@ -162,7 +162,7 @@ function AdjointAssembleStiff(domain, stress::Array{Float64}, dstress_dstrain::A
 
       gp_ids = (iele-1)*ngps_per_elem+1 : iele*ngps_per_elem
       # Get the element contribution by calling the specified action
-      stiff, dfint_dstress = getStiffAndDforceDstress(element, el_state, stress[gp_ids,:], dstress_dstrain[gp_ids,:,:])
+      stiff, dfint_dstress = getStiffAndDforceDstress(element, el_state, stress[gp_ids,:], dstress_dstrain_T[gp_ids,:,:])
       
    
       # Assemble in the global array
@@ -278,7 +278,7 @@ function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
 
         pnn_pstrain_tran, pnn_pstrain0_tran, pnn_pstress0_tran = output[:,1:3,:], output[:,4:6,:], output[:,7:9,:]
 
-        stiff_tran, dfint_dstress_tran = AdjointAssembleStiff(domain, stress[i+1,:,:], permutedims(pnn_pstrain_tran,[1,3,2]))
+        stiff_tran, dfint_dstress_tran = AdjointAssembleStiff(domain, stress[i+1,:,:], pnn_pstrain_tran)
 
         #compute tau^i
         adj_tau[i,:] = Δt * adj_lambda[i+1,:] + adj_tau[i+1,:]
@@ -428,7 +428,7 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
       @time stress[i+1, :,:], output, _ =  constitutive_law([strain[i+1,:,:] strain[i,:,:] stress[i,:,:]], theta, nothing, true, false, strain_scale=strain_scale, stress_scale=stress_scale)
       pnn_pstrain_tran = output[:,1:3,:]
       
-      @time fint, stiff = AssembleStiffAndForce(domain, stress[i+1, :,:], permutedims(pnn_pstrain_tran,[1,3,2]))
+      @time fint, stiff = AssembleStiffAndForce(domain, stress[i+1, :,:], pnn_pstrain_tran)
 
       res = M * (∂∂up *(1 - αm) + αm*globdat.acce)  + fint - fext
       

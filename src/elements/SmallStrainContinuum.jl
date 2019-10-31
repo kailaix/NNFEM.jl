@@ -185,7 +185,7 @@ end
 
 
 function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64},
-                          stress::Array{Float64,2}, dstress_dstrain::Array{Float64,3})
+                          stress::Array{Float64,2}, dstress_dstrain_T::Array{Float64,3})
     ndofs = dofCount(self); 
     nnodes = length(self.elnodes)
     fint = zeros(Float64, ndofs)
@@ -200,20 +200,20 @@ function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64},
         ∂E∂u = [g1   zeros(nnodes)    g2;
                 zeros(nnodes)    g2   g1;]  
 
-        S, dS_dE = stress[k, :], dstress_dstrain[k,:,:]
+        S, dS_dE_T = stress[k, :], dstress_dstrain_T[k,:,:]
 
 
         self.stress[k] = S
         # @show size(S), size(∂E∂u)
         fint += ∂E∂u * S * self.weights[k] # 1x8
         
-        stiff += (∂E∂u * dS_dE * ∂E∂u')*self.weights[k] # 8x8
+        stiff += (∂E∂u * dS_dE_T' * ∂E∂u')*self.weights[k] # 8x8
     end
     return fint, stiff
 end
 
 function  getStiffAndDforceDstress(self::SmallStrainContinuum, state::Array{Float64},  
-    stress::Array{Float64,2}, dstress_dstrain::Array{Float64,3})
+    stress::Array{Float64,2}, dstress_dstrain_T::Array{Float64,3})
     ndofs = dofCount(self); 
     nnodes = length(self.elnodes)
     nStrain = 3
@@ -232,7 +232,7 @@ function  getStiffAndDforceDstress(self::SmallStrainContinuum, state::Array{Floa
                 zeros(nnodes)    g2   g1;]
 
         # #@show E, DE
-        S, dS_dE = stress[k, :], dstress_dstrain[k,:,:]
+        S, dS_dE_T = stress[k, :], dstress_dstrain_T[k,:,:]
 
         self.stress[k] = S
 
@@ -241,7 +241,7 @@ function  getStiffAndDforceDstress(self::SmallStrainContinuum, state::Array{Floa
         dfint_dstress[:, (k-1)*nStrain+1:k*nStrain] = ∂E∂u * self.weights[k]
 
 
-        stiff += (∂E∂u * dS_dE * ∂E∂u')*self.weights[k] # 8x8
+        stiff += (∂E∂u * dS_dE_T' * ∂E∂u')*self.weights[k] # 8x8
     end
     return stiff , dfint_dstress
 end
