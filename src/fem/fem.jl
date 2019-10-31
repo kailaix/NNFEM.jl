@@ -52,14 +52,17 @@ mutable struct Domain
 
     ii_stiff::Array{Int64} 
     jj_stiff::Array{Int64} 
+    vv_stiff_ele_indptr::Array{Int64} 
     vv_stiff::Array{Float64} 
 
     ii_dfint_dstress::Array{Int64}  
-    jj_dfint_dstress::Array{Int64}   
+    jj_dfint_dstress::Array{Int64}
+    vv_dfint_dstress_ele_indptr::Array{Int64}    
     vv_dfint_dstress::Array{Float64}   
 
     ii_dstrain_dstate::Array{Int64}
     jj_dstrain_dstate::Array{Int64}
+    vv_dstrain_dstate_ele_indptr::Array{Int64} 
     vv_dstrain_dstate::Array{Float64}   
 
     history::Dict{String, Array{Array{Float64}}}
@@ -100,8 +103,14 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array
     
     history = Dict("state"=>Array{Float64}[], "acc"=>Array{Float64}[], "fint"=>Array{Float64}[],
                 "fext"=>Array{Float64}[], "strain"=>[], "stress"=>[])
-    domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, LM, DOF, ID, neqs, eq_to_dof, dof_to_eq, 
-    EBC, g, FBC, fext, 0.0, Int64[], Int64[], Float64[], Int64[], Int64[], Float64[], Int64[], Int64[], Float64[], history)
+    
+    domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, 
+    LM, DOF, ID, neqs, eq_to_dof, dof_to_eq, 
+    EBC, g, FBC, fext, 0.0, 
+    Int64[], Int64[], Int64[], Float64[], 
+    Int64[], Int64[], Int64[], Float64[], 
+    Int64[], Int64[], Int64[], Float64[], history)
+
     setDirichletBoundary!(domain, EBC, g)
     setNeumannBoundary!(domain, FBC, f)
     assembleSparseMatrixPattern!(domain)
@@ -373,9 +382,9 @@ function assembleSparseMatrixPattern!(self::Domain)
     neqs = self.neqs
 
 
-    ii_stiff = Int64[]; jj_stiff = Int64[];
-    ii_dfint_dstress = Int64[]; jj_dfint_dstress = Int64[]; 
-    ii_dstrain_dstate = Int64[]; jj_dstrain_dstate = Int64[]; 
+    ii_stiff = Int64[]; jj_stiff = Int64[]; vv_stiff_ele_indptr = ones(Int64, neles+1);
+    ii_dfint_dstress = Int64[]; jj_dfint_dstress = Int64[]; vv_dfint_dstress_ele_indptr = ones(Int64, neles+1);
+    ii_dstrain_dstate = Int64[]; jj_dstrain_dstate = Int64[]; vv_dstrain_dstate_ele_indptr = ones(Int64, neles+1);
 
 
     neles = self.neles
@@ -407,6 +416,7 @@ function assembleSparseMatrixPattern!(self::Domain)
           #push!(vv_stiff, stiff_active[i,j])
         end
       end
+      vv_stiff_ele_indptr[iele+1] = vv_stiff_ele_indptr[iele] + length(el_eqns_active_idx)*length(el_eqns_active_idx)
 
       for j = 1:ngps_per_elem*nstrain
         for i = 1:length(el_eqns_active_idx) 
@@ -415,6 +425,7 @@ function assembleSparseMatrixPattern!(self::Domain)
           #push!(vv_dfint_dstress, dfint_dstress_active[i,j])
         end
       end
+      vv_dfint_dstress_ele_indptr[iele+1] = vv_dfint_dstress_ele_indptr[iele] + ngps_per_elem*nstrain*length(el_eqns_active_idx)
 
       for j = 1:length(el_eqns_active_idx)
         for i = 1:ngps_per_elem*nstrain
@@ -424,12 +435,20 @@ function assembleSparseMatrixPattern!(self::Domain)
           #push!(vv_dstrain_dstate, dstrain_dstate_active[i,j])
         end
       end
+      vv_dstrain_dstate_ele_indptr[iele+1] = vv_dstrain_dstate_ele_indptr[iele] + ngps_per_elem*nstrain*length(el_eqns_active_idx)
+
+
 
      
     end
 
-    self.ii_stiff = ii_stiff; self.jj_stiff = jj_stiff;
-    self.ii_dfint_dstress = ii_dfint_dstress; self.jj_dfint_dstress = jj_dfint_dstress;
-    self.ii_dstrain_dstate = ii_dstrain_dstate; self.jj_dstrain_dstate = jj_dstrain_dstate;
+    self.ii_stiff = ii_stiff; self.jj_stiff = jj_stiff; 
+    self.vv_stiff_ele_indptr = vv_stiff_ele_indptr; self.vv_stiff = similar(ii_stiff)
+
+    self.ii_dfint_dstress = ii_dfint_dstress; self.jj_dfint_dstress = jj_dfint_dstress; 
+    self.vv_dfint_dstress_ele_indptr = vv_dfint_dstress_ele_indptr; self.vv_dfint_dstress= similar(ii_dfint_dstress)
+    
+    self.ii_dstrain_dstate = ii_dstrain_dstate; self.jj_dstrain_dstate = jj_dstrain_dstate; 
+    self.vv_dstrain_dstate_ele_indptr = vv_dstrain_dstate_ele_indptr; self.vv_dstrain_dstate = similar(ii_dstrain_dstate)
 
   end

@@ -33,7 +33,7 @@ function AdjointAssembleStrain(domain, computeDstrain::Bool=true)
 
   strain = zeros(Float64, neles*ngps_per_elem, nstrain)
   # dstrain_dstate = zeros(Float64, neles*ngps_per_elem, domain.neqs)
-  vv_dstrain_dstate = Float64[]
+
 
   # Loop over the elements in the elementGroup
   for iele  = 1:neles
@@ -58,12 +58,11 @@ function AdjointAssembleStrain(domain, computeDstrain::Bool=true)
     
       ldstrain_dstate_active = ldstrain_dstate[:,el_eqns_active]
     
-
-      append!(vv_dstrain_dstate, ldstrain_dstate_active[:])
+      domain.vv_dstrain_dstate[domain.vv_dstrain_dstate_ele_indptr[iele]:domain.vv_dstrain_dstate_ele_indptr[iele+1] - 1] = ldstrain_dstate_active[:]
+     
     end
   end
-
-  dstrain_dstate_tran = computeDstrain ? sparse(domain.jj_dstrain_dstate, domain.ii_dstrain_dstate, vv_dstrain_dstate, neqs, neles*ngps_per_elem*nstrain) : nothing;
+  dstrain_dstate_tran = computeDstrain ? sparse(domain.jj_dstrain_dstate, domain.ii_dstrain_dstate, domain.vv_dstrain_dstate, neqs, neles*ngps_per_elem*nstrain) : nothing;
   return strain, dstrain_dstate_tran
 end
 
@@ -79,7 +78,7 @@ function AssembleStiffAndForce(domain, stress::Array{Float64}, dstress_dstrain_T
   
   fint = zeros(Float64, domain.neqs)
   # K = zeros(Float64, domain.neqs, domain.neqs)
-  vv_stiff = Float64[]
+
 
   # Loop over the elements in the elementGroup
   for iele  = 1:neles
@@ -103,13 +102,14 @@ function AssembleStiffAndForce(domain, stress::Array{Float64}, dstress_dstrain_T
     # Assemble in the global array
     el_eqns_active = el_eqns .>= 1
     lstiff_active = lstiff[el_eqns_active,el_eqns_active]
-    append!(vv_stiff, lstiff_active[:])
+    domain.vv_stiff[domain.vv_stiff_ele_indptr[iele]:domain.vv_stiff_ele_indptr[iele+1] - 1] = lstiff_active[:]
 
 
     fint[el_eqns[el_eqns_active]] += lfint[el_eqns_active]
     # @info "Fint is ", Fint
   end
-  stiff = sparse(domain.ii_stiff, domain.jj_stiff, vv_stiff, neqs, neqs)
+  #@assert (norm(vv_stiff - domain.vv_stiff)) == 0.0
+  stiff = sparse(domain.ii_stiff, domain.jj_stiff, domain.vv_stiff, neqs, neqs)
   # @show norm(K-Array(Ksparse))
   return fint, stiff
 end
@@ -128,9 +128,6 @@ function AdjointAssembleStiff(domain, stress::Array{Float64}, dstress_dstrain_T:
     ngps_per_elem = length(domain.elements[1].weights)
     neqs = domain.neqs
 
-
-    ii_stiff = Int64[]; jj_stiff = Int64[]; vv_stiff = Float64[]
-    ii_dfint_dstress = Int64[]; jj_dfint_dstress = Int64[]; vv_dfint_dstress = Float64[]
 
 
     neles = domain.neles
@@ -158,15 +155,22 @@ function AdjointAssembleStiff(domain, stress::Array{Float64}, dstress_dstrain_T:
       # K[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += stiff[el_eqns_active,el_eqns_active]
       stiff_active = stiff[el_eqns_active,el_eqns_active]
       dfint_dstress_active = dfint_dstress[el_eqns_active,:]
+      #@show "aa"
+      #@show size(stiff_active)
+      domain.vv_stiff[domain.vv_stiff_ele_indptr[iele]:domain.vv_stiff_ele_indptr[iele+1] - 1] = stiff_active[:]
 
-      append!(vv_stiff, stiff_active[:])
-      append!(vv_dfint_dstress, dfint_dstress_active[:])
+      
+      #append!(vv_dfint_dstress, dfint_dstress_active[:])
+      #@show size(domain.vv_dfint_dstress), size(domain.vv_dfint_dstress_ele_indptr)
+      domain.vv_dfint_dstress[domain.vv_dfint_dstress_ele_indptr[iele]:domain.vv_dfint_dstress_ele_indptr[iele+1] - 1] = dfint_dstress_active[:]
+
 
      
     end
 
-    stiff_tran = sparse(domain.jj_stiff, domain.ii_stiff, vv_stiff, neqs, neqs) 
-    dfint_dstress_tran =  sparse(domain.jj_dfint_dstress, domain.ii_dfint_dstress, vv_dfint_dstress, neles*ngps_per_elem*nstrain, neqs)
+
+    stiff_tran = sparse(domain.jj_stiff, domain.ii_stiff, domain.vv_stiff, neqs, neqs) 
+    dfint_dstress_tran =  sparse(domain.jj_dfint_dstress, domain.ii_dfint_dstress, domain.vv_dfint_dstress, neles*ngps_per_elem*nstrain, neqs)
   
     return stiff_tran, dfint_dstress_tran
   end
