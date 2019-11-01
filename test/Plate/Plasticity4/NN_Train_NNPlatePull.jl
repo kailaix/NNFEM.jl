@@ -140,12 +140,12 @@ mutable struct Buffer
     strain::Array{Array{Float64}}
     stress::Array{Array{Float64}}
 
-    function Buffer(n::Int64, ntheta::Int64, neqs::Array{Int64}, ngps::Int64, nstrain::Int64)
+    function Buffer(n::Int64, ntheta::Int64, NT::Int64, neqs::Array{Int64}, ngps::Int64, nstrain::Int64)
         J = zeros(n)
         dJ = [zeros(ntheta) for i = 1:n]
-        state = [zeros(Float64, neqs[i]) for i = 1:n]
-        strain = [zeros(Float64, ngps, nstrain) for i = 1:n]
-        stress = [zeros(Float64, ngps, nstrain) for i = 1:n]
+        state = [zeros(Float64, NT+1, neqs[i]) for i = 1:n]
+        strain = [zeros(Float64,NT+1, ngps, nstrain) for i = 1:n]
+        stress = [zeros(Float64,NT+1,  ngps, nstrain) for i = 1:n]
         new(J, dJ, state, strain, stress)
     end
 end
@@ -199,7 +199,7 @@ ngps_per_elem = length(domain_arr[1].elements[1].weights)
 neles = domain_arr[1].neles
 initial_theta = rand(704) * 1.e-3
 neqs_arr = [domain_arr[i].neqs for i = 1:length(n_data)]
-buffer = Buffer(length(n_data), length(initial_theta), neqs_arr, neles*ngps_per_elem, nstrain) # Preallocate an appropriate buffer
+buffer = Buffer(length(n_data), length(initial_theta), NT, neqs_arr, neles*ngps_per_elem, nstrain) # Preallocate an appropriate buffer
 last_theta = similar(initial_theta)
 # df = TwiceDifferentiable(x -> f(x, buffer, initial_theta),
 #                                 (stor, x) -> g!(x, stor, buffer, last_theta))
