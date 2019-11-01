@@ -450,9 +450,9 @@ function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
             # end
             # gradtest(f, ∂∂up)
             
-            @error("Newton iteration cannot converge $(norm_res)");
+            @show "Newton iteration cannot converge $(norm_res)"
             J = Inf
-            return J, state, strain, stress
+            return J
          
           else
               Newtonconverge = true
