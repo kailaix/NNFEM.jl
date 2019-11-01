@@ -331,8 +331,8 @@ end
 @doc """
     the external force include the Dirichlet boundary condition effect
 """ ->
-function getExternalForce(self::Domain, globaldat::GlobalData)
-    fext = self.fext[:]
+function getExternalForce!(self::Domain, globaldat::GlobalData, fext::Array{Float64})
+    fext[:] = self.fext
     if globaldat.EBC_func != nothing
         MID = globaldat.MID
         _, acce = globaldat.EBC_func(globaldat.time)

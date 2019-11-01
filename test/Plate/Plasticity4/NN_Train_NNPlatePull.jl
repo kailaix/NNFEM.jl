@@ -161,7 +161,8 @@ function calculate_common!(theta, last_theta, buffer)
         for i = 1:length(n_data)
             #@show Threads.threadid()
             # todo: inplace 
-            buffer.J[i], buffer.state[i], buffer.strain[i], buffer.stress[i] = ForwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, strain_scale, stress_scale, obs_state_arr[i])
+            buffer.J[i] = ForwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, strain_scale, stress_scale, obs_state_arr[i], 
+            buffer.state[i], buffer.strain[i], buffer.stress[i])
         end
     end
 end

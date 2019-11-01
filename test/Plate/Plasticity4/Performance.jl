@@ -132,7 +132,15 @@ theta = rand(704) * 1.e-3
 globdat_arr, domain_arr, obs_state_arr = PreprocessData(n_data, NT)
 i = 1
 
-@time J, state, strain, stress = ForwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, strain_scale, stress_scale, obs_state_arr[i])
+nstrain = 3
+ngps_per_elem = length(domain_arr[1].elements[1].weights)
+neles = domain_arr[1].neles
 
-#@time BackwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, state, strain, stress, strain_scale, stress_scale, obs_state_arr[i])
+state = zeros(Float64, NT+1, domain_arr[1].neqs) 
+strain = zeros(Float64, NT+1,  ngps_per_elem*neles, nstrain) 
+stress = zeros(Float64, NT+1,  ngps_per_elem*neles, nstrain)
+@time J = ForwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, strain_scale, stress_scale, obs_state_arr[i], 
+state, strain, stress)
+
+@time BackwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, state, strain, stress, strain_scale, stress_scale, obs_state_arr[i])
    

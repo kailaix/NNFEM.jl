@@ -106,8 +106,8 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, �
     u = globdat.state[:]  #uⁿ
     ∂u  = globdat.velo[:] #∂uⁿ
 
-    
-    fext = getExternalForce(domain, globdat)
+    fext = similar(u)
+    getExternalForce!(domain, globdat, fext)
 
 
     ∂∂up = ∂∂u[:]
