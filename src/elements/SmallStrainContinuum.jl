@@ -240,8 +240,40 @@ function  getStiffAndDforceDstress(self::SmallStrainContinuum, state::Array{Floa
         
         dfint_dstress[:, (k-1)*nStrain+1:k*nStrain] = ∂E∂u * self.weights[k]
 
-
         stiff += (∂E∂u * dS_dE_T' * ∂E∂u')*self.weights[k] # 8x8
     end
     return stiff , dfint_dstress
+end
+
+
+
+function  getForceAndDforceDstress(self::SmallStrainContinuum, state::Array{Float64},  
+    stress::Array{Float64,2})
+    ndofs = dofCount(self); 
+    nnodes = length(self.elnodes)
+    nStrain = 3
+    nGauss = length(self.weights)
+    fint = zeros(Float64, ndofs)
+    dfint_dstress = zeros(Float64,  ndofs, nGauss * nStrain)
+
+    u = state[1:nnodes]; v = state[nnodes+1:2*nnodes]
+
+    for k = 1:length(self.weights)
+        g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
+
+        # compute  ∂E∂u, 3 by 2nnodes array 
+        ∂E∂u = [g1   zeros(nnodes)    g2;
+                zeros(nnodes)    g2   g1;]
+
+        # #@show E, DE
+        S = stress[k, :]
+
+        self.stress[k] = S
+
+        fint += ∂E∂u * S * self.weights[k] # 1x8
+        
+        dfint_dstress[:, (k-1)*nStrain+1:k*nStrain] = ∂E∂u * self.weights[k]
+
+    end
+    return fint , dfint_dstress
 end
