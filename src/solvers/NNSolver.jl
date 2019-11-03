@@ -1,5 +1,5 @@
 export DynamicMatLawLoss, preprocessing, DynamicMatLawLossInternalVariable,
-       DynamicMatLawLossWithTailLoss
+       DynamicMatLawLossWithTailLoss, LSfittingStress, LSfittingStressHelper
 
 @doc """
     domain   : finite element domain, for data structure
@@ -289,8 +289,10 @@ function preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64
 
     #Acceleration of Dirichlet nodes
     bc_acc = zeros(sum(domain.EBC.==-2),NT)
-    for i = 1:NT
-        _, bc_acc[:,i]  = globdat.EBC_func(Δt*i)
+    if !(globdat.EBC_func===nothing)
+        for i = 1:NT
+            _, bc_acc[:,i]  = globdat.EBC_func(Δt*i)
+        end
     end
 
     
@@ -369,20 +371,24 @@ and dstrain_dstate
 function LSfittingStressHelper(domain, S_comp::Array{Float64}, method::String)
     neles = domain.neles
     nnodes = domain.nnodes
+    npoints = domain.npoints
     eledim = domain.elements[1].eledim
     nstrain = div((eledim + 1)*eledim, 2)
     ngps_per_elem = length(domain.elements[1].weights)
     neqs = domain.neqs
 
+    node_to_point = domain.node_to_point
+
     
 
     #check
     @assert(method=="Constant" || method=="Linear")
-    method=="Constant" ? @assert(size(S_comp,1) == neqs) : @assert(size(S_comp,1) == nnodes)
+    #@show size(S_comp,1), npoints, neles
+    method=="Constant" ? @assert(size(S_comp,1) == neles) : @assert(size(S_comp,1) == npoints)
 
 
     Fint = zeros(Float64, neqs)
-    ii = Int64[]; jj=Int64[]; vv=Int64[]
+    ii = Int64[]; jj=Int64[]; vv=Float64[]
     E_all = zeros(neles*ngps_per_elem, nstrain)
     S_all = similar(E_all)
     
@@ -414,9 +420,10 @@ function LSfittingStressHelper(domain, S_comp::Array{Float64}, method::String)
 
       el_coords_comp = element.coords[1:4, :]
 
-      #todo
-      el_nodes_comp = element.elnodes[1:4]
-      error()
+      #the node number is the element point number
+      el_nodes_comp = node_to_point[element.elnodes[1:4]]
+      
+
         if method == "Constant"
             dS_ele_all_dS_ele_comp[:,:]  .= 0.0
             for igp = 1:ngps_per_elem
@@ -434,6 +441,7 @@ function LSfittingStressHelper(domain, S_comp::Array{Float64}, method::String)
             
             ngp = Int64(sqrt(ngps_per_elem))
             dhdx, weights, hs = get2DElemShapeData( el_coords_comp , ngp)
+        
             dS_ele_all_dS_ele_comp[:,:]  .= 0.0
             @assert(length(hs[1]) == ele_per_S_comp)
 
@@ -442,7 +450,7 @@ function LSfittingStressHelper(domain, S_comp::Array{Float64}, method::String)
                 
                 for i = 1:nstrain
                     for j = 1:ele_per_S_comp
-                        dS_ele_all_dS_ele_comp[(igp-1)*nstrain + i, (j-1)*nstrain+1:j*nstrain] = hs[igp][j]
+                        dS_ele_all_dS_ele_comp[(igp-1)*nstrain + i, (j-1)*nstrain+i] = hs[igp][j]
                     end
                 end
             end 
@@ -466,12 +474,13 @@ function LSfittingStressHelper(domain, S_comp::Array{Float64}, method::String)
         for j = 1:ele_per_S_comp
             for k = 1:nstrain
                 push!(ii, el_eqns_active_idx[i])
-                if method == "Linear"
+                if method == "Constant"
                     push!(jj, (iele-1)*nstrain + k)
                 else
                     push!(jj, (el_nodes_comp[j] - 1)*nstrain + k)
                 end
-                push!(vv, dfint_dS_ele_comp_active[i,(j-1)*ele_per_S_comp + k])
+
+                push!(vv, dfint_dS_ele_comp_active[i,(j-1)*nstrain + k])
             end
         end
       end
@@ -484,7 +493,8 @@ function LSfittingStressHelper(domain, S_comp::Array{Float64}, method::String)
       
      
     end
-    dFint_dS_comp =  sparse(ii, jj, vv, neqs,  size(S_comp)*nstrain)
+
+    dFint_dS_comp =  sparse(ii, jj, vv, neqs,  size(S_comp,1)*nstrain)
   
     return Fint, dFint_dS_comp, E_all, S_all
   end
@@ -495,10 +505,19 @@ The number of equations are neqs ≈ 2*(2nx + 1)*(2ny + 1)
 Plan 1: Assume the stress in each element is constant, the number of unknows are 3*nx*ny
 Plan 2: Assume the stress in each element is linear, the number of unknows are 3*(nx+1)*(ny+1) on each nodes
 """->
-function LSfittingStress(domain::Domain, globdat::GlobalData, F_ext::Array{Float64},Δt::Float64, method::String)
+function LSfittingStress(domain::Domain, globdat::GlobalData, state_history::Array{Float64}, F_ext::Array{Float64},Δt::Float64, method::String)
     nnodes = domain.nnodes
     neles = domain.neles
-    U = hcat(domain.history["state"]...)
+    eledim = domain.elements[1].eledim
+    nstrain = div((eledim + 1)*eledim, 2)
+
+    neles = domain.neles
+    ngps_per_elem = length(domain.elements[1].weights)
+    neqs = domain.neqs
+    neqns_per_elem = length(getEqns(domain,1))
+    
+
+    U = state_history
     # @info " U ", size(U),  U'
     M = globdat.M
     MID = globdat.MID 
@@ -507,8 +526,10 @@ function LSfittingStress(domain::Domain, globdat::GlobalData, F_ext::Array{Float
 
     #Acceleration of Dirichlet nodes
     bc_acc = zeros(sum(domain.EBC.==-2),NT)
-    for i = 1:NT
-        _, bc_acc[:,i]  = globdat.EBC_func(Δt*i)
+    if !(globdat.EBC_func===nothing)
+        for i = 1:NT
+            _, bc_acc[:,i]  = globdat.EBC_func(Δt*i)
+        end
     end
 
     
@@ -525,16 +546,16 @@ function LSfittingStress(domain::Domain, globdat::GlobalData, F_ext::Array{Float
     end
 
 
-    neles = domain.neles
-    nGauss = length(domain.elements[1].weights)
-    neqns_per_elem = length(getEqns(domain,1))
-    nstrains = div((domain.elements[1].eledim + 1)*domain.elements[1].eledim, 2)
+    
 
-    E_all = zeros(NT+1, neles*nGauss, nstrains)
-    S_all = zeros(NT+1, neles*nGauss, nstrains)
+    E_all = zeros(NT+1, neles*ngps_per_elem, nstrain)
+    S_all = zeros(NT+1, neles*ngps_per_elem, nstrain)
 
+    @assert(domain.npoints > 0)
+    nS_comp = (method == "Constant") ? neles : domain.npoints;
 
-    nS_comp = (method == "Constant") ? neles, n
+    @assert(nS_comp*nstrain < neqs)
+
 
     S_comp_all = zeros(Float64, NT+1, nS_comp, nstrain)
 
@@ -543,21 +564,26 @@ function LSfittingStress(domain::Domain, globdat::GlobalData, F_ext::Array{Float
     
         
     for it = 2:NT+1
-        Fint, dFint_dS_comp, E, S = LSfittingStressHelper(domain, S_comp_all[it, :, :], method)
 
+        domain.state = U[:, it-1]
+
+        Fint, dFint_dS_comp, E, S = LSfittingStressHelper(domain, S_comp_all[it, :, :], method)
+        #@show size(Fint), size(dFint_dS_comp), size(F_ext)
         # F_tot[it-1,:]
 
         #min ||F_tot -  F_int(E, S)||^2 = min ||F_tot -  dF_int/dS_comp * S_comp||^2 
 
-        S_comp = dFint_dS_comp\Fint
+        S_comp = dFint_dS_comp\F_tot[:,it-1]
 
+        S_comp = reshape(S_comp, nstrain, nS_comp)'|>Array
+        Fint, dFint_dS_comp, E, S = LSfittingStressHelper(domain, S_comp, method)
 
-        _, _, E, S = LSfittingStressHelper(domain, S_comp, method)
+        @show "LS loss is ", norm(Fint - F_tot[:,it-1])
 
         E_all[it, :, :] = E
         S_all[it, :, :] = S
 
-        S_comp_all[it,:,:] = reshape(S_comp, nstrain, nS_comp)'
+        S_comp_all[it,:,:] = S_comp
     
     end
 

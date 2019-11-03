@@ -1,0 +1,3 @@
+Plasticity3: min||Res^hat - 0|| (half Sin)
+Plasticity4: min||u - u^hat|| (half Sin)
+Plasticity5: prefit stress by LS (half Sin)

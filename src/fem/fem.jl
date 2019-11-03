@@ -1,6 +1,6 @@
 using SparseArrays
 export Domain,GlobalData,updateStates!,updateDomainStateBoundary!,getExternalForce,convertState,
-    setNeumannBoundary!
+    setNeumannBoundary!, setGeometryPoints!
 
 
 mutable struct GlobalData
@@ -48,6 +48,9 @@ mutable struct Domain
     FBC::Array{Int64}  # Nodal force boundary condition
     fext::Array{Float64}  # Value for Nodal force boundary condition
     time::Float64
+
+    npoints::Int64     # number of mesh points(the same as nodes, when porder==1)
+    node_to_point::Array{Int64} # map from node to point, -1 means the node is not a geometry point
     
 
     ii_stiff::Array{Int64} 
@@ -100,13 +103,16 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array
     eq_to_dof = Int64[]
     dof_to_eq = zeros(Bool, nnodes * ndims)
     fext = Float64[]
+
+    npoints = -1
+    node_to_point = Int64[]
     
     history = Dict("state"=>Array{Float64}[], "acc"=>Array{Float64}[], "fint"=>Array{Float64}[],
                 "fext"=>Array{Float64}[], "strain"=>[], "stress"=>[])
     
     domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, 
     LM, DOF, ID, neqs, eq_to_dof, dof_to_eq, 
-    EBC, g, FBC, fext, 0.0, 
+    EBC, g, FBC, fext, 0.0, npoints, node_to_point,
     Int64[], Int64[], Int64[], Float64[], 
     Int64[], Int64[], Int64[], Float64[], 
     Int64[], Int64[], Int64[], Float64[], history)
@@ -115,6 +121,16 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array
     setNeumannBoundary!(domain, FBC, f)
     assembleSparseMatrixPattern!(domain)
     domain
+end
+
+@doc """
+    :param npoints, the mesh contains npoints
+    :node_to_point, a map from node to point, -1 means the node is not the geometry point
+    :return:
+""" -> 
+function setGeometryPoints!(self::Domain, npoints::Int64, node_to_point::Array{Int64})
+    self.npoints = npoints
+    self.node_to_point = node_to_point
 end
 
 function commitHistory(domain::Domain)
