@@ -535,6 +535,7 @@ function LSfittingStress(domain::Domain, globdat::GlobalData, state_history::Arr
     
     ∂∂U = zeros(size(U,1), NT+1)
     ∂∂U[:,2:NT] = (U[:,1:NT-1]+U[:,3:NT+1]-2U[:,2:NT])/Δt^2
+    ∂∂U[:,NT+1] = (U[:,NT+1]-U[:,NT])/Δt
     
     @show "compute estimated F_int"
     if size(F_ext,2)==NT+1
