@@ -33,7 +33,7 @@ NT = 200
 nxc, nyc = 10,5
 nx, ny =  nxc*fiber_size, nyc*fiber_size
 
-nodes, EBC, g, gt, FBC, fext, ft, npoints, node_to_point = BoundaryCondition(tid, nx, ny, porder)
+nodes, EBC, g, gt, FBC, fext, ft, npoints, node_to_point = BoundaryCondition(tid, nx, ny, porder; force_scale=force_scale)
 elements = []
 for j = 1:ny
     for i = 1:nx 

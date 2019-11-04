@@ -32,8 +32,8 @@ prop2 = Dict("name"=> "PlaneStress", "rho"=> 3.2, "E"=>4e6, "nu"=>0.35)
 ps1 = PlaneStress(prop1); H1 = ps1.H
 ps2 = PlaneStress(prop2); H2 = ps2.H
 
-T = 0.05
-NT = 100
+T = 0.1
+NT = 200
 
 
 
@@ -50,7 +50,7 @@ ele_type = generateEleType(nxc, nyc, fiber_size, fiber_fraction, fiber_distribut
 
 
 
-nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder; force_scale=force_scale)
+nodes, EBC, g, gt, FBC, fext, ft, npoints, node_to_point = BoundaryCondition(tid, nx, ny, porder; force_scale=force_scale)
 elements = []
 for j = 1:ny
     for i = 1:nx 

@@ -44,13 +44,13 @@ set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};--expt-relaxed-constexpr)
 SET(CUDA_PROPAGATE_HOST_FLAGS ON)
 
 
-find_program(_nvidia_smi "nvidia-smi")
-if (_nvidia_smi)
-  add_definitions(-DUSE_GPU)
-  cuda_add_library(SPDOp SHARED SPDOp.cpp SPDOp.cu OPTIONS -std=c++11)
-else()
+#find_program(_nvidia_smi "nvidia-smi")
+#if (_nvidia_smi)
+#  add_definitions(-DUSE_GPU)
+#  cuda_add_library(SPDOp SHARED SPDOp.cpp SPDOp.cu OPTIONS -std=c++11)
+#else()
   add_library(SPDOp SHARED SPDOp.cpp)
-endif()
+#endif()
 
 
 set_property(TARGET SPDOp PROPERTY POSITION_INDEPENDENT_CODE ON)

@@ -24,8 +24,8 @@ fiber_fraction = 0.25
 prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>nn)
 
 
-T = 0.05
-NT = 100
+T = 0.1
+NT = 200
 
 # DNS computaional domain
 fiber_size = 5
