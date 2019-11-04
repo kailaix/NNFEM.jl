@@ -11,7 +11,7 @@ julia:
 os:
   - linux
 before_install:
-  - julia -e 'using Pkg; Pkg.add("ADCME")'
+  - julia -e 'using Pkg; Pkg.add("ADCME"); Pkg.add("Conda"); Pkg.add("PyCall")'
 notifications:
   email: false
 coveralls: false
