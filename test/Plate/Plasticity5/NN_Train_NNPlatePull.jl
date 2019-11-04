@@ -1,13 +1,15 @@
-using Optim, LineSearches
+using Optim
+using LineSearches
 stress_scale = 1.0e5
-strain_scale = 1.0
-T = 0.1
-NT = 200
-include("CommonFuncs.jl")
+strain_scale = 1
 
-force_scales = [5.0]
+include("nnutil.jl")
 
 force_scale = 5.0
+force_scales = [5.0]
+
+testtype = "NeuralNetwork2D"
+nntype = "piecewise"
 
 # ! define H0
 # Trained with nx, ny = 10, 5
@@ -17,20 +19,13 @@ H0 = [1.04167e6  2.08333e5  0.0
 
 
 n_data = [100, 200, 201, 202, 203]
-n_data = [100]
 
-@info "Thread number is ", Threads.nthreads() 
-@info "Mulithreading requires: export JULIA_NUM_THREADS=", length(n_data)
-
-# density 4.5*(1 - 0.25) + 3.2*0.25
-#fiber_fraction = 0.25
-#todo
 porder = 2
-prop = Dict("name"=> "PlaneStressPlasticity","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.2,
-"sigmaY"=>0.97e+4, "K"=>1e+5)
+prop = Dict("name"=> testtype, "rho"=> 4.5, "nn"=>nn)
 
 
-
+T = 0.1
+NT = 200
 
 # DNS computaional domain
 fiber_size = 2
@@ -57,6 +52,28 @@ for idof = 1:ndofs
 end
 
 
+function compute_loss(tid, force_scale)
+    nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder; force_scale=force_scale )
+    domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
+    state = zeros(domain.neqs)
+    ∂u = zeros(domain.neqs)
+    globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
+    assembleMassMatrix!(globdat, domain)
+    # full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
+    full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
+    
+    #update state history and fext_history on the homogenized domain
+    state_history = [x[fine_to_coarse] for x in full_state_history]
+
+    fext_history = []
+    setNeumannBoundary!(domain, FBC, fext)
+    for i = 1:NT
+        globdat.time = Δt*i
+        updateDomainStateBoundary!(domain, globdat)
+        push!(fext_history, domain.fext[:])
+    end
+    DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn, Δt)
+end
 
 
 Δt = T/NT
@@ -87,142 +104,100 @@ for j = 1:ny
     end
 end
 
-
-
-#####################Step 1 preprocess data
-function PreprocessData(n_data, NT)
-    globdat_arr = []
-    domain_arr = []
-    obs_state_arr = []
-    
-    for (id, tid) in enumerate(n_data)
-
-        
-         
-
-        nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder)
-        domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
-        neqs = domain.neqs
-        globdat = GlobalData(zeros(domain.neqs),zeros(domain.neqs), zeros(domain.neqs),zeros(domain.neqs), neqs, gt, ft)
-        assembleMassMatrix!(globdat, domain)
-
-
-        obs_state = zeros(Float64, NT+1, domain.neqs)
-        full_state_history, _ = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
-        @assert length(full_state_history) == NT+1
-        for i = 1:NT+1
-            obs_state[i,:] = (full_state_history[i][fine_to_coarse])[domain.dof_to_eq]
-        end
-
-
-        push!(domain_arr, domain)
-        push!(globdat_arr, globdat)
-        push!(obs_state_arr, obs_state)
-    end
-
-    return globdat_arr, domain_arr, obs_state_arr
-end
-
-
-
-
-
-
-
-globdat_arr, domain_arr, obs_state_arr = PreprocessData(n_data, NT)
-
-
-
-mutable struct Buffer
-    J::Array{Float64}
-    dJ::Array{Array{Float64}}
-    state::Array{Array{Float64}}
-    strain::Array{Array{Float64}}
-    stress::Array{Array{Float64}}
-
-    function Buffer(n::Int64, ntheta::Int64, NT::Int64, neqs::Array{Int64}, ngps::Int64, nstrain::Int64)
-        J = zeros(n)
-        dJ = [zeros(ntheta) for i = 1:n]
-        state = [zeros(Float64, NT+1, neqs[i]) for i = 1:n]
-        strain = [zeros(Float64,NT+1, ngps, nstrain) for i = 1:n]
-        stress = [zeros(Float64,NT+1,  ngps, nstrain) for i = 1:n]
-        new(J, dJ, state, strain, stress)
+losses = Array{PyObject}(undef, length(n_data)*length(force_scales))
+k = 1
+for i in n_data
+    global k
+    for force_scale in force_scales
+        losses[k] = compute_loss(i, force_scale)/stress_scale
+        k += 1
     end
 end
 
+@show stress_scale^2
+loss = sum(losses)
 
 
-function calculate_common!(theta, last_theta, buffer)
-    @show " theta norm ", norm(theta), " last_theta norm ", norm(last_theta)
-    if theta != last_theta
-        
-        copy!(last_theta, theta)
 
-        for i = 1:length(n_data)
-            #@show Threads.threadid()
-            # todo: inplace 
-            buffer.J[i] = ForwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, strain_scale, stress_scale, obs_state_arr[i], 
-            buffer.state[i], buffer.strain[i], buffer.stress[i])
-        end
-    end
-end
 
-function f(theta, buffer, last_theta)   
-    calculate_common!(theta, last_theta, buffer)
 
-    J = sum(buffer.J)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# function BFGS!(sess::PyObject, loss::PyObject, grads::Union{Array{T},Nothing,PyObject}, 
+#     vars::Union{Array{PyObject},PyObject}; kwargs...) where T<:Union{Nothing, PyObject}
+#     if isa(grads, PyObject); grads = [grads]; end
+#     if isa(vars, PyObject); vars = [vars]; end
+#     if length(grads)!=length(vars); error("ADCME: length of grads and vars do not match"); end
     
-    @show "start function evaluation: |J|=", norm(J)
+#     idx = ones(Bool, length(grads))
+#     for i = 1:length(grads)
+#         if isnothing(grads[i])
+#             idx[i] = false
+#         end
+#     end
+#     grads = grads[idx]
+#     vars = vars[idx]
     
-    return J
-end
-
-function g!(theta, storage, buffer, last_theta)
-    calculate_common!(theta, last_theta, buffer)
-
-    for i = 1:length(n_data)
-        # todo: inplace 
-        buffer.dJ[i] = BackwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, buffer.state[i], buffer.strain[i], buffer.stress[i], strain_scale, stress_scale, obs_state_arr[i])
-    end
+#     sizes = []
+#     for v in vars
+#         push!(sizes, size(v))
+#     end
+#     grds = vcat([tf.reshape(g, (-1,)) for g in grads]...)
+#     vs = vcat([tf.reshape(v, (-1,)) for v in vars]...); x0 = run(sess, vs)
+#     pl = placeholder(x0)
+#     n = 0
+#     assign_ops = PyObject[]
+#     for (k,v) in enumerate(vars)
+#         push!(assign_ops, assign(v, tf.reshape(pl[n+1:n+prod(sizes[k])], sizes[k])))
+#         n += prod(sizes[k])
+#     end
     
-    storage[:] = sum(buffer.dJ)
-
-    @show "start gradient evaluation: |dJ/dtheta|=", norm( storage )
-
-    storage[:] ./= max(1.0, norm(storage))
-end
-
-
-
-nstrain = 3
-ngps_per_elem = length(domain_arr[1].elements[1].weights)
-neles = domain_arr[1].neles
-initial_theta = rand(704) * 1.e-3
-neqs_arr = [domain_arr[i].neqs for i = 1:length(n_data)]
-buffer = Buffer(length(n_data), length(initial_theta), NT, neqs_arr, neles*ngps_per_elem, nstrain) # Preallocate an appropriate buffer
-last_theta = similar(initial_theta)
-# df = TwiceDifferentiable(x -> f(x, buffer, initial_theta),
-#                                 (stor, x) -> g!(x, stor, buffer, last_theta))
-# optimize(df, initial_theta, LBFGS())
-
-
-
-# function AdjointFunc(theta)
-#     dJ = similar(theta)
-#     J = f(theta, buffer, last_theta)  
-#     g!(theta, dJ, buffer, last_theta)
+#     __loss = 0.0
+#     __losses = Float64[]
+#     function f(x)
+#         run(sess, assign_ops, pl=>x)
+#         __loss = run(sess, loss)
+#         return __loss
+#     end
     
-#     return J, dJ' 
-
+#     function g!(G, x)
+#         run(sess, assign_ops, pl=>x)
+#         G[:] = run(sess, grds)
+#     end
+    
+#     function callback(x)
+#         push!(__losses, __loss)
+#         false
+#     end
+    
+#     Optim.optimize(f, g!, x0, Optim.LBFGS(alphaguess = InitialStatic(), linesearch=LineSearches.BackTracking(order=3)), 
+#                    Optim.Options(show_trace=true, callback=callback, iterations=1000))
+#     return __losses
 # end
-# gradtest(AdjointFunc, initial_theta, scale=1.e-4)
 
-algo = LBFGS(alphaguess = InitialPrevious(), linesearch=LineSearches.BackTracking(order=3))
 
-optimize(x -> f(x, buffer, last_theta), 
-        (stor, x) -> g!(x, stor, buffer, last_theta), 
-        initial_theta, 
-        algo)
 
+sess = tf.Session(); init(sess)
+ADCME.load(sess, "$(@__DIR__)/Data/NNPreLSfit_$(idx).mat")
+#vars = get_collection()
+for i = 1:100
+    println("************************** Outer Iteration = $i ************************** ")
+    BFGS!(sess, loss, 1000)
+    #BFGS!(sess, loss, gradients(loss,vars), vars, iterations=1000)
+    @show "save to ", "Data/NN_Train_$(idx).mat"
+    ADCME.save(sess, "Data/NN_Train_$(idx).mat")
+end
 
 

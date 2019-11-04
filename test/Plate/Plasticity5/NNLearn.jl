@@ -12,9 +12,10 @@ force_scale = 5.0
 fiber_size = 2
 porder = 2
 
-include("../MultiScale/nnutil.jl")
-
 nntype = "piecewise"
+
+include("nnutil.jl")
+
 H0 = [1.04167e6  2.08333e5  0.0      
       2.08333e5  1.04167e6  0.0      
       0.0        0.0        4.16667e5]/stress_scale
@@ -24,51 +25,20 @@ n_data = [100, 200, 201, 202, 203]
 loss = constant(0.0)
 for tid in n_data
     global loss
+    @show "Data/order$porder/domain$(tid)_$(force_scale)_$(fiber_size).jld2"
     @load "Data/order$porder/domain$(tid)_$(force_scale)_$(fiber_size).jld2" domain
     X, Y = prepare_strain_stress_data2D(domain)
     x = constant(X)
-    y = nn(X[:,1:3], X[:,4:6], X[:,7:9])
-
+    y = nn(x[:,1:3], x[:,4:6], x[:,7:9])
+    @show "tid is ", tid
     loss += mean((y-Y)^2) #/stress_scale^2
 end
 
 
 sess = Session(); init(sess)
 @show run(sess, loss)
-# ADCME.load(sess, "Data/order$porder/learned_nn.mat")
-for i = 1:10
+# ADCME.load(sess, "Data/NNLearn.mat")
+for i = 1:100
     BFGS!(sess, loss, 1000)
-    ADCME.save(sess, "Data/order$porder/learned_nn_$(force_scale)_$(fiber_size).mat")
+    ADCME.save(sess, "Data/NNLearn_$(idx).mat")
 end
-
-error()
-close("all")
-tid = n_data[end]
-@load "Data/order$porder/domain$(tid)_$(force_scale)_$(fiber_size).jld2" domain
-X, Y = prepare_strain_stress_data2D(domain)
-x = constant(X)
-y = nn(X[:,1:3], X[:,4:6], X[:,7:9])
-
-init(sess)
-ADCME.load(sess, "Data/order$porder/learned_nn_$(force_scale)_$(fiber_size).mat")
-ADCME.load(sess, "Data/nn_train0.mat")
-O = run(sess, y)
-using Random; Random.seed!(233)
-VisualizeStress2D(Y, O, 200, 200)
-
-error("Learning stop!")
-
-ADCME.load(sess, "Data/order$porder/learned_nn_$(force_scale)_$(fiber_size).mat")
-
-@show run(sess, loss)
-close("all")
-O = run(sess, y)
-using Random; Random.seed!(233)
-close("all")
-VisualizeStress2D(Y, O, 20)
-savefig("test.png")
-
-
-
-VisualizeStrainStressSurface(X, Y)
-VisualizeStrainStressSurface(X, O)
