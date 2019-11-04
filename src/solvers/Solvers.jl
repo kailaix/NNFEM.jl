@@ -1,15 +1,18 @@
 export ExplicitSolver, NewmarkSolver, AdaptiveSolver, StaticSolver
 
-@doc """
-Central Difference Explicit solver for Ma + fint = fext
-    a, v, u are acceleration, velocity and displacement
+@doc raw"""
+ExplicitSolver(Δt, globdat, domain)
 
-    u_{n+1} = u_n + dtv_n + dt^2/2 a_n
-    v_{n+1} = v_n + dt/2(a_n + a_{n+1})
+Central Difference Explicit solver for `Ma + fint = fext`, `a`, `v`, `u` are acceleration, velocity and displacement
 
-    M a_{n+1} + C v_{n+1} + R(u_{n+1}) = P_{n+1}
-    (M + dt/2 C) a_{n+1} = P_{n+1} - R(u_{n+1}) - C(v_n + dt/2 a_{n})
-
+```math
+\begin{align}
+u_{n+1} =& u_n + dtv_n + dt^2/2 a_n \\
+v_{n+1} =& v_n + dt/2(a_n + a_{n+1}) \\
+M a_{n+1} + C v_{n+1} + R(u_{n+1}) =& P_{n+1} \\
+(M + dt/2 C) a_{n+1} =& P_{n+1} - R(u_{n+1}) - C(v_n + dt/2 a_{n}) \\
+\end{align}
+```
 
     Alternative, todo:
     M a_n + C v_n + R(u_n) = P_n
@@ -61,7 +64,9 @@ end
 
 
 @doc """
-    Implicit solver for Ma + C v + R(u) = P
+    NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, ε0 = 1e-8, maxiterstep=100, η = 1.0, failsafe = false)
+
+Implicit solver for `Ma + C v + R(u) = P`
     a, v, u are acceleration, velocity and displacement
 
     u_{n+1} = u_n + dtv_n + dt^2/2 ((1 - 2\beta)a_n + 2\beta a_{n+1})

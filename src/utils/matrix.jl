@@ -44,13 +44,35 @@ end
 
 
 
+@doc raw"""
+    spd_Cholesky(o::Array)
 
+Creates a SPD matrix from 6 scalars. 
+
+```math
+A = LL'
+```
+where
+```math
+L = \begin{matrix}
+o_1 & & 
+o_2 & o_4 &
+o_3 & o_5 & o_6 
+\end{matrix}
+```
+"""
 function spd_Cholesky(o::Array)
     # @show size(o'*H0*o)
     [o[1]*o[1] o[1]*o[2] o[1]*o[3];
      o[1]*o[2] o[2]*o[2]+o[4]*o[4] o[2]*o[3]+o[4]*o[5];
      o[1]*o[3] o[2]*o[3]+o[4]*o[5] o[3]*o[3]+o[5]*o[5]+o[6]*o[6]]
 end
+
+"""
+    spd_Cholesky(o::PyObject)
+
+Creates a SPD matrix from 6 scalars. `o` is a ``n\\times6`` tensor.
+"""
 function spd_Cholesky(o::PyObject)
     if size(o,2)!=6
         error("NNFEM: second dimension of `o` must be 6")
@@ -62,7 +84,23 @@ function spd_Cholesky(o::PyObject)
 end
 
 
+@doc raw"""
+    spd_Chol_Orth(o::Array)
 
+Creates a SPD matrix from 4 scalars. 
+
+```math
+A = LL'
+```
+where
+```math
+L = \begin{matrix}
+o_1 & & 
+o_2 & o_3 &
+ &  & o_6 
+\end{matrix}
+```
+"""
 function spd_Chol_Orth(o::Array)
     # @show size(o'*H0*o)
     [o[1]*o[1] o[1]*o[2] 0;
@@ -70,7 +108,11 @@ function spd_Chol_Orth(o::Array)
      0.0       0.0                 o[4]*o[4]]
 end
 
+"""
+    spd_Chol_Orth(o::PyObject)
 
+Creates a SPD matrix from 6 scalars. `o` is a ``n\\times6`` tensor.
+"""
 function spd_Chol_Orth(o::PyObject)
     if size(o,2)!=4
         error("NNFEM: second dimension of `o` must be 4")

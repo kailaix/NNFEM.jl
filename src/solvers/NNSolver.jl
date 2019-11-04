@@ -500,6 +500,8 @@ function LSfittingStressHelper(domain, S_comp::Array{Float64}, method::String)
   end
 
 @doc """
+    LSfittingStress(domain::Domain, globdat::GlobalData, state_history::Array{Float64}, F_ext::Array{Float64},Δt::Float64, method::String)
+
 For quadratic element, nx, ny, ... elements in each direction
 The number of equations are neqs ≈ 2*(2nx + 1)*(2ny + 1)
 Plan 1: Assume the stress in each element is constant, the number of unknows are 3*nx*ny
