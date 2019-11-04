@@ -1,4 +1,3 @@
-using ForwardDiff
 export  PlaneStressIncompressibleRivlinSaunders, getStress
 
 @doc """

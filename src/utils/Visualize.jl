@@ -1,7 +1,6 @@
 export visstatic, visdynamic, show_strain_stress, prepare_strain_stress_data1D, prepare_strain_stress_data2D,
 prepare_sequence_strain_stress_data2D, VisualizeStress2D,visσ, VisualizeStrainStressSurface, visstate
 import PyPlot:scatter3D
-using Random
 function visstatic(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
     u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
     nodes = domain.nodes

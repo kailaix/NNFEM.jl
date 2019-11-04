@@ -1,4 +1,3 @@
-using SparseArrays
 export Domain,GlobalData,updateStates!,updateDomainStateBoundary!,getExternalForce,convertState,
     setNeumannBoundary!, setGeometryPoints!
 

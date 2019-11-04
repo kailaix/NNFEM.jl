@@ -8,6 +8,9 @@ using Statistics
 using LinearAlgebra
 using ADCME
 using SparseArrays
+using ForwardDiff
+using Random
+
 animation = PyNULL()
 colors = PyNULL()
 cmx = PyNULL()

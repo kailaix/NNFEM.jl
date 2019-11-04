@@ -1,4 +1,3 @@
-using SparseArrays
 export assembleStiffAndForce,assembleInternalForce,assembleMassMatrix!,tfAssembleInternalForce
 function assembleInternalForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
     Fint = zeros(Float64, domain.neqs)
