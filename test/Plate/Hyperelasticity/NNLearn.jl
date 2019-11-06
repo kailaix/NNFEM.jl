@@ -6,56 +6,39 @@ using PyCall
 using LinearAlgebra
 reset_default_graph()
 
-include("nnutil.jl")
-stress_scale = 1.0e5
+stress_scale = 1e5
 strain_scale = 1.0
+force_scale = 5.0
+fiber_size = 2
+porder = 2
 
-nntype = "ae_scaled"
-H0 = Variable(diagm(0=>ones(3)))
-ndata = 5
+nntype = "stiffmat"
+
+include("nnutil.jl")
+
+H0 = [1.04167e6  2.08333e5  0.0      
+      2.08333e5  1.04167e6  0.0      
+      0.0        0.0        4.16667e5]/stress_scale
+
+n_data = [100, 200, 201, 202, 203]
 
 loss = constant(0.0)
-for i = 1:ndata
+for tid in n_data
     global loss
-    @load "Data/domain$i.jld2" domain
+    @show "Data/order$porder/domain$(tid)_$(force_scale)_$(fiber_size).jld2"
+    @load "Data/order$porder/domain$(tid)_$(force_scale)_$(fiber_size).jld2" domain
     X, Y = prepare_strain_stress_data2D(domain)
     x = constant(X)
-    y = nn(X[:,1:3], X[:,4:6], X[:,7:9])
+    y = nn(x[:,1:3], x[:,4:6], x[:,7:9])
+    @show "tid is ", tid
+    loss += mean((y-Y)^2) #/stress_scale^2
+end
 
-    loss += sum((y-Y)^2)/stress_scale^2
-end
-variable_scope(nntype) do
-    global opt = AdamOptimizer().minimize(loss)
-end
 
 sess = Session(); init(sess)
-ADCME.load(sess, "Data/learned_nn.mat")
 @show run(sess, loss)
-BFGS!(sess, loss, 2000)
-ADCME.save(sess, "Data/learned_nn.mat")
-
-# error()
-close("all")
-@load "Data/domain1.jld2" domain
-X, Y = prepare_strain_stress_data2D(domain)
-x = constant(X)
-y = nn(X[:,1:3], X[:,4:6], X[:,7:9])
-
-init(sess)
-ADCME.load(sess, "Data/learned_nn.mat")
-O = run(sess, y)
-
-
-@info "Learning finshed"
-ADCME.load(sess, "Data/learned_nn.mat")
-@show run(sess, loss)
-close("all")
-O = run(sess, y)
-using Random; Random.seed!(233)
-VisualizeStress2D(Y, O, 20)
-savefig("Debug/learned_nn_1.png")
-
-
-VisualizeStrainStressSurface(X, Y)
-VisualizeStrainStressSurface(X, O)
-savefig("Debug/learned_nn_2.png")
+# ADCME.load(sess, "Data/NNLearn.mat")
+for i = 1:100
+    BFGS!(sess, loss, 1000)
+    ADCME.save(sess, "Data/NNLearn_$(idx).mat")
+end

@@ -1,69 +1,78 @@
 
-using ForwardDiff
-using DelimitedFiles
-include("ops.jl")
-threshold = 1e-4
-function get_matrix(o::PyObject)
-    tensor([o[1] o[2] o[3];
-    o[2] o[4] o[5];
-    o[3] o[5] o[6]])
+include("CommonFuncs.jl")
+threshold = 1e7 # σY ≈ 1e8
+
+if length(ARGS)==1
+    global idx = parse(Int64, ARGS[1])
+elseif length(ARGS)==2
+    global idx = parse(Int64, ARGS[1])
+    global tid = parse(Int64, ARGS[2])
+else
+    global idx = 0
 end
 
-function get_matrix(o::AbstractArray)
-    [o[1] o[2] o[3];
-    o[2] o[4] o[5];
-    o[3] o[5] o[6]]
+H_function = spd_Chol_Orth
+nn_out = 4
+
+if idx == 0
+    global config=[20,20,nn_out]
+elseif idx == 1
+    global config=[20, 20, 20, nn_out] 
+elseif idx == 2
+    global config=[20,20,20,nn_out] 
+elseif idx == 3
+    global config=[20,20,20,20,20,20,nn_out]
+elseif idx == 5
+    global config=[nn_out]
 end
+printstyled("idx = $idx, config=$config, H_function=$H_function\n", color=:green)
 
-transform = x->x
 
-function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
-    local y, H
-
+function nn(ε, ε0, σ0) # ε, ε0, σ0 450x3
+    local y, z
+    global H0
     if nntype=="linear"
         y = ε*H0*stress_scale
         y
-    elseif nntype=="linear_test"
-        y = ε*HH
-        y 
     elseif nntype=="ae_scaled"
-        x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
+        x = ε/strain_scale
         if isa(x, Array)
             x = constant(x)
         end
-        y = ae(x, [20,20,20,20,3], nntype)*stress_scale
-    elseif nntype=="mae"
-        x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
-        if isa(x, Array)
-            x = constant(x)
+        # y = ae(x, [50,50,50,50,50,50,50,3], nntype)*stress_scale
+        # y = ae(x, [50,50,50,50,50,50,50,3], nntype)*stress_scale
+        y = ae(x, config, nntype)*stress_scale
+    elseif nntype=="stiffmat"
+        x = ε/strain_scale
+        x = constant(x)
+        
+        σ0 = constant(σ0)
+        
+        y = ae(x, config, nntype)
+        
+        if H_function==spd_H
+            z = spd_H(y, H0)
+        else
+            z = H_function(y)
         end
-        y = ae(x, [20,20,20,20,6], nntype)*stress_scale
-        out = tf.map_fn(x->squeeze(reshape(x[2],1,3)*get_matrix(x[1])), (y, ε/strain_scale), dtype=tf.float64)
-        out
-    elseif nntype=="maeadd"
-        x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
-        x = transform(x)
-        if isa(x, Array)
-            x = constant(x)
-        end
-        y = ae(x, [20,20,20,20,6], nntype)
-        z = tf.reshape(sym_op(y), (-1,3,3))
-        out = squeeze(tf.matmul(z, tf.reshape((ε-ε0)/strain_scale, (-1,3,1)))) + σ0/stress_scale
-        @show out
-        # out = tf.map_fn(x->squeeze(reshape(x[4],1,3)+(reshape(x[2],1,3)-reshape(x[3],1,3))*get_matrix(x[1])), (y, ε/strain_scale, ε0/strain_scale, σ0/stress_scale), dtype=tf.float64)
-        out*stress_scale
-    elseif nntype=="indicator"
-        x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
-        x *= 1e3
-        if isa(x, Array)
-            x = constant(x)
-        end
-        y = ae(x, [20,20,20,20,6], nntype)
-        z = tf.reshape(sym_op(y), (-1,3,3))
-        out = squeeze(tf.matmul(z, tf.reshape((ε-ε0)/strain_scale, (-1,3,1)))) + σ0/stress_scale
-        @show out
-        # out = tf.map_fn(x->squeeze(reshape(x[4],1,3)+(reshape(x[2],1,3)-reshape(x[3],1,3))*get_matrix(x[1])), (y, ε/strain_scale, ε0/strain_scale, σ0/stress_scale), dtype=tf.float64)
-        out*stress_scale
+        
+	    
+
+        σnn = squeeze(tf.matmul(z, tf.reshape((ε-ε0)/strain_scale, (-1,3,1)))) 
+
+        ####################################
+        # σH = (ε-ε0)/strain_scale * H0
+        # s = σ0[:,1]^2-σ0[:,1]*σ0[:,2]+σ0[:,2]^2+3*σ0[:,3]^2 
+
+        # i = sigmoid(1000*(s-threshold)/1e9)        
+        # i = [i i i]
+        # out = σnn .* i + σH .* (1-i)  + σ0/stress_scale
+        ###############################################
+        
+        out = σnn + σ0/stress_scale
+
+
+        out*stress_scale    
     elseif nntype=="piecewise"
         x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
         x = constant(x)
@@ -71,20 +80,64 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 are all length 3 vector
         ε0 = constant(ε0)
         σ0 = constant(σ0)
         
-        H0 = [ 2.50784e11  1.12853e11  0.0       
-            1.12853e11  2.50784e11  0.0       
-            0.0         0.0         6.89655e10]/stress_scale
-        y = ae(x, [20,20,20,20,6], nntype)
-        z = tf.reshape(sym_op(y), (-1,3,3))
-        σnn = squeeze(tf.matmul(z, tf.reshape((ε-ε0)/strain_scale, (-1,3,1)))) + σ0/stress_scale
-        σH = (ε-ε0)/strain_scale * H0 + σ0/stress_scale
-        z = sum(ε^2,dims=2)
-        i = sigmoid(1e9*(z-(threshold)^2))
-        i = [i i i]
-        out = σnn .* i + σH .* (1-i)
-        out*stress_scale
-    end
+        y = ae(x, config, nntype)
+        
+        if H_function==spd_H
+            z = spd_H(y, H0)
+        else
+            z = H_function(y)
+        end
+        
+	    # op = tf.print(z)
+	    # z = bind(z, op)
+        # z = sym_H(y)
 
+        σnn = squeeze(tf.matmul(z, tf.reshape((ε-ε0)/strain_scale, (-1,3,1)))) 
+        σH = (ε-ε0)/strain_scale * H0
+        s = σ0[:,1]^2-σ0[:,1]*σ0[:,2]+σ0[:,2]^2+3*σ0[:,3]^2 
+
+        i = sigmoid(1000*(s-threshold)/1e9)        
+        i = [i i i]
+        out = σnn .* i + σH .* (1-i)  + σ0/stress_scale
+        out*stress_scale
+    elseif nntype=="doublenn"
+        x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
+        x = constant(x)
+        ε = constant(ε)
+        ε0 = constant(ε0)
+        σ0 = constant(σ0)
+        
+        y = ae(x, config, nntype)
+        i = sigmoid(ae(x, [20,20,1], nntype*"i"))
+        # op = tf.print("call spd_H")
+        if H_function==spd_H
+            z = spd_H(y, H0)
+        else
+            z = H_function(y)
+        end
+        # z = bind(z, op)
+        # z = sym_H(y)
+
+        σnn = squeeze(tf.matmul(z, tf.reshape((ε-ε0)/strain_scale, (-1,3,1)))) 
+        σH = (ε-ε0)/strain_scale * H0
+        s = σ0[:,1]^2-σ0[:,1]*σ0[:,2]+σ0[:,2]^2+3*σ0[:,3]^2 
+
+        # i = sigmoid(1000*(s-threshold)/1e9)        
+        i = [i i i]
+        out = σnn .* i + σH .* (1-i)  + σ0/stress_scale
+        out*stress_scale
+    elseif nntype=="stress"
+        x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
+        x = constant(x)
+        ε = constant(ε)
+        ε0 = constant(ε0)
+        σ0 = constant(σ0)
+        
+        y = ae(x, config, nntype)
+        y*stress_scale
+    else
+        error("$nntype does not exist")
+    end
 end
 
 
@@ -95,88 +148,84 @@ function sigmoid_(z)
   
 end
 
-
-
 function nn_helper(ε, ε0, σ0)
-    if nntype=="ae_scaled"
-        x = reshape([ε;ε0;σ0/stress_scale],1, 9)
-        reshape(nnae_scaled(x)*stress_scale,3,1)
-    elseif nntype=="linear"
+    local y1
+    if nntype=="linear"
         x = reshape(reshape(ε,1,3)*H0,3,1)
-    elseif nntype=="mae"
-        x = reshape([ε/strain_scale;ε0/strain_scale;σ0/stress_scale],1, 9)
-        y = reshape(ε/strain_scale, 1, 3)*get_matrix(nnae_scaled(x))*stress_scale
-        reshape(y, 3, 1)
-    elseif nntype=="maeadd"
+    elseif nntype=="ae_scaled"
+        x = reshape(ε/strain,1, 3)
+        reshape(nnae_scaled(x)*stress_scale,3,1)
+    elseif nntype=="stiffmat"
         ε = ε/strain_scale
         ε0 = ε0/strain_scale
         σ0 = σ0/stress_scale
-        x = reshape([ε;ε0;σ0],1, 9)
-        x = transform(x)
-        y = reshape(σ0, 1, 3) + (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*get_matrix(nnae_scaled(x))
-        reshape(y, 3, 1)*stress_scale
-    elseif nntype=="indicator"
-        ε = ε/strain_scale
-        ε0 = ε0/strain_scale
-        σ0 = σ0/stress_scale
-        x = reshape([ε;ε0;σ0],1, 9)
-        x *= 1e3
-        y = reshape(σ0, 1, 3) + (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*get_matrix(nnae_scaled(x))
-        reshape(y, 3, 1)*stress_scale
+        x = reshape(ε, 1, 3)
+        # y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*sym_H(nnpiecewise(x))
+        if H_function==spd_H
+            y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*spd_H(nnstiffmat(x), H0)
+        else
+            y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*H_function(nnstiffmat(x))
+        end
+        y1 = reshape(y1, 3, 1)
+        ################################################
+        # y2 = reshape((reshape(ε, 1, 3) - reshape(ε0, 1, 3))*H0, 3,1)
+        # s = σ0[1]^2-σ0[1]*σ0[2]+σ0[2]^2+3*σ0[3]^2 
+        # i = sigmoid_(1000*(s*stress_scale^2 - threshold)/1e9) 
+        # out = y1 * i + y2 * (1-i)  + reshape(σ0, 3, 1)
+        #####################################################
+
+        out = y1  + reshape(σ0, 3, 1)
+
+        out*stress_scale
     elseif nntype=="piecewise"
-        H0 = [ 2.50784e11  1.12853e11  0.0       
-            1.12853e11  2.50784e11  0.0       
-            0.0         0.0         6.89655e10]
         ε = ε/strain_scale
         ε0 = ε0/strain_scale
         σ0 = σ0/stress_scale
         x = reshape([ε;ε0;σ0],1, 9)
-        y1 = reshape(σ0, 1, 3) + (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*get_matrix(nnae_scaled(x))
-        y1 = reshape(y1, 3, 1)*stress_scale
-        y2 = reshape(reshape(ε,1,3)*H0,3,1)
-        i = sigmoid_(1e9*(norm(ε)^2-(threshold)^2))
-        y1 * i + y2 * (1-i)
+        # y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*sym_H(nnpiecewise(x))
+        if H_function==spd_H
+            y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*spd_H(nnpiecewise(x), H0)
+        else
+            y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*H_function(nnpiecewise(x))
+        end
+        y1 = reshape(y1, 3, 1)
+        y2 = reshape((reshape(ε, 1, 3) - reshape(ε0, 1, 3))*H0, 3,1)
+        s = σ0[1]^2-σ0[1]*σ0[2]+σ0[2]^2+3*σ0[3]^2 
+        i = sigmoid_(1000*(s*stress_scale^2 - threshold)/1e9) 
+        out = y1 * i + y2 * (1-i)  + reshape(σ0, 3, 1)
+        out*stress_scale
+    elseif nntype=="doublenn"
+        ε = ε/strain_scale
+        ε0 = ε0/strain_scale
+        σ0 = σ0/stress_scale
+        x = reshape([ε;ε0;σ0],1, 9)
+        # y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*sym_H(nnpiecewise(x))
+        if H_function==spd_H
+            y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*spd_H(nndoublenn(x), H0)
+        else
+            y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*H_function(nndoublenn(x))
+        end
+        y1 = reshape(y1, 3, 1)
+        y2 = reshape((reshape(ε, 1, 3) - reshape(ε0, 1, 3))*H0, 3,1)
+        s = σ0[1]^2-σ0[1]*σ0[2]+σ0[2]^2+3*σ0[3]^2 
+        # i = sigmoid_(1000*(s*stress_scale^2 - threshold)/1e9) 
+        i = sigmoid_(nndoublenni(x)[1,1])
+        out = y1 * i + y2 * (1-i)  + reshape(σ0, 3, 1)
+        out*stress_scale
+    elseif nntype=="stress"
+        ε = ε/strain_scale
+        ε0 = ε0/strain_scale
+        σ0 = σ0/stress_scale
+        x = reshape([ε;ε0;σ0],1, 9)
+        out = nnstress(x)
+        reshape(out*stress_scale,3,1)
     else
-        error()
+        error("$nntype does not exist")
     end
 end
 
 function post_nn(ε, ε0, σ0, Δt)
-    # # @show "Post NN"
     f = x -> nn_helper(x, ε0, σ0)
     df = ForwardDiff.jacobian(f, ε)
     return f(ε), df
-end
-
-function check_grad()
-    ε = rand(3); ε0 = rand(3); σ0 = rand(3)*1e10; Δt = 0.0
-    y_, J = post_nn(ε, ε0, σ0, Δt)
-
-    v_ = rand(3)
-    ms_ = Array{Array{Float64}}(undef, 5)
-    ys_ = Array{Array{Float64}}(undef, 5)
-    sval_ = Array{Float64}(undef, 5)
-    wval_ = Array{Float64}(undef, 5)
-    gs_ =  @. 1 / 10^(1:5)
-
-    for i = 1:5
-        g_ = gs_[i]
-        ms_[i] = ε + g_*v_
-        ys_[i],_ = post_nn(ms_[i], ε0, σ0, Δt)
-        sval_[i] = norm(ys_[i] - y_)
-        wval_[i] = norm(ys_[i] - y_ - g_*J*v_)
-    end
-
-
-    close("all")
-    loglog(gs_, abs.(sval_), "*-", label="finite difference")
-    loglog(gs_, abs.(wval_), "+-", label="automatic differentiation")
-    loglog(gs_, gs_.^2 * 0.5*abs(wval_[1])/gs_[1]^2, "--",label="\$\\mathcal{O}(\\gamma^2)\$")
-    loglog(gs_, gs_ * 0.5*abs(sval_[1])/gs_[1], "--",label="\$\\mathcal{O}(\\gamma)\$")
-
-    plt.gca().invert_xaxis()
-    legend()
-    xlabel("\$\\gamma\$")
-    ylabel("Error")
-
 end

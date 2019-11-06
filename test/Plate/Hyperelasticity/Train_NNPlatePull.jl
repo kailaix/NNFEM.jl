@@ -9,7 +9,8 @@ force_scale = 5.0
 force_scales = [5.0]
 
 testtype = "NeuralNetwork2D"
-nntype = "piecewise"
+nntype = "stiffmat"
+
 
 # ! define H0
 # Trained with nx, ny = 10, 5
@@ -21,11 +22,13 @@ H0 = [1.04167e6  2.08333e5  0.0
 n_data = [100, 200, 201, 202, 203]
 
 porder = 2
-prop = Dict("name"=> testtype, "rho"=> 4.5, "nn"=>nn)
+prop = Dict("name"=> testtype, "rho"=> 800, "nn"=>nn)
+
 
 
 T = 0.1
 NT = 200
+
 
 # DNS computaional domain
 fiber_size = 2
@@ -119,78 +122,8 @@ loss = sum(losses)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# function BFGS!(sess::PyObject, loss::PyObject, grads::Union{Array{T},Nothing,PyObject}, 
-#     vars::Union{Array{PyObject},PyObject}; kwargs...) where T<:Union{Nothing, PyObject}
-#     if isa(grads, PyObject); grads = [grads]; end
-#     if isa(vars, PyObject); vars = [vars]; end
-#     if length(grads)!=length(vars); error("ADCME: length of grads and vars do not match"); end
-    
-#     idx = ones(Bool, length(grads))
-#     for i = 1:length(grads)
-#         if isnothing(grads[i])
-#             idx[i] = false
-#         end
-#     end
-#     grads = grads[idx]
-#     vars = vars[idx]
-    
-#     sizes = []
-#     for v in vars
-#         push!(sizes, size(v))
-#     end
-#     grds = vcat([tf.reshape(g, (-1,)) for g in grads]...)
-#     vs = vcat([tf.reshape(v, (-1,)) for v in vars]...); x0 = run(sess, vs)
-#     pl = placeholder(x0)
-#     n = 0
-#     assign_ops = PyObject[]
-#     for (k,v) in enumerate(vars)
-#         push!(assign_ops, assign(v, tf.reshape(pl[n+1:n+prod(sizes[k])], sizes[k])))
-#         n += prod(sizes[k])
-#     end
-    
-#     __loss = 0.0
-#     __losses = Float64[]
-#     function f(x)
-#         run(sess, assign_ops, pl=>x)
-#         __loss = run(sess, loss)
-#         return __loss
-#     end
-    
-#     function g!(G, x)
-#         run(sess, assign_ops, pl=>x)
-#         G[:] = run(sess, grds)
-#     end
-    
-#     function callback(x)
-#         push!(__losses, __loss)
-#         false
-#     end
-    
-#     Optim.optimize(f, g!, x0, Optim.LBFGS(alphaguess = InitialStatic(), linesearch=LineSearches.BackTracking(order=3)), 
-#                    Optim.Options(show_trace=true, callback=callback, iterations=1000))
-#     return __losses
-# end
-
-
-
 sess = tf.Session(); init(sess)
-ADCME.load(sess, "$(@__DIR__)/Data/NNPreLSfit_$(idx).mat")
+#ADCME.load(sess, "$(@__DIR__)/Data/NNPreLSfit_$(idx).mat")
 #vars = get_collection()
 for i = 1:100
     println("************************** Outer Iteration = $i ************************** ")
@@ -199,5 +132,8 @@ for i = 1:100
     @show "save to ", "Data/NN_Train_$(idx).mat"
     ADCME.save(sess, "Data/NN_Train_$(idx).mat")
 end
+
+
+
 
 
