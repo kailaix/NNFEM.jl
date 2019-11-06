@@ -97,7 +97,7 @@ where
 L = \begin{matrix}
 o_1 & & 
 o_2 & o_3 &
- &  & o_6 
+ &  & o_4
 \end{matrix}
 ```
 """

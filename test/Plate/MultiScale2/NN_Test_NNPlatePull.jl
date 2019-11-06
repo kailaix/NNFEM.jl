@@ -21,7 +21,8 @@ H0 = [1.26827e6       3.45169e5   -5187.35
       -5187.35       -10791.7        536315.0]/stress_scale
       
 
-s = ae_to_code("Data/NNPreLSfit_0.mat", "piecewise")
+s = ae_to_code("Data/nn_train1.mat", "piecewise")
+# s = ae_to_code("Data/NNPreLSfit_$(idx).mat", "piecewise")
 eval(Meta.parse(s))
 
 
@@ -32,8 +33,8 @@ fiber_fraction = 0.25
 #fiber_fraction = 1.0
 prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>post_nn)
 
-T = 0.05
-NT = 100
+T = 0.1
+NT = 200
 
 # nx_f, ny_f = 12, 4
 # homogenized computaional domain
@@ -87,6 +88,12 @@ adaptive_solver_args = Dict("Newmark_rho"=> 0.0,
                           "Newton_Abs_Err"=>1e-4, 
                           "Newton_Rel_Err"=>1e-6, 
                           "damped_Newton_eta" => 1.0)
+
+# adaptive_solver_args = Dict("Newmark_rho"=> 0.0, 
+#                           "Newton_maxiter"=>10, 
+#                           "Newton_Abs_Err"=>1e-3, 
+#                           "Newton_Rel_Err"=>1e-3, 
+#                           "damped_Newton_eta" => 1.0)
 
 globdat, domain, ts = AdaptiveSolver("NewmarkSolver", globdat, domain, T, NT, adaptive_solver_args)
 

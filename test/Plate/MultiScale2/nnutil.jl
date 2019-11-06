@@ -18,11 +18,11 @@ nout = 4
 if idx == 0
     global config=[20,20,20,nout] 
 elseif idx == 1
-    global config=[100,nout] 
+    global config=[20,20,20,20,20,20,nout]
 elseif idx == 2
     global config=[20,nout]
 elseif idx == 3
-    global config=[20,20,20,20,20,20,nout]
+    global config=[100,nout]
 elseif idx == 5
     global config=[nout]
 end
@@ -123,7 +123,9 @@ function nn_helper(ε, ε0, σ0)
         if H_function==spd_H
             y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*spd_H(nnpiecewise(x), H0)
         else
-            y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*H_function(nnpiecewise(x))
+            H = H_function(nnpiecewise(x))
+            H = H*0.99 + 0.01*H0
+            y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*H
         end
         y1 = reshape(y1, 3, 1)
         y2 = reshape((reshape(ε, 1, 3) - reshape(ε0, 1, 3))*H0, 3,1)

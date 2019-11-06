@@ -146,15 +146,18 @@ for i in n_data
     end
 end
 
+error()
 @show stress_scale^2
 loss = sum(losses)
+W = get_collection()
+reg = 1e6 * sum([sum(w^2) for w in W])
 
 sess = tf.Session(); init(sess)
 ADCME.load(sess, "$(@__DIR__)/Data/NNPreLSfit_$(idx).mat") # pre-trained model
-@info run(sess, loss)
+@info run(sess, loss+reg)
 # error()
 for i = 1:100
     println("************************** Outer Iteration = $i ************************** ")
-    BFGS!(sess, loss, 200)
+    BFGS!(sess, loss+reg, 200)
     ADCME.save(sess, "$(@__DIR__)/Data/nn_train$idx.mat")
 end
