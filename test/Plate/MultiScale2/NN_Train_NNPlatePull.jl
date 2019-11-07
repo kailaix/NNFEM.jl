@@ -10,10 +10,14 @@ nntype = "piecewise"
 
 # ! define H0
 # Trained with nx, ny = 10, 5
-H0 = [1.26827e6       3.45169e5   -5187.35
-      3.45169e5       1.25272e6  -10791.7
-      -5187.35       -10791.7        536315.0]/stress_scale
+# H0 = [1.26827e6       3.45169e5   -5187.35
+#       3.45169e5       1.25272e6  -10791.7
+#       -5187.35       -10791.7        536315.0]/stress_scale
 
+
+H0 = [1335174.0968380707 326448.3267263398 0.0 
+      326448.3267263398 1326879.2022994285 0.0 
+      0.0 0.0 526955.763626241]/stress_scale
 
 n_data = [202,100, 200,201,203]
 porder = 2
@@ -158,6 +162,6 @@ ADCME.load(sess, "$(@__DIR__)/Data/NNPreLSfit_$(idx).mat") # pre-trained model
 # error()
 for i = 1:100
     println("************************** Outer Iteration = $i ************************** ")
-    BFGS!(sess, loss+reg, 200)
+    BFGS!(sess, loss+reg, 1000)
     ADCME.save(sess, "$(@__DIR__)/Data/nn_train$idx.mat")
 end

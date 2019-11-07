@@ -18,7 +18,7 @@ nout = 4
 if idx == 0
     global config=[20,20,20,nout] 
 elseif idx == 1
-    global config=[20,20,20,20,20,20,nout]
+    global config=[20,20,20,20,20,nout]
 elseif idx == 2
     global config=[20,nout]
 elseif idx == 3
@@ -51,7 +51,7 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 450x3
         σ0 = constant(σ0)
         
         y = ae(x, config, nntype)
-	@show y, size(H0)
+	
         if H_function==spd_H
             z = spd_H(y, H0)
         else
