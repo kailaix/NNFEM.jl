@@ -63,16 +63,19 @@ end
 
 
 
-@doc """
+@doc raw"""
     NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, ε0 = 1e-8, maxiterstep=100, η = 1.0, failsafe = false)
 
-Implicit solver for `Ma + C v + R(u) = P`
-    a, v, u are acceleration, velocity and displacement
+Implicit solver for ``Ma + C v + R(u) = P``
+``a``, ``v``, ``u`` are acceleration, velocity and displacement respectively.
+```math
+u_{n+1} = u_n + dtv_n + dt^2/2 ((1 - 2\beta)a_n + 2\beta a_{n+1})
+v_{n+1} = v_n + dt((1 - gamma)a_n + gamma a_{n+1})
+```
 
-    u_{n+1} = u_n + dtv_n + dt^2/2 ((1 - 2\beta)a_n + 2\beta a_{n+1})
-    v_{n+1} = v_n + dt((1 - gamma)a_n + gamma a_{n+1})
-
-    M a_{n+0.5} + fint(u_{n+0.f}) = fext_{n+0.5}
+```math
+M a_{n+0.5} + f_{\mathrm{int}}(u_{n+0.f}) = fext_{n+0.5}
+```
 
     αm = (2\rho_oo - 1)/(\rho_oo + 1)
     αf = \rho_oo/(\rho_oo + 1)
@@ -226,16 +229,18 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, �
 end 
 
 
-@doc """
-    Implicit solver for fint(u) = fext
-    u is the displacement
-    Newton iteration, with time-stepping at P
-    u_{n+1} = u_n -  dR(u)^{-1} *(R(u) - P)
+@doc raw"""
+    StaticSolver(globdat, domain, loaditerstep = 10, ε = 1.e-8, maxiterstep=100)
 
-    :param app:
-    :param u_0:
-    :return: u_{oo}
-"""->
+Implicit solver for 
+```math
+f_{\mathrm{int}}(u) = f_{\mathrm{ext}}
+```
+``u`` is the displacement. We apply the Newton-Raphson algorithm
+```math
+u_{n+1} = u_n -  \nabla f_{\mathrm{int}}(u^n)^{-1} *( f_{\mathrm{int}}(u^n) -  f_{\mathrm{ext}})
+```
+"""
 function StaticSolver(globdat, domain, loaditerstep = 10, ε = 1.e-8, maxiterstep=100)
     
     fext = domain.fext
