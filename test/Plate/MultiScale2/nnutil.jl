@@ -2,17 +2,23 @@
 include("CommonFuncs.jl")
 threshold = 1e7 # σY ≈ 1e8
 
-if length(ARGS)==1
+idx = 0
+H_function = spd_zero_to_H
+use_reg = false
+
+
+if length(ARGS)==3
     global idx = parse(Int64, ARGS[1])
-elseif length(ARGS)==2
-    global idx = parse(Int64, ARGS[1])
-    global tid = parse(Int64, ARGS[2])
+    global H_function = eval(Meta.parse(ARGS[2]))
+    global use_reg = parse(Bool, ARGS[3])
 else
-    global idx = 0
+    @warn("No ARGS provided")
 end
 
-H_function = spd_Chol_Orth
-nout = 4
+@show H_function
+if H_function==spd_zero_to_H || H_function==spd_Chol_Orth
+    global nout = 4
+end
 
 
 if idx == 0
@@ -26,7 +32,7 @@ elseif idx == 3
 elseif idx == 5
     global config=[nout]
 end
-printstyled("idx = $idx, config=$config, H_function=$H_function\n", color=:green)
+printstyled("idx = $idx, config=$config, H_function=$H_function, use_reg = $use_reg\n", color=:green)
 
 
 function nn(ε, ε0, σ0) # ε, ε0, σ0 450x3
@@ -52,8 +58,8 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 450x3
         
         y = ae(x, config, nntype)
 	@show y, size(H0)
-        if H_function==spd_H
-            z = spd_H(y, H0)
+        if H_function==spd_H || H_function==spd_zero_to_H
+            z = H_function(y, H0)
         else
             z = H_function(y)
         end

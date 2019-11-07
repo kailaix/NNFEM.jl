@@ -21,7 +21,7 @@ H0 = [1.26827e6       3.45169e5   -5187.35
       -5187.35       -10791.7        536315.0]/stress_scale
       
 
-s = ae_to_code("Data/nn_train1.mat", "piecewise")
+s = ae_to_code("Data/nn_train_$(use_reg)_$(idx)_$H_function.mat", "piecewise")
 # s = ae_to_code("Data/NNPreLSfit_$(idx).mat", "piecewise")
 eval(Meta.parse(s))
 
@@ -116,10 +116,10 @@ savefig("Debug/order$porder/test_stress$(tid)_$force_scale.png")
 close("all")
 ux = [reshape(domain.history["state"][i][1:(nx*porder+1)*(ny*porder+1)], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
 plot(ts, ux)
-savefig("Debug/order$porder/test_ux$(tid)_$force_scale.png")
+savefig("Debug/order$porder/test_ux_$(use_reg)_$(idx)_$H_function.png")
 
 close("all")
 uy = [reshape(domain.history["state"][i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
 plot(ts, uy)
-savefig("Debug/order$porder/test_uy$(tid)_$force_scale.png")
+savefig("Debug/order$porder/test_uy_$(use_reg)_$(idx)_$H_function.png")
 
