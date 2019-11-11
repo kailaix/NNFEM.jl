@@ -8,7 +8,8 @@ function constitutive_law(input::Array{Float64,2}, θ::Array{Float64,1},
   input_ = zero(input)
   input_[:,1:6,:] = input[:,1:6,:]/strain_scale
   input_[:,7:9,:] = input[:,7:9,:]/stress_scale
-  out, g_input, g_θ = nn_constitutive_law(input_, θ, g, grad_input, grad_θ)
+  config = [9, 20, 20, 20, 4]    
+  out, g_input, g_θ = nn_constitutive_law(input_, θ, config, g, grad_input, grad_θ)
   out *= stress_scale
   if grad_θ
     g_θ *= stress_scale
