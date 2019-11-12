@@ -1,4 +1,4 @@
-export readMesh, save, load, read_data, write_data
+export readMesh, save, load, read_data, write_data, convert_mat
 function readMesh(gmshFile::String)
     fp = open(gmshFile);
     boundaries = Dict{String, Array}()
@@ -93,4 +93,40 @@ function read_data(file::String)
     vars = matread(file)
     #use fint for debugging purpose
     vars["state"], vars["fext"]
+end
+
+
+# type == nn2array: read mat convert to 1D array
+# type == array2nn: read 1D array convert to mat
+function convert_mat(type::String, nnlayers::Array{Int64}, file1::String)
+    if type == "nn2array" 
+       nn = matread(file1)
+       nnlayerNum = length(nnlayers) - 1
+       theta_indptr = ones(Int64, 2*nnlayerNum+1)
+       for i = 1:nnlayerNum
+       	   theta_indptr[2*i]   = theta_indptr[2*i-1] + nnlayers[i]*nnlayers[i+1]
+	       theta_indptr[2*i+1] = theta_indptr[2*i] + nnlayers[i+1]
+       end
+
+       
+       theta = zeros(Float64, theta_indptr[end]-1)
+       for i = 1:nnlayerNum
+           for name in nn
+               if occursin("connected_" * string(i) * "backslashweights", name.first)
+                   theta[theta_indptr[2*(i+1)-1]:theta_indptr[2*(i+1)]-1] = transpose(name.second)[:]
+               end
+  	       if occursin("connected_" * string(i) * "backslashbiases", name.first)
+                   theta[theta_indptr[2*(i+1)]:theta_indptr[2*(i+1)+1]-1] = transpose(name.second)[:]
+               end
+  	       if occursin("connectedbackslashweights", name.first)
+                   theta[theta_indptr[1]:theta_indptr[2]-1] = transpose(name.second)[:]
+               end
+  	       if occursin("connectedbackslashbiases", name.first)
+                   theta[theta_indptr[2]:theta_indptr[3]-1] = transpose(name.second)[:]
+               end
+           end
+       end    
+
+       return theta
+   end
 end

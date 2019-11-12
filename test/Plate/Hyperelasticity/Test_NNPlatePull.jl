@@ -23,8 +23,8 @@ H0 = [1.04167e6  2.08333e5  0.0
 
 #s = ae_to_code("Data/NNLear.mat", nntype)
 #s = ae_to_code("Data/NNPreLSfit_$(idx).mat", nntype)
-#s = ae_to_code("Data/NNLearn_$(idx).mat", nntype)
-s = ae_to_code("Data/NN_Train_$(idx).mat", nntype)
+nnname="Data/NN_Train_$(idx)_ite30.mat"
+s = ae_to_code(nnname, nntype)
 
 eval(Meta.parse(s))
 # density 4.5*(1 - 0.25) + 3.2*0.25
@@ -74,8 +74,7 @@ end
 domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
 state = zeros(domain.neqs)
 ∂u = zeros(domain.neqs)
-globdat = GlobalData(state,zeros(domain.neqs)
-, zeros(domain.neqs),∂u, domain.neqs, gt, ft)
+globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
 
 assembleMassMatrix!(globdat, domain)
 updateStates!(domain, globdat)

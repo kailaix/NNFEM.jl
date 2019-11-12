@@ -7,22 +7,30 @@ tid = 200
 #    global tid = parse(Int64, ARGS[1])
 #    global force_scale = parse(Float64, ARGS[2])
 # end
-
-include("CommonFuncs.jl")
-
 testtype = "NeuralNetwork2D"
 # nntype = "piecewise"
 nntype = "piecewise"
 include("nnutil.jl")
 printstyled("force_scale=$force_scale, tid=$tid\n", color=:green)
 
-H0 = [1.26827e6       3.45169e5   -5187.35
-      3.45169e5       1.25272e6  -10791.7
-      -5187.35       -10791.7        536315.0]/stress_scale
-      
+# H0 = [1.26827e6       3.45169e5   -5187.35
+#       3.45169e5       1.25272e6  -10791.7
+#       -5187.35       -10791.7        536315.0]/stress_scale
 
-s = ae_to_code("Data/nn_train1.mat", "piecewise")
-# s = ae_to_code("Data/NNPreLSfit_$(idx).mat", "piecewise")
+
+H0 = [1335174.0968380707 326448.3267263398   0.0 
+      326448.3267263398  1326879.2022994285  0.0 
+      0.0                0.0                 526955.763626241]/stress_scale
+      
+H0inv = inv(H0)
+
+nn_file = "Data/nn_train_false_0_spd_zero_to_H_from10_ite3.mat"
+#nn_file = "Data/NNPreLSfit_0_spd_zero_to_H_10.mat"
+#nn_file = "Data/nn_train_$(use_reg)_$(idx)_$(H_function)_ite7.mat"
+@show nn_file
+s = ae_to_code(nn_file, "piecewise")
+
+
 eval(Meta.parse(s))
 
 
@@ -43,7 +51,7 @@ nx, ny = 10, 5
 
 porder = 2
 
-nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny,porder)
+nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny,porder; force_scale=force_scale)
 
 ndofs=2
 elements = []
@@ -116,10 +124,10 @@ savefig("Debug/order$porder/test_stress$(tid)_$force_scale.png")
 close("all")
 ux = [reshape(domain.history["state"][i][1:(nx*porder+1)*(ny*porder+1)], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
 plot(ts, ux)
-savefig("Debug/order$porder/test_ux$(tid)_$force_scale.png")
+savefig("Debug/order$porder/test_ux_$(use_reg)_$(idx)_$H_function.png")
 
 close("all")
 uy = [reshape(domain.history["state"][i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
 plot(ts, uy)
-savefig("Debug/order$porder/test_uy$(tid)_$force_scale.png")
+savefig("Debug/order$porder/test_uy_$(use_reg)_$(idx)_$H_function.png")
 

@@ -172,7 +172,7 @@ end
 sess = Session(); init(sess)
 @show run(sess, loss)
 # ADCME.load(sess, "Data/NNPreLSfit.mat")
-for i = 1:1000
+for i = 1:20
     BFGS!(sess, loss, 1000)
-    ADCME.save(sess, "Data/NNPreLSfit_$(idx).mat")
+    ADCME.save(sess, "Data/NNPreLSfit_$(idx)_ite$(i).mat")
 end

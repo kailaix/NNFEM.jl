@@ -130,7 +130,7 @@ for i = 1:100
     BFGS!(sess, loss, 1000)
     #BFGS!(sess, loss, gradients(loss,vars), vars, iterations=1000)
     @show "save to ", "Data/NN_Train_$(idx).mat"
-    ADCME.save(sess, "Data/NN_Train_$(idx).mat")
+    ADCME.save(sess, "Data/NN_Train_$(idx)_ite$(i).mat")
 end
 
 

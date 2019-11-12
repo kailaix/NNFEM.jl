@@ -25,7 +25,6 @@ n_data = [100, 200, 201, 202, 203]
 loss = constant(0.0)
 for tid in n_data
     global loss
-    @show "Data/order$porder/domain$(tid)_$(force_scale)_$(fiber_size).jld2"
     @load "Data/order$porder/domain$(tid)_$(force_scale)_$(fiber_size).jld2" domain
     X, Y = prepare_strain_stress_data2D(domain)
     x = constant(X)
@@ -38,7 +37,7 @@ end
 sess = Session(); init(sess)
 @show run(sess, loss)
 # ADCME.load(sess, "Data/NNLearn.mat")
-for i = 1:100
+for i = 1:30
     BFGS!(sess, loss, 1000)
-    ADCME.save(sess, "Data/NNLearn_$(idx).mat")
+    ADCME.save(sess, "Data/NNLearn_$(idx)_ite$(i).mat")
 end

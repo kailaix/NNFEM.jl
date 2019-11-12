@@ -20,6 +20,8 @@ H0 = [1335174.0968380707 326448.3267263398 0.0
       326448.3267263398 1326879.2022994285 0.0 
       0.0 0.0 526955.763626241]/stress_scale
 
+H0inv = inv(H0)
+
 n_data = [202,100, 200,201,203]
 porder = 2
 # density 4.5*(1 - 0.25) + 3.2*0.25
@@ -176,7 +178,8 @@ end
 sess = Session(); init(sess)
 @show run(sess, loss)
 # ADCME.load(sess, "Data/NNPreLSfit.mat")
-for i = 1:1000
+for i = 1:10
     BFGS!(sess, loss, 1000)
-    ADCME.save(sess, "Data/NNPreLSfit_$(idx).mat")
+    
+    ADCME.save(sess, "Data/NNPreLSfit_$(idx)_$(H_function)_$(i).mat")
 end

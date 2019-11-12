@@ -2,31 +2,37 @@
 include("CommonFuncs.jl")
 threshold = 1e7 # σY ≈ 1e8
 
-if length(ARGS)==1
+idx = 0
+H_function = spd_zero_to_H
+use_reg = false
+
+
+if length(ARGS)==3
     global idx = parse(Int64, ARGS[1])
-elseif length(ARGS)==2
-    global idx = parse(Int64, ARGS[1])
-    global tid = parse(Int64, ARGS[2])
+    global H_function = eval(Meta.parse(ARGS[2]))
+    global use_reg = parse(Bool, ARGS[3])
 else
-    global idx = 0
+    @warn("No ARGS provided")
 end
 
-H_function = spd_Chol_Orth
-nout = 4
+@show H_function
+if H_function==spd_zero_to_H || H_function==spd_Chol_Orth
+    global nout = 4
+end
 
 
 if idx == 0
     global config=[20,20,20,nout] 
 elseif idx == 1
-    global config=[20,20,20,20,20,nout]
+    global config=[20,20,20,20,20,20,nout]
 elseif idx == 2
-    global config=[20,nout]
+    global config=[20,20,20,20,nout]
 elseif idx == 3
-    global config=[100,nout]
+    global config=[20,20,20,20,20,nout]
 elseif idx == 5
     global config=[nout]
 end
-printstyled("idx = $idx, config=$config, H_function=$H_function\n", color=:green)
+printstyled("idx = $idx, config=$config, H_function=$H_function, use_reg = $use_reg\n", color=:green)
 
 
 function nn(ε, ε0, σ0) # ε, ε0, σ0 450x3
@@ -51,9 +57,11 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 450x3
         σ0 = constant(σ0)
         
         y = ae(x, config, nntype)
-	
-        if H_function==spd_H
-            z = spd_H(y, H0)
+
+        if H_function==spd_H 
+            z = H_function(y, H0)
+        elseif H_function==spd_zero_to_H
+            z = H_function(y, H0inv)
         else
             z = H_function(y)
         end
@@ -121,11 +129,13 @@ function nn_helper(ε, ε0, σ0)
         x = reshape([ε;ε0;σ0],1, 9)
         # y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*sym_H(nnpiecewise(x))
         if H_function==spd_H
-            y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*spd_H(nnpiecewise(x), H0)
+            y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*H_function(nnpiecewise(x), H0)
+
+        elseif H_function==spd_zero_to_H
+            
+            y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*H_function(nnpiecewise(x), H0inv)
         else
-            H = H_function(nnpiecewise(x))
-            H = H*0.99 + 0.01*H0
-            y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*H
+            y1 = (reshape(ε, 1, 3) - reshape(ε0, 1, 3))*H_function(nnpiecewise(x))
         end
         y1 = reshape(y1, 3, 1)
         y2 = reshape((reshape(ε, 1, 3) - reshape(ε0, 1, 3))*H0, 3,1)

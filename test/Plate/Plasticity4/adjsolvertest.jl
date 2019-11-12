@@ -98,11 +98,11 @@ state = zeros(Float64, NT+1, domain.neqs)
 strain = zeros(Float64, NT+1,  ngps_per_elem*neles, nstrain) 
 stress = zeros(Float64, NT+1,  ngps_per_elem*neles, nstrain)
 
-J1,  = ForwardAdjoint(theta,  obs_state, state, strain, stress)
-state2 = ForwardSolve([H[1,1], H[1,2], H[1,3], H[2,2], H[2,3], H[3,3]],  obs_state)
-@show "Forward state error is ", norm(state2 - state)
-@show "Forward J error is ", J1 - norm(state[2:end,:] - obs_state[2:end,:])^2
-error()
+# J1,  = ForwardAdjoint(theta,  obs_state, state, strain, stress)
+# state2 = ForwardSolve([H[1,1], H[1,2], H[1,3], H[2,2], H[2,3], H[3,3]],  obs_state)
+# @show "Forward state error is ", norm(state2 - state)
+# @show "Forward J error is ", J1 - norm(state[2:end,:] - obs_state[2:end,:])^2
+# error()
 
 function AdjointFunc(theta)
     J = ForwardAdjoint(theta,  obs_state, state, strain, stress)
@@ -113,7 +113,7 @@ end
 
 
 
-theta = rand(704) *1.e-3
+theta = rand(1124) *1.e-3
 # ForwardAdjoint(theta,  obs_state)
 # J, state = ForwardAdjoint(theta,  obs_state)
 # dJ = BackwardAdjoint(theta,  state, obs_state)

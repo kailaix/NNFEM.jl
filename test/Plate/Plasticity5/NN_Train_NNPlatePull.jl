@@ -190,14 +190,13 @@ loss = sum(losses)
 
 
 sess = tf.Session(); init(sess)
-ADCME.load(sess, "$(@__DIR__)/Data/NNPreLSfit_$(idx).mat")
+ADCME.load(sess, "$(@__DIR__)/Data/NNPreLSfit_$(idx)_ite5.mat")
 #vars = get_collection()
-for i = 1:100
+for i = 1:50
     println("************************** Outer Iteration = $i ************************** ")
     BFGS!(sess, loss, 1000)
     #BFGS!(sess, loss, gradients(loss,vars), vars, iterations=1000)
-    @show "save to ", "Data/NN_Train_$(idx).mat"
-    ADCME.save(sess, "Data/NN_Train_$(idx).mat")
+    ADCME.save(sess, "Data/NN_Train_$(idx)_from_5_ite$(i).mat")
 end
 
 

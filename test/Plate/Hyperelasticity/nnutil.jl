@@ -15,9 +15,9 @@ H_function = spd_Chol_Orth
 nn_out = 4
 
 if idx == 0
-    global config=[20,20,nn_out]
+    global config=[20,20,20,nn_out]
 elseif idx == 1
-    global config=[20, 20, 20, nn_out] 
+    global config=[20, 20, 20, 20, nn_out] 
 elseif idx == 2
     global config=[20,20,20,nn_out] 
 elseif idx == 3
