@@ -164,19 +164,29 @@ void constitutive_law_generic(
 
     x[0] = X;
     for(int l=0;l<n_layer-1;l++){
-        x[l+1] = x[l]**weight[l];
-        y[l] = Array2D(x[l+1].size(0),x[l+1].size(1));
+        // x[l+1] = x[l]**weight[l];
+        // y[l] = Array2D(x[l+1].size(0),x[l+1].size(1));
+        // for(int i=0;i<x[l+1].size(0);i++) 
+        //     for(int j=0;j<x[l+1].size(1);j++){
+        //         if(l==n_layer-2)
+        //             y[l](i,j) = x[l+1](i,j)+bias[l](j);
+        //         else
+        //             y[l](i,j) = tanh(x[l+1](i,j)+bias[l](j));
+        //     }  
+        y[l] = x[l]**weight[l];
+        x[l+1] = Array2D(y[l].size(0),y[l].size(1));
         for(int i=0;i<x[l+1].size(0);i++) 
             for(int j=0;j<x[l+1].size(1);j++){
                 if(l==n_layer-2)
-                    y[l](i,j) = x[l+1](i,j)+bias[l](j);
+                    x[l+1](i,j) = y[l](i,j)+bias[l](j);
                 else
-                    y[l](i,j) = tanh(x[l+1](i,j)+bias[l](j));
-            }           
+                    x[l+1](i,j) = tanh(y[l](i,j)+bias[l](j));
+            }            
     }
 
     Array2D out(n, 3);
-    cholorthop(out, X, y[n_layer-2]);
+    // cholorthop(out, X, y[n_layer-2]);
+    cholorthop(out, X, x[n_layer-1]);
 
     for(int i=0;i<n;i++){
         osigma[3*i] = out(i,0).value();

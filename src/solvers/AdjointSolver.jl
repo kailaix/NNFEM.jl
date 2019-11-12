@@ -4,12 +4,15 @@ ForwardNewmarkSolver, BackwardNewmarkSolver,constitutive_law
 
 function constitutive_law(input::Array{Float64,2}, θ::Array{Float64,1}, 
   g::Union{Array{Float64,2}, Nothing}=nothing, grad_input::Bool=false, grad_θ::Bool=false; 
-  strain_scale::Float64, stress_scale::Float64)
+  strain_scale::Float64, stress_scale::Float64, config = [9, 20, 20, 20, 4])
   input_ = zero(input)
   input_[:,1:6,:] = input[:,1:6,:]/strain_scale
   input_[:,7:9,:] = input[:,7:9,:]/stress_scale
+<<<<<<< HEAD
 
   config = [9, 20, 20, 20, 4]      
+=======
+>>>>>>> eb01b942909069672dad351ec0a16b04c9b01ab0
   out, g_input, g_θ = nn_constitutive_law(input_, θ, config, g, grad_input, grad_θ)
   out *= stress_scale
   if grad_θ
