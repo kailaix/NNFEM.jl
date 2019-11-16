@@ -24,8 +24,8 @@ H0 = [1335174.0968380707 326448.3267263398   0.0
       
 H0inv = inv(H0)
 
-nn_file = "Data/nn_train_false_0_spd_zero_to_H_from10_ite3.mat"
-#nn_file = "Data/NNPreLSfit_0_spd_zero_to_H_10.mat"
+nn_file = "Data/nn_train_$(use_reg)_$(idx)_$(H_function)_from20_ite80.mat"
+#nn_file = "Data/NNPreLSfit_$(idx)_$(H_function)_20.mat"
 #nn_file = "Data/nn_train_$(use_reg)_$(idx)_$(H_function)_ite7.mat"
 @show nn_file
 s = ae_to_code(nn_file, "piecewise")

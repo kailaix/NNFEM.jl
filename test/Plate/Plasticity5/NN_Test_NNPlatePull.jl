@@ -19,10 +19,10 @@ H0 = [1.04167e6  2.08333e5  0.0
       2.08333e5  1.04167e6  0.0      
       0.0        0.0        4.16667e5]/stress_scale
 
-#s = ae_to_code("Data/NNLear.mat", nntype)
+s = ae_to_code("Data/NNLearn_0_ite50.mat", nntype)
 #s = ae_to_code("Data/NNPreLSfit_$(idx)_ite20.mat", nntype)
 #s = ae_to_code("Data/NN_Train_$(idx)_from_5_ite9.mat", nntype)
-s = ae_to_code("Data/NN_Train_$(idx)_ite5.mat", nntype)
+#s = ae_to_code("Data/NN_Train_$(idx)_ite5.mat", nntype)
 #s = ae_to_code("Data/NN_Train_$(idx).mat", nntype)
 
 eval(Meta.parse(s))

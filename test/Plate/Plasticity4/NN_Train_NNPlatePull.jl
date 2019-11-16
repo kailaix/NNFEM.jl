@@ -17,7 +17,7 @@ H0 = [1.04167e6  2.08333e5  0.0
 
 
 n_data = [100, 200, 201, 202, 203]
-n_data = [100]
+#n_data = [100]
 
 @info "Thread number is ", Threads.nthreads() 
 @info "Mulithreading requires: export JULIA_NUM_THREADS=", length(n_data)
@@ -124,13 +124,7 @@ function PreprocessData(n_data, NT)
 end
 
 
-
-
-
-
-
 globdat_arr, domain_arr, obs_state_arr = PreprocessData(n_data, NT)
-
 
 
 mutable struct Buffer
@@ -150,19 +144,22 @@ mutable struct Buffer
     end
 end
 
-
-
 function calculate_common!(theta, last_theta, buffer)
     @show " theta norm ", norm(theta), " last_theta norm ", norm(last_theta)
     if theta != last_theta
         
         copy!(last_theta, theta)
 
+        #Threads.@threads for i = 1:length(n_data)
         for i = 1:length(n_data)
             #@show Threads.threadid()
             # todo: inplace 
             buffer.J[i] = ForwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, strain_scale, stress_scale, obs_state_arr[i], 
             buffer.state[i], buffer.strain[i], buffer.stress[i])
+
+            if buffer.J[i]  == Inf
+                break
+            end
         end
     end
 end
@@ -172,22 +169,23 @@ function f(theta, buffer, last_theta)
 
     J = sum(buffer.J)
     
-    @show "start function evaluation: |J|=", norm(J)
+    @show "function evaluation: |J|=", norm(J)
     
     return J
 end
 
 function g!(theta, storage, buffer, last_theta)
     calculate_common!(theta, last_theta, buffer)
-
-    for i = 1:length(n_data)
+    
+    
+    Threads.@threads for i = 1:length(n_data)
         # todo: inplace 
         buffer.dJ[i] = BackwardNewmarkSolver(globdat_arr[i], domain_arr[i], theta, T, NT, buffer.state[i], buffer.strain[i], buffer.stress[i], strain_scale, stress_scale, obs_state_arr[i])
     end
     
     storage[:] = sum(buffer.dJ)
 
-    @show "start gradient evaluation: |dJ/dtheta|=", norm( storage )
+    @show "gradient evaluation: |dJ/dtheta|=", norm( storage )
 
     storage[:] ./= max(1.0, norm(storage))
 end
@@ -197,32 +195,31 @@ end
 nstrain = 3
 ngps_per_elem = length(domain_arr[1].elements[1].weights)
 neles = domain_arr[1].neles
-initial_theta = rand(704) * 1.e-3
+
+
+config = [9, 20, 20, 20, 4]
+initial_theta = convert_mat("nn2array", config,  "Data/NNPreLSfit_0_ite10.mat")
+
+
+
+
 neqs_arr = [domain_arr[i].neqs for i = 1:length(n_data)]
 buffer = Buffer(length(n_data), length(initial_theta), NT, neqs_arr, neles*ngps_per_elem, nstrain) # Preallocate an appropriate buffer
 last_theta = similar(initial_theta)
-# df = TwiceDifferentiable(x -> f(x, buffer, initial_theta),
-#                                 (stor, x) -> g!(x, stor, buffer, last_theta))
-# optimize(df, initial_theta, LBFGS())
+algo = LBFGS(alphaguess = InitialStatic(), linesearch=LineSearches.BackTracking(order=2))
 
 
+for i = 1:50
+    println("************************** Outer Iteration = $i ************************** ")
 
-# function AdjointFunc(theta)
-#     dJ = similar(theta)
-#     J = f(theta, buffer, last_theta)  
-#     g!(theta, dJ, buffer, last_theta)
-    
-#     return J, dJ' 
-
-# end
-# gradtest(AdjointFunc, initial_theta, scale=1.e-4)
-
-algo = LBFGS(alphaguess = InitialPrevious(), linesearch=LineSearches.BackTracking(order=3))
-
-optimize(x -> f(x, buffer, last_theta), 
+    optimize(x -> f(x, buffer, last_theta), 
         (stor, x) -> g!(x, stor, buffer, last_theta), 
         initial_theta, 
-        algo)
+        algo, 
+        Optim.Options(iterations=1000))
 
-
-
+        initial_theta[:] = last_theta
+        @save "theta_ite$(i).jld2" last_theta
+end
+        
+        

@@ -162,11 +162,12 @@ else
 end
 
 sess = tf.Session(); init(sess)
-ADCME.load(sess, "$(@__DIR__)/Data/NNPreLSfit_$(idx)_$(H_function)_10.mat") # pre-trained model
+ADCME.load(sess, "$(@__DIR__)/Data/NNPreLSfit_$(idx)_$(H_function)_20.mat") # pre-trained model
+#ADCME.load(sess, "$(@__DIR__)/Data/nn_train_$(use_reg)_$(idx)_$(H_function)_from5_ite18.mat") # pre-trained model
 @info run(sess, loss+reg)
 # error()
 for i = 1:100
     println("************************** Outer Iteration = $i ************************** ")
     BFGS!(sess, loss+reg, 1000)
-    ADCME.save(sess, "$(@__DIR__)/Data/nn_train_$(use_reg)_$(idx)_$(H_function)_from10_ite$(i).mat")
+    ADCME.save(sess, "$(@__DIR__)/Data/nn_train_$(use_reg)_$(idx)_$(H_function)_from20_ite$(i).mat")
 end

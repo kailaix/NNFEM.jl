@@ -8,11 +8,6 @@ function constitutive_law(input::Array{Float64,2}, θ::Array{Float64,1},
   input_ = zero(input)
   input_[:,1:6,:] = input[:,1:6,:]/strain_scale
   input_[:,7:9,:] = input[:,7:9,:]/stress_scale
-<<<<<<< HEAD
-
-  config = [9, 20, 20, 20, 4]      
-=======
->>>>>>> eb01b942909069672dad351ec0a16b04c9b01ab0
   out, g_input, g_θ = nn_constitutive_law(input_, θ, config, g, grad_input, grad_θ)
   out *= stress_scale
   if grad_θ
@@ -358,7 +353,7 @@ Implicit solver for Ma + C v + R(u) = P
       αm::Float64 = -1.0, αf::Float64 = 0.0, ε::Float64 = 1e-8, 
       ε0::Float64 = 1e-8, maxiterstep::Int64=10)
       
-      Δti = T/NT
+      Δti = T/Float64(NT)
       β2 = 0.5*(1 - αm + αf)^2
       γ = 0.5 - αm + αf
       neles, ngps_per_elem, neqs = domain.neles, length(domain.elements[1].weights), domain.neqs
@@ -391,7 +386,7 @@ Implicit solver for Ma + C v + R(u) = P
       output = Array{Float64}(undef, neles*ngps_per_elem, 3*nstrain,  nstrain) 
       
       Ni, i = 0.0, 1
-      MinStepSize = 1.0/2.0^10
+      MinStepSize = 1.0/2.0^6
       stepsize = 1.0
       convergeCounter = 0
       
@@ -423,7 +418,6 @@ Implicit solver for Ma + C v + R(u) = P
           
           fint, stiff = AssembleStiffAndForce(domain, stress[i+1, :,:], pnn_pstrain_tran)
 
-          @show norm(fint), norm(fext)
           
           res[:] = M * (∂∂up *(1 - αm) + αm*globdat.acce)  + fint - fext
           
@@ -441,26 +435,27 @@ Implicit solver for Ma + C v + R(u) = P
           
           
           
-          #println("$Newtoniterstep/$maxiterstep, $(norm(res))")
+          #println("$Newtoniterstep/$maxiterstep, $(norm_res)")
           if (norm_res < ε || norm_res < ε0*norm_res0) 
               Newtonconverge = true
           end
-          @show norm_res, " / " , norm_res0
+          #@show norm_res, " / " , norm_res0
           
         end
 
-        @show "After Newton, Ni = ", Ni
+        @show "After Newton, Ni = ", Ni, " i = ", i
         
      
         
         if !Newtonconverge
-          @show "!Newtonconverge"
+          @show "!Newtonconverge", " i = ", i, " stepsize= ", stepsize
           #revert the globdat time
           globdat.time  = failSafeTime
           stepsize /= 2.0
           convergeCounter = 0
 
           if stepsize < MinStepSize
+            @show "ForwardSolver fails! Return J = Inf"
             J = Inf
             return J
           end
@@ -477,6 +472,8 @@ Implicit solver for Ma + C v + R(u) = P
           
           
           if Ni ≈ i
+
+            @show "Ni ≈ i"
             
             
             #save data 
@@ -493,14 +490,18 @@ Implicit solver for Ma + C v + R(u) = P
 
             i += 1  
 
-            @show i, Ni, size(state)
+            #@show i, Ni, size(state)
+
+
+            if convergeCounter  >= 4
+              stepsize = min(1.0, stepsize*2.0)
+              convergeCounter = 0 
+            end
+
           
           end
 
-          if convergeCounter  == 4
-            stepsize = min(1.0, stepsize*2.0)
-            convergeCounter = 0 
-          end
+          
         end
 
 
