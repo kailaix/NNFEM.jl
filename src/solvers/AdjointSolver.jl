@@ -6,8 +6,8 @@ function constitutive_law(input::Array{Float64,2}, θ::Array{Float64,1},
   g::Union{Array{Float64,2}, Nothing}=nothing, grad_input::Bool=false, grad_θ::Bool=false; 
   strain_scale::Float64, stress_scale::Float64, config = [9, 20, 20, 20, 4])
   input_ = zero(input)
-  input_[:,1:6,:] = input[:,1:6,:]/strain_scale
-  input_[:,7:9,:] = input[:,7:9,:]/stress_scale
+  input_[:,1:6] = input[:,1:6]/strain_scale
+  input_[:,7:9] = input[:,7:9]/stress_scale
   out, g_input, g_θ = nn_constitutive_law(input_, θ, config, g, grad_input, grad_θ)
   out *= stress_scale
   if grad_θ
@@ -386,7 +386,7 @@ Implicit solver for Ma + C v + R(u) = P
       output = Array{Float64}(undef, neles*ngps_per_elem, 3*nstrain,  nstrain) 
       
       Ni, i = 0.0, 1
-      MinStepSize = 1.0/2.0^6
+      MinStepSize = 1.0/2.0^8
       stepsize = 1.0
       convergeCounter = 0
       
@@ -402,8 +402,11 @@ Implicit solver for Ma + C v + R(u) = P
         getExternalForce!(domain, globdat, fext)
         
         ∂∂up[:] = globdat.acce
+        #∂∂up[:] .= 0.0
         
         Newtoniterstep, Newtonconverge = 0, false
+
+        # norm_Δ∂∂u0, η = Inf, 1.0
         
         while !Newtonconverge && Newtoniterstep < maxiterstep 
           
@@ -430,7 +433,15 @@ Implicit solver for Ma + C v + R(u) = P
           A = (M*(1 - αm) + (1 - αf) * 0.5 * β2 * Δt^2 * stiff)
           
           Δ∂∂u[:] = A\res
+
+          #@info " norm(Δ∂∂u) ", norm(Δ∂∂u) 
+          # norm_Δ∂∂u = norm(Δ∂∂u)
+          # while η * norm_Δ∂∂u > norm_Δ∂∂u0
+          #   η /= 2.0
+          #   @info "η", η
+          # end
           
+          # ∂∂up -= η*Δ∂∂u
           ∂∂up -= Δ∂∂u
           
           
@@ -439,7 +450,12 @@ Implicit solver for Ma + C v + R(u) = P
           if (norm_res < ε || norm_res < ε0*norm_res0) 
               Newtonconverge = true
           end
+
           #@show norm_res, " / " , norm_res0
+
+          # norm_Δ∂∂u0 = η * norm_Δ∂∂u
+          # η = min(1.0, 2η)
+          
           
         end
 
@@ -456,7 +472,7 @@ Implicit solver for Ma + C v + R(u) = P
 
           if stepsize < MinStepSize
             @show "ForwardSolver fails! Return J = Inf"
-            J = Inf
+            J = 100000.0 # very large number 
             return J
           end
         else  
