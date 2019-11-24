@@ -115,6 +115,8 @@ end
 
 
 theta = rand(1124) *1.e-3
+config = [9, 20, 20, 20, 4]
+theta = convert_mat("nn2array", config,  "../MultiScale2/Data/NNPreLSfit_0_spd_Chol_Orth_40.mat")
 #theta = rand(6) *1.e-3
 # ForwardAdjoint(theta,  obs_state)
 # J, state = ForwardAdjoint(theta,  obs_state)

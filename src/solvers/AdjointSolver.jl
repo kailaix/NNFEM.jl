@@ -849,16 +849,17 @@ Implicit solver for Ma + C v + R(u) = P
 
         @show "time is ", ctime
         
-     
+        # @info length(dts), length(dts)%5, convergeCounter
+        # if length(dts) > 1 && length(dts)%5 == 0 && convergeCounter > 1
+        #   Newtonconverge = false
+        # end
         
         if !Newtonconverge
-
-          @show "!Newtonconverge"
-          error("DDD")
           #revert the globdat time
           globdat.time  = failSafeTime
           Δt /= 2.0
           convergeCounter = 0
+          @info "reduct dt ", Δt
 
           if Δt < MinΔt
             @show "ForwardSolver fails! Return J = Inf"
