@@ -45,14 +45,14 @@ end
 
 ############################################
 
-function ForwardAdjoint(theta,  obs_state, state,strain, stress)
-    J = ForwardNewmarkSolver(globdat, domain, theta, T, NT, strain_scale, stress_scale, obs_state, state,strain, stress)
+function ForwardAdjoint(theta,  obs_state)
+    J, dts, state_list,strain_list, stress_list = ForwardNewmarkSolver(globdat, domain, theta, T, NT, strain_scale, stress_scale, obs_state)
 end
 
 
-function BackwardAdjoint(theta,  state, strain, stress, obs_state)
+function BackwardAdjoint(theta, dts, state_list, strain_list, stress_list, obs_state)
  
-    dJ = BackwardNewmarkSolver(globdat, domain, theta, T, NT, state, strain, stress, strain_scale, stress_scale, obs_state)
+    dJ = BackwardNewmarkSolver(globdat, domain, theta, T, NT, dts, state_list, strain_list, stress_list, strain_scale, stress_scale, obs_state)
 
 end
 
@@ -96,28 +96,26 @@ ngps_per_elem = length(domain.elements[1].weights)
 neles = domain.neles
 
 
-state = zeros(Float64, NT+1, domain.neqs) 
-strain = zeros(Float64, NT+1,  ngps_per_elem*neles, nstrain) 
-stress = zeros(Float64, NT+1,  ngps_per_elem*neles, nstrain)
-
-J1,  = ForwardAdjoint(theta,  obs_state, state, strain, stress)
-state2 = ForwardSolve([H[1,1], H[1,2], H[1,3], H[2,2], H[2,3], H[3,3]],  obs_state)
-@show "Forward state error is ", norm(state2 - state)
-@show "Forward J error is ", J1 - norm(state[2:end,:] - obs_state[2:end,:])^2
-dJ = BackwardAdjoint(theta,  state, strain, stress, obs_state)
-@show dJ
-error()
+# J1, dts, state_list, strain_list, stress_list  = ForwardAdjoint(theta,  obs_state)
+# state = hcat(state_list...)
+# state2 = ForwardSolve([H[1,1], H[1,2], H[1,3], H[2,2], H[2,3], H[3,3]],  obs_state)
+# @show "Forward state error is ", norm(state2 - state')
+# @show "Forward J error is ", J1 - norm(state'[2:end,:] - obs_state[2:end,:])^2
+# dJ = BackwardNewmarkSolver(globdat, domain, theta, T, NT, dts, state_list, strain_list, stress_list, strain_scale, stress_scale, obs_state)
+# error()
 
 function AdjointFunc(theta)
-    J = ForwardAdjoint(theta,  obs_state, state, strain, stress)
-    dJ = BackwardAdjoint(theta,  state, strain, stress, obs_state)
+    J, dts, state_list, strain_list, stress_list = ForwardAdjoint(theta,  obs_state)
+    dJ = BackwardAdjoint(theta,  dts, state_list, strain_list, stress_list, obs_state)
     return J, dJ'
 end
 
 
 
 
+
 theta = rand(1124) *1.e-3
+#theta = rand(6) *1.e-3
 # ForwardAdjoint(theta,  obs_state)
 # J, state = ForwardAdjoint(theta,  obs_state)
 # dJ = BackwardAdjoint(theta,  state, obs_state)

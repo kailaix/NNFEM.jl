@@ -314,6 +314,160 @@ Implicit solver for Ma + C v + R(u) = P
     return dJ
   end 
   
+
+
+  
+  @doc """
+  Varied time step
+  Implicit solver for Ma + C v + R(u) = P
+    a, v, u are acceleration, velocity and displacement
+    
+    u_{n+1} = u_n + dtv_n + dt^2/2 ((1 - 2\beta)a_n + 2\beta a_{n+1})
+    v_{n+1} = v_n + dt((1 - gamma)a_n + gamma a_{n+1})
+    
+    M a_{n+0.5} + fint(u_{n+0.f}) = fext_{n+0.5}
+    
+    αm = (2\rho_oo - 1)/(\rho_oo + 1)
+    αf = \rho_oo/(\rho_oo + 1)
+    
+    β2 = 0.5*(1 - αm + αf)^2
+    γ = 0.5 - αm + αf
+    
+    make sure
+    state[NT+1, neqs], strain[NT+1, ngps_per_elem*neles, nstrain], stress[NT+1, ngps_per_elem*neles, nstrain]
+    state, obs_state strain, stress have NT+1 frames, the first time step corresponds to the initial condition
+    dts has placeholder at end, therefore, length(dts) >= ndts + 1
+    return dJ
+    """->
+    function BackwardNewmarkSolver(globdat, domain, theta::Array{Float64},
+      T::Float64, NT::Int64, dts::Array{Any, 1},  state::Array{Any, 1}, strain::Array{Any, 1}, stress::Array{Any, 1},
+      strain_scale::Float64, stress_scale::Float64, obs_state::Array{Float64}, αm::Float64 = -1.0, αf::Float64 = 0.0)
+      Δt = T/NT
+      MinΔt = Δt / 2.0^8
+      β2 = 0.5*(1 - αm + αf)^2
+      γ = 0.5 - αm + αf
+      neles, ngps_per_elem, neqs = domain.neles, length(domain.elements[1].weights), domain.neqs
+      nstrain = 3
+      
+      ndts = length(dts)
+      
+
+
+      adj_dts = copy(dts)
+      push!(adj_dts, 0.0)
+      adj_lambda = zeros(Float64, ndts+1,neqs)
+      adj_tau = zeros(Float64,ndts+1,neqs)
+      adj_kappa = zeros(Float64,ndts+1,neqs)
+      adj_sigma = zeros(Float64,ndts+1,neles*ngps_per_elem, nstrain)
+      
+      MT = (globdat.M)'
+      dJ = zeros(Float64,length(theta))
+      
+      
+      
+      
+      # dstrain_dstate_tran = dE_i/d d_i
+      # dstrain_dstate_tran_p = dE_{i+1}/d d_{i+1}
+      
+      # pnn_pstrain_tran = pnn(E^i, E^{i-1}, S^{i-1})/pE^i
+      # pnn_pstrain0_tran = pnn(E^i, E^{i-1}, S^{i-1})/pE^{i-1}
+      # pnn_pstress0_tran = pnn(E^i, E^{i-1}, S^{i-1})/pS^{i-1}
+      
+      # pnn_pstrain_tran_p = pnn(E^{i+1}, E^{i}, S^{i})/pE^{i+1}
+      # pnn_pstrain0_tran_p = pnn(E^{i+1}, E^{i}, S^{i})/pE^{i}
+      # pnn_pstress0_tran_p = pnn(E^{i+1}, E^{i}, S^{i})/pS^{i}
+      
+      pnn_pstrain0_tran_p = zeros(Float64, neles*ngps_per_elem, nstrain, nstrain) 
+      pnn_pstrain0_tran = Array{Float64}(undef, neles*ngps_per_elem, nstrain, nstrain)
+      pnn_pstress0_tran_p = zeros(Float64, neles*ngps_per_elem, nstrain, nstrain) 
+      pnn_pstress0_tran = Array{Float64}(undef, neles*ngps_per_elem, nstrain, nstrain)
+      pnn_pstrain_tran = Array{Float64}(undef, neles*ngps_per_elem, nstrain, nstrain)
+      
+      # temporal variables
+      rhs = Array{Float64}(undef, neqs)  
+      temp = Array{Float64}(undef, neqs)
+      tempmult = Array{Float64}(undef, nstrain, neles*ngps_per_elem)
+      output = Array{Float64}(undef, neles*ngps_per_elem, 3*nstrain,  nstrain)
+      sigmaTdstressdtheta = similar(dJ) 
+      
+      ctime = T
+      for i = ndts:-1:1
+        # get strain
+        domain.state[domain.dof_to_eq] = state[i+1]
+        _, dstrain_dstate_tran = AdjointAssembleStrain(domain)
+        
+        #@show size(strain[i+1,:,:]), size(strain[i,:,:]), size(stress[i,:,:])
+        _, output[:,:,:], _ =  constitutive_law([strain[i+1] strain[i] stress[i]], theta, nothing, true, false, strain_scale=strain_scale, stress_scale=stress_scale)
+        
+        pnn_pstrain_tran[:,:,:], pnn_pstrain0_tran[:,:,:], pnn_pstress0_tran[:,:,:] = output[:,1:3,:], output[:,4:6,:], output[:,7:9,:]
+        
+        stiff_tran, dfint_dstress_tran = AdjointAssembleStiff(domain, stress[i+1], pnn_pstrain_tran)
+        
+        
+        #compute tau^i
+        adj_tau[i,:] = adj_dts[i+1] * adj_lambda[i+1,:] + adj_tau[i+1,:]
+        
+        #compute kappa^i
+        temp[:] = (adj_dts[i+1]^2*(1-β2)/2.0*adj_lambda[i+1,:] + adj_dts[i]*γ*adj_tau[i,:] + adj_dts[i+1]*(1.0-γ)*adj_tau[i+1,:]) - MT*(αm*adj_kappa[i+1,:]) 
+        
+        
+        
+        rhs[:] =  adj_lambda[i+1,:]
+
+        if (ctime + MinΔt/4.0) % Δt < MinΔt/2.0
+          # i+1 step corresponds to obs_state step
+
+          rhs +=  computDJDstate(state[i+1], obs_state[trunc(Int, (ctime + MinΔt/4.0)/Δt)+1,:])
+        
+        end
+
+        for j = 1:neles*ngps_per_elem
+          tempmult[:,j] = pnn_pstrain0_tran_p[j,:,:]*adj_sigma[i+1,j,:] 
+        end
+        rhs +=  dstrain_dstate_tran* tempmult[:]
+        
+        for j = 1:neles*ngps_per_elem
+          tempmult[:,j] = pnn_pstrain_tran[j, :, :] *(pnn_pstress0_tran_p[j,:,:]*adj_sigma[i+1,j,:])
+        end
+        rhs +=  dstrain_dstate_tran*tempmult[:]
+        
+        
+        rhs[:] = rhs*(adj_dts[i]^2/2.0*β2) + temp
+        
+        adj_kappa[i,:] = (MT*(1 - αm) + stiff_tran*(adj_dts[i]^2/2.0*β2))\rhs
+        
+        
+        rhs[:] = MT * ((1 - αm)*adj_kappa[i,:]) - temp 
+        adj_lambda[i,:] = rhs/(adj_dts[i]^2/2.0 * β2)
+        
+        
+        for j = 1:neles*ngps_per_elem
+          tempmult[:,j] = pnn_pstress0_tran_p[j,:,:]*adj_sigma[i+1,j,:]
+        end
+        
+        #@assert norm(tempmult)==0.0
+        
+        adj_sigma[i,:,:] = (reshape(-dfint_dstress_tran*adj_kappa[i,:], nstrain, neles*ngps_per_elem) + tempmult)'
+        
+        _, _, sigmaTdstressdtheta[:] =  constitutive_law([strain[i+1] strain[i] stress[i]], theta, adj_sigma[i,:,:], false, true, strain_scale=strain_scale, stress_scale=stress_scale)
+        
+        
+        dJ += sigmaTdstressdtheta
+        
+        pnn_pstrain0_tran_p[:,:,:] = pnn_pstrain0_tran
+        
+        pnn_pstress0_tran_p[:,:,:] = pnn_pstress0_tran
+
+        ctime -= adj_dts[i]
+
+        @show ctime
+        
+      end
+      @assert(abs(ctime) < MinΔt)
+      return dJ
+    end   
+  
+  
   
   @doc """
   Implicit solver for Ma + C v + R(u) = P
@@ -354,6 +508,7 @@ Implicit solver for Ma + C v + R(u) = P
       ε0::Float64 = 1e-8, maxiterstep::Int64=10)
       
       Δti = T/Float64(NT)
+      
       β2 = 0.5*(1 - αm + αf)^2
       γ = 0.5 - αm + αf
       neles, ngps_per_elem, neqs = domain.neles, length(domain.elements[1].weights), domain.neqs
@@ -414,9 +569,12 @@ Implicit solver for Ma + C v + R(u) = P
      
           
           domain.state[domain.eq_to_dof] = (1 - αf)*(Δt*globdat.velo + 0.5 * Δt * Δt * ((1 - β2)*globdat.acce + β2*∂∂up)) + globdat.state
-          
+          @show norm(domain.state)
           strain[i+1, :,:], _ = AdjointAssembleStrain(domain, false)
+          @show norm(strain[i+1,:,:])
           stress[i+1, :,:], output[:,:,:], _ =  constitutive_law([strain[i+1,:,:] strain[i,:,:] stress[i,:,:]], theta, nothing, true, false, strain_scale=strain_scale, stress_scale=stress_scale)
+          @show norm(strain[i,:,:]), norm(stress[i,:,:])
+
           pnn_pstrain_tran = output[:,1:3,:]
           
           fint, stiff = AssembleStiffAndForce(domain, stress[i+1, :,:], pnn_pstrain_tran)
@@ -425,6 +583,8 @@ Implicit solver for Ma + C v + R(u) = P
           res[:] = M * (∂∂up *(1 - αm) + αm*globdat.acce)  + fint - fext
           
           norm_res = norm(res)
+
+          @show(norm_res)
 
           if Newtoniterstep==1
             norm_res0 = norm_res 
@@ -443,6 +603,8 @@ Implicit solver for Ma + C v + R(u) = P
           
           # ∂∂up -= η*Δ∂∂u
           ∂∂up -= Δ∂∂u
+
+          @show(norm(∂∂up))
           
           
           
@@ -497,9 +659,13 @@ Implicit solver for Ma + C v + R(u) = P
             
             domain.state[domain.eq_to_dof] = globdat.state
             strain[i+1, :,:], _ = AdjointAssembleStrain(domain, false)
+
+            #@show "!!!!norm strain is ", norm(strain[i+1,:,:])
+            #@show norm([strain[i+1,:,:] strain[i,:,:] stress[i,:,:]])
             stress[i+1, :,:], _, _ =  constitutive_law([strain[i+1,:,:] strain[i,:,:] stress[i,:,:]], theta, nothing, false, false, strain_scale=strain_scale, stress_scale=stress_scale)
             
-            
+            #@show norm(stress[i+1,:,:]), norm(stress[i,:,:])
+
             
             #update J 
             J += computeJ(state[i+1,:], obs_state[i+1,:])
@@ -524,4 +690,236 @@ Implicit solver for Ma + C v + R(u) = P
       end
       
       return J
+    end
+
+
+
+
+
+    @doc """
+  Implicit solver for Ma + C v + R(u) = P
+    a, v, u are acceleration, velocity and displacement
+    
+    u_{n+1} = u_n + dtv_n + dt^2/2 ((1 - 2\beta)a_n + 2\beta a_{n+1})
+    v_{n+1} = v_n + dt((1 - gamma)a_n + gamma a_{n+1})
+    
+    M a_{n+0.5} + fint(u_{n+0.f}) = fext_{n+0.5}
+    
+    αm = (2\rho_oo - 1)/(\rho_oo + 1)
+    αf = \rho_oo/(\rho_oo + 1)
+    
+    β2 = 0.5*(1 - αm + αf)^2
+    γ = 0.5 - αm + αf
+    
+    absolution error ε = 1e-8, 
+    relative error ε0 = 1e-8  
+    
+    make sure
+    globdat.time  = 0.0
+    domain.state, domain.velo, and domain.acce neqs parts are the initial conditions
+    globdat.acce, globdat.state, globdat.velo are the intial conditions
+    
+    obs_state has NT+1, the first time step corresponds to the initial condition
+    
+    return J
+    state[NT+1, neqs], strain[NT+1, ngps_per_elem*neles, nstrain], stress[NT+1, ngps_per_elem*neles, nstrain]
+    the first time step corresponds to the initial condition
+    """->
+    function ForwardNewmarkSolver(globdat, domain, theta::Array{Float64},
+      T::Float64, NT::Int64, strain_scale::Float64, stress_scale::Float64, 
+      obs_state::Array{Float64}, 
+      #output 
+      #Newmark and Newton Parameter
+      αm::Float64 = -1.0, αf::Float64 = 0.0, ε::Float64 = 1e-8, 
+      ε0::Float64 = 1e-8, maxiterstep::Int64=10)
+      #
+      Δti = T/Float64(NT)
+      β2 = 0.5*(1 - αm + αf)^2
+      γ = 0.5 - αm + αf
+      neles, ngps_per_elem, neqs = domain.neles, length(domain.elements[1].weights), domain.neqs
+      nstrain = 3
+      local norm_res0      
+      
+      # initialize globdat and domain
+      fill!(globdat.state, 0.0)
+      fill!(globdat.velo, 0.0)
+      fill!(globdat.acce, 0.0)
+      globdat.time = 0.0
+      
+      M = globdat.M
+      J = 0.0 
+      
+      # 1: initial condition, compute 2, 3, 4 ... NT+1
+      # state = zeros(Float64, NT+1,neqs)
+      # strain = zeros(Float64, NT+1, neles*ngps_per_elem, nstrain)
+      # stress = zeros(Float64, NT+1, neles*ngps_per_elem, nstrain) 
+
+      state_list = []
+      strain_list = []
+      stress_list = []
+      
+      state = zeros(Float64, neqs)
+      strain = zeros(Float64, neles*ngps_per_elem, nstrain)
+      stress = zeros(Float64, neles*ngps_per_elem, nstrain)
+
+      push!(state_list, copy(state))
+      push!(strain_list, copy(strain))
+      push!(stress_list, copy(stress))
+      # @assert(size(state) == (NT+1, neqs))
+      # @assert(size(strain) == (NT+1, neles*ngps_per_elem, nstrain))
+      # @assert(size(stress) == (NT+1, neles*ngps_per_elem, nstrain))
+      
+      # temporal variables
+      ∂∂up = Array{Float64}(undef, neqs)  
+      Δ∂∂u = Array{Float64}(undef, neqs)
+      res = Array{Float64}(undef, neqs)
+      fint = Array{Float64}(undef, neqs)
+      fext = Array{Float64}(undef, neqs)
+      output = Array{Float64}(undef, neles*ngps_per_elem, 3*nstrain,  nstrain) 
+      
+
+      MinΔt = Δti / 2.0^8
+      
+      convergeCounter = 0
+
+      dts = []
+      
+      Δt  = Δti
+      ctime = 0.0
+      while ctime + MinΔt/4.0 < T
+        
+        Ni = trunc(Int, (ctime + MinΔt/4.0)/Δti) + 1
+        Δt = min(Δt,  Ni*Δti - ctime)
+
+        @show Ni,  Δti ,  ctime, Δt
+        
+        failSafeTime =  globdat.time 
+        globdat.time  += (1 - αf)*Δt
+        
+        updateDomainStateBoundary!(domain, globdat)
+        
+        getExternalForce!(domain, globdat, fext)
+        
+        ∂∂up[:] = globdat.acce
+        #∂∂up[:] .= 0.0
+        
+        Newtoniterstep, Newtonconverge = 0, false
+
+        # norm_Δ∂∂u0, η = Inf, 1.0
+        
+        while !Newtonconverge && Newtoniterstep < maxiterstep 
+          
+          Newtoniterstep += 1
+     
+          
+          domain.state[domain.eq_to_dof] = (1 - αf)*(Δt*globdat.velo + 0.5 * Δt * Δt * ((1 - β2)*globdat.acce + β2*∂∂up)) + globdat.state
+          
+          @show norm(domain.state)
+          strain[:,:], _ = AdjointAssembleStrain(domain, false)
+          @show norm(strain)
+          stress[:,:], output[:,:,:], _ =  constitutive_law([strain strain_list[end] stress_list[end]], theta, nothing, true, false, strain_scale=strain_scale, stress_scale=stress_scale)
+          @show norm(strain_list[end]), norm(stress_list[end])
+          pnn_pstrain_tran = output[:,1:3,:]
+          
+          fint, stiff = AssembleStiffAndForce(domain, stress, pnn_pstrain_tran)
+
+          
+          res[:] = M * (∂∂up *(1 - αm) + αm*globdat.acce)  + fint - fext
+          
+          norm_res = norm(res)
+
+          
+
+          if Newtoniterstep==1
+            norm_res0 = norm_res 
+          end
+          
+          A = (M*(1 - αm) + (1 - αf) * 0.5 * β2 * Δt^2 * stiff)
+          
+          Δ∂∂u[:] = A\res
+          
+          ∂∂up -= Δ∂∂u
+
+          @show(norm(∂∂up))
+          
+          if (norm_res < ε || norm_res < ε0*norm_res0) 
+              Newtonconverge = true
+          end
+        end
+
+        @show "time is ", ctime
+        
+     
+        
+        if !Newtonconverge
+
+          @show "!Newtonconverge"
+          error("DDD")
+          #revert the globdat time
+          globdat.time  = failSafeTime
+          Δt /= 2.0
+          convergeCounter = 0
+
+          if Δt < MinΔt
+            @show "ForwardSolver fails! Return J = Inf"
+            @show Δt ,  MinΔt
+            J = 100000.0 # very large number 
+            return J, dts, state_list, strain_list, stress_list
+          end
+        else  
+          
+          ctime += Δt
+          convergeCounter += 1
+
+          globdat.state += Δt * globdat.velo + Δt^2/2 * ((1 - β2) * globdat.acce + β2 * ∂∂up)
+          globdat.velo += Δt * ((1 - γ) * globdat.acce + γ * ∂∂up)
+          globdat.acce[:] = ∂∂up
+          globdat.time  += αf*Δt
+          
+          
+          push!(state_list, copy(globdat.state))
+          domain.state[domain.eq_to_dof] = globdat.state
+          strain[:,:], _ = AdjointAssembleStrain(domain, false)
+          
+          
+
+          #@show "!!!!norm strain is ", norm(strain)
+          #@show norm([strain strain_list[end] stress_list[end]])
+
+          #@show norm(strain_list[end]) , norm(stress_list[end]) 
+          #@show size([strain strain_list[end] stress_list[end]])
+          stress[:,:], _, _ =  constitutive_law([strain strain_list[end] stress_list[end]], theta, nothing, false, false, strain_scale=strain_scale, stress_scale=stress_scale)
+          
+          #@show "!!!!norm stress is ", norm(stress)
+          push!(strain_list, copy(strain))
+          push!(stress_list, copy(stress))
+
+          #@show norm(stress), norm(stress_list[end])
+
+          push!(dts, Δt)
+
+          if convergeCounter  >= 4
+            Δt = min(Δti, 2.0*Δt)
+            convergeCounter = 0 
+          end
+
+          if Ni * Δti ≈ ctime
+            # do not include the initial condition
+            J += computeJ(state_list[end], obs_state[Ni + 1,:])
+          # else
+          #   @show Ni,  Δti ,  ctime, Δt
+          #   error("???")
+          end
+
+          
+        end
+
+
+      end
+
+      @show size(dts), size(state_list)
+      
+      return J, dts, state_list, strain_list, stress_list
+
+      
     end

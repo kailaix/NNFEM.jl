@@ -77,7 +77,7 @@ end
 =#
 
 
-function linear_constitutive_law(input::Array{Float64,2}, θ::Array{Float64,1}, 
+function linear_constitutive_law(input::Array{Float64,2}, θ::Array{Float64,1}, config::Array{Int64,1},
     g::Union{Array{Float64,2}, Nothing}=nothing, grad_input::Bool=false, grad_θ::Bool=false)
     
     @assert size(θ,1)==6
