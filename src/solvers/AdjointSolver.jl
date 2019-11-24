@@ -89,10 +89,6 @@ function AssembleStiffAndForce(domain, stress::Array{Float64}, dstress_dstrain_T
     
     el_dofs = getDofs(domain,iele)
     
-    #@show "iele", iele, el_dofs 
-    
-    #@show "domain.state", iele, domain.state 
-    
     el_state  = getState(domain,el_dofs)
     
     gp_ids = (iele-1)*ngps_per_elem+1 : iele*ngps_per_elem
@@ -110,7 +106,6 @@ function AssembleStiffAndForce(domain, stress::Array{Float64}, dstress_dstrain_T
   end
   #@assert (norm(vv_stiff - domain.vv_stiff)) == 0.0
   stiff = sparse(domain.ii_stiff, domain.jj_stiff, domain.vv_stiff, neqs, neqs)
-  # @show norm(K-Array(Ksparse))
   return fint, stiff
 end
 
@@ -173,14 +168,10 @@ end
 
 
 function computDJDstate(state, obs_state)
-  #J = (state - obs_state).^2
-  #@show  norm(2.0*(state - obs_state))
   2.0*(state - obs_state)
 end
 
 function computeJ(state, obs_state)
-  
-  #@show sum((state - obs_state).^2)
   sum((state - obs_state).^2)
 end
 
@@ -255,7 +246,6 @@ Implicit solver for Ma + C v + R(u) = P
       domain.state[domain.dof_to_eq] = state[i+1,:]
       _, dstrain_dstate_tran = AdjointAssembleStrain(domain)
       
-      #@show size(strain[i+1,:,:]), size(strain[i,:,:]), size(stress[i,:,:])
       _, output[:,:,:], _ =  constitutive_law([strain[i+1,:,:] strain[i,:,:] stress[i,:,:]], theta, nothing, true, false, strain_scale=strain_scale, stress_scale=stress_scale)
       
       pnn_pstrain_tran[:,:,:], pnn_pstrain0_tran[:,:,:], pnn_pstress0_tran[:,:,:] = output[:,1:3,:], output[:,4:6,:], output[:,7:9,:]
@@ -396,7 +386,6 @@ Implicit solver for Ma + C v + R(u) = P
         domain.state[domain.dof_to_eq] = state[i+1]
         _, dstrain_dstate_tran = AdjointAssembleStrain(domain)
         
-        #@show size(strain[i+1,:,:]), size(strain[i,:,:]), size(stress[i,:,:])
         _, output[:,:,:], _ =  constitutive_law([strain[i+1] strain[i] stress[i]], theta, nothing, true, false, strain_scale=strain_scale, stress_scale=stress_scale)
         
         pnn_pstrain_tran[:,:,:], pnn_pstrain0_tran[:,:,:], pnn_pstress0_tran[:,:,:] = output[:,1:3,:], output[:,4:6,:], output[:,7:9,:]
@@ -459,11 +448,9 @@ Implicit solver for Ma + C v + R(u) = P
         pnn_pstress0_tran_p[:,:,:] = pnn_pstress0_tran
 
         ctime -= adj_dts[i]
-
-        @show ctime
         
       end
-      @assert(abs(ctime) < MinΔt)
+      @assert(abs(ctime) < MinΔt/4.0)
       return dJ
     end   
   
@@ -569,11 +556,11 @@ Implicit solver for Ma + C v + R(u) = P
      
           
           domain.state[domain.eq_to_dof] = (1 - αf)*(Δt*globdat.velo + 0.5 * Δt * Δt * ((1 - β2)*globdat.acce + β2*∂∂up)) + globdat.state
-          @show norm(domain.state)
+   
           strain[i+1, :,:], _ = AdjointAssembleStrain(domain, false)
-          @show norm(strain[i+1,:,:])
+
           stress[i+1, :,:], output[:,:,:], _ =  constitutive_law([strain[i+1,:,:] strain[i,:,:] stress[i,:,:]], theta, nothing, true, false, strain_scale=strain_scale, stress_scale=stress_scale)
-          @show norm(strain[i,:,:]), norm(stress[i,:,:])
+   
 
           pnn_pstrain_tran = output[:,1:3,:]
           
@@ -583,8 +570,6 @@ Implicit solver for Ma + C v + R(u) = P
           res[:] = M * (∂∂up *(1 - αm) + αm*globdat.acce)  + fint - fext
           
           norm_res = norm(res)
-
-          @show(norm_res)
 
           if Newtoniterstep==1
             norm_res0 = norm_res 
@@ -603,8 +588,6 @@ Implicit solver for Ma + C v + R(u) = P
           
           # ∂∂up -= η*Δ∂∂u
           ∂∂up -= Δ∂∂u
-
-          @show(norm(∂∂up))
           
           
           
@@ -621,19 +604,18 @@ Implicit solver for Ma + C v + R(u) = P
           
         end
 
-        @show "After Newton, Ni = ", Ni, " i = ", i
         
      
         
         if !Newtonconverge
-          @show "!Newtonconverge", " i = ", i, " stepsize= ", stepsize
+          @info "!Newtonconverge", " i = ", i, " stepsize= ", stepsize
           #revert the globdat time
           globdat.time  = failSafeTime
           stepsize /= 2.0
           convergeCounter = 0
 
           if stepsize < MinStepSize
-            @show "ForwardSolver fails! Return J = Inf"
+            @info "ForwardSolver fails! Return J = Inf"
             J = 100000.0 # very large number 
             return J
           end
@@ -650,8 +632,6 @@ Implicit solver for Ma + C v + R(u) = P
           
           
           if Ni ≈ i
-
-            @show "Ni ≈ i"
             
             
             #save data 
@@ -660,19 +640,14 @@ Implicit solver for Ma + C v + R(u) = P
             domain.state[domain.eq_to_dof] = globdat.state
             strain[i+1, :,:], _ = AdjointAssembleStrain(domain, false)
 
-            #@show "!!!!norm strain is ", norm(strain[i+1,:,:])
-            #@show norm([strain[i+1,:,:] strain[i,:,:] stress[i,:,:]])
             stress[i+1, :,:], _, _ =  constitutive_law([strain[i+1,:,:] strain[i,:,:] stress[i,:,:]], theta, nothing, false, false, strain_scale=strain_scale, stress_scale=stress_scale)
-            
-            #@show norm(stress[i+1,:,:]), norm(stress[i,:,:])
+          
 
             
             #update J 
             J += computeJ(state[i+1,:], obs_state[i+1,:])
 
             i += 1  
-
-            #@show i, Ni, size(state)
 
 
             if convergeCounter  >= 4
@@ -790,8 +765,6 @@ Implicit solver for Ma + C v + R(u) = P
         
         Ni = trunc(Int, (ctime + MinΔt/4.0)/Δti) + 1
         Δt = min(Δt,  Ni*Δti - ctime)
-
-        @show Ni,  Δti ,  ctime, Δt
         
         failSafeTime =  globdat.time 
         globdat.time  += (1 - αf)*Δt
@@ -814,11 +787,8 @@ Implicit solver for Ma + C v + R(u) = P
           
           domain.state[domain.eq_to_dof] = (1 - αf)*(Δt*globdat.velo + 0.5 * Δt * Δt * ((1 - β2)*globdat.acce + β2*∂∂up)) + globdat.state
           
-          @show norm(domain.state)
           strain[:,:], _ = AdjointAssembleStrain(domain, false)
-          @show norm(strain)
           stress[:,:], output[:,:,:], _ =  constitutive_law([strain strain_list[end] stress_list[end]], theta, nothing, true, false, strain_scale=strain_scale, stress_scale=stress_scale)
-          @show norm(strain_list[end]), norm(stress_list[end])
           pnn_pstrain_tran = output[:,1:3,:]
           
           fint, stiff = AssembleStiffAndForce(domain, stress, pnn_pstrain_tran)
@@ -839,20 +809,12 @@ Implicit solver for Ma + C v + R(u) = P
           Δ∂∂u[:] = A\res
           
           ∂∂up -= Δ∂∂u
-
-          @show(norm(∂∂up))
           
           if (norm_res < ε || norm_res < ε0*norm_res0) 
               Newtonconverge = true
           end
         end
 
-        @show "time is ", ctime
-        
-        # @info length(dts), length(dts)%5, convergeCounter
-        # if length(dts) > 1 && length(dts)%5 == 0 && convergeCounter > 1
-        #   Newtonconverge = false
-        # end
         
         if !Newtonconverge
           #revert the globdat time
@@ -862,8 +824,7 @@ Implicit solver for Ma + C v + R(u) = P
           @info "reduct dt ", Δt
 
           if Δt < MinΔt
-            @show "ForwardSolver fails! Return J = Inf"
-            @show Δt ,  MinΔt
+            @info "ForwardSolver fails! Return J = Inf"
             J = 100000.0 # very large number 
             return J, dts, state_list, strain_list, stress_list
           end
@@ -883,19 +844,10 @@ Implicit solver for Ma + C v + R(u) = P
           strain[:,:], _ = AdjointAssembleStrain(domain, false)
           
           
-
-          #@show "!!!!norm strain is ", norm(strain)
-          #@show norm([strain strain_list[end] stress_list[end]])
-
-          #@show norm(strain_list[end]) , norm(stress_list[end]) 
-          #@show size([strain strain_list[end] stress_list[end]])
           stress[:,:], _, _ =  constitutive_law([strain strain_list[end] stress_list[end]], theta, nothing, false, false, strain_scale=strain_scale, stress_scale=stress_scale)
           
-          #@show "!!!!norm stress is ", norm(stress)
           push!(strain_list, copy(strain))
           push!(stress_list, copy(stress))
-
-          #@show norm(stress), norm(stress_list[end])
 
           push!(dts, Δt)
 
@@ -907,9 +859,6 @@ Implicit solver for Ma + C v + R(u) = P
           if Ni * Δti ≈ ctime
             # do not include the initial condition
             J += computeJ(state_list[end], obs_state[Ni + 1,:])
-          # else
-          #   @show Ni,  Δti ,  ctime, Δt
-          #   error("???")
           end
 
           
@@ -917,9 +866,6 @@ Implicit solver for Ma + C v + R(u) = P
 
 
       end
-
-      @show size(dts), size(state_list)
-      
       return J, dts, state_list, strain_list, stress_list
 
       
