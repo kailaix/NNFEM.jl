@@ -760,14 +760,17 @@ Implicit solver for Ma + C v + R(u) = P
       dts = []
       
       Δt  = Δti
-      ctime = 0.0
+
+      invNΔti = 1
+
+      ctime = BigFloat(0.0)
       while ctime + MinΔt/4.0 < T
         
         Ni = trunc(Int, (ctime + MinΔt/4.0)/Δti) + 1
-        Δt = min(Δt,  Ni*Δti - ctime)
+        Δt = min(Δti/2^invNΔti,  Float64(Ni*Δti - ctime))
 	      # todo test 
         #Δt = min(Δt,  Δti/8.0)
-        @show Δti, Δt, abs(Δti%Δt)
+        #@show Δti, Δt, abs(Δti%Δt)
         @assert(abs(Δti - Δt * round(Int64, Δti/Δt)) < 1.0e-10)
 	        
         failSafeTime =  globdat.time 
@@ -823,9 +826,10 @@ Implicit solver for Ma + C v + R(u) = P
         if !Newtonconverge
           #revert the globdat time
           globdat.time  = failSafeTime
-          Δt /= 2.0
+          #Δt /= 2.0
+          invNΔti *= 2
           convergeCounter = 0
-          @info "reduct dt ", Δt
+          @info "reduct dt ", Δti/2^invNΔti
 
           if Δt < MinΔt
             @info "ForwardSolver fails! Return J = Inf"
@@ -856,7 +860,9 @@ Implicit solver for Ma + C v + R(u) = P
           push!(dts, Δt)
 
           if convergeCounter  >= 4
-            Δt = min(Δti, 2.0*Δt)
+            #Δt = min(Δti, 2.0*Δt)
+
+            invNΔti = max(1, div(invNΔti, 2))
             convergeCounter = 0 
           end
 
