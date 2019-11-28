@@ -765,7 +765,11 @@ Implicit solver for Ma + C v + R(u) = P
         
         Ni = trunc(Int, (ctime + MinΔt/4.0)/Δti) + 1
         Δt = min(Δt,  Ni*Δti - ctime)
-        
+	      # todo test 
+        #Δt = min(Δt,  Δti/8.0)
+        @show Δti, Δt, abs(Δti%Δt)
+        @assert(abs(Δti - Δt * round(Int64, Δti/Δt)) < 1.0e-10)
+	        
         failSafeTime =  globdat.time 
         globdat.time  += (1 - αf)*Δt
         

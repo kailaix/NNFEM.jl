@@ -1,21 +1,14 @@
 stress_scale = 1.0e+5
 strain_scale = 1
-# tid = parse(Int64, ARGS[1])
+
 force_scale = 5.0
 tid = 200
-# if Sys.MACHINE=="x86_64-pc-linux-gnu"
-#    global tid = parse(Int64, ARGS[1])
-#    global force_scale = parse(Float64, ARGS[2])
-# end
-testtype = "NeuralNetwork2D"
-# nntype = "piecewise"
-nntype = "piecewise"
-include("nnutil.jl")
-printstyled("force_scale=$force_scale, tid=$tid\n", color=:green)
 
-# H0 = [1.26827e6       3.45169e5   -5187.35
-#       3.45169e5       1.25272e6  -10791.7
-#       -5187.35       -10791.7        536315.0]/stress_scale
+testtype = "NeuralNetwork2D"
+
+nntype = "piecewise"
+include("../nnutil.jl")
+printstyled("force_scale=$force_scale, tid=$tid\n", color=:green)
 
 
 H0 = [1335174.0968380707 326448.3267263398   0.0 
@@ -24,11 +17,12 @@ H0 = [1335174.0968380707 326448.3267263398   0.0
       
 H0inv = inv(H0)
 
-#nn_file = "Data/nn_train_$(use_reg)_$(idx)_$(H_function)_from20_ite10.mat"
-nn_file = "Data/NNPreLSfit_$(idx)_$(H_function)_40.mat"
-#nn_file = "Data/nn_train_$(use_reg)_$(idx)_$(H_function)_ite7.mat"
+#nn_file = "Data/nn_train_$(use_reg)_$(idx)_$(H_function)_from20_ite9.mat"
+
+nn_file = "Data/$(nntype)/NNPreLSfit_$(idx)_$(H_function)_40.mat"
+#nn_file = "Data/$(nntype)/nn_train_$(use_reg)_$(idx)_$(H_function)_from20_ite10.mat"
 @show nn_file
-s = ae_to_code(nn_file, "piecewise")
+s = ae_to_code(nn_file, nntype)
 
 
 eval(Meta.parse(s))
