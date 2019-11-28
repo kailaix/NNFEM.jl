@@ -21,7 +21,9 @@ H0 = [1335174.0968380707  326448.3267263398 0.0
 H0inv = inv(H0)
 
 
-n_data = [100,101,102,103, 200, 201, 202, 203]
+# n_data = [100,101,102,103, 200, 201, 202, 203]
+# n_data = [100,200,201,202,203]
+n_data = [100]
 porder = 2
 # density 4.5*(1 - 0.25) + 3.2*0.25
 fiber_fraction = 0.25
@@ -203,19 +205,20 @@ neles = domain_arr[1].neles
 
 
 config = [9, 20, 20, 20, 4]
-initial_theta = convert_mat("nn2array", config,  "Data/piecewise/NNPreLSfit_$(idx)_spd_Chol_Orth_40.mat")
+# initial_theta = convert_mat("nn2array", config,  "Data/piecewise/NNPreLSfit_$(idx)_spd_Chol_Orth_40.mat")
 
 #initial_theta = 1.0e-3*rand((9+1)*20 + (20+1)*20 + (20+1)*20 + (20+1)*4)
 
 #@load "Data/theta_ite_0_5.jld2" last_theta
 #initial_theta = copy(last_theta)
 
-neqs_arr = [domain_arr[i].neqs for i = 1:length(n_data)]
-buffer = Buffer(length(n_data), length(initial_theta), NT, neqs_arr, neles*ngps_per_elem, nstrain) # Preallocate an appropriate buffer
-
-
-
 @load "Data/piecewise/theta_ite_idx0_from40_6.jld2" last_theta
+
+neqs_arr = [domain_arr[i].neqs for i = 1:length(n_data)]
+buffer = Buffer(length(n_data), length(last_theta), NT, neqs_arr, neles*ngps_per_elem, nstrain) # Preallocate an appropriate buffer
+
+
+
 theta = copy(last_theta)
 
 last_theta .= 0.0

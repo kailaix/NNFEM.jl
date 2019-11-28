@@ -760,15 +760,16 @@ Implicit solver for Ma + C v + R(u) = P
       dts = []
       
       Δt  = Δti
-      ctime = 0.0
+      ctime = BigFloat(0.0)
       while ctime + MinΔt/4.0 < T
         
         Ni = trunc(Int, (ctime + MinΔt/4.0)/Δti) + 1
-        Δt = min(Δt,  Ni*Δti - ctime)
+        # ctime = dt1 + dt2 + dt3 + ... => L + S
+        Δt = min(Δt,  Float64(Ni*Δti - ctime))
 	      # todo test 
         #Δt = min(Δt,  Δti/8.0)
-        @show Δti, Δt, abs(Δti%Δt)
-        @assert(abs(Δti - Δt * round(Int64, Δti/Δt)) < 1.0e-10)
+        # @show Δti, Δt, abs(Δti%Δt), ctime
+        # @assert(abs(Δti - Δt * round(Int64, Δti/Δt)) < 1.0e-10)
 	        
         failSafeTime =  globdat.time 
         globdat.time  += (1 - αf)*Δt

@@ -178,6 +178,7 @@ function f(theta, buffer, last_theta)
     return J
 end
 
+# H_k Δd = -g
 function g!(theta, storage, buffer, last_theta)
     calculate_common!(theta, last_theta, buffer)
     
