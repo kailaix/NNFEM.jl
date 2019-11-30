@@ -62,3 +62,4 @@ deps/build.jl
 *Adept-2*
 
 !deps/CustomOp/ADLaw/CMakeLists.txt
+!docs/src/assets/*.png
