@@ -761,7 +761,7 @@ Implicit solver for Ma + C v + R(u) = P
       
       Δt  = Δti
 
-      invNΔti = 1
+      invNΔti = 0
 
       ctime = BigFloat(0.0)
       while ctime + MinΔt/4.0 < T
@@ -827,7 +827,7 @@ Implicit solver for Ma + C v + R(u) = P
           #revert the globdat time
           globdat.time  = failSafeTime
           #Δt /= 2.0
-          invNΔti *= 2
+          invNΔti += 1
           convergeCounter = 0
           @info "reduct dt ", Δti/2^invNΔti
 
@@ -862,7 +862,7 @@ Implicit solver for Ma + C v + R(u) = P
           if convergeCounter  >= 4
             #Δt = min(Δti, 2.0*Δt)
 
-            invNΔti = max(1, div(invNΔti, 2))
+            invNΔti = max(0, invNΔti - 1)
             convergeCounter = 0 
           end
 
