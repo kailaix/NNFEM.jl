@@ -1,3 +1,6 @@
+# Training the neural network with residual minimization.
+
+
 stress_scale = 1.0e5
 strain_scale = 1
 

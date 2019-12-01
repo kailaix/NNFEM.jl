@@ -63,3 +63,7 @@ deps/build.jl
 
 !deps/CustomOp/ADLaw/CMakeLists.txt
 !docs/src/assets/*.png
+*.DS_Store
+*._.DS_Store
+*._.
+*._README.md

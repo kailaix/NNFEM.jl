@@ -4,7 +4,8 @@ makedocs(sitename="NNFEM", modules=[NNFEM],
 pages = Any[
     "index.md",
     "api.md",
-    "plasticity.md"
+    "plasticity.md",
+    "instructions.md"
 ],
 authors = "Kailai Xu and Daniel (Zhengyu) Huang")
 

@@ -1,3 +1,6 @@
+# Training the neural network with the adjoint state method
+
+
 using Optim, LineSearches
 stress_scale = 1.0e5
 strain_scale = 1.0
