@@ -16,7 +16,7 @@ pkg> activate .
 ```
 
 
-# Quick Start
+## Quick Start
 
 There are several test cases in `test/Plate` and `test/Truss/Case1D`
 
@@ -29,7 +29,7 @@ There are several test cases in `test/Plate` and `test/Truss/Case1D`
 * `Test_NN*` substitutes the constitutive law with the learned NN from last step and computes the displacement. 
 
 
-# Applications
+## Applications
 
 The applications are located in the `test` folder. 
 
