@@ -264,6 +264,7 @@ function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5; force_scal
 
     P1 = 80000 /force_scale #gcm/ms^2 compress/pull
     P2 = 8000 /force_scale #gcm/ms^2 bend 
+    P3 = 40000/force_scale
     @show P1, P2
     ngp = 3
     #Bending or Pulling
@@ -279,17 +280,17 @@ function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5; force_scal
         fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2
 
     elseif tid==102
-        F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Constant",  [2.0*P2, 0])
+        F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Constant",  [P3, 0])
         fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 1] .= F1
         fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2 
 
     elseif tid==103
-        F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Constant",  [2.0*P2/sqrt(2.0), P1/sqrt(2.0)])
+        F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Constant",  [P3/sqrt(2.0), P1/sqrt(2.0)])
         fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 1] .= F1
         fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2 
 
     elseif tid==104
-        F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Constant",  [-2.0*P2, 0])
+        F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Constant",  [-P3, 0])
         fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 1] .= F1
         fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2 
     
@@ -299,7 +300,7 @@ function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5; force_scal
         fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2
 
     elseif tid==106
-        F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Constant",  [0.75*2.0*P2, 0])
+        F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Constant",  [0.75*P3, 0])
         fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 1] .= F1
         fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2 
 
