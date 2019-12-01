@@ -1,28 +1,22 @@
-## Install Julia  from https://julialang.org/downloads/
-## Install NNFEM.jl Development Package
+# NNFEM
+
+## Install `NNFEM`
+
+If you intend to develop the package (add new features, modify current functions, etc.), we suggest developing the package (in the current directory)
 ```
-$ julia
 julia> ]
 pkg> dev .
 ```
-Now you have access to NNFEM.jl through `using NNFEM`
 
-## Development
-```
-julia> using Revise
-julia> using NNFEM
-```
-Run tests in the Julia console, modify source codes without exiting Julia every time.
-
-## Test and Commit
+If you only want to use the package and do not want to install the dependencies manually, do
 ```
 julia> ]
-pkg> test NNFEM
+pkg> activate .
+(NNFEM) pkg> instantiate
 ```
-For every function, a test snippet should go into `test` folder. Be sure to include the new files in `runtests.jl`.
 
 
-# Quick Start
+## Quick Start
 
 There are several test cases in `test/Plate` and `test/Truss/Case1D`
 
@@ -35,9 +29,7 @@ There are several test cases in `test/Plate` and `test/Truss/Case1D`
 * `Test_NN*` substitutes the constitutive law with the learned NN from last step and computes the displacement. 
 
 
+## Applications
 
-assembleStiffAndForce
-tfAssembleInternalForce
+The applications are located in the `test` folder. 
 
-
-https://prod.liveshare.vsengsaas.visualstudio.com/join?A6079A1E32957E5BA7147DC889EC61B457F8

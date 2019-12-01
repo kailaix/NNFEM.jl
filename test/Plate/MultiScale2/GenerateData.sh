@@ -55,16 +55,16 @@ echo 0 $(date | awk '{print $4}') '[' ${group1} ']'
 # done
 
 echo
-for force_scale in 4.0 6.0
+for force_scale in 5.0
 do
-for tid in 100 200 201 202 203 300
+for tid in 100 101 102 103 104 105 106 200 201 202 203 204 205 206 300
 do
 for porder in 2
 do
 for fiber_size in 5
 do
 bgxgrp=${group1} 
-bgxlimit 12 julia Data_NNPlatePull.jl $tid $force_scale $fiber_size $porder 
+bgxlimit 15 julia Data_NNPlatePull.jl $tid $force_scale $fiber_size $porder 
 group1=${bgxgrp}
 echo "julia Data_NNPlatePull.jl $tid $force_scale $fiber_size $porder"
 done
