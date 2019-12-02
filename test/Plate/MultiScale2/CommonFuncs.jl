@@ -264,7 +264,7 @@ function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5; force_scal
 
     P1 = 80000 /force_scale #gcm/ms^2 compress/pull
     P2 = 8000 /force_scale #gcm/ms^2 bend 
-    P3 = 40000/force_scale
+    P3 = 30000/force_scale
     @show P1, P2
     ngp = 3
     #Bending or Pulling
