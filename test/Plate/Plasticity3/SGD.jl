@@ -1,7 +1,7 @@
 stress_scale = 1.0e5
 strain_scale = 1
 
-include("../MultiScale/nnutil.jl")
+include("nnutil.jl")
 
 # H0 = constant(H1/stress_scale)
 testtype = "NeuralNetwork2D"
@@ -152,9 +152,14 @@ opt[4] = AdamOptimizer().minimize(losses[4])
 opt[5] = AdamOptimizer().minimize(losses[5])
 
 sess = Session(); init(sess)
+ADCME.load(sess, "$(@__DIR__)/Data/nn_train_sgd_$(idx)_$(fiber_size).mat")
+for ite = 1:1000
 for i = 1:1000
     for j in randperm(5)
-        _, l = run(sess, [opt[i], losses[i]])
+        _, l = run(sess, [opt[j], losses[j]])
         @show i, j, l
     end
+   
+end
+ ADCME.save(sess, "$(@__DIR__)/Data/nn_train_sgd_$(idx)_$(fiber_size).mat")
 end

@@ -1,12 +1,12 @@
 stress_scale = 1.0e5
 strain_scale = 1
 
-include("../MultiScale/nnutil.jl")
+include("nnutil.jl")
 
 # H0 = constant(H1/stress_scale)
 testtype = "NeuralNetwork2D"
 # force_scale = 5.0
-force_scales = [5.0]
+force_scales = [4.0 5.0 6.0]
 nntype = "piecewise"
 
 # ! define H0
@@ -146,17 +146,16 @@ end
 @show stress_scale^2
 loss = sum(losses)
 
-tf.debugging.set_log_device_placement(true)
+#tf.debugging.set_log_device_placement(true)
 sess = tf.Session(); init(sess)
-# ADCME.load(sess, "$(@__DIR__)/Data/order1/learned_nn_5.0_1.mat")
+ADCME.load(sess, "$(@__DIR__)/Data/nn_train0_2.mat")
 # ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
-run(sess, loss)
-run_profile(sess, loss)
-save_profile("test.json")
+#run_profile(sess, loss)
+#save_profile("test.json")
 # error()
 for i = 1:100
     println("************************** Outer Iteration = $i ************************** ")
-    BFGS!(sess, loss, 200)
+    BFGS!(sess, loss, 1000)
     ADCME.save(sess, "$(@__DIR__)/Data/nn_train$(idx)_$(fiber_size).mat")
 end
 # ADCME.load(sess, "$(@__DIR__)/Data/train_neural_network_from_fem.mat")
