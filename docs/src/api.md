@@ -35,5 +35,5 @@ Pages   = ["NNSolver.jl", "Solvers.jl"]
 
 ```@autodocs
 Modules = [NNFEM]
-Pages   = ["io.jl", "matrix.jl", "shapeFunctions", "Testsuit.jl", "Visualize.jl"]
+Pages   = ["io.jl", "matrix.jl", "shapeFunctions", "Testsuit.jl", "Visualize.jl", "linearConstitutiveLaw.jl"]
 ```
