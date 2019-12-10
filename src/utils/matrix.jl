@@ -1,10 +1,42 @@
 export sym_H, orthotropic_H, spd_H, spd_Cholesky, spd_Chol_Orth, spd_zero_to_H
 
+
+@doc raw"""
+    sym_H(y::PyObject)
+
+Creates a symmetric matrix from 6 parameters
+```math
+H = \begin{matrix}
+y_1 & y_2 & y_3\\ 
+y_2 & y_4 & y_5 \\ 
+y_3 & y_5 & y_6
+\end{matrix}
+```
+"""
 function sym_H(y::PyObject)
     y = sym_op(y)
     z = tf.reshape(y, (-1,3,3)) 
 end
 
+function sym_H(o::Array)
+    [o[1] o[2] o[3];
+    o[2] o[4] o[5];
+    o[3] o[5] o[6]]
+end
+
+
+@doc raw"""
+    orthotropic_H(y::PyObject)
+
+Creates a symmetric matrix from 4 parameters
+```math
+H = \begin{matrix}
+y_1 & y_2 & 0\\ 
+y_2 & y_3 & 0 \\ 
+0 & 0 & y_4
+\end{matrix}
+```
+"""
 function orthotropic_H(y::PyObject)
 
     y = orthotropic_op(y)
@@ -14,24 +46,21 @@ function orthotropic_H(y::PyObject)
     return z
 end
 
-function spd_H(o::Array, H0::Array)
-    # @show size(o'*H0*o)
-    o = o[:]
-    H0 - H0*(o*o')*H0/(1+o'*H0*o)
-end
-
-function sym_H(o::Array)
-    [o[1] o[2] o[3];
-    o[2] o[4] o[5];
-    o[3] o[5] o[6]]
-end
-
 function orthotropic_H(o::Array)
     [o[1] o[2] 0.0;
     o[2] o[3] 0.0;
     0.0 0.0 o[4]]
 end
 
+@doc raw"""
+    spd_H(o::PyObject, H0::Array{Float64,2})
+
+Creates a SPD matrix from 3 scalars
+
+```math
+H = H_0 - \frac{H_0nn'H_0}{1+n'H_0n}
+```
+"""
 function spd_H(o::PyObject, H0::Array{Float64,2})
     if size(o,2)!=3
         error("NNFEM: second dimension of `o` must be 3")
@@ -40,6 +69,12 @@ function spd_H(o::PyObject, H0::Array{Float64,2})
   
     # ret.set_shape((-1,3,3))
     return ret
+end
+
+function spd_H(o::Array, H0::Array)
+    # @show size(o'*H0*o)
+    o = o[:]
+    H0 - H0*(o*o')*H0/(1+o'*H0*o)
 end
 
 
@@ -123,6 +158,24 @@ function spd_Chol_Orth(o::PyObject)
     tf.reshape(ret, (-1,3,3))
 end
 
+@doc raw"""
+    spd_zero_to_H(o::Array)
+
+Creates a SPD matrix from 4 scalars. 
+
+```math
+A = (H_0^{-1} +LL')^{-1}
+```
+where
+```math
+L =  \begin{matrix}
+o_1 & & 
+o_2 & o_3 &
+ &  & o_4
+\end{matrix}
+```
+
+"""
 function spd_zero_to_H(o::PyObject, H0inv::Array{Float64,2})
     if size(o,2)!=4
         error("NNFEM: second dimension of `o` must be 4")
