@@ -1,6 +1,7 @@
 void forward(double *out, const double *y, const double *H0, int n){
-  double V[3];
+  #pragma omp parallel for 
   for(int i=0;i<n;i++){
+    double V[3];
     double v = 0.0;
     for(int i_=0;i_<3;i_++){
       V[i_] = H0[3*i_]*y[3*i] + H0[3*i_+1]*y[3*i+1] + H0[3*i_+2]*y[3*i+2];
@@ -27,9 +28,9 @@ void backward(double *d_y, const double *d_out, const double *y, const double *H
   //     M(i,j) = H0[3*i+j];
   //   }
   // }
-
-  double dO_dy, P[3][3], V[3];
+#pragma omp parallel for 
   for(int i=0;i<n;i++){
+    double dO_dy, P[3][3], V[3];
     double v = 0.0;
     for(int i_=0;i_<3;i_++){
       V[i_] = (H0[3*i_]*y[3*i] + H0[3*i_+1]*y[3*i+1] + H0[3*i_+2]*y[3*i+2]);

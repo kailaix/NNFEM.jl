@@ -1,9 +1,14 @@
 export gradtest
 
-"""
+@doc raw"""
     gradtest(f::Function, x0::Array{Float64}; scale::Float64 = 1.0)
 
 Testing the gradients of a vector function `f`. 
+Here `x0` is $n$-dimensional vector, `f` takes an $n$-dimensional vector as inputs, and
+outputs a $m$ dimensional vector. The function tests the second order convergence of `f`
+```math
+\|f(x_0+\gamma c) - f(x_0) - \gamma \nabla f(x_0) c\|_2 = \mathcal{O}(\gamma^2)
+```
 """
 function gradtest(f::Function, x0::Array{Float64}; scale::Float64 = 1.0)
     v0 = rand(Float64,size(x0))
