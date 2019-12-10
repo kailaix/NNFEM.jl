@@ -56,6 +56,7 @@ end
 
 @doc raw"""
     spd_H(o::PyObject, H0::Array{Float64,2})
+    spd_H(o::Array, H0::Array)
 
 Creates a SPD matrix from 3 scalars
 
