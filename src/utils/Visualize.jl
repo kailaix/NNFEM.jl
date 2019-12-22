@@ -123,6 +123,28 @@ function prepare_strain_stress_data2D(domain::Domain, scale::Float64=1.0)
     X,y
 end
 
+
+function prepare_strain_stress_data2D(strain::Array{Any, 1}, stress::Array{Any, 1}, scale::Float64=1.0)
+    ngp = size(strain[1],1)
+    nt = length(strain)
+    X = zeros(nt*ngp,9)
+    y = zeros(nt*ngp,3)
+    pushfirst!(strain, zero(strain[1]))
+    pushfirst!(stress, zero(stress[1]))
+    
+    k = 1
+    nt += 1
+    for j = 2:nt
+        for i = 1:ngp
+            X[k,:] = [strain[j][i,:]; strain[j-1][i,:]; stress[j-1][i,:]/scale]#ε, ε0, σ0
+            y[k,:] = stress[j][i,:]/scale
+            k = k + 1
+        end
+    end
+    X,y
+end
+
+
 # Return strain_seq[ngp, NT+1, 3], stress_seq[ngp, NT+1, 3]
 function prepare_sequence_strain_stress_data2D(domain::Domain, scale::Float64=1.0)
     strain = domain.history["strain"]

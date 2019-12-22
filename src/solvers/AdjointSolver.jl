@@ -4,7 +4,7 @@ ForwardNewmarkSolver, BackwardNewmarkSolver,constitutive_law
 
 function constitutive_law(input::Array{Float64,2}, θ::Array{Float64,1}, 
   g::Union{Array{Float64,2}, Nothing}=nothing, grad_input::Bool=false, grad_θ::Bool=false; 
-  strain_scale::Float64, stress_scale::Float64, config = [9, 20, 20, 20, 4])
+  strain_scale::Float64, stress_scale::Float64, config = [9, 20, 20, 20, 20, 4])
   input_ = zero(input)
   input_[:,1:6] = input[:,1:6]/strain_scale
   input_[:,7:9] = input[:,7:9]/stress_scale
@@ -771,7 +771,7 @@ Implicit solver for Ma + C v + R(u) = P
 	      # todo test 
         #Δt = min(Δt,  Δti/8.0)
         #@show Δti, Δt, abs(Δti%Δt)
-        @assert(abs(Δti - Δt * round(Int64, Δti/Δt)) < 1.0e-10)
+        #@assert(abs(Δti - Δt * round(Int64, Δti/Δt)) < 1.0e-10)
 	        
         failSafeTime =  globdat.time 
         globdat.time  += (1 - αf)*Δt

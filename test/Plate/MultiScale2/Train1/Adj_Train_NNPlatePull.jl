@@ -1,6 +1,3 @@
-# Training the neural network with the adjoint state method
-
-
 using Optim, LineSearches
 stress_scale = 1.0e5
 strain_scale = 1.0
@@ -24,7 +21,9 @@ H0 = [1335174.0968380707  326448.3267263398 0.0
 H0inv = inv(H0)
 
 
-n_data = [100,101,102,103, 104, 200, 201, 202, 203, 204]
+
+n_data = [100, 101, 102, 103, 104,  200, 201, 202, 203, 204]
+
 porder = 2
 # density 4.5*(1 - 0.25) + 3.2*0.25
 fiber_fraction = 0.25
@@ -174,6 +173,7 @@ end
 function f(theta, buffer, last_theta)   
     calculate_common!(theta, last_theta, buffer)
 
+    @show buffer.J
     J = sum(buffer.J)
     
     @show "function evaluation: |J|=", norm(J)
@@ -204,8 +204,8 @@ ngps_per_elem = length(domain_arr[1].elements[1].weights)
 neles = domain_arr[1].neles
 
 
-config = [9, 20, 20, 20, 4]
-initial_theta = convert_mat("nn2array", config,  "Data/piecewise/NNPreLSfit_$(idx)_spd_Chol_Orth_40.mat")
+config = [9, 20, 20, 20, 20, 4]
+initial_theta = convert_mat("nn2array", config,  "Data/piecewise/NNPreLSfit_$(idx)_spd_Chol_Orth_10.mat")
 
 #initial_theta = 1.0e-3*rand((9+1)*20 + (20+1)*20 + (20+1)*20 + (20+1)*4)
 
@@ -215,7 +215,7 @@ initial_theta = convert_mat("nn2array", config,  "Data/piecewise/NNPreLSfit_$(id
 neqs_arr = [domain_arr[i].neqs for i = 1:length(n_data)]
 buffer = Buffer(length(n_data), length(initial_theta), NT, neqs_arr, neles*ngps_per_elem, nstrain) # Preallocate an appropriate buffer
 last_theta = similar(initial_theta)
-algo = LBFGS(alphaguess = InitialStatic(), linesearch=LineSearches.BackTracking(order=3))
+algo = LBFGS(alphaguess = InitialStatic(0.005), linesearch=LineSearches.BackTracking(order=3))
 #algo = GradientDescent(alphaguess = InitialStatic(), linesearch=LineSearches.BackTracking(order=2))
 
 for i = 1:50
@@ -228,7 +228,7 @@ for i = 1:50
         Optim.Options(iterations=100))
 
         initial_theta[:] = last_theta
-        @save "Data/piecewise/theta_ite_idx$(idx)_from40_$(i).jld2" last_theta
+        @save "Data/piecewise/theta_ite_idx$(idx)_from10_$(i).jld2" last_theta
 end
         
         

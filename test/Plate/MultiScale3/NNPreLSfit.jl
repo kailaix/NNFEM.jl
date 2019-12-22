@@ -8,7 +8,8 @@ testtype = "NeuralNetwork2D"
 force_scales = [5.0]
 force_scale = 5.0
 
-nntype = "piecewise"
+#nntype = "piecewise"
+nntype = "orthpiecewise"
 
 # ! define H0
 # Trained with nx, ny = 10, 5
@@ -31,7 +32,7 @@ fiber_fraction = 0.25
 prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>nn)
 
 
-T = 0.1
+T = 200.0
 NT = 200
 Δt = T/NT
 
@@ -71,7 +72,7 @@ function approximate_stress(tid, force_scale, method)
     assembleMassMatrix!(globdat, domain)
 
     # full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
-    full_state_history, full_fext_history = read_data("../Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
+    full_state_history, full_fext_history = read_data("Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
     
 
     #update state history and fext_history on the homogenized domain

@@ -116,7 +116,7 @@ function getStrain(self::FiniteStrainContinuum, state::Array{Float64})
 
     nGauss = length(self.weights)
     E = zeros(nGauss, 3)
-    w∂E∂u = zeros(nGauss, 8, 3)
+    w∂E∂u = zeros(nGauss, 2nnodes, 3)
     for k = 1:length(self.weights)
         g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
         

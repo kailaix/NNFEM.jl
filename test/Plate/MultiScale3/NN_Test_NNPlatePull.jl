@@ -7,7 +7,9 @@ tid = 200
 testtype = "NeuralNetwork2D"
 
 nntype = "piecewise"
-include("../nnutil.jl")
+#nntype = "orthpiecewise"
+
+include("nnutil.jl")
 printstyled("force_scale=$force_scale, tid=$tid\n", color=:green)
 
 
@@ -17,10 +19,9 @@ H0 = [1335174.0968380707 326448.3267263398   0.0
       
 H0inv = inv(H0)
 
+nn_file = "Data/$(nntype)/nn_train_$(use_reg)_$(idx)_$(H_function)_from2_ite50.mat"
+#nn_file = "Data/$(nntype)/NNPreLSfit_$(idx)_$(H_function)_2.mat"
 
-
-#nn_file = "Data/$(nntype)/NNPreLSfit_$(idx)_$(H_function)_5.mat"
-nn_file = "Data/$(nntype)/nn_train_$(use_reg)_$(idx)_$(H_function)_from5_ite17.mat"
 @show nn_file
 s = ae_to_code(nn_file, nntype)
 
@@ -35,7 +36,7 @@ fiber_fraction = 0.25
 #fiber_fraction = 1.0
 prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>post_nn)
 
-T = 0.1
+T = 200.0
 NT = 200
 
 # nx_f, ny_f = 12, 4

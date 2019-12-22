@@ -1,10 +1,10 @@
 using Optim, LineSearches
 stress_scale = 1.0e5
 strain_scale = 1.0
-T = 0.1
+T = 200.0
 NT = 200
 
-include("../nnutil.jl")
+include("nnutil.jl")
 
 # H0 = constant(H1/stress_scale)
 testtype = "NeuralNetwork2D"
@@ -31,9 +31,6 @@ fiber_fraction = 0.25
 #fiber_fraction = 1.0
 prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>nn)
 
-
-T = 0.1
-NT = 200
 
 # DNS computaional domain
 fiber_size = 5
@@ -111,7 +108,7 @@ function PreprocessData(n_data, NT)
 
 
         obs_state = zeros(Float64, NT+1, domain.neqs)
-        full_state_history, _ = read_data("../Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
+        full_state_history, _ = read_data("Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
         @assert length(full_state_history) == NT+1
         for i = 1:NT+1
             obs_state[i,:] = (full_state_history[i][fine_to_coarse])[domain.dof_to_eq]
@@ -204,18 +201,33 @@ ngps_per_elem = length(domain_arr[1].elements[1].weights)
 neles = domain_arr[1].neles
 
 
-config = [9, 20, 20, 20, 4]
+config = [9, 20, 20, 20, 20, 4]
+start_id=5
+initial_theta = convert_mat("nn2array", config,  "Data/piecewise/NNPreLSfit_$(idx)_$(H_function)_$(start_id).mat")
 
+#initial_theta = 1.0e-3*rand((9+1)*20 + (20+1)*20 + (20+1)*20 + (20+1)*4)
 
-
-initial_theta = convert_mat("nn2array", config,  "Data/piecewise/NNPreLSfit_$(idx)_spd_Chol_Orth_10.mat")
+#@load "Data/theta_ite_0_5.jld2" last_theta
+#initial_theta = copy(last_theta)
 
 neqs_arr = [domain_arr[i].neqs for i = 1:length(n_data)]
 buffer = Buffer(length(n_data), length(initial_theta), NT, neqs_arr, neles*ngps_per_elem, nstrain) # Preallocate an appropriate buffer
+last_theta = similar(initial_theta)
+#algo = LBFGS(alphaguess = InitialStatic(0.01), linesearch=LineSearches.BackTracking(order=3))
+algo = LBFGS(alphaguess = InitialPrevious(), linesearch=LineSearches.BackTracking(order=3))
+#algo = GradientDescent(alphaguess = InitialStatic(), linesearch=LineSearches.BackTracking(order=2))
 
+for i = 1:50
+    println("************************** Outer Iteration = $i ************************** ")
 
-last_theta  = similar(initial_theta)
+    optimize(x -> f(x, buffer, last_theta), 
+        (stor, x) -> g!(x, stor, buffer, last_theta), 
+        initial_theta, 
+        algo, 
+        Optim.Options(iterations=100))
 
-J =  f(initial_theta, buffer, last_theta)  
-
-@show buffer.J,  J
+        initial_theta[:] = last_theta
+        @save "Data/piecewise/theta_ite_idx$(idx)_from$(start_id)_$(i).jld2" last_theta
+end
+        
+        

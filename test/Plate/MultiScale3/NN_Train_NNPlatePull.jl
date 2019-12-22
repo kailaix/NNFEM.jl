@@ -1,10 +1,7 @@
-# Training the neural network with residual minimization.
-
-
 stress_scale = 1.0e5
 strain_scale = 1
 
-include("../nnutil.jl")
+include("nnutil.jl")
 
 # H0 = constant(H1/stress_scale)
 testtype = "NeuralNetwork2D"
@@ -18,13 +15,13 @@ nntype = "piecewise"
 #       -5187.35       -10791.7        536315.0]/stress_scale
 
 
-H0 = [1335174.0968380707 326448.3267263398  0.0 
-      326448.3267263398  1326879.2022994285 0.0 
-      0.0                0.0                526955.763626241]/stress_scale
+H0 = [1335174.0968380707 326448.3267263398 0.0 
+      326448.3267263398 1326879.2022994285 0.0 
+      0.0 0.0 526955.763626241]/stress_scale
       
 H0inv = inv(H0)
 
-n_data = [100, 101, 102, 103, 104, 200,201,202,203,204]
+n_data = [100,101,102,103,104,200,201,202,203,204]
 porder = 2
 # density 4.5*(1 - 0.25) + 3.2*0.25
 fiber_fraction = 0.25
@@ -33,7 +30,7 @@ fiber_fraction = 0.25
 prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>nn)
 
 
-T = 0.1
+T = 200.0
 NT = 200
 
 # DNS computaional domain
@@ -97,7 +94,7 @@ function compute_loss(tid, force_scale)
     globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
     assembleMassMatrix!(globdat, domain)
     # full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
-    full_state_history, full_fext_history = read_data("../Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
+    full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
     
     #update state history and fext_history on the homogenized domain
     state_history = [x[fine_to_coarse] for x in full_state_history]
@@ -164,13 +161,17 @@ else
     global reg = 0.0
 end
 
+
+
 sess = tf.Session(); init(sess)
-ADCME.load(sess, "$(@__DIR__)/Data/$(nntype)/NNPreLSfit_$(idx)_$(H_function)_5.mat") # pre-trained model
+
+startid=5
+ADCME.load(sess, "$(@__DIR__)/Data/$(nntype)/NNPreLSfit_$(idx)_$(H_function)_$(startid).mat") # pre-trained model
 #ADCME.load(sess, "$(@__DIR__)/Data/nn_train_$(use_reg)_$(idx)_$(H_function)_from5_ite18.mat") # pre-trained model
 @info run(sess, loss+reg)
 # error()
 for i = 1:100
     println("************************** Outer Iteration = $i ************************** ")
     BFGS!(sess, loss+reg, 1000)
-    ADCME.save(sess, "$(@__DIR__)/Data/$(nntype)/nn_train_$(use_reg)_$(idx)_$(H_function)_from5_ite$(i).mat")
+    ADCME.save(sess, "$(@__DIR__)/Data/$(nntype)/nn_train_$(use_reg)_$(idx)_$(H_function)_from$(startid)_ite$(i).mat")
 end

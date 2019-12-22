@@ -1,4 +1,4 @@
-export readMesh, save, load, read_data, write_data, convert_mat
+export readMesh, save, load, read_data, write_data, convert_mat, read_strain_stress
 function readMesh(gmshFile::String)
     fp = open(gmshFile);
     boundaries = Dict{String, Array}()
@@ -85,16 +85,24 @@ function write_data(file::String, domain::Domain)
     write(file, "state", domain.history["state"])
     write(file, "fext", domain.history["fext"])
     write(file, "fint", domain.history["fint"])
+    write(file, "strain", domain.history["strain"])
+    write(file, "stress", domain.history["stress"])
     close(file)
 end
 
 # state, fext
 function read_data(file::String)
     vars = matread(file)
-    #use fint for debugging purpose
+    #use fint, strain, stress, for debugging purpose
     vars["state"], vars["fext"]
 end
 
+# state, fext
+function read_strain_stress(file::String)
+    vars = matread(file)
+    #use fint, strain, stress, for debugging purpose
+    vars["strain"], vars["stress"]
+end
 
 # type == nn2array: read mat convert to 1D array
 # type == array2nn: read 1D array convert to mat

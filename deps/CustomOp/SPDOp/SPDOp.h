@@ -1,4 +1,5 @@
 void forward(double *out, const double *y, const double *H0, int n){
+  double h = 100.0;
   double V[3];
   for(int i=0;i<n;i++){
     double v = 0.0;
@@ -12,7 +13,7 @@ void forward(double *out, const double *y, const double *H0, int n){
 
     for(int i_=0;i_<3;i_++){
       for(int j_=0;j_<3;j_++){
-        out[9*i+i_*3+j_] = H0[3*i_+j_] - V[i_]*V[j_]/(1.0+v);
+        out[9*i+i_*3+j_] = H0[3*i_+j_] - V[i_]*V[j_]/(h+v);
       }
     }
   }  
@@ -28,6 +29,7 @@ void backward(double *d_y, const double *d_out, const double *y, const double *H
   //   }
   // }
 
+  double h = 100.0;
   double dO_dy, P[3][3], V[3];
   for(int i=0;i<n;i++){
     double v = 0.0;
@@ -40,7 +42,7 @@ void backward(double *d_y, const double *d_out, const double *y, const double *H
       }
 
     for(int i_=0;i_<3;i_++){
-      V[i_] /= (1 + v);
+      V[i_] /= (h + v);
     }
 
     for(int i_=0;i_<3;i_++){

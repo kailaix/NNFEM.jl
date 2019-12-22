@@ -1,4 +1,6 @@
 Plasticity3: min||Res^hat - 0|| (half Sin)
 Plasticity4: min||u - u^hat|| (half Sin)
 Plasticity5: prefit stress by LS (half Sin)
-Plasticity5: prefit stress by LS (half Sin), test symmetry nn
+Plasticity5: prefit stress by LS (half Sin), all data
+
+Plasticity5.1: prefit stress by LS (half Sin), test symmetry nn
