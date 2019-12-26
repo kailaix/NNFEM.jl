@@ -67,3 +67,4 @@ deps/build.jl
 *._.DS_Store
 *._.
 *._README.md
+.*

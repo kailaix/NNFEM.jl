@@ -5,7 +5,8 @@ pages = Any[
     "index.md",
     "api.md",
     "plasticity.md",
-    "instructions.md"
+    "instructions.md",
+    "api.md"
 ],
 authors = "Kailai Xu and Daniel (Zhengyu) Huang")
 

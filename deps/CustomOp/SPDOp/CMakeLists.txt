@@ -44,6 +44,8 @@ set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};--expt-relaxed-constexpr)
 SET(CUDA_PROPAGATE_HOST_FLAGS ON)
 
 
+find_package(OpenMP REQUIRED)
+
 #find_program(_nvidia_smi "nvidia-smi")
 #if (_nvidia_smi)
 #  add_definitions(-DUSE_GPU)
@@ -54,6 +56,6 @@ SET(CUDA_PROPAGATE_HOST_FLAGS ON)
 
 
 set_property(TARGET SPDOp PROPERTY POSITION_INDEPENDENT_CODE ON)
-target_link_libraries(SPDOp ${TF_LIB_FILE} "${TORCH_LIBRARIES}")
-
+target_link_libraries(SPDOp PUBLIC ${TF_LIB_FILE} "${TORCH_LIBRARIES}")
+target_link_libraries(SPDOp PRIVATE OpenMP::OpenMP_CXX)
 
