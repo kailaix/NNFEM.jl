@@ -1,42 +1,39 @@
+using Optim
+using LineSearches
 stress_scale = 1.0e5
 strain_scale = 1
 
 include("nnutil.jl")
 
-# H0 = constant(H1/stress_scale)
+force_scale = 1.0
+force_scales = [1.0]
+
 testtype = "NeuralNetwork2D"
-force_scales = [5.0]
-nntype = "piecewise"
+nntype = "stiffmat"
+
 
 # ! define H0
 # Trained with nx, ny = 10, 5
-# H0 = [1.26827e6       3.45169e5   -5187.35
-#       3.45169e5       1.25272e6  -10791.7
-#       -5187.35       -10791.7        536315.0]/stress_scale
+H0 = [1.04167e6  2.08333e5  0.0      
+      2.08333e5  1.04167e6  0.0      
+      0.0        0.0        4.16667e5]/stress_scale
 
 
-H0 = [1335174.0968380707 326448.3267263398 0.0 
-      326448.3267263398 1326879.2022994285 0.0 
-      0.0 0.0 526955.763626241]/stress_scale
-      
-H0inv = inv(H0)
+n_data = [100, 101, 102, 103, 104,  200, 201, 202, 203, 204]
 
-n_data = [100,101,102,103,104,200,201,202,203,204]
 porder = 2
-# density 4.5*(1 - 0.25) + 3.2*0.25
-fiber_fraction = 0.25
-#todo
-#fiber_fraction = 1.0
-prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>nn)
+prop = Dict("name"=> testtype, "rho"=> 800, "nn"=>nn)
 
 
-T = 200.0
+
+T = 0.2
 NT = 200
 
+
 # DNS computaional domain
-fiber_size = 5
+fiber_size = 2
 # nx_f, ny_f = 40*fiber_size, 20*fiber_size
-nx_f, ny_f = 80*fiber_size, 40*fiber_size
+nx_f, ny_f = 10*fiber_size, 5*fiber_size
 
 # nx_f, ny_f = 12, 4
 
@@ -45,6 +42,7 @@ nx_f, ny_f = 80*fiber_size, 40*fiber_size
 nx, ny = 10, 5
 # number of subelements in one element in each directions
 sx_f, sy_f = div(nx_f,nx), div(ny_f,ny)
+Lx, Ly = 0.1, 0.05 #m
 
 ndofs = 2
 fine_to_coarse = zeros(Int64, ndofs*(nx*porder+1)*(ny*porder+1))
@@ -57,37 +55,9 @@ for idof = 1:ndofs
     end
 end
 
-# #todo only for first order
-# function compute_fine_to_coarse_fext(tid)
-#     @assert(porder == 1)
-#     # Attention fix left
-#     if div(tid,100)==1 # fix bottom
-#         fine_to_coarse_fext = zeros(Int64, ndofs*(nx + 1)* ny)
-#         for idof = 1:ndofs
-#             for iy = 1:ny
-#                 for ix = 1:nx + 1
-#                     fine_to_coarse_fext[ix + (iy - 1)*(nx + 1) + (idof-1)*(nx + 1)*ny] =
-#                      1 + (nx_f + 1) * (sy_f - 1)  + (iy - 1) * (nx_f + 1) * sy_f + (nx_f + 1)*ny_f*(idof - 1)
-#                 end
-#             end
-#         end
-
-#     elseif div(tid,100)==2 # fix left
-#         fine_to_coarse_fext = zeros(Int64, ndofs*nx*(ny+1))
-#         for idof = 1:ndofs
-#             for iy = 1:ny+1
-#                 for ix = 1:nx
-#                     fine_to_coarse_fext[ix + (iy - 1)*(nx) + (idof-1)*(nx)*(ny+1)] = sx_f + (ix - 1) * sx_f + (iy - 1) * (nx_f) * sy_f + (nx_f)*(ny_f + 1)*(idof - 1)
-#                 end
-#             end
-#         end
-#     end
-#     fine_to_coarse_fext
-# end
-
 
 function compute_loss(tid, force_scale)
-    nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder; force_scale=force_scale)
+    nodes, EBC, g, gt, FBC, fext, ft, npoints, node_to_point = BoundaryCondition(tid, nx, ny, porder, Lx, Ly; force_scale=force_scale )
     domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
     state = zeros(domain.neqs)
     ∂u = zeros(domain.neqs)
@@ -106,18 +76,14 @@ function compute_loss(tid, force_scale)
         updateDomainStateBoundary!(domain, globdat)
         push!(fext_history, domain.fext[:])
     end
-
-    # domain.state = state_history[end]
-    # visσ(domain)
-    # error()
-    sum_loss = DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
+    DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn, Δt)
 end
 
 
 Δt = T/NT
 
 
-nodes, _, _, _, _, _, _ = BoundaryCondition(n_data[1], nx, ny, porder)
+nodes, _, _, _, _, _, _,_,_ = BoundaryCondition(n_data[1], nx, ny, porder, Lx, Ly; force_scale=force_scale)
 elements = []
 for j = 1:ny
     for i = 1:nx 
@@ -147,31 +113,28 @@ k = 1
 for i in n_data
     global k
     for force_scale in force_scales
-        losses[k] = compute_loss(i, force_scale)
+        losses[k] = compute_loss(i, force_scale)/stress_scale
         k += 1
     end
 end
 
 @show stress_scale^2
-loss = sum(losses)/stress_scale
-W = get_collection()
-if use_reg
-    global reg = 1e6 * sum([sum(w^2) for w in W])
-else
-    global reg = 0.0
-end
+loss = sum(losses)
 
 
 
 sess = tf.Session(); init(sess)
-
-startid=4
-ADCME.load(sess, "$(@__DIR__)/Data/$(nntype)/NNPreLSfit_$(idx)_$(H_function)_$(startid).mat") # pre-trained model
-#ADCME.load(sess, "$(@__DIR__)/Data/nn_train_$(use_reg)_$(idx)_$(H_function)_from5_ite18.mat") # pre-trained model
-@info run(sess, loss+reg)
-# error()
+#ADCME.load(sess, "$(@__DIR__)/Data/NNPreLSfit_$(idx).mat")
+#vars = get_collection()
 for i = 1:100
     println("************************** Outer Iteration = $i ************************** ")
-    BFGS!(sess, loss+reg, 1000)
-    ADCME.save(sess, "$(@__DIR__)/Data/$(nntype)/nn_train_$(use_reg)_$(idx)_$(H_function)_from$(startid)_ite$(i).mat")
+    BFGS!(sess, loss, 1000)
+    #BFGS!(sess, loss, gradients(loss,vars), vars, iterations=1000)
+    @show "save to ", "Data/NN_Train_$(idx).mat"
+    ADCME.save(sess, "Data/$(nntype)/NN_Train_$(idx)_ite$(i).mat")
 end
+
+
+
+
+

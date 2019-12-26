@@ -6,7 +6,7 @@ idx = 0
 H_function = spd_Chol_Orth
 use_reg = false
 
-@show length(ARGS)
+
 if length(ARGS)==3
     global idx = parse(Int64, ARGS[1])
     global H_function = eval(Meta.parse(ARGS[2]))
@@ -28,7 +28,7 @@ elseif idx == 1
 elseif idx == 2
     global config=[20,20,20,20,20,nout]
 elseif idx == 3
-    global config=[20,20,20,20,20,20,nout]
+    global config=[20,20,20,20,20,nout]
 elseif idx == 5
     global config=[nout]
 end
