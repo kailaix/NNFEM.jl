@@ -33,7 +33,7 @@ function __init__()
     # sym_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/SymOp/build/libSymOp", "sym_op")
     # orthotropic_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/OrthotropicOp/build/libOrthotropicOp", "orthotropic_op")
     spd_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/SPDOp/build/libSPDOp", "spd_op")
-    chol_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/CholOp/build/libCholOp", "chol_op")
+    #chol_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/CholOp/build/libCholOp", "chol_op")
     chol_orth_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/CholOrthOp/build/libCholOrthOp", "chol_orth_op")
 end
 
