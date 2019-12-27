@@ -37,7 +37,7 @@ NT = 200
 Δt = T/NT
 
 # DNS computaional domain
-fiber_size = 5
+fiber_size = 2
 # nx_f, ny_f = 40*fiber_size, 20*fiber_size
 nx_f, ny_f = 80*fiber_size, 40*fiber_size
 

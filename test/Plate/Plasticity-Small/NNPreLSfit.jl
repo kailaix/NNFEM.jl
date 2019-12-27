@@ -29,7 +29,7 @@ n_data = [100, 101, 102, 103, 104, 200, 201, 202, 203, 204]
 
 
 # DNS computaional domain
-fiber_size = 2
+fiber_size = 1
 # nx_f, ny_f = 40*fiber_size, 20*fiber_size
 nx_f, ny_f = 10*fiber_size, 5*fiber_size
 Lx, Ly = 1.0, 0.5

@@ -2,7 +2,7 @@
 include("CommonFuncs.jl")
 threshold = 1e7 # σY ≈ 1e8
 
-idx = 0
+idx = 2
 H_function = spd_Chol_Orth
 use_reg = false
 

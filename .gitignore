@@ -68,3 +68,7 @@ deps/build.jl
 *._.
 *._README.md
 .*
+
+*logs/*
+*.err
+*.out
