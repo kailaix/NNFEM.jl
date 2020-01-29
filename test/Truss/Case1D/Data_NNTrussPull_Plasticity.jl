@@ -47,7 +47,10 @@ for i = 1:NT
 end
 
 # error()
-# todo write data
+if !isdir("$(@__DIR__)/Data/")
+    mkdir("$(@__DIR__)/Data/")
+end
+
 write_data("$(@__DIR__)/Data/1.dat", domain)
 # plot
 close("all")
