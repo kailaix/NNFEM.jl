@@ -7,7 +7,7 @@ using JLD2
 using ADCME
 using LinearAlgebra
 
-tid = 1
+tid = length(ARGS)==1 ? parse(Int64, ARGS[1]) : 1
 
 # testtype = "PathDependent1D" 
 testtype = "Plasticity1D"
@@ -38,9 +38,16 @@ for i = 1:NT
 end
 # error()
 # error()
-# todo write data
+
+if !isdir("$(@__DIR__)/Data")
+    mkdir("$(@__DIR__)/Data")
+end
+if !isdir("$(@__DIR__)/Debug")
+    mkdir("$(@__DIR__)/Debug")
+end
+
 write_data("$(@__DIR__)/Data/$tid.dat", domain)
-# plot
+
 close("all")
 scatter(nodes[:, 1], nodes[:,2], color="red")
 u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
@@ -51,14 +58,14 @@ savefig("$(@__DIR__)/Debug/terminal$tid.png")
 @save "Data/domain.jld2" domain
 
 
-X, Y = prepare_strain_stress_data1D(domain)
-close("all")
-plot(X[:,1], Y, ".", label="Exact")
-grid("on")
-legend()
-xlim(-0.05,0.05)
-ylim(-2,2)
-savefig("$(@__DIR__)/Debug/law$tid.png")
+# X, Y = prepare_strain_stress_data1D(domain)
+# close("all")
+# plot(X[:,1], Y, ".", label="Exact")
+# grid("on")
+# legend()
+# xlim(-0.05,0.05)
+# ylim(-2,2)
+# savefig("$(@__DIR__)/Debug/law$tid.png")
 
 
 

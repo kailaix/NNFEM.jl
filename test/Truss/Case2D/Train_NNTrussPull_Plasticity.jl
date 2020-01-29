@@ -51,15 +51,15 @@ ADCME.save(sess, "Data/trained_nn_fem.mat")
 # end
 # error()
 
-# * test
-@load "Data/domain.jld2" domain
-X, Y = prepare_strain_stress_data1D(domain)
-x = constant(X)
-y = squeeze(nn(constant(X[:,1]), constant(X[:,2]), constant(X[:,3])))
-sess = Session(); init(sess)
-close("all")
-ADCME.load(sess, "Data/trained_nn_fem.mat")
-out = run(sess, y)
-plot(X[:,1], out,"+", label="NN")
-plot(X[:,1], Y, ".", label="Exact")
-legend()
+# # * test
+# @load "Data/domain.jld2" domain
+# X, Y = prepare_strain_stress_data1D(domain)
+# x = constant(X)
+# y = squeeze(nn(constant(X[:,1]), constant(X[:,2]), constant(X[:,3])))
+# sess = Session(); init(sess)
+# close("all")
+# ADCME.load(sess, "Data/trained_nn_fem.mat")
+# out = run(sess, y)
+# plot(X[:,1], out,"+", label="NN")
+# plot(X[:,1], Y, ".", label="Exact")
+# legend()
