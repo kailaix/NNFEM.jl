@@ -7,6 +7,10 @@ using JLD2
 using ADCME
 using LinearAlgebra
 
+
+s = ae_to_code(nnname, nntype)
+eval(Meta.parse(s))
+
 include("nnutil.jl")
 
 

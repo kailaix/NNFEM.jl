@@ -13,6 +13,8 @@ os:
 notifications:
   email: false
 coveralls: false
+before_install:
+  - julia -e 'using Pkg; Pkg.add("Conda"); ENV["PYTHON"]="/home/travis/.julia/conda/3/bin/python"; Pkg.add("PyCall")'
 jobs:
   include:
     - stage: "Documentation"
