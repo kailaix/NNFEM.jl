@@ -49,3 +49,8 @@ $$\sigma = \Big(\eta(\sigma_0)H_0  + (1-\eta(\sigma_0))H_{\theta}(\varepsilon, \
 
 The constitutive relation model (2) is also used for the multiscale case, where the material is a mixture of plasticity materials and elasticity materials. 
 
+
+
+!!! note 
+
+​	If the problem can be reduced to 1D, we can construct a neural network that takes a 3D vector $(\varepsilon, \varepsilon_0, \sigma_0)$ as inputs and outputs a stress scalar $\sigma$. Here $\varepsilon_0$ and $\sigma_0$ are strains  and stresses at last time step. We do not have use the special neural network structure as that in the high dimensional case because the 1D constitutive relation is much simpler. 
