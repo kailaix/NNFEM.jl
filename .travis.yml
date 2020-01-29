@@ -7,11 +7,9 @@ git:
   depth: 3
   quiet: true
 julia:
-  - 1.2
+  - 1.3
 os:
   - linux
-before_install:
-  - julia -e 'using Pkg; Pkg.add("ADCME"); Pkg.add("Conda"); Pkg.add("PyCall")'
 notifications:
   email: false
 coveralls: false
@@ -21,6 +19,7 @@ jobs:
       julia: 1.2
       os: linux
       script:
+        - julia --project=docs/ -e 'using Pkg; Pkg.add("Conda"); ENV["PYTHON"]="/home/travis/.julia/conda/3/bin/python"; Pkg.add("PyCall")'
         - julia --project=docs/ -e 'using Pkg;Pkg.add("Documenter"); Pkg.develop(PackageSpec(path=pwd())); Pkg.build("NNFEM");
                                                Pkg.instantiate()'
         - julia --project=docs/ docs/make.jl

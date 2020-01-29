@@ -4,6 +4,7 @@ makedocs(sitename="NNFEM", modules=[NNFEM],
 pages = Any[
     "index.md",
     "api.md",
+    "method.md",
     "plasticity.md",
     "instructions.md",
     "api.md"
