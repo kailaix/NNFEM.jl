@@ -1,7 +1,0 @@
-use data 100 101 102 103 104 and 200 201 202 203 204 to train
-
-Step1 NNPreLSfit.jl
-
-Step2 Adj_Loss.jl: Check the NNPreLSfit.jl results
-
-Step3: Adj_Train_NNPlatePull.jl  or  NN_Train_NNPlatePull.jl 

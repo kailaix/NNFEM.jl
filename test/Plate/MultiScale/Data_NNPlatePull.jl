@@ -1,5 +1,5 @@
 # tid = parse(Int64, ARGS[1])
-force_scale = 6.0 #50
+force_scale = 5.0 #50
 tid = 203 
 fiber_size = 2 
 porder = 2
@@ -32,7 +32,7 @@ prop2 = Dict("name"=> "PlaneStress", "rho"=> 3.2, "E"=>4e6, "nu"=>0.35)
 ps1 = PlaneStress(prop1); H1 = ps1.H
 ps2 = PlaneStress(prop2); H2 = ps2.H
 
-T = 0.1
+T = 200.0
 NT = 200
 
 
@@ -81,6 +81,8 @@ end
 
 ndofs = 2
 domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
+setGeometryPoints!(domain, npoints, node_to_point)
+
 state = zeros(domain.neqs)
 ∂u = zeros(domain.neqs)
 globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)

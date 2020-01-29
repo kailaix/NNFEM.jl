@@ -4,13 +4,10 @@ threshold = 1e7 # σY ≈ 1e8
 
 idx = 0
 H_function = spd_Chol_Orth
-use_reg = false
 
 
-if length(ARGS)==3
+if length(ARGS)==1
     global idx = parse(Int64, ARGS[1])
-    global H_function = eval(Meta.parse(ARGS[2]))
-    global use_reg = parse(Bool, ARGS[3])
 else
     @warn("No ARGS provided")
 end
@@ -27,10 +24,8 @@ if idx == 0
 elseif idx == 1
     global config=[20, 20, 20, 20, nout] 
 elseif idx == 2
-    global config=[20,20,20,nout] 
+    global config=[20, 20, 20, 20, 20, 20, nout]
 elseif idx == 3
-    global config=[20,20,20,20,20,20,nout]
-elseif idx == 5
     global config=[nout]
 end
 printstyled("idx = $idx, config=$config, H_function=$H_function\n", color=:green)
