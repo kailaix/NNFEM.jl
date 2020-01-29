@@ -2,6 +2,7 @@ using ADCME
 function buildops(dirname)
     PWD = pwd()
     cd(joinpath("$(@__DIR__)/CustomOp/", dirname))
+    rm("build", force=true, recursive=true)
     if !isdir("build")
         mkdir("build")
         cd("build")
