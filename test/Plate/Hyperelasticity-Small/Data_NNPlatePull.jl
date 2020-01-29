@@ -1,4 +1,5 @@
-force_scale = 5.0 #50
+# default values 
+force_scale = 5.0 # use force_scale = 50  
 tid = 200
 fiber_size = 1
 porder = 2
@@ -72,7 +73,6 @@ updateStates!(domain, globdat)
 
 Δt = T/NT
 
-
 ρ_oo = 0.0
 αm = (2*ρ_oo - 1)/(ρ_oo + 1)
 αf = ρ_oo/(ρ_oo + 1)
@@ -85,7 +85,14 @@ for i = 1:NT
 end
 
 # error()
-# todo write data
+if !isdir("$(@__DIR__)/Data")
+    mkdir("$(@__DIR__)/Data")
+end
+
+if !isdir("$(@__DIR__)/Debug")
+    mkdir("$(@__DIR__)/Debug")
+end
+
 if !isdir("$(@__DIR__)/Data/order$porder")
     mkdir("$(@__DIR__)/Data/order$porder")
 end

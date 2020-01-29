@@ -11,19 +11,10 @@ force_scales = [1.0]
 testtype = "NeuralNetwork2D"
 nntype = "stiffmat"
 
-
-# ! define H0
-# Trained with nx, ny = 10, 5
-H0 = [1.04167e6  2.08333e5  0.0      
-      2.08333e5  1.04167e6  0.0      
-      0.0        0.0        4.16667e5]/stress_scale
-
-
-n_data = [100, 101, 102, 103, 104,  200, 201, 202, 203, 204]
+n_data = [100, 101, 102, 103, 104, 200, 201, 202, 203, 204]
 
 porder = 2
 prop = Dict("name"=> testtype, "rho"=> 800, "nn"=>nn)
-
 
 
 T = 0.2
@@ -124,14 +115,15 @@ loss = sum(losses)
 
 
 sess = tf.Session(); init(sess)
-#ADCME.load(sess, "$(@__DIR__)/Data/NNPreLSfit_$(idx).mat")
-#vars = get_collection()
+
+
+
 for i = 1:100
     println("************************** Outer Iteration = $i ************************** ")
     BFGS!(sess, loss, 1000)
     #BFGS!(sess, loss, gradients(loss,vars), vars, iterations=1000)
     @show "save to ", "Data/NN_Train_$(idx).mat"
-    ADCME.save(sess, "Data/$(nntype)/NN_Train_$(idx)_ite$(i).mat")
+    ADCME.save(sess, "Data/$(nntype)/NN_Train_$(idx)_iter$(i).mat")
 end
 
 

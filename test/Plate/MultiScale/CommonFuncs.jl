@@ -227,6 +227,7 @@ end
 
 function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5; force_scale=5.0)
     nnodes, neles = (nx*porder + 1)*(ny*porder + 1), nx*ny
+    
     Lx, Ly = 1.0, 0.5
     x = np.linspace(0.0, Lx, nx*porder + 1)
     y = np.linspace(0.0, Ly, ny*porder + 1)
@@ -263,18 +264,47 @@ function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5; force_scal
 
     P1 = 80000 /force_scale #gcm/ms^2 compress/pull
     P2 = 8000 /force_scale #gcm/ms^2 bend 
+    P3 = 30000/force_scale
     @show P1, P2
     ngp = 3
     #Bending or Pulling
+    # 
     if tid==100
         F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Constant",  [0, P1])
         fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 1] .= F1
         fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2
+        
     elseif tid==101
         F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Constant",  [0, -P1])
         fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 1] .= F1
         fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2
-     
+
+    elseif tid==102
+        F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Constant",  [P3, 0])
+        fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 1] .= F1
+        fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2 
+
+    elseif tid==103
+        F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Constant",  [P3/sqrt(2.0), P1/sqrt(2.0)])
+        fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 1] .= F1
+        fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2 
+
+    elseif tid==104
+        F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Constant",  [-P3, 0])
+        fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 1] .= F1
+        fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2 
+    
+    elseif tid==105
+        F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Constant",  [0, 0.75*P1])
+        fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 1] .= F1
+        fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2
+
+    elseif tid==106
+        F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Constant",  [0.75*P3, 0])
+        fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 1] .= F1
+        fext[collect((nx*porder+1)*ny*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2 
+
+
     elseif tid == 200
         F1, F2 = ComputeLoad(Ly, ny, porder, ngp, "Constant",  [P1, 0])
         fext[collect(nx*porder+1:nx*porder+1:(nx*porder+1)*(ny*porder+1)), 1] .= F1
@@ -295,6 +325,20 @@ function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5; force_scal
         fext[collect(nx*porder+1:nx*porder+1:(nx*porder+1)*(ny*porder+1)), 1] .= F1
         fext[collect(nx*porder+1:nx*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2
 
+    elseif tid == 204
+        F1, F2 = ComputeLoad(Ly, ny, porder, ngp, "Constant",  [0, -P2])
+        fext[collect(nx*porder+1:nx*porder+1:(nx*porder+1)*(ny*porder+1)), 1] .= F1
+        fext[collect(nx*porder+1:nx*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2
+
+    elseif tid == 205
+        F1, F2 = ComputeLoad(Ly, ny, porder, ngp, "Constant",  [0.75*P1, 0])
+        fext[collect(nx*porder+1:nx*porder+1:(nx*porder+1)*(ny*porder+1)), 1] .= F1
+        fext[collect(nx*porder+1:nx*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2
+
+    elseif tid == 206
+        F1, F2 = ComputeLoad(Ly, ny, porder, ngp, "Constant",  [0, 0.75*P2])
+        fext[collect(nx*porder+1:nx*porder+1:(nx*porder+1)*(ny*porder+1)), 1] .= F1
+        fext[collect(nx*porder+1:nx*porder+1:(nx*porder+1)*(ny*porder+1)), 2] .= F2
 
     elseif tid == 300
 
@@ -306,7 +350,19 @@ function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5; force_scal
     end
 
     dof_to_active = findall(FBC[:].==-2)
-    ft = t->fext[:][dof_to_active]*sin(π*t/(2T))
+    ft = t->fext[:][dof_to_active]*sin(π*t/(T))
     # @show ft(T)
-    return nodes, EBC, g, gt, FBC, fext, ft
+
+
+    npoints = (nx+1)*(ny+1)
+    node_to_point = zeros(Int64, nnodes) .- 1
+    pointid = 1
+    for j = 1:2:(ny*porder + 1)
+        for i = 1:2:(nx*porder + 1)
+            node_to_point[(j-1)*(nx*porder + 1) + i] = pointid
+            pointid += 1
+        end
+    end
+
+    return nodes, EBC, g, gt, FBC, fext, ft, npoints, node_to_point
 end
