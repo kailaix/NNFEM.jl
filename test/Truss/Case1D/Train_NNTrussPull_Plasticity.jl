@@ -32,7 +32,7 @@ for i = 1:nx
     push!(elements, FiniteStrainTruss(coords,elnodes, prop, ngp))
 end
 # domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
-@load "Data/domain.jld2" domain
+@load "Data/domain1.jld2" domain
 state = zeros(domain.neqs)
 ∂u = zeros(domain.neqs)
 globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
@@ -43,10 +43,10 @@ E = prop["E"]
 H0 = zeros(1,1)
 H0[1,1] = E
 
-n_data = 1
-losses = Array{PyObject}(undef, n_data)
-for i = 1:n_data
-    state_history, fext_history = read_data("$(@__DIR__)/Data/$i.dat")
+n_data = [1,2,4,5]
+losses = Array{PyObject}(undef, length(n_data))
+for (i, ni) in enumerate(n_data)
+    state_history, fext_history = read_data("$(@__DIR__)/Data/$ni.dat")
     losses[i] = DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
 end
 loss = sum(losses)
@@ -55,7 +55,7 @@ loss = sum(losses)
 sess = Session(); init(sess)
 @show run(sess, loss)
 
-BFGS!(sess, loss, 800)
+BFGS!(sess, loss, 2000)
 ADCME.save(sess, "Data/trained_nn_fem.mat")
 
 # X, Y = prepare_strain_stress_data1D(domain)

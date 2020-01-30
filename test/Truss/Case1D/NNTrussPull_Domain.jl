@@ -7,6 +7,8 @@ using JLD2
 using ADCME
 using LinearAlgebra
 
+tid = length(ARGS)==1 ? parse(Int64, ARGS[1]) : 3
+
 np = pyimport("numpy")
 
 """
@@ -55,7 +57,7 @@ end
 
 #force load function
 function ft(t)
-    return  sin(pi*t/T) * 1e9
+    return  sin(pi*t/T) * 1e9 * (0.2*tid + 0.8)
 end
 
 ngp=2

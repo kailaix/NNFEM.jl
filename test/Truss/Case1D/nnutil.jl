@@ -23,7 +23,7 @@ end
 
 function post_nn(ε::Float64, ε0::Float64, σ0::Float64, Δt::Float64)
     # @show "Post NN"
-    f = x -> nnae_scaled([x;ε0;σ0/1e10])*1e10
+    f = x -> nnae_scaled([x ε0 σ0/1e10])*1e10
     df = ForwardDiff.derivative(f, ε)
-    return f(ε), df
+    return f(ε)[1], df[1]
 end

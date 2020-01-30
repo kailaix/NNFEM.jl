@@ -14,6 +14,13 @@ notifications:
   email: false
 coveralls: false
 before_install:
+  - sudo apt-get update
+  - sudo apt-get install python3-pip
+  - sudo apt-get install python3-setuptools
+  - /usr/bin/python3 -m pip install --upgrade pip
+  - /usr/bin/python3 -m pip install --user matplotlib
+  - /usr/bin/python3 -m pip install --user numpy
+  - /usr/bin/python3 -m pip install --user scipy
   - julia -e 'using Pkg; Pkg.add("Conda"); ENV["PYTHON"]="/home/travis/.julia/conda/3/bin/python"; Pkg.add("PyCall")'
 jobs:
   include:
