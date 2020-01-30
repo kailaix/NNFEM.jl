@@ -8,11 +8,12 @@ reset_default_graph()
 
 stress_scale = 1e5
 strain_scale = 1.0
-force_scale = 5.0
+force_scale = 1.0
 fiber_size = 2
 porder = 2
 
 nntype = "stiffmat"
+#nntype = "ae_scaled"
 
 include("nnutil.jl")
 
@@ -37,7 +38,7 @@ end
 sess = Session(); init(sess)
 @show run(sess, loss)
 # ADCME.load(sess, "Data/NNLearn.mat")
-for i = 1:30
+for i = 1:50
     BFGS!(sess, loss, 1000)
     ADCME.save(sess, "Data/$nntype/NNLearn_$(idx)_ite$(i).mat")
 end
