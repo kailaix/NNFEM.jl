@@ -1,4 +1,7 @@
 export  PlaneStrain
+
+"""
+"""
 mutable struct PlaneStrain
     H::Array{Float64}
     E::Float64

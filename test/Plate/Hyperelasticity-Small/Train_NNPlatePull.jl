@@ -13,19 +13,10 @@ force_scales = [2.0]
 
 testtype = "NeuralNetwork2D"
 
-
-# ! define H0
-# Trained with nx, ny = 10, 5
-H0 = [1.04167e6  2.08333e5  0.0      
-      2.08333e5  1.04167e6  0.0      
-      0.0        0.0        4.16667e5]/stress_scale
-
-
-n_data = [100, 101, 102, 103, 104,  200, 201, 202, 203, 204]
+n_data = [100, 101, 102, 103, 104, 200, 201, 202, 203, 204]
 
 porder = 2
 prop = Dict("name"=> testtype, "rho"=> 800, "nn"=>nn)
-
 
 
 T = 0.2
@@ -125,17 +116,31 @@ loss = sum(losses)
 
 
 
+<<<<<<< HEAD
 sess = tf.Session(); init(sess)
 #Train from NNPreTrain
 restart_id = 5
 ADCME.load(sess, "$(@__DIR__)/Data/$(nntype)/NNPreLSfit_$(idx)_$(H_function)_$(restart_id).mat")
 #vars = get_collection()
 for i = 1:50
+=======
+sess = Session(); init(sess)
+
+if !isdir("Data/$(nntype)")
+    mkdir("Data/$(nntype)")
+end
+
+for i = 1:100
+>>>>>>> a03560c8aa597b42ed229ef85fd91a9c6f9aa95f
     println("************************** Outer Iteration = $i ************************** ")
     BFGS!(sess, loss, 1000)
     #BFGS!(sess, loss, gradients(loss,vars), vars, iterations=1000)
     @show "save to ", "Data/NN_Train_$(idx).mat"
+<<<<<<< HEAD
     ADCME.save(sess, "Data/$(nntype)/NN_Train_$(idx)_from_$(restart_id)_ite$(i).mat")
+=======
+    ADCME.save(sess, "Data/$(nntype)/NN_Train_$(idx)_iter$(i).mat")
+>>>>>>> a03560c8aa597b42ed229ef85fd91a9c6f9aa95f
 end
 
 

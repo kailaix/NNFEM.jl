@@ -1,4 +1,19 @@
 export FiniteStrainContinuum
+
+
+"""
+    FiniteStrainContinuum
+
+Implements the finite strain element. 
+
+- `eledim`: spatial dimension of the element (default = 2).
+- `mat`: constitutive law, a length `#elem` vector of materials such as [`PlaneStress`](@ref)
+- `elnodes`: the node indices in this finite element, an integer array 
+- `props`: property dictionary 
+- `coords`: coordinates of the vertices of the element
+- `dhdx`, `weights`, `hs`: data for integral 
+- `stress`: stress at each quadrature points
+"""
 mutable struct FiniteStrainContinuum
     eledim::Int64
     mat  # constitutive law

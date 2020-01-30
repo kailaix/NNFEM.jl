@@ -6,6 +6,7 @@ using PyPlot
 using JLD2
 using ADCME
 using LinearAlgebra
+tid = length(ARGS)==1 ? parse(Int64, ARGS[1]) : 3
 
 np = pyimport("numpy")
 

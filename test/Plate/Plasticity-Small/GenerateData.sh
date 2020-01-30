@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #!/bin/bash
 
 force_scale=50.0
@@ -21,3 +22,9 @@ julia Data_NNPlatePull.jl 300 $force_scale 2 2 &
 
 
 wait
+=======
+for tid in 100 101 102 103 104 200 201 202 203 204 300
+do 
+    julia Data_NNPlatePull.jl $tid 5.0 2 2 &
+done
+>>>>>>> a03560c8aa597b42ed229ef85fd91a9c6f9aa95f

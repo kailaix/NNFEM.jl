@@ -119,94 +119,9 @@ end
 @show stress_scale^2
 loss = sum(losses)
 
+sess = Session(); init(sess)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# function BFGS!(sess::PyObject, loss::PyObject, grads::Union{Array{T},Nothing,PyObject}, 
-#     vars::Union{Array{PyObject},PyObject}; kwargs...) where T<:Union{Nothing, PyObject}
-#     if isa(grads, PyObject); grads = [grads]; end
-#     if isa(vars, PyObject); vars = [vars]; end
-#     if length(grads)!=length(vars); error("ADCME: length of grads and vars do not match"); end
-    
-#     idx = ones(Bool, length(grads))
-#     for i = 1:length(grads)
-#         if isnothing(grads[i])
-#             idx[i] = false
-#         end
-#     end
-#     grads = grads[idx]
-#     vars = vars[idx]
-    
-#     sizes = []
-#     for v in vars
-#         push!(sizes, size(v))
-#     end
-#     grds = vcat([tf.reshape(g, (-1,)) for g in grads]...)
-#     vs = vcat([tf.reshape(v, (-1,)) for v in vars]...); x0 = run(sess, vs)
-#     pl = placeholder(x0)
-#     n = 0
-#     assign_ops = PyObject[]
-#     for (k,v) in enumerate(vars)
-#         push!(assign_ops, assign(v, tf.reshape(pl[n+1:n+prod(sizes[k])], sizes[k])))
-#         n += prod(sizes[k])
-#     end
-    
-#     __loss = 0.0
-#     __losses = Float64[]
-#     function f(x)
-#         run(sess, assign_ops, pl=>x)
-#         __loss = run(sess, loss)
-#         return __loss
-#     end
-    
-#     function g!(G, x)
-#         run(sess, assign_ops, pl=>x)
-#         G[:] = run(sess, grds)
-#     end
-    
-#     function callback(x)
-#         push!(__losses, __loss)
-#         false
-#     end
-    
-#     Optim.optimize(f, g!, x0, Optim.LBFGS(alphaguess = InitialStatic(), linesearch=LineSearches.BackTracking(order=3)), 
-#                    Optim.Options(show_trace=true, callback=callback, iterations=1000))
-#     return __losses
-# end
-
-
-
-sess = tf.Session(); init(sess)
-
-
-# for iteid = 1:30
-# ADCME.load(sess, "$(@__DIR__)/Data/$nntype/NNPreLSfit_$(idx)_ite$(iteid).mat")
-# @show "iteid is ", iteid
-# @show run(sess, loss)
-# @show run(sess, losses)
-# end
-
-
-
-start_id = 3
-
-
-
+start_id = 4
 ADCME.load(sess, "$(@__DIR__)/Data/$nntype/NNPreLSfit_$(idx)_$(H_function)_$(start_id).mat")
 #vars = get_collection()
 for i = 1:50

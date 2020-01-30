@@ -1,39 +1,50 @@
 stress_scale = 1.0e5
 strain_scale = 1
 
+include("nnutil.jl")
+
+# H0 = constant(H1/stress_scale)
+testtype = "NeuralNetwork2D"
 force_scales = [5.0]
 force_scale = 5.0
+
+#nntype = "piecewise"
+nntype = "piecewise"
+
+# ! define H0
+# Trained with nx, ny = 10, 5
+# H0 = [1.26827e6       3.45169e5   -5187.35
+#       3.45169e5       1.25272e6  -10791.7
+#       -5187.35       -10791.7        536315.0]/stress_scale
+
+H0 = [1335174.0968380707  326448.3267263398         0.0 
+       326448.3267263398  1326879.2022994285        0.0 
+                    0.0                 0.0     526955.763626241]/stress_scale
+
+H0inv = inv(H0)
+
+n_data = [100, 101, 102, 103, 104, 200, 201, 202, 203, 204]
 porder = 2
+# density 4.5*(1 - 0.25) + 3.2*0.25
+fiber_fraction = 0.25
+#todo
+#fiber_fraction = 1.0
+prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>nn)
+
+
 T = 200.0
 NT = 200
 Δt = T/NT
 
-include("nnutil.jl")
-nntype = "piecewise"
-#use only rho
-prop = Dict("name"=> "PlaneStressPlasticity","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.2,
-"sigmaY"=>0.97e+4, "K"=>1e+5)
-
-# ! define H0
-# Trained with nx, ny = 10, 5
-#H0 = [1.04167e6  2.08333e5  0.0      
-#      2.08333e5  1.04167e6  0.0      
-#      0.0        0.0        4.16667e5]/stress_scale
-
-H0 = [1.0406424793819175e6 209077.08366547766         0.0
-      209077.08366547766   1.0411467691352057e6       0.0
-      0.0                  0.0                   419057.32049008965]/stress_scale
-
-n_data = [100, 101, 102, 103, 104, 200, 201, 202, 203, 204]
-
-
-
 # DNS computaional domain
-fiber_size = 2
+fiber_size = 5
 # nx_f, ny_f = 40*fiber_size, 20*fiber_size
-nx_f, ny_f = 10*fiber_size, 5*fiber_size
-Lx, Ly = 1.0, 0.5
+nx_f, ny_f = 80*fiber_size, 40*fiber_size
 
+# nx_f, ny_f = 12, 4
+
+# homogenized computaional domain
+# number of elements in each directions
 nx, ny = 10, 5
 # number of subelements in one element in each directions
 sx_f, sy_f = div(nx_f,nx), div(ny_f,ny)
@@ -51,7 +62,7 @@ end
 
 
 function approximate_stress(tid, force_scale, method)
-    nodes, EBC, g, gt, FBC, fext, ft, npoints, node_to_point = BoundaryCondition(tid, nx, ny, porder, Lx, Ly; force_scale=force_scale )
+    nodes, EBC, g, gt, FBC, fext, ft, npoints, node_to_point = BoundaryCondition(tid, nx, ny, porder; force_scale=force_scale )
     domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
     setGeometryPoints!(domain, npoints, node_to_point)
 
@@ -61,7 +72,7 @@ function approximate_stress(tid, force_scale, method)
     assembleMassMatrix!(globdat, domain)
 
     # full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
-    full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
+    full_state_history, full_fext_history = read_data("Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
     
 
     #update state history and fext_history on the homogenized domain
@@ -79,11 +90,7 @@ function approximate_stress(tid, force_scale, method)
 
 end
 
-
-
-
-
-nodes, _, _, _, _, _, _,_,_ = BoundaryCondition(n_data[1], nx, ny, porder, Lx, Ly; force_scale=force_scale)
+nodes, _ = BoundaryCondition(n_data[1], nx, ny, porder)
 elements = []
 for j = 1:ny
     for i = 1:nx 
@@ -146,6 +153,7 @@ end
 loss = constant(0.0)
 
 method = "Linear"
+#for force_scale in force_scales
 for tid in n_data
     E_all, S_all = approximate_stress(tid, force_scale, method)
     ngp = size(E_all,2)
@@ -168,15 +176,16 @@ for tid in n_data
     global loss
     loss += mean((y - Y)^2) #/stress_scale^2
 end
+#end
 
 sess = Session(); init(sess)
 @show run(sess, loss)
-# ADCME.load(sess, "Data/$(nntype)/NNPreLSfit.mat")
+# ADCME.load(sess, "Data/NNPreLSfit.mat")
 if !isdir("Data/$(nntype)")
     mkdir("Data/$(nntype)")
 end
-
 for i = 1:5
     BFGS!(sess, loss, 1000)
+    @show "Data/$(nntype)/NNPreLSfit_$(idx)_$(H_function)_$(i).mat"
     ADCME.save(sess, "Data/$(nntype)/NNPreLSfit_$(idx)_$(H_function)_$(i).mat")
 end

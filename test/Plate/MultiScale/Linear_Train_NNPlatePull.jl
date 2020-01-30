@@ -2,32 +2,37 @@ stress_scale = 1.0e5
 strain_scale = 1
 
 include("nnutil.jl")
-# reset_default_graph()
-H0 = Variable(zeros(3,3))
-H0 = H0 + H0'
+
 # H0 = constant(H1/stress_scale)
 testtype = "NeuralNetwork2D"
 force_scales = [50.0]
 nntype = "linear"
-n_data = [100,200,201,202,203]
-printstyled("training data: $n_data\n", color=:green)
 
+# ! define H0
+# Trained with nx, ny = 10, 5
 
-# H0 = [4.5584e6   1.59544e6  0.0      
-# 1.59544e6  4.5584e6   0.0      
-# 0.0        0.0        1.48148e6]
+# reset_default_graph()
+H0 = Variable(zeros(3,3))
+H0 = H0 + H0'
+M = [1.0 1.0 0.0; 1.0 1.0 0.0; 0.0 0.0 1.0]
+H0 = M .* H0
+n_data = [100, 101, 102, 103, 104, 200, 201, 202, 203, 204]
+porder = 2
 # density 4.5*(1 - 0.25) + 3.2*0.25
 fiber_fraction = 0.25
 #todo
-# fiber_fraction = 1.0
+#fiber_fraction = 1.0
 prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>nn)
 
 
-T = 0.05
-NT = 100
-fiber_size = 5
+T = 200.0
+NT = 200
+
 # DNS computaional domain
+fiber_size = 5
+# nx_f, ny_f = 40*fiber_size, 20*fiber_size
 nx_f, ny_f = 80*fiber_size, 40*fiber_size
+
 # nx_f, ny_f = 12, 4
 
 # homogenized computaional domain
@@ -36,17 +41,15 @@ nx, ny = 10, 5
 # number of subelements in one element in each directions
 sx_f, sy_f = div(nx_f,nx), div(ny_f,ny)
 
-porder = 2
-
 ndofs = 2
 fine_to_coarse = zeros(Int64, ndofs*(nx*porder+1)*(ny*porder+1))
 for idof = 1:ndofs
-for iy = 1:ny*porder+1
-    for ix = 1:nx*porder+1
-        fine_to_coarse[ix + (iy - 1)*(nx*porder+1) + (idof-1)*(nx*porder+1)*(ny*porder+1)] = 
-        1 + (ix - 1) * sx_f + (iy - 1) * (nx_f*porder + 1) * sy_f + (nx_f*porder + 1)*(ny_f*porder + 1)*(idof - 1)
+    for iy = 1:ny*porder+1
+        for ix = 1:nx*porder+1
+            fine_to_coarse[ix + (iy - 1)*(nx*porder+1) + (idof-1)*(nx*porder+1)*(ny*porder+1)] = 
+            1 + (ix - 1) * sx_f + (iy - 1) * (nx_f*porder + 1) * sy_f + (nx_f*porder + 1)*(ny_f*porder + 1)*(idof - 1)
+        end
     end
-end
 end
 
 # #todo only for first order
@@ -78,33 +81,6 @@ end
 # end
 
 
-
-# function compute_loss(tid)
-#     local fscale
-#     nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny,porder)
-#     domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
-#     state = zeros(domain.neqs)
-#     ∂u = zeros(domain.neqs)
-#     globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
-#     assembleMassMatrix!(globdat, domain)
-#     # @load "Data/domain$tid.jld2" domain
-#     full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
-#     #update state history and fext_history on the homogenized domain
-#     state_history = [x[fine_to_coarse] for x in full_state_history]
-#     #todo hard code the sy_f, it is on the right hand side
-#     fine_to_coarse_fext = compute_fine_to_coarse_fext(tid)
-    
-#     if tid in [100, 300]
-#         fscale = sx_f
-#     elseif tid in [200, 201, 202, 203]
-#         fscale = sy_f
-#     end
-#     fext_history = [x[fine_to_coarse_fext] * fscale for x in full_fext_history]
-#     # @show size(hcat(domain.history["state"]...))
-#     DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
-# end
-
-
 function compute_loss(tid, force_scale)
     nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny, porder; force_scale=force_scale)
     domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
@@ -112,8 +88,9 @@ function compute_loss(tid, force_scale)
     ∂u = zeros(domain.neqs)
     globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
     assembleMassMatrix!(globdat, domain)
-    # @load "Data/domain$tid.jld2" domain
+    # full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
     full_state_history, full_fext_history = read_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat")
+    
     #update state history and fext_history on the homogenized domain
     state_history = [x[fine_to_coarse] for x in full_state_history]
 
@@ -124,7 +101,11 @@ function compute_loss(tid, force_scale)
         updateDomainStateBoundary!(domain, globdat)
         push!(fext_history, domain.fext[:])
     end
-    DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
+
+    # domain.state = state_history[end]
+    # visσ(domain)
+    # error()
+    sum_loss = DynamicMatLawLoss(domain, globdat, state_history, fext_history, nn,Δt)
 end
 
 
@@ -165,15 +146,23 @@ for i in n_data
         k += 1
     end
 end
+
+
 @show stress_scale^2
-loss = sum(losses)/stress_scale^2
-sess = Session(); init(sess)
-# ADCME.load(sess, "$(@__DIR__)/Data/order1/learned_nn_5.0_1.mat")
-# ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
+loss = sum(losses)
+
+sess = tf.Session(); init(sess)
 @info run(sess, loss)
 # error()
-for i = 1:100
+for i = 1:2
     println("************************** Outer Iteration = $i ************************** ")
-    BFGS!(sess, loss, 200)
-    writedlm("$(@__DIR__)/Data/H0.mat", run(sess, H0))
+    BFGS!(sess, loss, 2000)
+    ADCME.save(sess, "$(@__DIR__)/Data/linear_train.mat")
 end
+
+@info run(sess, H0)
+
+
+@show [1335174.0968380707 326448.3267263398 0.0; 
+        326448.3267263398 1326879.2022994285 0.0; 
+        0.0 0.0 526955.763626241]

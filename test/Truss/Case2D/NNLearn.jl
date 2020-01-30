@@ -7,28 +7,21 @@ using PyPlot
 include("nnutil.jl")
 nntype= "ae_scaled"
 stress_scale = 100.0
-@load "Data/domain.jld2" domain
 
-X, Y = prepare_strain_stress_data1D(domain)
-y = squeeze(nn(constant(X[:,1]), constant(X[:,2]), constant(X[:,3])))
-loss = sum((y-Y)^2)
-variable_scope("nn") do
-    global opt = AdamOptimizer().minimize(loss)
+loss = constant(0.0)
+for i = [1,2,4,5]
+    @load "Data/domain$i.jld2" domain
+    X, Y = prepare_strain_stress_data1D(domain)
+    y = squeeze(nn(constant(X[:,1]), constant(X[:,2]), constant(X[:,3])))
+    global loss += sum((y-Y)^2)
 end
-
 sess = Session(); init(sess)
 @show run(sess,loss)
-# for i = 1:50000
-#     l, _ = run(sess, [loss, opt])
-#     @show i,l
-# end
-BFGS!(sess, loss, 1000)
-out = run(sess, y)
-
+BFGS!(sess, loss, 2000)
 ADCME.save(sess, "Data/learned_nn.mat")
 # error()
 
-@load "Data/domain.jld2" domain
+@load "Data/domain3.jld2" domain
 X, Y = prepare_strain_stress_data1D(domain)
 x = constant(X)
 y = squeeze(nn(constant(X[:,1]), constant(X[:,2]), constant(X[:,3])))

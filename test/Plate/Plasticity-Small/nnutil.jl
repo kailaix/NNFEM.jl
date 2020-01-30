@@ -2,15 +2,11 @@
 include("CommonFuncs.jl")
 threshold = 1e7 # σY ≈ 1e8
 
-idx = 0
+idx = 2
 H_function = spd_Chol_Orth
-use_reg = false
 
-
-if length(ARGS)==3
+if length(ARGS)==1
     global idx = parse(Int64, ARGS[1])
-    global H_function = eval(Meta.parse(ARGS[2]))
-    global use_reg = parse(Bool, ARGS[3])
 else
     @warn("No ARGS provided")
 end
@@ -28,11 +24,9 @@ elseif idx == 1
 elseif idx == 2
     global config=[20,20,20,20,20,nout]
 elseif idx == 3
-    global config=[20,20,20,20,20,nout]
-elseif idx == 5
     global config=[nout]
 end
-printstyled("idx = $idx, config=$config, H_function=$H_function, use_reg = $use_reg\n", color=:green)
+printstyled("idx = $idx, config=$config, H_function=$H_function\n", color=:green)
 
 
 function nn(ε, ε0, σ0) # ε, ε0, σ0 450x3

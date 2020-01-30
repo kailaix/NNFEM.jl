@@ -6,16 +6,22 @@ include("nnutil.jl")
 # H0 = constant(H1/stress_scale)
 testtype = "NeuralNetwork2D"
 force_scales = [5.0]
-nntype = "doublenn"
+nntype = "piecewise"
 
 # ! define H0
 # Trained with nx, ny = 10, 5
-H0 = [1.26827e6       3.45169e5   -5187.35
-      3.45169e5       1.25272e6  -10791.7
-      -5187.35       -10791.7        536315.0]/stress_scale
+# H0 = [1.26827e6       3.45169e5   -5187.35
+#       3.45169e5       1.25272e6  -10791.7
+#       -5187.35       -10791.7        536315.0]/stress_scale
 
 
-n_data = [202,100, 200,201,203]
+H0 = [1335174.0968380707 326448.3267263398 0.0 
+      326448.3267263398 1326879.2022994285 0.0 
+      0.0 0.0 526955.763626241]/stress_scale
+      
+H0inv = inv(H0)
+
+n_data = [100,101,102,103,104,200,201,202,203,204]
 porder = 2
 # density 4.5*(1 - 0.25) + 3.2*0.25
 fiber_fraction = 0.25
@@ -24,8 +30,8 @@ fiber_fraction = 0.25
 prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>nn)
 
 
-T = 0.05
-NT = 100
+T = 200.0
+NT = 200
 
 # DNS computaional domain
 fiber_size = 5
@@ -147,15 +153,25 @@ for i in n_data
 end
 
 @show stress_scale^2
-loss = sum(losses)
+loss = sum(losses)/stress_scale
+W = get_collection()
+# if use_reg
+#     global reg = 1e6 * sum([sum(w^2) for w in W])
+# else
+#     global reg = 0.0
+# end
 
-sess = tf.Session(); init(sess)
-# ADCME.load(sess, "$(@__DIR__)/Data/order1/learned_nn_5.0_1.mat")
-# ADCME.load(sess, "Data/train_neural_network_from_fem.mat")
-@info run(sess, loss)
+
+
+sess = Session(); init(sess)
+
+startid=4
+ADCME.load(sess, "$(@__DIR__)/Data/$(nntype)/NNPreLSfit_$(idx)_$(H_function)_$(startid).mat") # pre-trained model
+#ADCME.load(sess, "$(@__DIR__)/Data/nn_train_$(use_reg)_$(idx)_$(H_function)_from5_ite18.mat") # pre-trained model
+# @info run(sess, loss+reg)
 # error()
 for i = 1:100
     println("************************** Outer Iteration = $i ************************** ")
-    BFGS!(sess, loss, 200)
-    ADCME.save(sess, "$(@__DIR__)/Data/nn_train$idx.mat")
+    BFGS!(sess, loss, 1000)
+    ADCME.save(sess, "$(@__DIR__)/Data/$(nntype)/nn_train_$(idx)_$(H_function)_from$(startid)_ite$(i).mat")
 end
