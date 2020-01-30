@@ -31,15 +31,10 @@ if idx == 0
 elseif idx == 1
     global config=[20, 20, 20, 20, nout] 
 elseif idx == 2
-<<<<<<< HEAD
     global config=[20, 20, 20, 20, 20, nout] 
 elseif idx == 3
     global config=[20, 20, 20, 20, 20, 20,nout]
 elseif idx == 5
-=======
-    global config=[20, 20, 20, 20, 20, 20, nout]
-elseif idx == 3
->>>>>>> a03560c8aa597b42ed229ef85fd91a9c6f9aa95f
     global config=[nout]
 end
 printstyled("idx = $idx, config=$config, H_function=$H_function\n", color=:green)

@@ -2,19 +2,10 @@ stress_scale = 1.0e+5
 strain_scale = 1
 
 # tid = parse(Int64, ARGS[1])
-<<<<<<< HEAD
 force_scale = 2.0
 tid=200
 
 printstyled("tid=$tid\n", color=:green)
-=======
-force_scale = 1.0
-tid = 200 # default
-# if Sys.MACHINE=="x86_64-pc-linux-gnu"
-#    global tid = parse(Int64, ARGS[1])
-#    global force_scale = parse(Float64, ARGS[2])
-# end
->>>>>>> a03560c8aa597b42ed229ef85fd91a9c6f9aa95f
 
 testtype = "NeuralNetwork2D"
 nntype = "stiffmat"
@@ -30,14 +21,10 @@ H0 = [1.04167e6  2.08333e5  0.0
 
 #s = ae_to_code("Data/NNLear.mat", nntype)
 #s = ae_to_code("Data/NNPreLSfit_$(idx).mat", nntype)
-<<<<<<< HEAD
 i = 5
 #nnname="Data/$(nntype)/NN_Train_$(idx)_ite$(i).mat"
 #nnname="Data/$(nntype)/NNLearn_$(idx)_ite$(i).mat"
 nnname="Data/$(nntype)/NNPreLSfit_$(idx)_spd_Chol_Orth_$(i).mat"
-=======
-nnname="Data/$nntype/NN_Train_$(idx)_iter2.mat"
->>>>>>> a03560c8aa597b42ed229ef85fd91a9c6f9aa95f
 s = ae_to_code(nnname, nntype)
 
 eval(Meta.parse(s))
