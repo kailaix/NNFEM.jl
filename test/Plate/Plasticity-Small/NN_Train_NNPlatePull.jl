@@ -119,9 +119,9 @@ end
 @show stress_scale^2
 loss = sum(losses)
 
-sess = tf.Session(); init(sess)
+sess = Session(); init(sess)
 
-start_id = 3
+start_id = 4
 ADCME.load(sess, "$(@__DIR__)/Data/$nntype/NNPreLSfit_$(idx)_$(H_function)_$(start_id).mat")
 #vars = get_collection()
 for i = 1:50
