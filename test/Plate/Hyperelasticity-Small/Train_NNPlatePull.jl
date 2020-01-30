@@ -114,9 +114,11 @@ loss = sum(losses)
 
 
 
-sess = tf.Session(); init(sess)
+sess = Session(); init(sess)
 
-
+if !isdir("Data/$(nntype)")
+    mkdir("Data/$(nntype)")
+end
 
 for i = 1:100
     println("************************** Outer Iteration = $i ************************** ")
