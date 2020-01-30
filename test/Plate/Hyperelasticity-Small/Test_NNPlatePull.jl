@@ -3,17 +3,16 @@ strain_scale = 1
 
 # tid = parse(Int64, ARGS[1])
 force_scale = 1.0
-
-tid = 200
+tid = 200 # default
 # if Sys.MACHINE=="x86_64-pc-linux-gnu"
 #    global tid = parse(Int64, ARGS[1])
 #    global force_scale = parse(Float64, ARGS[2])
 # end
-printstyled("tid=$tid\n", color=:green)
 
 testtype = "NeuralNetwork2D"
 nntype = "stiffmat"
 include("nnutil.jl")
+printstyled("idx = $idx, tid=$tid\n", color=:green)
 
 
 

@@ -8,7 +8,7 @@ H_function = spd_Chol_Orth
 
 if length(ARGS)==1
     global idx = parse(Int64, ARGS[1])
-elseif length(ARGS)==3
+elseif length(ARGS)==2
     global idx = parse(Int64, ARGS[1])
     global tid = parse(Int64, ARGS[2])
 else
