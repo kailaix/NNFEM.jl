@@ -44,7 +44,8 @@ if !isdir("$(@__DIR__)/Data/")
     mkdir("$(@__DIR__)/Data/")
 end
 
-write_data("$(@__DIR__)/Data/1.dat", domain)
+write_data("$(@__DIR__)/Data/$tid.dat", domain)
+@save "$(@__DIR__)/Data/domain$tid.jld2" domain
 # plot
 # close("all")
 # scatter(nodes[:, 1], nodes[:,2], color="red")
