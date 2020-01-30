@@ -8,8 +8,8 @@ using ADCME
 using LinearAlgebra
 using MAT
 
-
-nnname = "Data/trained_nn_fem.mat"
+learn = true
+nnname = learn ? "Data/learned_nn.mat" : "Data/trained_nn_fem.mat"
 nntype = "ae_scaled"
 s = ae_to_code(nnname, nntype)
 
@@ -35,10 +35,13 @@ updateStates!(domain, globdat)
 for i = 1:NT
     @info i, "/" , NT
     solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-5, 1e-5, 100) # ok
-
 end
 @info tid
 domain_te = domain
-@save "Data/domain$(tid)_te.jld2" domain_te
+if learn 
+    @save "Data/learn_domain$(tid)_te.jld2" domain_te
+else
+    @save "Data/domain$(tid)_te.jld2" domain_te
+end
 
 

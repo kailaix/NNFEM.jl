@@ -1,5 +1,5 @@
 # default values 
-force_scale = 5.0 # use force_scale = 50  
+force_scale = 1.0 # use force_scale = 50  
 tid = 200
 fiber_size = 1
 porder = 2
