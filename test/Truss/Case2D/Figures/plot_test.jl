@@ -5,6 +5,9 @@ using JLD2
 using NNFEM
 using ADCME
 
+global nntype="ae_scaled"
+stress_scale = 100.0
+
 include("../nnutil.jl")
 
 for tid in [1,3]
@@ -25,8 +28,9 @@ for tid in [1,3]
     NT = 100
     t = LinRange(0.0,T, NT+1)
     for i = 1:8
-        plot(t, err[i,:])
+        plot(t, err[i,:], label="$i")
     end
+    legend()
     xlabel("\$t\$")
     ylabel("\$u_{ref}-u_{est}\$")
     mpl.save("truss2d_loc_diff$tid.tex")
@@ -45,6 +49,7 @@ for tid in [1,3]
     scatter(X[:,1], out[:], marker=".",s=5, label="Estimated")
     xlabel("Strain")
     ylabel("Stress")
+    legend()
     grid("on")
     mpl.save("truss2d_stress_diff$tid.tex")
     savefig("truss2d_stress_diff$tid.pdf")

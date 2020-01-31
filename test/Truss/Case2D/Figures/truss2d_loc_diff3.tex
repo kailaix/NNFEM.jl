@@ -10,6 +10,8 @@
 \definecolor{color6}{rgb}{0.890196078431372,0.466666666666667,0.76078431372549}
 
 \begin{axis}[
+legend cell align={left},
+legend style={at={(0.03,0.97)}, anchor=north west, draw=white!80.0!black},
 tick align=outside,
 tick pos=left,
 x grid style={white!69.01960784313725!black},
@@ -125,6 +127,7 @@ table {%
 0.495 0
 0.5 0
 };
+\addlegendentry{1}
 \addplot [semithick, color1]
 table {%
 0 0
@@ -229,6 +232,7 @@ table {%
 0.495 0
 0.5 0
 };
+\addlegendentry{2}
 \addplot [semithick, color2]
 table {%
 0 0
@@ -333,6 +337,7 @@ table {%
 0.495 0.00597790603634235
 0.5 0.00604847085213182
 };
+\addlegendentry{3}
 \addplot [semithick, color3]
 table {%
 0 0
@@ -437,6 +442,7 @@ table {%
 0.495 0.00535603892260568
 0.5 0.00542312187914584
 };
+\addlegendentry{4}
 \addplot [semithick, color4]
 table {%
 0 0
@@ -541,6 +547,7 @@ table {%
 0.495 0.00542310717805455
 0.5 0.0054653012869538
 };
+\addlegendentry{5}
 \addplot [semithick, color5]
 table {%
 0 0
@@ -645,6 +652,7 @@ table {%
 0.495 0.00593228292660809
 0.5 0.00594408004806207
 };
+\addlegendentry{6}
 \addplot [semithick, color6]
 table {%
 0 0
@@ -749,6 +757,7 @@ table {%
 0.495 0.0113723206582229
 0.5 0.0115723526751416
 };
+\addlegendentry{7}
 \addplot [semithick, white!49.80392156862745!black]
 table {%
 0 0
@@ -853,6 +862,7 @@ table {%
 0.495 0.00770889403270953
 0.5 0.00775600978057685
 };
+\addlegendentry{8}
 \end{axis}
 
 \end{tikzpicture}

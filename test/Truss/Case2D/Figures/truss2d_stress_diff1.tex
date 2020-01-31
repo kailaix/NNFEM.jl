@@ -5,6 +5,8 @@
 \definecolor{color1}{rgb}{1,0.498039215686275,0.0549019607843137}
 
 \begin{axis}[
+legend cell align={left},
+legend style={at={(0.03,0.97)}, anchor=north west, draw=white!80.0!black},
 tick align=outside,
 tick pos=left,
 x grid style={white!69.01960784313725!black},
@@ -3222,6 +3224,7 @@ x                      y
 -0.00308489473689162 -0.336324700809445
 -0.00309194910180212 -0.337735573806437
 };
+\addlegendentry{Reference}
 \addplot [only marks, marker=*, draw=color1, fill=color1, colormap/viridis]
 table{%
 x                      y
@@ -6426,6 +6429,7 @@ x                      y
 -0.00308489473689162 -0.285723965099316
 -0.00309194910180212 -0.285875567265648
 };
+\addlegendentry{Estimated}
 \end{axis}
 
 \end{tikzpicture}
