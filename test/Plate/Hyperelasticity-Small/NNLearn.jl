@@ -8,7 +8,7 @@ reset_default_graph()
 
 stress_scale = 1e5
 strain_scale = 1.0
-force_scale = 1.0
+force_scale = 2.0
 fiber_size = 2
 porder = 2
 

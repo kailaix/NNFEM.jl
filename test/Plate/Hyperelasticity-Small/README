@@ -1,0 +1,15 @@
+1.  run GenerateData.sh with force_scale = 2.0
+
+
+2.  For point-to-point learning
+    run NNLearn.sh  
+    it has "julia NNLearn.jl 2 spd_Chol_Orth 0"  The source file is in NNLearn.jl, and the number 2 (idx) determines nn layer number in nnutil
+
+3.  For indirect data learning
+    a) run PreLSfit.jl
+    The source file is NNPreLSfit.jl
+    b) run NNTrain.jl
+    The source file is Train_NNPlatePull.jl, you can choose the restart output (from the PreLSfit), the current restart_id=5 (5000 iterations)
+
+
+The present setup is nntype=stiffmat in all files, you can change it to ae_scaled. 

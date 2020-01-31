@@ -2,12 +2,10 @@ stress_scale = 1.0e+5
 strain_scale = 1
 
 # tid = parse(Int64, ARGS[1])
-force_scale = 1.0
-tid = 200 # default
-# if Sys.MACHINE=="x86_64-pc-linux-gnu"
-#    global tid = parse(Int64, ARGS[1])
-#    global force_scale = parse(Float64, ARGS[2])
-# end
+force_scale = 2.0
+tid=200
+
+printstyled("tid=$tid\n", color=:green)
 
 testtype = "NeuralNetwork2D"
 nntype = "stiffmat"
@@ -23,7 +21,10 @@ H0 = [1.04167e6  2.08333e5  0.0
 
 #s = ae_to_code("Data/NNLear.mat", nntype)
 #s = ae_to_code("Data/NNPreLSfit_$(idx).mat", nntype)
-nnname="Data/$nntype/NN_Train_$(idx)_iter2.mat"
+i = 5
+#nnname="Data/$(nntype)/NN_Train_$(idx)_ite$(i).mat"
+#nnname="Data/$(nntype)/NNLearn_$(idx)_ite$(i).mat"
+nnname="Data/$(nntype)/NNPreLSfit_$(idx)_spd_Chol_Orth_$(i).mat"
 s = ae_to_code(nnname, nntype)
 
 eval(Meta.parse(s))
@@ -35,14 +36,15 @@ prop = Dict("name"=> testtype, "rho"=> 800.0, "nn"=>post_nn)
 T = 0.2
 NT = 200
 
+
 # nx_f, ny_f = 12, 4
 # homogenized computaional domain
 # number of elements in each directions
 nx, ny = 10, 5
-
+Lx, Ly = 0.1, 0.05 #m
 porder = 2
 
-nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny,porder;force_scale=force_scale)
+nodes, EBC, g, gt, FBC, fext, ft = BoundaryCondition(tid, nx, ny,porder, Lx, Ly;force_scale=force_scale)
 
 ndofs=2
 elements = []
@@ -96,12 +98,12 @@ axis("equal")
 savefig("Debug/order$porder/test_stress$(tid)_$(idx)_$force_scale.png")
 
 close("all")
-ux = [reshape(domain.history["state"][i][1:(nx*porder+1)*(ny*porder+1)], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
+ux = [reshape(domain.history["state"][i][1:(nx*porder+1)*(ny*porder+1)], ny*porder+1, nx*porder+1)[end,end] for i = 1:length(domain.history["state"])]
 plot(ts, ux)
 savefig("Debug/order$porder/test_ux$(tid)_$(idx)_$force_scale.png")
 
 close("all")
-uy = [reshape(domain.history["state"][i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
+uy = [reshape(domain.history["state"][i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[end,end] for i = 1:length(domain.history["state"])]
 plot(ts, uy)
 savefig("Debug/order$porder/test_uy$(tid)_$(idx)_$force_scale.png")
 

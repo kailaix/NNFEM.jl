@@ -3,13 +3,15 @@ using LineSearches
 stress_scale = 1.0e5
 strain_scale = 1
 
+nntype = "stiffmat"
+#nntype = "ae_scaled"
+
 include("nnutil.jl")
 
-force_scale = 1.0
-force_scales = [1.0]
+force_scale = 2.0
+force_scales = [2.0]
 
 testtype = "NeuralNetwork2D"
-nntype = "stiffmat"
 
 n_data = [100, 101, 102, 103, 104, 200, 201, 202, 203, 204]
 
@@ -114,18 +116,20 @@ loss = sum(losses)
 
 
 
-sess = Session(); init(sess)
-
+sess = tf.Session(); init(sess)
 if !isdir("Data/$(nntype)")
     mkdir("Data/$(nntype)")
 end
-
-for i = 1:100
+#Train from NNPreTrain
+restart_id = 5
+ADCME.load(sess, "$(@__DIR__)/Data/$(nntype)/NNPreLSfit_$(idx)_$(H_function)_$(restart_id).mat")
+#vars = get_collection()
+for i = 1:50
     println("************************** Outer Iteration = $i ************************** ")
     BFGS!(sess, loss, 1000)
     #BFGS!(sess, loss, gradients(loss,vars), vars, iterations=1000)
     @show "save to ", "Data/NN_Train_$(idx).mat"
-    ADCME.save(sess, "Data/$(nntype)/NN_Train_$(idx)_iter$(i).mat")
+    ADCME.save(sess, "Data/$(nntype)/NN_Train_$(idx)_from_$(restart_id)_ite$(i).mat")
 end
 
 
