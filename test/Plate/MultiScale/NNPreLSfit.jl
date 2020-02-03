@@ -181,10 +181,7 @@ end
 sess = Session(); init(sess)
 @show run(sess, loss)
 # ADCME.load(sess, "Data/NNPreLSfit.mat")
-if !isdir("Data/$(nntype)")
-    mkdir("Data/$(nntype)")
-end
-for i = 1:5
+for i = 1:50
     BFGS!(sess, loss, 1000)
     @show "Data/$(nntype)/NNPreLSfit_$(idx)_$(H_function)_$(i).mat"
     ADCME.save(sess, "Data/$(nntype)/NNPreLSfit_$(idx)_$(H_function)_$(i).mat")

@@ -155,23 +155,23 @@ end
 @show stress_scale^2
 loss = sum(losses)/stress_scale
 W = get_collection()
-# if use_reg
-#     global reg = 1e6 * sum([sum(w^2) for w in W])
-# else
-#     global reg = 0.0
-# end
+if use_reg
+    global reg = 1e6 * sum([sum(w^2) for w in W])
+else
+    global reg = 0.0
+end
 
 
 
-sess = Session(); init(sess)
+sess = tf.Session(); init(sess)
 
-startid=4
+startid=2
 ADCME.load(sess, "$(@__DIR__)/Data/$(nntype)/NNPreLSfit_$(idx)_$(H_function)_$(startid).mat") # pre-trained model
 #ADCME.load(sess, "$(@__DIR__)/Data/nn_train_$(use_reg)_$(idx)_$(H_function)_from5_ite18.mat") # pre-trained model
-# @info run(sess, loss+reg)
+@info run(sess, loss+reg)
 # error()
 for i = 1:100
     println("************************** Outer Iteration = $i ************************** ")
-    BFGS!(sess, loss, 1000)
-    ADCME.save(sess, "$(@__DIR__)/Data/$(nntype)/nn_train_$(idx)_$(H_function)_from$(startid)_ite$(i).mat")
+    BFGS!(sess, loss+reg, 1000)
+    ADCME.save(sess, "$(@__DIR__)/Data/$(nntype)/nn_train_$(use_reg)_$(idx)_$(H_function)_from$(startid)_ite$(i).mat")
 end

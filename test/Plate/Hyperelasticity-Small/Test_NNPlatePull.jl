@@ -31,7 +31,7 @@ eval(Meta.parse(s))
 # density 4.5*(1 - 0.25) + 3.2*0.25
 #fiber_fraction = 0.25
 #todo
-prop = Dict("name"=> testtype, "rho"=> 800.0, "nn"=>post_nn)
+prop = Dict("name"=> testtype, "rho"=> 0.8000, "nn"=>post_nn)
 
 T = 0.2
 NT = 200

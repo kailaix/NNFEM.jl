@@ -301,3 +301,100 @@ end
 function visstate(domain::Domain; kwargs...)
     visstate(domain, domain.state; kwargs...)
 end
+
+
+# need 1)empty domain for data structure 
+#      2)data in stresses and disps
+function visσ(domain::Domain, nx::Int64, ny::Int64,  stress::Array{Float64, 2}, disps::Array{Float64, 1}, 
+    vmin=nothing, vmax=nothing; scaling = 1.0)
+
+    u,v = disps[1:domain.nnodes], disps[domain.nnodes+1:end]
+    nodes = domain.nodes
+    ngpt = length(domain.elements[1].weights)
+    ngp = Int64(sqrt(ngpt))
+
+    ### Compute X[nx*ngp+1, ny*ngp+1], Y[nx*ngp+1, ny*ngp+1], C[nx*ngp, ny*ngp] for pcolormesh
+    X = zeros(Float64, nx*ngp+1, ny*ngp+1)
+    Y = zeros(Float64, nx*ngp+1, ny*ngp+1)
+    C = zeros(Float64, nx*ngp, ny*ngp)
+    
+    Gp_order_1D = zeros(Int64, ngp)
+    if ngp == 2
+        Gp_order_1D = [1, 2]
+    elseif ngp == 3
+        Gp_order_1D = [2, 1, 3]
+    elseif ngp == 4
+        Gp_order_1D = [4, 2, 1, 3]
+    else
+        error(" ngp == ", ngp, " has not implemented")
+    end
+
+    Gp_order = zeros(Int64, ngp, ngp)
+    for gy = 1:ngp
+        for gx = 1:ngp
+        Gp_order[gx, gy] = (Gp_order_1D[gx] - 1)*ngp  +  Gp_order_1D[gy]
+        end
+    end 
+
+
+    for iy = 1:ny
+        for ix = 1:nx
+            eid = ix + (iy-1)*nx
+            ele = domain.elements[eid]
+            # (iy-1)*ngp + ngp
+            # (iy-1)*ngp + 1
+            # (iy-1)*ngp + 0       (ix-1)*ngp + 0, (ix-1)*ngp + 1, (ix-1)*ngp + ngp
+
+            N = getNodes(ele)
+            N = N[[1;2;3;4]] #take these nodes on the four corners
+            xy = scaling*(nodes[N,:] + [u[N,:] v[N,:]])
+     
+            for gy = 0:ngp
+                for gx = 0:ngp
+                    w = [(1.0 - gx/ngp) * (1.0 - gy/ngp), gx/ngp * (1.0 - gy/ngp), 
+                          gx/ngp * gy/ngp, (1.0 - gx/ngp) * gy/ngp]
+                    if ix == 1 && gx == 0
+                            @show xy, w
+                        end
+                    X[1 + (ix-1)*ngp + gx, 1 + (iy-1)*ngp + gy] = w[1]*xy[1,1] +w[2]*xy[2,1] +w[3]*xy[3,1] +w[4]*xy[4,1] 
+                    Y[1 + (ix-1)*ngp + gx, 1 + (iy-1)*ngp + gy] = w[1]*xy[1,2] +w[2]*xy[2,2] +w[3]*xy[3,2] +w[4]*xy[4,2]  
+                end
+            end
+
+
+            for gy = 1:ngp
+                for gx = 1:ngp
+                    σ = stress[(eid-1)*ngpt + Gp_order[gx ,gy], :]
+                    σvm = postprocess_stress(σ, "vonMises")
+                    C[(ix-1)*ngp + gx, (iy-1)*ngp + gy] = σvm
+                    
+                end
+            end
+
+        end
+    end
+
+
+
+    vmin = vmin==nothing ? minimum(C) : vmin 
+    vmax = vmax==nothing ? maximum(C) : vmax
+
+    fig,ax = subplots()
+    temp = nodes + [u v]
+    x1, x2 = minimum(temp[:,1]), maximum(temp[:,1])
+    y1, y2 = minimum(temp[:,2]), maximum(temp[:,2])
+    
+
+    p = plt.pcolormesh(X, Y, C)
+    
+    cNorm  = colors.Normalize(
+            vmin=vmin,
+            vmax=vmax)
+    scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
+
+    
+    #scalarMap.set_array(σ)
+    colorbar(scalarMap)
+    xlim(x1 .-0.1,x2 .+0.1)
+    ylim(y1 .-0.1,y2 .+0.1)
+end

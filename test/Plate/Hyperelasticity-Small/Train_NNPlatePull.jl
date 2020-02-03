@@ -16,7 +16,7 @@ testtype = "NeuralNetwork2D"
 n_data = [100, 101, 102, 103, 104, 200, 201, 202, 203, 204]
 
 porder = 2
-prop = Dict("name"=> testtype, "rho"=> 800, "nn"=>nn)
+prop = Dict("name"=> testtype, "rho"=> 0.800, "nn"=>nn)
 
 
 T = 0.2

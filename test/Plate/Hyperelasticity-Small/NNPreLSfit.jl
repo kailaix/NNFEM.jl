@@ -14,7 +14,7 @@ include("nnutil.jl")
 #use only rho
 testtype = "PlaneStressIncompressibleRivlinSaunders"
 #https://classes.engineering.wustl.edu/2009/spring/mase5513/abaqus/docs/v6.6/books/bmk/default.htm?startat=ch01s01ach08.html
-prop = Dict("name"=> testtype, "rho"=> 800.0, "C1"=>0.1863e6, "C2"=>-0.00979e6)
+prop = Dict("name"=> testtype, "rho"=> 0.8000, "C1"=>0.1863e6, "C2"=>-0.00979e6)
 
 
 # ! define H0

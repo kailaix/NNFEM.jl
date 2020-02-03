@@ -1,5 +1,8 @@
 #!/bin/bash
-for idx in 0 1 2 
-do 
-julia NN_Train_NNPlatePull.jl $idx spd_Chol_Orth 0&
-done 
+ 
+julia NN_Train_NNPlatePull.jl 0 & 
+julia NN_Train_NNPlatePull.jl 1 &
+julia NN_Train_NNPlatePull.jl 2 &
+
+
+wait

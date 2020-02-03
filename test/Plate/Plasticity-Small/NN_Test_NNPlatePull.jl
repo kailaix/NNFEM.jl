@@ -25,7 +25,7 @@ H0 = [1.0406424793819175e6 209077.08366547766         0.0
 
 #s = ae_to_code("Data/$(nntype)/NNLearn_$(idx)_$(H_function)_ite50.mat", nntype)
 #s = ae_to_code("Data/$(nntype)/NNPreLSfit_$(idx)_$(H_function)_2.mat", nntype)
-s = ae_to_code("Data/$(nntype)/NN_Train_$(idx)_from_2_$(H_function)_ite30.mat", nntype)
+s = ae_to_code("Data/$(nntype)/NN_Train_$(idx)_from_3_$(H_function)_ite50.mat", nntype)
 
 
 eval(Meta.parse(s))

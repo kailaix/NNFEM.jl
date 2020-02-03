@@ -257,7 +257,7 @@ function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5; force_scal
 
     elseif tid == 300
 
-        F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Gaussian",  [Ly*P2, Lx*5.0/6.0, 0.2])
+        F1, F2 = ComputeLoad(Lx, nx, porder, ngp, "Gaussian",  [Lx*P2, Lx*5.0/6.0, 0.2*Lx])
         fext[collect(2:nx*porder+1), 1] .= F1[2:end]
         fext[collect(2:nx*porder+1), 2] .= F2[2:end]
     else

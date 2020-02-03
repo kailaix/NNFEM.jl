@@ -160,3 +160,37 @@ function commitHistory(self::FiniteStrainContinuum)
         commitHistory(m)
     end
 end
+
+
+function  getForceAndDforceDstress(self::FiniteStrainContinuum, state::Array{Float64},  
+    stress::Array{Float64,2})
+    ndofs = dofCount(self); 
+    nnodes = length(self.elnodes)
+    nStrain = 3
+    nGauss = length(self.weights)
+    fint = zeros(Float64, ndofs)
+    dfint_dstress = zeros(Float64,  ndofs, nGauss * nStrain)
+
+    u = state[1:nnodes]; v = state[nnodes+1:2*nnodes]
+
+    for k = 1:length(self.weights)
+        g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
+
+        ux = u'*g1; uy = u'*g2; vx = v'*g1; vy = v'*g2
+        # compute  ∂E∂u, 3 by 2nnodes array 
+        ∂E∂u = [g1+ux*g1 uy*g2    g2 + g2*ux+g1*uy;
+                vx*g1    g2+vy*g2 g1 + g1*vy+g2*vx;]
+
+        
+        S = stress[k, :]
+
+        self.stress[k] = S
+
+        fint += ∂E∂u * S * self.weights[k] # 1x8
+        
+        dfint_dstress[:, (k-1)*nStrain+1:k*nStrain] = ∂E∂u * self.weights[k]
+
+    end
+    return fint , dfint_dstress
+end
+

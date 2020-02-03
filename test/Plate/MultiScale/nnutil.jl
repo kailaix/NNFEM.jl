@@ -2,8 +2,9 @@
 include("CommonFuncs.jl")
 threshold = 1e7 # σY ≈ 1e8
 
-idx = 2
+idx = 0
 H_function = spd_Chol_Orth
+use_reg = false
 
 @show length(ARGS)
 if length(ARGS)==1
@@ -29,7 +30,7 @@ elseif idx == 3
 elseif idx == 5
     global config=[nout]
 end
-printstyled("idx = $idx, config=$config, H_function=$H_function\n", color=:green)
+printstyled("idx = $idx, config=$config, H_function=$H_function, use_reg = $use_reg\n", color=:green)
 
 
 function nn(ε, ε0, σ0) # ε, ε0, σ0 450x3

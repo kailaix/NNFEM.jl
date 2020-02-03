@@ -1,5 +1,5 @@
 # tid = parse(Int64, ARGS[1])
-force_scale = 5.0 #50
+force_scale = 6.0 #50
 tid = 203 
 fiber_size = 2 
 porder = 2

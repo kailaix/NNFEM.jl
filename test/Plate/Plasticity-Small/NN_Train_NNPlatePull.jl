@@ -124,7 +124,7 @@ sess = Session(); init(sess)
 start_id = 4
 ADCME.load(sess, "$(@__DIR__)/Data/$nntype/NNPreLSfit_$(idx)_$(H_function)_$(start_id).mat")
 #vars = get_collection()
-for i = 1:50
+for i = 1:100
     println("************************** Outer Iteration = $i ************************** ")
     BFGS!(sess, loss, 1000)
     #BFGS!(sess, loss, gradients(loss,vars), vars, iterations=1000)
