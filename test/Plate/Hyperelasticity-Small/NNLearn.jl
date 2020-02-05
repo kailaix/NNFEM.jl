@@ -35,10 +35,11 @@ for tid in n_data
 end
 
 
+
 sess = Session(); init(sess)
 @show run(sess, loss)
 # ADCME.load(sess, "Data/NNLearn.mat")
 for i = 1:50
     BFGS!(sess, loss, 1000)
-    ADCME.save(sess, "Data/$nntype/NNLearn_$(idx)_ite$(i).mat")
+    ADCME.save(sess, "Data/$nntype/NNLearn_$(idx)_$(H_function)_ite$(i).mat")
 end

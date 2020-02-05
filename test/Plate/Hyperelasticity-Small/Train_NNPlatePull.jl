@@ -121,7 +121,7 @@ if !isdir("Data/$(nntype)")
     mkdir("Data/$(nntype)")
 end
 #Train from NNPreTrain
-restart_id = 5
+restart_id = 3
 ADCME.load(sess, "$(@__DIR__)/Data/$(nntype)/NNPreLSfit_$(idx)_$(H_function)_$(restart_id).mat")
 #vars = get_collection()
 for i = 1:50

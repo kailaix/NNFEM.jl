@@ -306,7 +306,9 @@ end
 # need 1)empty domain for data structure 
 #      2)data in stresses and disps
 function visσ(domain::Domain, nx::Int64, ny::Int64,  stress::Array{Float64, 2}, disps::Array{Float64, 1}, 
-    vmin=nothing, vmax=nothing; scaling = 1.0)
+    vmin=nothing, vmax=nothing; scaling = [1.0, 1.0])
+
+    L_scale, sigma_scale = scaling
 
     u,v = disps[1:domain.nnodes], disps[domain.nnodes+1:end]
     nodes = domain.nodes
@@ -347,15 +349,13 @@ function visσ(domain::Domain, nx::Int64, ny::Int64,  stress::Array{Float64, 2},
 
             N = getNodes(ele)
             N = N[[1;2;3;4]] #take these nodes on the four corners
-            xy = scaling*(nodes[N,:] + [u[N,:] v[N,:]])
+            xy = L_scale*(nodes[N,:] + [u[N,:] v[N,:]])
      
             for gy = 0:ngp
                 for gx = 0:ngp
                     w = [(1.0 - gx/ngp) * (1.0 - gy/ngp), gx/ngp * (1.0 - gy/ngp), 
                           gx/ngp * gy/ngp, (1.0 - gx/ngp) * gy/ngp]
-                    if ix == 1 && gx == 0
-                            @show xy, w
-                        end
+           
                     X[1 + (ix-1)*ngp + gx, 1 + (iy-1)*ngp + gy] = w[1]*xy[1,1] +w[2]*xy[2,1] +w[3]*xy[3,1] +w[4]*xy[4,1] 
                     Y[1 + (ix-1)*ngp + gx, 1 + (iy-1)*ngp + gy] = w[1]*xy[1,2] +w[2]*xy[2,2] +w[3]*xy[3,2] +w[4]*xy[4,2]  
                 end
@@ -365,7 +365,7 @@ function visσ(domain::Domain, nx::Int64, ny::Int64,  stress::Array{Float64, 2},
             for gy = 1:ngp
                 for gx = 1:ngp
                     σ = stress[(eid-1)*ngpt + Gp_order[gx ,gy], :]
-                    σvm = postprocess_stress(σ, "vonMises")
+                    σvm = sigma_scale * postprocess_stress(σ, "vonMises")
                     C[(ix-1)*ngp + gx, (iy-1)*ngp + gy] = σvm
                     
                 end
@@ -380,9 +380,8 @@ function visσ(domain::Domain, nx::Int64, ny::Int64,  stress::Array{Float64, 2},
     vmax = vmax==nothing ? maximum(C) : vmax
 
     fig,ax = subplots()
-    temp = nodes + [u v]
-    x1, x2 = minimum(temp[:,1]), maximum(temp[:,1])
-    y1, y2 = minimum(temp[:,2]), maximum(temp[:,2])
+    x1, x2 = minimum(X), maximum(X)
+    y1, y2 = minimum(Y), maximum(Y)
     
 
     p = plt.pcolormesh(X, Y, C)
@@ -395,6 +394,9 @@ function visσ(domain::Domain, nx::Int64, ny::Int64,  stress::Array{Float64, 2},
     
     #scalarMap.set_array(σ)
     colorbar(scalarMap)
-    xlim(x1 .-0.1,x2 .+0.1)
-    ylim(y1 .-0.1,y2 .+0.1)
+    dx, dy = (x2 - x1)*0.1, (y2 - y1)*0.1
+    xlim(x1 .- dx,x2 .+ dx)
+    ylim(y1 .- dy,y2 .+ dy)
+
+    return vmin, vmax
 end
