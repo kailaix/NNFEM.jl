@@ -158,24 +158,13 @@ function Plot(tid::Int64, restart_id::Int64)
     plot(disp_test[:, 1]*t_scale, disp_test[:, 4]*L_scale, label="u (pred)")
     plot(disp_test[:, 1]*t_scale, disp_test[:, 5]*L_scale, label="v (pred)")
 
-    savefig("Plot/disp_nn$(idx)_$(nntype)_from$(restart_id)_test$(tid).png")
+    savefig("Plot/plate_multiscale_disp_nn$(idx)_$(nntype)_from$(restart_id)_test$(tid).png")
 
 end
 
 
 function PlotStress(tid::Int64, nx::Int64, ny::Int64, nxf::Int64, nyf::Int64, fiber_size::Int64, porder::Int64, 
     Lx::Float64, Ly::Float64, force_scale::Float64, restart_id::Int64)
-    
-    #visualize exact solution 
-    close("all")
-    domain, _, _ = BuildDomain(nxf, nyf, Lx, Ly, tid, porder, force_scale, prop_dummy)
-    vars = matread("Plot/reference$(tid).txt")
-    ts, stress, full_state_history = vars["state"][:,1], vars["full_stress_history"], vars["full_state_history"]
-    # stress size is NT
-    # full_state_history size is NT+1
-    frame = Int64(NT/2)
-    vmin, vmax = visσ(domain, nxf, nyf,  stress[frame], full_state_history[frame+1]; scaling = scales)
-    savefig("Plot/stress_reference$(tid).png")
 
 
     #visualize nn solution
@@ -194,9 +183,24 @@ function PlotStress(tid::Int64, nx::Int64, ny::Int64, nxf::Int64, nyf::Int64, fi
     end
     @show "frame is ", frame, " ,time is ", ts[frame]
 
-    visσ(domain, nx, ny,  stress[frame-1], full_state_history[frame], vmin, vmax; scaling = scales)
-    savefig("Plot/stress_test_nntrain$(idx)_$(nntype)_from$(restart_id)_test$(tid).png")
+    vmin, vmax = visσ(domain, nx, ny,  stress[frame-1], full_state_history[frame]; scaling = scales)
+    savefig("Plot/plate_multiscale_stress_test_nntrain$(idx)_$(nntype)_from$(restart_id)_test$(tid).png")
 
+
+    
+    #visualize exact solution 
+    close("all")
+    domain, _, _ = BuildDomain(nxf, nyf, Lx, Ly, tid, porder, force_scale, prop_dummy)
+    vars = matread("Plot/reference$(tid).txt")
+    ts, stress, full_state_history = vars["state"][:,1], vars["full_stress_history"], vars["full_state_history"]
+    # stress size is NT
+    # full_state_history size is NT+1
+    frame = Int64(NT/2)
+    vmin, vmax = visσ(domain, nxf, nyf,  stress[frame], full_state_history[frame+1], vmin, vmax; scaling = scales)
+    savefig("Plot/plate_multiscale_stress_reference$(tid).png")
+
+
+    
 end
 
 
@@ -206,7 +210,7 @@ end
 
 
 #####################################################
-GENERATE_DATA = true
+GENERATE_DATA = false
 PLOT = true
 restart_id_list = [2,3]
 tid_list = [106, 206, 300]

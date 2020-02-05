@@ -37,7 +37,7 @@ function nn(ε, ε0, σ0) # ε, ε0, σ0 450x3
     local y, z
     global H0
     if nntype=="linear"
-        y = ε*H0
+        y = ε*H0*stress_scale
         y
     elseif nntype=="ae_scaled"
         x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
@@ -151,7 +151,7 @@ end
 function nn_helper(ε, ε0, σ0)
     local y1
     if nntype=="linear"
-        x = reshape(reshape(ε,1,3)*H0,3,1)
+        x = reshape(reshape(ε,1,3)*H0,3,1)*stress_scale
     elseif nntype=="ae_scaled"
         x = reshape([ε;ε0;σ0/stress_scale],1, 9)
         reshape(nnae_scaled(x)*stress_scale,3,1)

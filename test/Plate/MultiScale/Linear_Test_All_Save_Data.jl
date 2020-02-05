@@ -2,20 +2,20 @@ stress_scale = 1.0e+5
 strain_scale = 1
 
 # tid = parse(Int64, ARGS[1])
-force_scale = 5.0
-fiber_size = 2
+force_scale = 50.0
+fiber_size = 5
 
 
 
 testtype = "NeuralNetwork2D"
-nntype = "piecewise"
+nntype = "linear"
 include("nnutil.jl")
 
 
 
-H0 = [1.0406424793819175e6 209077.08366547766         0.0
-      209077.08366547766   1.0411467691352057e6       0.0
-      0.0                  0.0                   419057.32049008965]/stress_scale
+H0 = [1335174.0968380707 326448.3267263398   0.0 
+      326448.3267263398  1326879.2022994285  0.0 
+      0.0                0.0                 526955.763626241]/stress_scale
 
 
 T = 200.0
@@ -24,9 +24,10 @@ NT = 200
 
 nx, ny = 10, 5
 porder = 2
-nxf, nyf =10*fiber_size,5*fiber_size
+fiber_fraction = 0.25
+nxf, nyf =80*fiber_size,40*fiber_size
 Lx, Ly = 1.0, 0.5
-prop_dummy = Dict("name"=> "PlaneStress","rho"=> 4.5, "E"=> 1e+6, "nu"=> 0.2)  #dummy
+prop_dummy = Dict("name"=> "PlaneStress","rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "E"=> 1e+6, "nu"=> 0.2)  #dummy
 
 #scale  length uses cm, stress uses     GPa,     time uses  s, 
 #       current is 10cm    and      10-4GPa              ms  
@@ -73,7 +74,7 @@ end
 # Each tid, we save ux uy at right-top corner and right-bottom corner
 # and the stress history "stress"
 
-function TestNN(tid::Int64, nx::Int64, ny::Int64, prop::Dict{String, Any}, file_name::String, restart_id::Int64)
+function TestNN(tid::Int64, nx::Int64, ny::Int64, prop::Dict{String, Any}, file_name::String)
     printstyled("tid=$tid\n", color=:green)
 
 domain, ft, gt = BuildDomain(nx, ny, Lx, Ly, tid, porder, force_scale, prop)
@@ -127,7 +128,7 @@ function Reference(tid::Int64, nx::Int64, ny::Int64)
     uy = [reshape(full_state_history[i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[1,end] for i = 1:N]
     Disp[:,4], Disp[:,5]  = ux, uy
     
-    file = matopen("Plot/reference$(tid).txt", "w")
+    file = matopen("Plot/linear_reference$(tid).txt", "w")
     write(file, "state", Disp)
     write(file, "full_stress_history", stress)
     write(file, "full_state_history", full_state_history)
@@ -135,30 +136,21 @@ function Reference(tid::Int64, nx::Int64, ny::Int64)
 end
 
 
-function Plot(tid::Int64, restart_id::Int64)
+function Plot(tid::Int64)
     close("all")
     L_scale, t_scale = scales[1], scales[3]
 
-    # Reference
-    vars = matread("Plot/reference$(tid).txt")
+    vars = matread("Plot/linear_reference$(tid).txt")
+    #use fint, strain, stress, for debugging purpose
     disp_ref = vars["state"] 
+
     plot(disp_ref[:, 1]*t_scale, disp_ref[:, 2]*L_scale, "--", label="u (ref)")
     plot(disp_ref[:, 1]*t_scale, disp_ref[:, 3]*L_scale, "--", label="v (ref)")
     plot(disp_ref[:, 1]*t_scale, disp_ref[:, 4]*L_scale, "--", label="u (ref)")
     plot(disp_ref[:, 1]*t_scale, disp_ref[:, 5]*L_scale, "--", label="v (ref)")
    
 
-    # NNTrain
-    vars = matread("Plot/test_nntrain$(idx)_$(nntype)_from$(restart_id)_test$(tid).txt")
-    disp_test = vars["state"]
-    plot(disp_test[:, 1]*t_scale, disp_test[:, 2]*L_scale, label="u (pred)")
-    plot(disp_test[:, 1]*t_scale, disp_test[:, 3]*L_scale, label="v (pred)")
-    plot(disp_test[:, 1]*t_scale, disp_test[:, 4]*L_scale, label="u (pred)")
-    plot(disp_test[:, 1]*t_scale, disp_test[:, 5]*L_scale, label="v (pred)")
-
-
-    # NNLearn
-    vars = matread("Plot/test_nnlearn$(idx)_$(nntype)_test$(tid).txt")
+    vars = matread("Plot/test_lineartrain_$(nntype)_$(tid).txt")
     #use fint, strain, stress, for debugging purpose
     disp_test = vars["state"]
     plot(disp_test[:, 1]*t_scale, disp_test[:, 2]*L_scale, label="u (pred)")
@@ -166,68 +158,49 @@ function Plot(tid::Int64, restart_id::Int64)
     plot(disp_test[:, 1]*t_scale, disp_test[:, 4]*L_scale, label="u (pred)")
     plot(disp_test[:, 1]*t_scale, disp_test[:, 5]*L_scale, label="v (pred)")
 
-    savefig("Plot/plate_plasticity_disp_nn$(idx)_$(nntype)_from$(restart_id)_test$(tid).png")
+    savefig("Plot/plate_multiscale_disp_linear_$(tid).png")
 
 end
 
 
 function PlotStress(tid::Int64, nx::Int64, ny::Int64, nxf::Int64, nyf::Int64, fiber_size::Int64, porder::Int64, 
-    Lx::Float64, Ly::Float64, force_scale::Float64, restart_id::Int64)
+    Lx::Float64, Ly::Float64, force_scale::Float64)
+
+
+    #visualize nn solution
+    close("all")
+    domain,_,_ = BuildDomain(nx, ny, Lx, Ly, tid, porder, force_scale, prop_dummy)
+    vars = matread("Plot/test_lineartrain_$(nntype)_$(tid).txt")
+    ts, stress, full_state_history = vars["state"][:,1], vars["full_stress_history"], vars["full_state_history"]
+    # stress size is NT
+    # full_state_history size is NT+1
+    frame = 0
+    for iframe = 1 : length(ts)
+        if ts[iframe] > T/2.0
+            frame = ((ts[iframe] - T/2.0) > (T/2.0 - ts[iframe - 1]) ? iframe-1  : iframe) 
+            break
+        end
+    end
+    @show "frame is ", frame, " ,time is ", ts[frame]
+
+    vmin, vmax = visσ(domain, nx, ny,  stress[frame-1], full_state_history[frame]; scaling = scales)
+    savefig("Plot/plate_multiscale_stress_test_lineartrain$(tid).png")
+
+
     
     #visualize exact solution 
     close("all")
     domain, _, _ = BuildDomain(nxf, nyf, Lx, Ly, tid, porder, force_scale, prop_dummy)
-    vars = matread("Plot/reference$(tid).txt")
+    vars = matread("Plot/linear_reference$(tid).txt")
     ts, stress, full_state_history = vars["state"][:,1], vars["full_stress_history"], vars["full_state_history"]
     # stress size is NT
     # full_state_history size is NT+1
     frame = Int64(NT/2)
-    vmin, vmax = visσ(domain, nxf, nyf,  stress[frame], full_state_history[frame+1]; scaling = scales)
-    savefig("Plot/plate_plasticity_stress_reference$(tid).png")
+    vmin, vmax = visσ(domain, nxf, nyf,  stress[frame], full_state_history[frame+1], vmin, vmax; scaling = scales)
+    savefig("Plot/plate_multiscale_stress_linear_reference$(tid).png")
 
 
-    #visualize nntrain solution
-    close("all")
-    domain,_,_ = BuildDomain(nx, ny, Lx, Ly, tid, porder, force_scale, prop_dummy)
-    vars = matread("Plot/test_nntrain$(idx)_$(nntype)_from$(restart_id)_test$(tid).txt")
-    ts, stress, full_state_history = vars["state"][:,1], vars["full_stress_history"], vars["full_state_history"]
-    # stress size is NT
-    # full_state_history size is NT+1
-    frame = 0
-    for iframe = 1 : length(ts)
-        if ts[iframe] > T/2.0
-            frame = ((ts[iframe] - T/2.0) > (T/2.0 - ts[iframe - 1]) ? iframe-1  : iframe) 
-            break
-        end
-    end
-    @show "frame is ", frame, " ,time is ", ts[frame]
-
-    visσ(domain, nx, ny,  stress[frame-1], full_state_history[frame], vmin, vmax; scaling = scales)
-    savefig("Plot/plate_plasticity_stress_test_nntrain$(idx)_$(nntype)_from$(restart_id)_test$(tid).png")
-
-
-
-    #visualize nnlearn solution
-    close("all")
-    domain,_,_ = BuildDomain(nx, ny, Lx, Ly, tid, porder, force_scale, prop_dummy)
-    vars = matread("Plot/test_nnlearn$(idx)_$(nntype)_test$(tid).txt")
-    ts, stress, full_state_history = vars["state"][:,1], vars["full_stress_history"], vars["full_state_history"]
-    # stress size is NT
-    # full_state_history size is NT+1
-    frame = 0
-    for iframe = 1 : length(ts)
-        if ts[iframe] > T/2.0
-            frame = ((ts[iframe] - T/2.0) > (T/2.0 - ts[iframe - 1]) ? iframe-1  : iframe) 
-            break
-        end
-    end
-    @show "frame is ", frame, " ,time is ", ts[frame]
-
-    visσ(domain, nx, ny,  stress[frame-1], full_state_history[frame], vmin, vmax; scaling = scales)
-    savefig("Plot/plate_plasticity_stress_test_nnlearn$(idx)_$(nntype)_test$(tid).png")
-
-
-
+    
 end
 
 
@@ -239,47 +212,25 @@ end
 #####################################################
 GENERATE_DATA = false
 PLOT = true
-restart_id_list = [2,3]
 tid_list = [106, 206, 300]
 train_id = 50
 
-
 if GENERATE_DATA
-for restart_id in restart_id_list
-    # Reference
-    for tid in tid_list
-        Reference(tid, nxf, nyf)
-    end
-    
-
-    # NNTrain
-    s = ae_to_code("Data/$(nntype)/NN_Train_$(idx)_from_$(restart_id)_$(H_function)_ite$(train_id).mat", nntype)
-    eval(Meta.parse(s))
-    prop = Dict("name"=> testtype, "rho"=> 4.5, "nn"=>post_nn)
-    for tid in tid_list
-        file_name = "Plot/test_nntrain$(idx)_$(nntype)_from$(restart_id)_test$(tid).txt"
-        TestNN(tid, nx, ny, prop, file_name, restart_id)
-    end
-
-    # NNLearn
-    s = ae_to_code("Data/$(nntype)/NNLearn_$(idx)_$(H_function)_ite$(train_id).mat", nntype)
-    eval(Meta.parse(s))
-    prop = Dict("name"=> testtype, "rho"=> 4.5, "nn"=>post_nn)
-    for tid in tid_list
-        file_name = "Plot/test_nnlearn$(idx)_$(nntype)_test$(tid).txt"
-        TestNN(tid, nx, ny, prop, file_name, restart_id)
-    end
 
 
+prop = Dict("name"=> testtype, "rho"=> 4.5*(1 - fiber_fraction) + 3.2*fiber_fraction, "nn"=>post_nn)
+for tid in tid_list
+    file_name = "Plot/test_lineartrain_$(nntype)_$(tid).txt"
+    TestNN(tid, nx, ny, prop, file_name)
+    Reference(tid, nxf, nyf)
 end
 end
+
 
 if PLOT
 for tid in tid_list
-    for restart_id in [2,3]
-        Plot(tid, restart_id)
-        PlotStress(tid, nx, ny, nxf, nyf, fiber_size, porder, Lx, Ly, force_scale, restart_id)
-    end
+        Plot(tid)
+        PlotStress(tid, nx, ny, nxf, nyf, fiber_size, porder, Lx, Ly, force_scale)
 end
 end
 
