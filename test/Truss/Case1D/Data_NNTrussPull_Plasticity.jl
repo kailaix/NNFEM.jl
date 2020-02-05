@@ -7,24 +7,21 @@ using JLD2
 using ADCME
 using LinearAlgebra
 
-# T = 0.2
-# NT = 200
+T = 0.2
+NT = 200
 
-T = 0.005
-NT = 100
+# T = 0.005
+# NT = 100
 Δt = T/NT
 
 include("NNTrussPull_Domain.jl")
 testtype = "Plasticity1D" 
 
-# prop = Dict("name"=> testtype, "rho"=> 0.1, "E"=> 200, "B"=> 10.0,
-            # "sigmaY"=>0.300, "K"=>1/9*200, "A0"=> 1.0, "eta"=> 10.0)
-
-#prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e9, "nu"=> 0.45,
-#            "sigmaY"=>0.3e9, "K"=>1/9*200e9, "B"=> 0.0, "A0"=> 0.005)
-
 prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e9, "nu"=> 0.45,
-"sigmaY"=>0.3e9, "K"=>1/9*200e9, "B"=> 0.0, "A0"=> 1.0)
+           "sigmaY"=>0.3e9, "K"=>1/9*200e9, "B"=> 0.0, "A0"=> 0.005)
+
+# prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e9, "nu"=> 0.45,
+# "sigmaY"=>0.3e9, "K"=>1/9*200e9, "B"=> 0.0, "A0"=> 1.0)
 elements = []
 for i = 1:nx 
     elnodes = [i, i+1]; coords = nodes[elnodes,:];

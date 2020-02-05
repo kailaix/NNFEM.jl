@@ -98,7 +98,10 @@ for i = 1:nx
     push!(elements, FiniteStrainTruss(coords,elnodes, prop, ngp))
 end
 
-T = 0.5
-NT = 100
+# T = 0.5
+# NT = 100
+T = 0.2
+NT = 200
+
 Δt = T/NT
 stress_scale = 100.0
