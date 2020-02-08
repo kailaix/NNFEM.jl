@@ -101,6 +101,28 @@ function prepare_strain_stress_data1D(domain::Domain)
 end
 
 
+function prepare_strain_stress_data1D(strain::Array{Any, 1}, stress::Array{Any, 1},)
+    strain = hcat(strain...)
+    stress = hcat(stress...)
+    ngp = size(strain,1)
+    nt = size(strain,2)
+    X = zeros(nt*ngp,3)
+    y = zeros(nt*ngp)
+    strain = [zeros(ngp, 1) strain]
+    stress = [zeros(ngp,1) stress]
+    nt += 1
+    k = 1
+    for i = 1:ngp
+        for j = 2:nt
+            X[k,:] = [strain[i,j] strain[i,j-1] stress[i,j-1]] #ε, ε0, σ0
+            y[k] = stress[i,j]
+            k = k + 1
+        end
+    end
+    X,y
+end
+
+
 function prepare_strain_stress_data2D(domain::Domain, scale::Float64=1.0)
     strain = domain.history["strain"]
     stress = domain.history["stress"]

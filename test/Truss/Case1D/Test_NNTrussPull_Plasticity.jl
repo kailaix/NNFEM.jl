@@ -11,8 +11,9 @@ using LinearAlgebra
 
 #nntype = "ae_scaled"
 nntype = "piecewise"
-ite_id = 10
-nnname = "Data/trained_$(nntype)_ite$(ite_id).mat"
+ite_id = 5
+#nnname = "Data/$(nntype)/trained_ite$(ite_id).mat"
+nnname = "Data/$(nntype)/NNPreLSfit_$(ite_id).mat"
 s = ae_to_code(nnname, nntype)
 
 eval(Meta.parse(s))
@@ -24,7 +25,7 @@ include("nnutil.jl")
 testtype = "NeuralNetwork1D"
 include("NNTrussPull_Domain.jl")
 
-
+nodes, EBC, g, gt, FBC, fext, ft, npoints, node_to_point = BoundaryCondition(tid)
 prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e3, "nu"=> 0.45,
            "sigmaY"=>0.3e3, "K"=>1/9*200e3, "B"=> 0.0, "A0"=> 0.005, "nn"=>post_nn)
 

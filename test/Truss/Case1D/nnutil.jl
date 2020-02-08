@@ -4,28 +4,38 @@ using DelimitedFiles
 using MAT
 
 
-nntype = length(ARGS)>=2 ? parse(String, ARGS[2]) : "linear"
+nntype = length(ARGS)>=1 ? ARGS[1] : "linear"
 
-stress_scale = 1e5
-config = [20,20,20,1]
+stress_scale = 1e3
+strain_scale = 1e-2
+config = [20,20,1]
 E0 = 200.0e3
+#H0 = 20.0e3
+
 function nn(ε, ε0, σ0)
-    local y, y1, y2, y3
+    local y
     if nntype=="linear"
         y = E0 * ε
     elseif nntype=="ae_scaled"
-        x = [ε ε0 σ0/stress_scale]
+        x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
         y = ae(x, config, "ae_scaled")*stress_scale
     elseif nntype=="piecewise"
-        x = [ε ε0 σ0/stress_scale]
-        H = ae(x, config, "piecewise")^2*stress_scale
+        x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
+        H = ae(x, config, "piecewise")*stress_scale
         s = σ0^2
         i = sigmoid((s - 0.01e6))  
-        # @show H, i
-        out = ( H .* i + E0 * (1-i) ) .* (ε-ε0) + σ0
+
+        op = tf.print(tf.reduce_sum(i))
+        i = bind(i, op)
+ 
+        y = ( H.* i + E0 * (1-i) ) .* (ε-ε0) + σ0
+
+        #y = H  .* (ε-ε0) + σ0
     else
         error("nntype must be specified.")
     end
+
+    return y
 
     
 end

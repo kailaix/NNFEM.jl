@@ -36,7 +36,7 @@ updateStates!(domain, globdat)
 
 
 for i = 1:NT
-    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-5, 1e-5, 100) # ok
+    solver = NewmarkSolver(Δt, globdat, domain, -1.0, 0.0, 1e-8, 1e-8, 100) # ok
     printstyled("============================== iteration $i ==============================\n",color=:green)
 end
 
