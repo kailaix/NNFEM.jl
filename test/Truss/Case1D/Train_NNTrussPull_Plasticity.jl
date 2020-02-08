@@ -22,7 +22,7 @@ prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e3, "nu"=> 0.45,
            "sigmaY"=>0.3e3, "K"=>1/9*200e3, "B"=> 0.0, "A0"=> 0.005, "nn"=>post_nn)
 
 n_data = [1,2,4,5]
-nodes, EBC, g, gt, FBC, fext, ft, npoints, node_to_point = BoundaryCondition(ndata[1])
+nodes, EBC, g, gt, FBC, fext, ft, npoints, node_to_point = BoundaryCondition(n_data[1])
 elements = []
 for i = 1:nx 
     elnodes = [i, i+1]; coords = nodes[elnodes,:];
@@ -54,9 +54,9 @@ end
 
 start_id = 3
 ADCME.load(sess, "Data/$(nntype)/NNPreLSfit_$(start_id).mat")
-for i = 1:10
+for i = 1:5
     println("************************** Outer Iteration = $i ************************** ")
-    BFGS!(sess, loss, 2000)
+    BFGS!(sess, loss, 1000)
     ADCME.save(sess, "Data/$(nntype)/trained_from$(start_id)_ite$(i).mat")
 end
 

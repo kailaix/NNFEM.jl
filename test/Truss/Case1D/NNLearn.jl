@@ -3,6 +3,7 @@ using ADCME
 using NNFEM
 using JLD2
 using PyPlot
+reset_default_graph()
 
 include("nnutil.jl")
 
@@ -24,7 +25,7 @@ if !isdir("Data/$(nntype)")
     mkdir("Data/$(nntype)")
 end
 
-for i = 1:5
+for i = 1:10
     println("************************** Outer Iteration = $i ************************** ")
     BFGS!(sess, loss, 1000)
     ADCME.save(sess, "Data/$(nntype)/learned_nn_ite$(i).mat")
@@ -33,7 +34,7 @@ end
 
 # error()
 
-tid = 1
+tid = 3
 strain, stress = read_strain_stress("Data/$(tid).dat")
 X, Y = prepare_strain_stress_data1D(strain, stress )
 x = constant(X)
@@ -45,7 +46,7 @@ out = run(sess, y)
 plot(X[:,1], out,"+", label="NN")
 plot(X[:,1], Y, ".", label="Exact")
 #legend()
-savefig("truss1d_stress$tid.png")
+savefig("nn$(nntype)_truss1d_stress$tid.png")
 
 
 

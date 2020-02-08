@@ -10,7 +10,7 @@ np = pyimport("numpy")
 
 
 
-tid = length(ARGS)>=2 ? parse(Int64, ARGS[2]) : 1
+tid = length(ARGS)>=2 ? parse(Int64, ARGS[2]) : 3
 
 
 

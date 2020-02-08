@@ -4,7 +4,7 @@ using DelimitedFiles
 using MAT
 
 
-nntype = length(ARGS)>=1 ? ARGS[1] : "linear"
+nntype = length(ARGS)>=1 ? ARGS[1] : "piecewise"
 
 stress_scale = 1e3
 strain_scale = 1e-2
@@ -21,16 +21,14 @@ function nn(ε, ε0, σ0)
         y = ae(x, config, "ae_scaled")*stress_scale
     elseif nntype=="piecewise"
         x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
-        H = ae(x, config, "piecewise")*stress_scale
+        H = squeeze(ae(x, config, "piecewise"))^2*stress_scale
         s = σ0^2
         i = sigmoid((s - 0.01e6))  
 
-        op = tf.print(tf.reduce_sum(i))
-        i = bind(i, op)
+        # op = tf.print(tf.size(H), tf.size(i), tf.size(H))
+        # i = bind(i, op)
  
         y = ( H.* i + E0 * (1-i) ) .* (ε-ε0) + σ0
-
-        #y = H  .* (ε-ε0) + σ0
     else
         error("nntype must be specified.")
     end
@@ -42,28 +40,54 @@ end
 
 
 function sigmoid_(z)
-
     return 1.0 / (1.0 + exp(-z))
-  
 end
 
 function post_nn(ε::Float64, ε0::Float64, σ0::Float64, Δt::Float64)
     # @show "Post NN"
     local f, df
     if nntype=="linear"
-        f = x -> E0 * ε
+        f = x -> E0*x
         df = ForwardDiff.derivative(f, ε)
     elseif nntype=="piecewise"
         f = x -> begin
-            H = nnpiecewise(reshape([x;ε0;σ0/stress_scale],1,3))[1,1]^2*stress_scale
+            H = nnpiecewise(reshape([x/strain_scale;ε0/strain_scale;σ0/stress_scale],1,3))[1,1]^2*stress_scale
             s = σ0^2
-            i = sigmoid_((s - 0.01e6)) 
-            ( H * i + E0 * (1-i) ) * (x-ε0) + σ0
+            i = sigmoid_((s - 0.01e6))
+
+            (H * i + E0 * (1.0-i) ) * (x-ε0) + σ0
+
+            
         end
         df = ForwardDiff.derivative(f, ε)
     elseif nntype=="ae_scaled"
-        f = x -> nnae_scaled(reshape([x;ε0;σ0/stress_scale],1,3))[1,1]*stress_scale
+        f = x -> nnae_scaled(reshape([x/strain_scale;ε0/strain_scale;σ0/stress_scale],1,3))[1,1]*stress_scale
         df = ForwardDiff.derivative(f, ε)
+    else
+        error("$(nntype) must be specified.")
     end
     return f(ε), df
 end
+
+
+# function nn_helper(ε, ε0, σ0)
+#     if nntype=="linear"
+#         E0 * ε
+#     elseif nntype=="piecewise"
+#         H = nnpiecewise(reshape([ε/strain_scale;ε0/strain_scale;σ0/stress_scale],1,3))[1,1]^2*stress_scale
+#         s = σ0^2
+#         i = sigmoid_((s - 0.01e6)) 
+#         ( H * i + E0 * (1.0-i) ) * (ε-ε0) + σ0
+#     elseif nntype=="ae_scaled"
+#         nnae_scaled(reshape([ε/strain_scale;ε0/strain_scale;σ0/stress_scale],1,3))[1,1]*stress_scale
+#     else
+#         error("$nntype does not exist")
+#     end
+# end
+
+
+# function post_nn(ε, ε0, σ0, Δt)
+#     f = x -> nn_helper(x, ε0, σ0)
+#     df = ForwardDiff.jacobian(f, ε)
+#     return f(ε), df
+# end
