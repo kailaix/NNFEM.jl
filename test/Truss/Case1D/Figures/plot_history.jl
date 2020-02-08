@@ -1,17 +1,19 @@
 using PyPlot
 using PyCall
-mpl = pyimport("tikzplotlib")
+#mpl = pyimport("tikzplotlib")
 using JLD2
 
 
-tid = 1
+T = 0.2
+NT = 200
+
+
+tid = 5
 @load "../Data/domain$tid.jld2" domain 
 
 function ft(t)
-    return  sin(pi*t/T) * 1e9 * (0.2*tid + 0.8)
+    return  sin(2pi*t/T) * 1e9 * (0.2*tid + 0.8)
 end
-T = 0.005
-NT = 100
 t = LinRange(0,T,NT+1)
 f = ft.(t)
 plot(t, f)
@@ -40,8 +42,7 @@ savefig("truss1d_loc.pdf")
 
 
 close("all")
-T = 0.005
-NT = 100
+
 t = LinRange(0,T,NT+1)
 u = hcat(domain.history["state"]...)
 for i = 1:5

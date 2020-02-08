@@ -184,3 +184,46 @@ function commitHistory(self::FiniteStrainTruss)
         commitHistory(m)
     end
 end
+
+
+function  getForceAndDforceDstress(self::FiniteStrainTruss, state::Array{Float64},  
+    stress::Array{Float64,2})
+    ndofs = dofCount(self); 
+    nnodes = length(self.elnodes)
+    nStrain = 1
+    nGauss = length(self.weights)
+    fint = zeros(Float64, ndofs)
+    dfint_dstress = zeros(Float64,  ndofs, nGauss * nStrain)
+    
+    
+    rot_mat = self.rot_mat
+    #rotate displacement to the local coordinate
+    lu = rot_mat * state
+
+    A0, l0 = self.A0, self.l0
+
+    E = (lu[2]-lu[1])/l0 + 0.5*((lu[2]-lu[1])/l0)^2 + 0.5*((lu[4]-lu[3])/l0)^2
+    # compute  ∂E∂u.T, 4 by 1 array 
+    ∂E∂u =  [-1/l0+(lu[1]-lu[2])/l0;  1/l0+(lu[2]-lu[1])/l0; (lu[3]-lu[4])/l0; (lu[4]-lu[3])/l0]
+
+    for k = 1:length(self.weights)
+
+        # #@show E, DE
+        S = stress[k, :]
+        
+        self.stress[k] = S[1]
+
+        fint += A0 * self.weights[k]  * ∂E∂u  * S[1]# 4x1
+
+        dfint_dstress[:, (k-1)*nStrain+1:k*nStrain] = A0 * ∂E∂u * self.weights[k]
+        
+    end
+
+    #rotate back to global coordinate
+
+    fint = rot_mat' * fint
+
+    dfint_dstress = rot_mat' * dfint_dstress
+
+    return fint , dfint_dstress
+end

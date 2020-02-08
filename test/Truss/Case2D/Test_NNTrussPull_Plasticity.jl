@@ -8,13 +8,18 @@ using ADCME
 using LinearAlgebra
 using MAT
 
-learn = true
-nnname = learn ? "Data/learned_nn.mat" : "Data/trained_nn_fem.mat"
-nntype = "ae_scaled"
-s = ae_to_code(nnname, nntype)
 
-eval(Meta.parse(s))
 include("nnutil.jl")
+include("NNTrussPull_Domain.jl")
+
+
+nnname = "Data/$(nntype)/trained_from$(start_id)_ite$(i).mat"
+nnname = "Data/$(nntype)/learned_nn_ite$(i).mat"
+
+
+s = ae_to_code(nnname, nntype)
+eval(Meta.parse(s))
+
 
 # testtype = "PlaneStressPlasticity"
 testtype = "NeuralNetwork1D"
@@ -22,7 +27,7 @@ testtype = "NeuralNetwork1D"
 prop = Dict("name"=> testtype, "rho"=> 0.1, "E"=> 200, "B"=> 10.0,
             "sigmaY"=>0.300, "K"=>1/9*200, "A0"=> 1.0, "eta"=> 10.0, "nn"=>post_nn)
 
-include("NNTrussPull_Domain.jl")
+
 
 domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
 state = zeros(domain.neqs)

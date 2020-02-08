@@ -14,7 +14,7 @@ include("nnutil.jl")
 #use only rho
 testtype = "PlaneStressIncompressibleRivlinSaunders"
 #https://classes.engineering.wustl.edu/2009/spring/mase5513/abaqus/docs/v6.6/books/bmk/default.htm?startat=ch01s01ach08.html
-prop = Dict("name"=> testtype, "rho"=> 0.8000, "C1"=>0.1863e6, "C2"=>-0.00979e6)
+prop = Dict("name"=> testtype, "rho"=> 0.8000, "C1"=>0.1863e6, "C2"=>0.00979e6)
 
 
 # ! define H0
@@ -175,7 +175,7 @@ end
 sess = Session(); init(sess)
 @show run(sess, loss)
 # ADCME.load(sess, "Data/$(nntype)/NNPreLSfit.mat")
-for i = 1:10
+for i = 1:5
     BFGS!(sess, loss, 1000)
     ADCME.save(sess, "Data/$(nntype)/NNPreLSfit_$(idx)_$(H_function)_$(i).mat")
 end

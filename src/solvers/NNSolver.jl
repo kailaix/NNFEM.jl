@@ -376,6 +376,8 @@ function LSfittingStressHelper(domain, S_comp::Array{Float64}, method::String)
     nstrain = div((eledim + 1)*eledim, 2)
     ngps_per_elem = length(domain.elements[1].weights)
     neqs = domain.neqs
+    eledim = domain.elements[1].eledim
+    elepoints = 2^eledim  #number of anchor points of an element
 
     node_to_point = domain.node_to_point
 
@@ -396,8 +398,9 @@ function LSfittingStressHelper(domain, S_comp::Array{Float64}, method::String)
     # each element involves ele_per_S_comp number of compact Stress points,
     # for Constant the stress is assume to be constant ele_per_S_comp = 1
     # for Linear the stress is assume to be bilinear ele_per_S_comp = 4
-    ele_per_S_comp = method=="Constant" ? 1 : 4;
+    # ele_per_S_comp = method=="Constant" ? 1 : 4;
 
+    ele_per_S_comp = method=="Constant" ? 1 : elepoints;
 
     # stress array at each Gaussian point 
     S_ele = zeros(Float64, ngps_per_elem, nstrain)
@@ -418,10 +421,10 @@ function LSfittingStressHelper(domain, S_comp::Array{Float64}, method::String)
   
       el_state  = getState(domain, el_dofs)
 
-      el_coords_comp = element.coords[1:4, :]
+      el_coords_comp = element.coords[1:elepoints, :]
 
       #the node number is the element point number
-      el_nodes_comp = node_to_point[element.elnodes[1:4]]
+      el_nodes_comp = node_to_point[element.elnodes[1:elepoints]]
       
 
         if method == "Constant"
@@ -438,10 +441,13 @@ function LSfittingStressHelper(domain, S_comp::Array{Float64}, method::String)
 
         else 
             @assert(method == "Linear")
+            @assert(eledim <= 2)
+            ngp = Int64((ngps_per_elem)^(1.0/eledim))
+
+
+            hs = (eledim==1) ? get1DElemShapeData(el_coords_comp , ngp)[end] : get2DElemShapeData(el_coords_comp , ngp)[end]
             
-            ngp = Int64(sqrt(ngps_per_elem))
-            dhdx, weights, hs = get2DElemShapeData( el_coords_comp , ngp)
-        
+
             dS_ele_all_dS_ele_comp[:,:]  .= 0.0
             @assert(length(hs[1]) == ele_per_S_comp)
 

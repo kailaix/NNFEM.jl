@@ -4,26 +4,56 @@ using DelimitedFiles
 using MAT
 
 
+nntype = length(ARGS)>=2 ? parse(String, ARGS[2]) : "linear"
+
+stress_scale = 1e5
+config = [20,20,20,1]
+E0 = 200.0e3
 function nn(ε, ε0, σ0)
     local y, y1, y2, y3
     if nntype=="linear"
-        y = ε*H0
-        y
+        y = E0 * ε
     elseif nntype=="ae_scaled"
-        x = [ε ε0 σ0/1e10]
-        y = ae(x, [20,20,20,20,1], "ae_scaled")*1e10
+        x = [ε ε0 σ0/stress_scale]
+        y = ae(x, config, "ae_scaled")*stress_scale
+    elseif nntype=="piecewise"
+        x = [ε ε0 σ0/stress_scale]
+        H = ae(x, config, "piecewise")^2*stress_scale
+        s = σ0^2
+        i = sigmoid((s - 0.01e6))  
+        # @show H, i
+        out = ( H .* i + E0 * (1-i) ) .* (ε-ε0) + σ0
+    else
+        error("nntype must be specified.")
     end
+
+    
 end
 
 
 function sigmoid_(z)
-    return 1.0 / (1.0 + exp(-z))
-end
 
+    return 1.0 / (1.0 + exp(-z))
+  
+end
 
 function post_nn(ε::Float64, ε0::Float64, σ0::Float64, Δt::Float64)
     # @show "Post NN"
-    f = x -> nnae_scaled([x ε0 σ0/1e10])*1e10
-    df = ForwardDiff.derivative(f, ε)
-    return f(ε)[1], df[1]
+    local f, df
+    if nntype=="linear"
+        f = x -> E0 * ε
+        df = ForwardDiff.derivative(f, ε)
+    elseif nntype=="piecewise"
+        f = x -> begin
+            H = nnpiecewise(reshape([x;ε0;σ0/stress_scale],1,3))[1,1]^2*stress_scale
+            s = σ0^2
+            i = sigmoid_((s - 0.01e6)) 
+            ( H * i + E0 * (1-i) ) * (x-ε0) + σ0
+        end
+        df = ForwardDiff.derivative(f, ε)
+    elseif nntype=="ae_scaled"
+        f = x -> nnae_scaled(reshape([x;ε0;σ0/stress_scale],1,3))[1,1]*stress_scale
+        df = ForwardDiff.derivative(f, ε)
+    end
+    return f(ε), df
 end

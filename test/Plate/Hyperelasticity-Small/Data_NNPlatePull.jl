@@ -18,8 +18,8 @@ np = pyimport("numpy")
 
 testtype = "PlaneStressIncompressibleRivlinSaunders"
 #https://classes.engineering.wustl.edu/2009/spring/mase5513/abaqus/docs/v6.6/books/bmk/default.htm?startat=ch01s01ach08.html
-prop = Dict("name"=> testtype, "rho"=> 0.8000, "C1"=>0.1863e6, "C2"=>-0.00979e6)
-#prop = Dict("name"=> testtype, "rho"=> 0.800, "C1"=>0.1863e3, "C2"=>-0.00979e3)
+prop = Dict("name"=> testtype, "rho"=> 0.8000, "C1"=>0.1863e6, "C2"=>0.00979e6)
+#prop = Dict("name"=> testtype, "rho"=> 0.800, "C1"=>0.1863e3, "C2"=>0.00979e3)
 # testtype = "PlaneStress"
 # prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e+9, "nu"=> 0.45)
 

@@ -237,7 +237,7 @@ end
 
 
 #####################################################
-GENERATE_DATA = false
+GENERATE_DATA = true
 PLOT = true
 restart_id_list = [2,3]
 tid_list = [106, 206, 300]
@@ -276,7 +276,7 @@ end
 
 if PLOT
 for tid in tid_list
-    for restart_id in [2,3]
+    for restart_id in restart_id_list
         Plot(tid, restart_id)
         PlotStress(tid, nx, ny, nxf, nyf, fiber_size, porder, Lx, Ly, force_scale, restart_id)
     end
