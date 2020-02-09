@@ -12,6 +12,8 @@ using LinearAlgebra
 include("NNTrussPull_Domain.jl")
 testtype = "Plasticity1D" 
 
+tid = length(ARGS)>=1 ? parse(Int64, ARGS[1]) : 3
+
 # kg, m,  ms
 prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e3, "nu"=> 0.45,
            "sigmaY"=>0.3e3, "K"=>1/9*200e3, "B"=> 0.0, "A0"=> 0.005)

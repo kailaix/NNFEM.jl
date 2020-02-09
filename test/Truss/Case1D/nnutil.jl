@@ -6,6 +6,8 @@ using MAT
 
 nntype = length(ARGS)>=1 ? ARGS[1] : "piecewise"
 idx = length(ARGS)>=2 ? parse(Int,ARGS[2]) : 3
+nn_init_id = length(ARGS)>=3 ? parse(Int,ARGS[3]) : 0
+
 config = [20,20,20,1]
 
 if idx == 1
@@ -14,8 +16,12 @@ elseif idx == 2
     config = [20,20,1]
 elseif idx == 3
     config = [20,20,20,1]
+elseif idx == 4
+    config = [20,20,20,20,1]
+elseif idx == 5
+    config = [20,20,20,20,20,1]
 else 
-    error(idx == 3, idx, "idx <= 3")
+    error("idx <= 5")
 end
 
 

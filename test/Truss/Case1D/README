@@ -1,0 +1,36 @@
+nnutil.jl:
+ARGS[1]: nntype: 
+         piecewise piecewise2 ae_scale
+ARGS[2]: idx
+         number of nn layers 1, 2, 3
+
+
+
+NNLearn.jl: Direct learn
+i.e. julia NNLearn.jl piecewise 3 
+
+NNPreLSfit.jl: estimate stress by assuming it is constant in each element and direct fit
+i.e. julia NNPreLSfit.jl piecewise 3
+
+Train_NNTrussPull_Plasticity.jl: Train nn from indirect data (can restart from NNPreLSfit results)
+i.e. julia Train_NNTrussPull_Plasticity.jl piecewise 3
+
+Test_NNTrussPull_Plasticity.jl Test tid=3, need to change ite number
+i.e. julia Test_NNTrussPull_Plasticity.jl piecewise 3
+
+
+
+
+
+To reproduce plots in the paper, 
+
+./GenerateData.sh
+./NNLearn.sh
+./NNLearn_Plot.sh
+
+
+
+
+
+
+

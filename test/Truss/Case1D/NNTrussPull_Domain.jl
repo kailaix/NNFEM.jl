@@ -10,9 +10,6 @@ np = pyimport("numpy")
 
 
 
-tid = length(ARGS)>=2 ? parse(Int64, ARGS[2]) : 3
-
-
 
 """
 1  -  2  -  3  -  4

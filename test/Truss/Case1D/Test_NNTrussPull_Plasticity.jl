@@ -16,16 +16,13 @@ tid = 3
 
 #nntype = "ae_scaled"
 #nntype = "piecewise"
-ite_id = 3
-nnname = "Data/$(nntype)/trained_nn$(idx)_from3_ite$(ite_id).mat"
+ite_id = 10
+#nnname = "Data/$(nntype)/trained_nn$(idx)_from3_ite$(ite_id).mat"
 #nnname = "Data/$(nntype)/NNPreLSfit_nn$(idx)_ite$(start_id).mat"
-#nnname = "Data/$(nntype)/learned_nn$(idx)_ite$(ite_id).mat"
+nnname = "Data/$(nntype)/learned_nn$(idx)_ite$(ite_id)_$(nn_init_id).mat"
 @show nnname
 s = ae_to_code(nnname, nntype)
 eval(Meta.parse(s))
-
-
-
 
 
 
@@ -64,7 +61,7 @@ globdat, domain, ts = AdaptiveSolver("NewmarkSolver", globdat, domain, T, NT, ad
 
 domain_te = domain 
 @info tid
-@save "Data/$(nntype)/domain_te$(tid).jld2" domain_te
+@save "Data/$(nntype)/nn$(idx)_domain_te$(tid).jld2" domain_te
 
 
 ############################## Plot stress

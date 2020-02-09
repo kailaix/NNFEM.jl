@@ -107,7 +107,7 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array
     node_to_point = Int64[]
     
     history = Dict("state"=>Array{Float64}[], "acc"=>Array{Float64}[], "fint"=>Array{Float64}[],
-                "fext"=>Array{Float64}[], "strain"=>[], "stress"=>[])
+                "fext"=>Array{Float64}[], "strain"=>[], "stress"=>[], "time"=>Array{Float64}[])
     
     domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, 
     LM, DOF, ID, neqs, eq_to_dof, dof_to_eq, 

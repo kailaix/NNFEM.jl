@@ -223,6 +223,7 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, �
     fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
     push!(domain.history["fint"], fint)
     push!(domain.history["fext"], fext)
+    push!(domain.history["time"], [globdat.time])
 
     return true
     
