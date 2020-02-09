@@ -8,7 +8,7 @@ T = 200.0
 NT = 200
 t = LinRange(0,T,NT+1)
 
-tid = length(ARGS)>=2 ? parse(Int64, ARGS[2]) : 3
+tid = 3
 nntype = length(ARGS)>=1 ? ARGS[1] : "piecewise"
 
 @load "Data/domain$tid.jld2" domain 

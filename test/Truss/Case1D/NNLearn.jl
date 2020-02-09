@@ -24,7 +24,7 @@ end
 for i = 1:10
     println("************************** Outer Iteration = $i ************************** ")
     BFGS!(sess, loss, 1000)
-    ADCME.save(sess, "Data/$(nntype)/learned_nn_ite$(i).mat")
+    ADCME.save(sess, "Data/$(nntype)/learned_nn$(idx)_ite$(i).mat")
 end
 
 
@@ -41,7 +41,7 @@ out = run(sess, y)
 plot(X[:,1], out,"+", label="NN")
 plot(X[:,1], Y, ".", label="Exact")
 #legend()
-savefig("nnlearn_$(nntype)_truss1d_stress$tid.png")
+savefig("nnlearn_$(nntype)_nn$(idx)_truss1d_stress$tid.png")
 
 
 

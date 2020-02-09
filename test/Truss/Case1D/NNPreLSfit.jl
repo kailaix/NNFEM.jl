@@ -83,7 +83,7 @@ for tid in n_data
     y = squeeze(nn(constant(X[:,1:1]), constant(X[:,2:2]), constant(X[:,3:3])))
     
     global loss
-    loss += mean((y - Y)^2) #/stress_scale^2
+    loss += sum((y - Y)^2) #/stress_scale^2
 end
 
 sess = Session(); init(sess)
@@ -95,7 +95,7 @@ end
 
 for i = 1:5
     BFGS!(sess, loss, 1000)
-    ADCME.save(sess, "Data/$(nntype)/NNPreLSfit_$(i).mat")
+    ADCME.save(sess, "Data/$(nntype)/NNPreLSfit_nn$(idx)_ite$(i).mat")
 end
 
 
