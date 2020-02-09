@@ -52,9 +52,9 @@ if !isdir("Data/$(nntype)")
     mkdir("Data/$(nntype)")
 end
 
-start_id = 3
-ADCME.load(sess, "Data/$(nntype)/NNPreLSfit_$(start_id).mat")
-for i = 1:5
+start_id = 0
+#ADCME.load(sess, "Data/$(nntype)/NNPreLSfit_$(start_id).mat")
+for i = 1:50
     println("************************** Outer Iteration = $i ************************** ")
     BFGS!(sess, loss, 1000)
     ADCME.save(sess, "Data/$(nntype)/trained_from$(start_id)_ite$(i).mat")

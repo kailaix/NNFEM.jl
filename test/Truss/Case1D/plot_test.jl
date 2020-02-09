@@ -31,14 +31,16 @@ nntype = length(ARGS)>=1 ? ARGS[1] : "piecewise"
 close("all")
 strain = hcat(domain.history["strain"]...)
 stress = hcat(domain.history["stress"]...)
-i = 8
-plot(strain[i,:], stress[i,:], "--", label="Reference")
-
+for i = 1:2:8
+plot(strain[i,:], stress[i,:], "--", label="Reference$(i)")
+end
 
 strain = hcat(domain_te.history["strain"]...)
 stress = hcat(domain_te.history["stress"]...)
-i = 8
+
+for i = 1:2:8
 plot(strain[i,:], stress[i,:], ".", label="Estimated")
+end
 
 xlabel("Strain")
 ylabel("Stress")

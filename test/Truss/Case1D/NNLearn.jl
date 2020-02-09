@@ -11,12 +11,8 @@ loss = constant(0.0)
 for tid = [1,2,4,5]
     strain, stress = read_strain_stress("Data/$(tid).dat")
     X, Y = prepare_strain_stress_data1D(strain, stress )
-
-    #yy = E0*(X[:,1] - X[:,2]) + X[:,3]
-
-    #@show (Y - X[:,3]) ./ (X[:,1] - X[:,2])
     y = squeeze(nn(constant(X[:,1:1]), constant(X[:,2:2]), constant(X[:,3:3])))
-    global loss += mean((y - Y)^2)
+    global loss += sum((y - Y)^2)
 end
 sess = Session(); init(sess)
 @show run(sess,loss)

@@ -31,6 +31,16 @@ function nn(ε, ε0, σ0)
         @show H, i, (ε-ε0), E0 * (1-i)
  
         y = ( H.* i + E0 * (1-i) ) .* (ε-ε0) + σ0
+
+    elseif nntype=="piecewise2"
+        x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
+        H = ae(x, config, "piecewise2")*stress_scale
+        s = σ0^2
+        i = sigmoid((s - 0.01e6))  
+
+        @show H, i, (ε-ε0), E0 * (1-i)
+ 
+        y = ( H.* i + E0 * (1-i) ) .* (ε-ε0) + σ0
     else
         error("nntype must be specified.")
     end
@@ -60,6 +70,14 @@ function post_nn(ε::Float64, ε0::Float64, σ0::Float64, Δt::Float64)
             (H * i + E0 * (1.0-i) ) * (x-ε0) + σ0
 
             
+        end
+        df = ForwardDiff.derivative(f, ε)
+    elseif nntype=="piecewise2"
+        f = x -> begin
+            H = nnpiecewise2(reshape([x/strain_scale;ε0/strain_scale;σ0/stress_scale],1,3))[1,1]*stress_scale
+            s = σ0^2
+            i = sigmoid_((s - 0.01e6))
+            (H * i + E0 * (1.0-i) ) * (x-ε0) + σ0
         end
         df = ForwardDiff.derivative(f, ε)
     elseif nntype=="ae_scaled"
