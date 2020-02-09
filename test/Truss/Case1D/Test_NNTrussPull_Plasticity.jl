@@ -16,10 +16,10 @@ include("NNTrussPull_Domain.jl")
 
 #nntype = "ae_scaled"
 #nntype = "piecewise"
-ite_id = 10
-#nnname = "Data/$(nntype)/trained_ite$(ite_id).mat"
+ite_id = 5
+nnname = "Data/$(nntype)/trained_from3_ite$(ite_id).mat"
 #nnname = "Data/$(nntype)/NNPreLSfit_$(ite_id).mat"
-nnname = "Data/$(nntype)/learned_nn_ite$(ite_id).mat"
+#nnname = "Data/$(nntype)/learned_nn_ite$(ite_id).mat"
 @show nnname
 s = ae_to_code(nnname, nntype)
 eval(Meta.parse(s))
@@ -91,4 +91,4 @@ xlabel("Strain")
 ylabel("Stress")
 legend()
 #mpl.save("truss1d_stress$tid.tex")
-savefig("nn_$(nntype)_truss1d_stress$tid.pdf")
+savefig("nntest_$(nntype)_truss1d_stress$tid.pdf")

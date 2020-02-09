@@ -15,7 +15,7 @@ for tid = [1,2,4,5]
     #yy = E0*(X[:,1] - X[:,2]) + X[:,3]
 
     #@show (Y - X[:,3]) ./ (X[:,1] - X[:,2])
-    y = squeeze(nn(constant(X[:,1]), constant(X[:,2]), constant(X[:,3])))
+    y = squeeze(nn(constant(X[:,1:1]), constant(X[:,2:2]), constant(X[:,3:3])))
     global loss += mean((y - Y)^2)
 end
 sess = Session(); init(sess)
@@ -37,8 +37,7 @@ end
 tid = 3
 strain, stress = read_strain_stress("Data/$(tid).dat")
 X, Y = prepare_strain_stress_data1D(strain, stress )
-x = constant(X)
-y = squeeze(nn(constant(X[:,1]), constant(X[:,2]), constant(X[:,3])))
+y = squeeze(nn(constant(X[:,1:1]), constant(X[:,2:2]), constant(X[:,3:3])))
 # sess = Session(); init(sess)
 # close("all")
 # ADCME.load(sess, "Data/$(nntype)/learned_nn_ite5.mat")
@@ -46,7 +45,7 @@ out = run(sess, y)
 plot(X[:,1], out,"+", label="NN")
 plot(X[:,1], Y, ".", label="Exact")
 #legend()
-savefig("nn$(nntype)_truss1d_stress$tid.png")
+savefig("nnlearn_$(nntype)_truss1d_stress$tid.png")
 
 
 

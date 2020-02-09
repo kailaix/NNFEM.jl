@@ -13,6 +13,9 @@ E0 = 200.0e3
 #H0 = 20.0e3
 
 function nn(ε, ε0, σ0)
+    # make sure all inputs are 2d matrix
+    @show ε, ε0, σ0
+
     local y
     if nntype=="linear"
         y = E0 * ε
@@ -21,12 +24,11 @@ function nn(ε, ε0, σ0)
         y = ae(x, config, "ae_scaled")*stress_scale
     elseif nntype=="piecewise"
         x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
-        H = squeeze(ae(x, config, "piecewise"))^2*stress_scale
+        H = ae(x, config, "piecewise")^2*stress_scale
         s = σ0^2
         i = sigmoid((s - 0.01e6))  
 
-        # op = tf.print(tf.size(H), tf.size(i), tf.size(H))
-        # i = bind(i, op)
+        @show H, i, (ε-ε0), E0 * (1-i)
  
         y = ( H.* i + E0 * (1-i) ) .* (ε-ε0) + σ0
     else

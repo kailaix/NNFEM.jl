@@ -9,8 +9,6 @@ using LinearAlgebra
 reset_default_graph()
 
 
-#nntype = "ae_scaled"
-nntype = "piecewise"
 
 include("nnutil.jl")
 
@@ -18,9 +16,6 @@ testtype = "NeuralNetwork1D"
 include("NNTrussPull_Domain.jl")
 
 
-
-include("nnutil.jl")
-nntype = "piecewise"
 #use only rho
 prop = Dict("name"=> testtype, "rho"=> 8000.0, "E"=> 200e3, "nu"=> 0.45,
            "sigmaY"=>0.3e3, "K"=>1/9*200e3, "B"=> 0.0, "A0"=> 0.005, "nn"=>post_nn)
@@ -30,7 +25,9 @@ n_data = [1,2, 4,5]
 
 function approximate_stress(tid::Int64, method::String)
     nodes, EBC, g, gt, FBC, fext, ft, npoints, node_to_point = BoundaryCondition(tid)
-    domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
+    #domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
+
+    @load "Data/domain$(tid).jld2" domain 
     setGeometryPoints!(domain, npoints, node_to_point)
     state = zeros(domain.neqs)
     ∂u = zeros(domain.neqs)
@@ -67,7 +64,7 @@ end
 
 loss = constant(0.0)
 
-method = "Linear"
+method = "Constant"
 for tid in n_data
     E_all, S_all = approximate_stress(tid, method)
     X = zeros(Float64, (NT-1)*ngp, 3)
@@ -81,7 +78,9 @@ for tid in n_data
         end
     end
 
-    y = squeeze(nn(constant(X[:,1]), constant(X[:,2]), constant(X[:,3])))
+
+
+    y = squeeze(nn(constant(X[:,1:1]), constant(X[:,2:2]), constant(X[:,3:3])))
     
     global loss
     loss += mean((y - Y)^2) #/stress_scale^2
@@ -98,3 +97,14 @@ for i = 1:5
     BFGS!(sess, loss, 1000)
     ADCME.save(sess, "Data/$(nntype)/NNPreLSfit_$(i).mat")
 end
+
+
+tid = 3
+strain, stress = read_strain_stress("Data/$(tid).dat")
+X, Y = prepare_strain_stress_data1D(strain, stress )
+y = squeeze(nn(constant(X[:,1:1]), constant(X[:,2:2]), constant(X[:,3:3])))
+out = run(sess, y)
+plot(X[:,1], out,"+", label="NN")
+plot(X[:,1], Y, ".", label="Exact")
+#legend()
+savefig("nnpreLSfit_$(nntype)_truss1d_stress$tid.png")

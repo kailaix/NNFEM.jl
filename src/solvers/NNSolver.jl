@@ -522,7 +522,6 @@ function LSfittingStress(domain::Domain, globdat::GlobalData, state_history::Arr
     neles = domain.neles
     ngps_per_elem = length(domain.elements[1].weights)
     neqs = domain.neqs
-    neqns_per_elem = length(getEqns(domain,1))
     
 
     U = state_history
@@ -551,7 +550,7 @@ function LSfittingStress(domain::Domain, globdat::GlobalData, state_history::Arr
     elseif size(F_ext,2)==NT
         F_tot = F_ext - M*∂∂U[domain.dof_to_eq,2:end] - MID*bc_acc
     else
-        error("F size is not valid")
+        error("F size is not valid", size(F_ext,2) , NT)
     end
 
 
