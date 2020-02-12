@@ -40,10 +40,13 @@ function nn(ε, ε0, σ0)
         y = E0 * ε
     elseif nntype=="ae_scaled"
         x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
-        y = ae(x, config, "ae_scaled")*stress_scale/strain_scale
+        y = ae(x, config, nntype)*stress_scale
+    elseif nntype=="ae_scaled2"
+        x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
+        y = ae(x, config, nntype)*stress_scale + σ0
     elseif nntype=="piecewise"
         x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
-        H = ae(x, config, "piecewise")^2
+        H = ae(x, config, nntype)^2
         s = σ0^2
         i = sigmoid((s - 0.01e6))  
  
@@ -51,7 +54,7 @@ function nn(ε, ε0, σ0)
 
     elseif nntype=="piecewise2"
         x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
-        H = ae(x, config, "piecewise2")
+        H = ae(x, config, nntype)
         s = σ0^2
         i = sigmoid((s - 0.01e6))  
  
@@ -101,7 +104,10 @@ function post_nn(ε::Float64, ε0::Float64, σ0::Float64, Δt::Float64)
         end
         df = ForwardDiff.derivative(f, ε)
     elseif nntype=="ae_scaled"
-        f = x -> nnae_scaled(reshape([x/strain_scale;ε0/strain_scale;σ0/stress_scale],1,3))[1,1]*stress_scale/strain_scale
+        f = x -> nnae_scaled(reshape([x/strain_scale;ε0/strain_scale;σ0/stress_scale],1,3))[1,1]*stress_scale
+        df = ForwardDiff.derivative(f, ε)
+    elseif nntype=="ae_scaled2"
+        f = x -> nnae_scaled2(reshape([x/strain_scale;ε0/strain_scale;σ0/stress_scale],1,3))[1,1]*stress_scale + σ0
         df = ForwardDiff.derivative(f, ε)
     else
         error("$(nntype) must be specified.")

@@ -142,31 +142,36 @@ function Plot(tid::Int64, restart_id::Int64)
     # Reference
     vars = matread("Plot/reference$(tid).txt")
     disp_ref = vars["state"] 
-    plot(disp_ref[:, 1]*t_scale, disp_ref[:, 2]*L_scale, "--", label="u (ref)")
-    plot(disp_ref[:, 1]*t_scale, disp_ref[:, 3]*L_scale, "--", label="v (ref)")
-    plot(disp_ref[:, 1]*t_scale, disp_ref[:, 4]*L_scale, "--", label="u (ref)")
-    plot(disp_ref[:, 1]*t_scale, disp_ref[:, 5]*L_scale, "--", label="v (ref)")
+    markevery=5
+
+    plot(disp_ref[1:markevery:end, 1]*t_scale, disp_ref[1:markevery:end, 2]*L_scale, "--+r", label="Reference")
+    plot(disp_ref[1:markevery:end, 1]*t_scale, disp_ref[1:markevery:end, 3]*L_scale, "--+y")
+    plot(disp_ref[1:markevery:end, 1]*t_scale, disp_ref[1:markevery:end, 4]*L_scale, "--+b")
+    plot(disp_ref[1:markevery:end, 1]*t_scale, disp_ref[1:markevery:end, 5]*L_scale, "--+g")
    
 
     # NNTrain
     vars = matread("Plot/test_nntrain$(idx)_$(nntype)_from$(restart_id)_test$(tid).txt")
     disp_test = vars["state"]
-    plot(disp_test[:, 1]*t_scale, disp_test[:, 2]*L_scale, label="u (pred)")
-    plot(disp_test[:, 1]*t_scale, disp_test[:, 3]*L_scale, label="v (pred)")
-    plot(disp_test[:, 1]*t_scale, disp_test[:, 4]*L_scale, label="u (pred)")
-    plot(disp_test[:, 1]*t_scale, disp_test[:, 5]*L_scale, label="v (pred)")
+    plot(disp_test[:, 1]*t_scale, disp_test[:, 2]*L_scale, "r",  label="Indirect")
+    plot(disp_test[:, 1]*t_scale, disp_test[:, 3]*L_scale, "y")
+    plot(disp_test[:, 1]*t_scale, disp_test[:, 4]*L_scale, "b")
+    plot(disp_test[:, 1]*t_scale, disp_test[:, 5]*L_scale, "g")
 
 
     # NNLearn
     vars = matread("Plot/test_nnlearn$(idx)_$(nntype)_test$(tid).txt")
     #use fint, strain, stress, for debugging purpose
     disp_test = vars["state"]
-    plot(disp_test[:, 1]*t_scale, disp_test[:, 2]*L_scale, label="u (pred)")
-    plot(disp_test[:, 1]*t_scale, disp_test[:, 3]*L_scale, label="v (pred)")
-    plot(disp_test[:, 1]*t_scale, disp_test[:, 4]*L_scale, label="u (pred)")
-    plot(disp_test[:, 1]*t_scale, disp_test[:, 5]*L_scale, label="v (pred)")
+    plot(disp_test[:, 1]*t_scale, disp_test[:, 2]*L_scale, "--r",  label="Direct")
+    plot(disp_test[:, 1]*t_scale, disp_test[:, 3]*L_scale, "--y")
+    plot(disp_test[:, 1]*t_scale, disp_test[:, 4]*L_scale, "--b")
+    plot(disp_test[:, 1]*t_scale, disp_test[:, 5]*L_scale, "--g")
 
-    savefig("Plot/plate_plasticity_disp_nn$(idx)_$(nntype)_from$(restart_id)_test$(tid).png")
+    xlabel("Time (s)")
+    ylabel("Displacement (cm)")
+
+    savefig("Plot/plate_plasticity_disp_nn$(idx)_$(nntype)_from$(restart_id)_test$(tid).pdf")
 
 end
 
@@ -183,7 +188,11 @@ function PlotStress(tid::Int64, nx::Int64, ny::Int64, nxf::Int64, nyf::Int64, fi
     # full_state_history size is NT+1
     frame = Int64(NT/2)
     vmin, vmax = visσ(domain, nxf, nyf,  stress[frame], full_state_history[frame+1]; scaling = scales)
-    savefig("Plot/plate_plasticity_stress_reference$(tid).png")
+    
+    xlabel("X (cm)")
+    ylabel("Y (cm)")
+
+    savefig("Plot/plate_plasticity_stress_reference$(tid).pdf")
 
 
     #visualize nntrain solution
@@ -203,7 +212,9 @@ function PlotStress(tid::Int64, nx::Int64, ny::Int64, nxf::Int64, nyf::Int64, fi
     @show "frame is ", frame, " ,time is ", ts[frame]
 
     visσ(domain, nx, ny,  stress[frame-1], full_state_history[frame], vmin, vmax; scaling = scales)
-    savefig("Plot/plate_plasticity_stress_test_nntrain$(idx)_$(nntype)_from$(restart_id)_test$(tid).png")
+    xlabel("X (cm)")
+    ylabel("Y (cm)")
+    savefig("Plot/plate_plasticity_stress_test_nntrain$(idx)_$(nntype)_from$(restart_id)_test$(tid).pdf")
 
 
 
@@ -224,7 +235,9 @@ function PlotStress(tid::Int64, nx::Int64, ny::Int64, nxf::Int64, nyf::Int64, fi
     @show "frame is ", frame, " ,time is ", ts[frame]
 
     visσ(domain, nx, ny,  stress[frame-1], full_state_history[frame], vmin, vmax; scaling = scales)
-    savefig("Plot/plate_plasticity_stress_test_nnlearn$(idx)_$(nntype)_test$(tid).png")
+    xlabel("X (cm)")
+    ylabel("Y (cm)")
+    savefig("Plot/plate_plasticity_stress_test_nnlearn$(idx)_$(nntype)_test$(tid).pdf")
 
 
 
@@ -237,9 +250,9 @@ end
 
 
 #####################################################
-GENERATE_DATA = true
+GENERATE_DATA = false
 PLOT = true
-restart_id_list = [2,3]
+restart_id_list = [3]
 tid_list = [106, 206, 300]
 train_id = 50
 

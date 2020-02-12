@@ -401,24 +401,29 @@ function visσ(domain::Domain, nx::Int64, ny::Int64,  stress::Array{Float64, 2},
     vmin = vmin==nothing ? minimum(C) : vmin 
     vmax = vmax==nothing ? maximum(C) : vmax
 
+    @show minimum(C), maximum(C) , "!!!!!!"
+
     fig,ax = subplots()
     x1, x2 = minimum(X), maximum(X)
     y1, y2 = minimum(Y), maximum(Y)
     
 
-    p = plt.pcolormesh(X, Y, C)
+    p = plt.pcolormesh(X, Y, C, cmap="rainbow")
     
-    cNorm  = colors.Normalize(
-            vmin=vmin,
-            vmax=vmax)
-    scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
+    clim(vmin,vmax)
+    # cNorm  = colors.Normalize(
+    #         vmin=0,
+    #         vmax=1.0)
+    # scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
 
     
-    #scalarMap.set_array(σ)
-    colorbar(scalarMap)
+    # #scalarMap.set_array(σ)
+    # colorbar(scalarMap)
+    colorbar()
     dx, dy = (x2 - x1)*0.1, (y2 - y1)*0.1
     xlim(x1 .- dx,x2 .+ dx)
     ylim(y1 .- dy,y2 .+ dy)
+    axis("equal")
 
     return vmin, vmax
 end
