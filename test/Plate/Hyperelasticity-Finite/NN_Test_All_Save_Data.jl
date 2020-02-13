@@ -245,7 +245,7 @@ end
 
 
 #####################################################
-GENERATE_DATA = false
+GENERATE_DATA = true
 PLOT = true
 restart_id_list = [3]
 tid_list = [106, 206, 300]
@@ -263,7 +263,7 @@ for restart_id in restart_id_list
     # NNTrain
     s = ae_to_code("Data/$(nntype)/NN_Train_$(idx)_from_$(restart_id)_ite$(train_id).mat", nntype)
     eval(Meta.parse(s))
-    prop = Dict("name"=> testtype, "rho"=> 4.5, "nn"=>post_nn)
+    prop = Dict("name"=> testtype, "rho"=> 0.8, "nn"=>post_nn)
     for tid in tid_list
         file_name = "Plot/test_nntrain$(idx)_$(nntype)_from$(restart_id)_test$(tid).txt"
         TestNN(tid, nx, ny, prop, file_name, restart_id)
@@ -272,7 +272,7 @@ for restart_id in restart_id_list
     # NNLearn 
     s = ae_to_code("Data/$(nntype)/NNLearn_$(idx)_$(H_function)_ite$(train_id).mat", nntype)
     eval(Meta.parse(s))
-    prop = Dict("name"=> testtype, "rho"=> 4.5, "nn"=>post_nn)
+    prop = Dict("name"=> testtype, "rho"=> 0.8, "nn"=>post_nn)
     for tid in tid_list
         file_name = "Plot/test_nnlearn$(idx)_$(nntype)_test$(tid).txt"
         TestNN(tid, nx, ny, prop, file_name, restart_id)
