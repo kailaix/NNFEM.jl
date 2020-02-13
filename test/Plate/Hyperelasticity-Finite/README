@@ -11,7 +11,7 @@ ARGS[1]: idx
     it has "julia NNLearn.jl 1",  The source file is in NNLearn.jl, and the number 1 (idx) determines nn layer number in nnutil
 
 3.  For indirect data learning
-    a) run NNPreLSfit.sh
+    a) run NNPrefit.sh
     it has "julia NNPreLSfit.jl 1", The source file is in NNPreLSfit.jl
     b) run NNTrain.sh
     it has "julia Train_NNPlatePull.jl 1", The source file is Train_NNPlatePull.jl, you can choose the restart output (restart_id=3) 
