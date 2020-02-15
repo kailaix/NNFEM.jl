@@ -1,0 +1,5 @@
+1.NNLearn.sh 
+Train direct input-output data fitting for Chol-NN, NN1 and NN2
+
+2.NNLearn_Plot.sh
+Plot all results

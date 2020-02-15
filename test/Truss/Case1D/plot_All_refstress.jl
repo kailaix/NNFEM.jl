@@ -25,7 +25,7 @@ strain = hcat(domain.history["strain"]...)
 stress = hcat(domain.history["stress"]...)
 i=8
 markevery=5
-plot(strain[i,1:markevery:end], stress[i,1:markevery:end], "o", fillstyle="none", label="Reference-tid$(tid)")
+plot(strain[i,1:markevery:end], stress[i,1:markevery:end], "--o", fillstyle="none", label="Reference-tid$(tid)")
 
 end
 

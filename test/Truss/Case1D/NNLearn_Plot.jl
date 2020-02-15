@@ -61,7 +61,7 @@ function plot_loss(nntype::String)
             N = length(train_loss)
             NN = 1:div(N,100):N
             if nn_init_id == 1
-                semilogy(NN, train_loss[NN],"--$(cols[idx])", label="$(nnname)-$(idx)layers") 
+                semilogy(NN, train_loss[NN],"--$(cols[idx])", label="$(idx)-layer $(nnname)") 
             else
                 semilogy(NN, train_loss[NN],"--$(cols[idx])") 
             end
@@ -164,7 +164,7 @@ function plot_nnlearn_p2p_strain_stress(tid::Int64, nntype::String, min_nn_init_
         ADCME.load(sess, "Data/$(nntype)/learned_nn$(idx)_ite$(Nite)_$(min_nn_init_ids[idx]).mat")
         
         out = run(sess, y)
-        plot(X[NT*(sid-1)+1:NT*sid,1], out[NT*(sid-1)+1:NT*sid]/s_scale, "--$(cols[idx])", label="$(nnname)-$(idx)layers")
+        plot(X[NT*(sid-1)+1:NT*sid,1], out[NT*(sid-1)+1:NT*sid]/s_scale, "--$(cols[idx])", label="$(idx)-layer $(nnname)")
         
     end
     ylim((-0.1,0.6))
@@ -204,7 +204,7 @@ function plot_nnlearn_fem_strain_stress(tid::Int64, nntype::String)
         
         strain = hcat(domain_te.history["strain"]...)
         stress = hcat(domain_te.history["stress"]...)
-        plot(strain[sid,:], stress[sid,:]/s_scale, "--$(cols[idx])", label="$(nnname)-$(idx)layers")
+        plot(strain[sid,:], stress[sid,:]/s_scale, "--$(cols[idx])", label="$(idx)-layer $(nnname)")
     end
 
     xlabel("Strain")
@@ -235,7 +235,7 @@ function plot_nnlearn_fem_disp(tid::Int64, nntype::String)
         t2 = vcat([0.0], domain_te.history["time"]...)
 
         @show idx, u2[5,:]
-        plot(t2/t_scale, u2[5,:], "--$(cols[idx])", label="$(nnname)-$(idx)layers")
+        plot(t2/t_scale, u2[5,:], "--$(cols[idx])", label="$(idx)-layer $(nnname)")
     end
     xlabel("Time (s)")
     ylabel("Displacement (m)")
