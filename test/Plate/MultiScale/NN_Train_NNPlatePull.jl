@@ -155,6 +155,7 @@ end
 @show stress_scale^2
 loss = sum(losses)/stress_scale
 W = get_collection()
+use_ref=false
 if use_reg
     global reg = 1e6 * sum([sum(w^2) for w in W])
 else

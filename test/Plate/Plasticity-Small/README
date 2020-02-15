@@ -17,6 +17,10 @@ ARGS[1]: idx
     it has "julia Train_NNPlatePull.jl 2", The source file is Train_NNPlatePull.jl, you can choose the restart output (restart_id=3) 
     from the PreLSfit results
 
+4. For postprocess
+   julia NN_Test_All_Save_Data.jl 2
+   Postprocess all paper results with idx=2
+
 
 The present setup is nntype=piecewise in all files. 
 

@@ -8,6 +8,20 @@ using JLD2
 using MAT
 using Statistics
 
+
+rcParams = PyPlot.PyDict(PyPlot.matplotlib."rcParams")
+font0 = Dict(
+        "font.size" => 12,
+        "axes.labelsize" => 12,
+        "xtick.labelsize" => 12,
+        "ytick.labelsize" => 12,
+        "legend.fontsize" => 12,
+)
+merge!(rcParams, font0)
+np = pyimport("numpy")
+
+
+
 reset_default_graph()
 include("nnutil.jl")
 t_scale, s_scale = 1000.0, 1000.0 #ms->s, MPa->GPa
@@ -69,7 +83,7 @@ function plot_loss(nntype::String)
     xlabel("Iteration")
     ylabel("Loss")
     
-
+    PyPlot.tight_layout()
     savefig("nnlearn_$(nntype)_loss.pdf")
     @show min_nn_init_ids
     return min_nn_init_ids
@@ -82,7 +96,7 @@ function plot_nnlearn_p2p_strain_stress(tid::Int64, nntype::String, min_nn_init_
     X, Y = prepare_strain_stress_data1D(strain, stress )
     NT = Int64(length(Y)/sid)
 
-    plot(X[NT*(sid-1)+1:markevery:NT*sid, 1], Y[NT*(sid-1)+1:markevery:NT*sid]/s_scale, "+", label="Reference")
+    plot(X[NT*(sid-1)+1:markevery:NT*sid, 1], Y[NT*(sid-1)+1:markevery:NT*sid]/s_scale, "o",fillstyle="none", label="Reference")
 
     
     for idx = 1:max_idx
@@ -157,6 +171,8 @@ function plot_nnlearn_p2p_strain_stress(tid::Int64, nntype::String, min_nn_init_
     xlabel("Strain")
     ylabel("Stress (GPa)")
     legend()
+    PyPlot.tight_layout()
+
     savefig("nnlearn_$(nntype)_p2p_strain_stress_tid$(tid).pdf")
 end
 
@@ -180,7 +196,7 @@ function plot_nnlearn_fem_strain_stress(tid::Int64, nntype::String)
     sid = 8
     strain = hcat(domain.history["strain"]...)
     stress = hcat(domain.history["stress"]...)
-    plot(strain[sid,1:markevery:end], stress[sid,1:markevery:end]/s_scale, "+", label="Reference")
+    plot(strain[sid,1:markevery:end], stress[sid,1:markevery:end]/s_scale, "o",fillstyle="none", label="Reference")
 
 
     for idx = 1:max_idx
@@ -195,6 +211,8 @@ function plot_nnlearn_fem_strain_stress(tid::Int64, nntype::String)
     ylabel("Stress (GPa)")
     legend()
     ylim((-0.1,0.6))
+    PyPlot.tight_layout()
+
     savefig("nnlearn_$(nntype)_fem_strain_stress$tid.pdf")
 end
 
@@ -207,7 +225,7 @@ function plot_nnlearn_fem_disp(tid::Int64, nntype::String)
     u1 = hcat(domain.history["state"]...)
     t1 = vcat([0.0], domain.history["time"]...)
     
-    plot(t1[1:markevery:end]/t_scale, u1[5,1:markevery:end], "--+", label="Reference")
+    plot(t1[1:markevery:end]/t_scale, u1[5,1:markevery:end], "o",fillstyle="none", label="Reference")
 
 
 
@@ -223,6 +241,7 @@ function plot_nnlearn_fem_disp(tid::Int64, nntype::String)
     ylabel("Displacement (m)")
     legend()
     ylim((-0.005,0.06))
+    PyPlot.tight_layout()
     savefig("nnlearn_$(nntype)_fem_disp$tid.pdf")
 
 

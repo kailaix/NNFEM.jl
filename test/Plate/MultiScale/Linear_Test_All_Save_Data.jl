@@ -98,11 +98,11 @@ globdat, domain, ts = AdaptiveSolver("NewmarkSolver", globdat, domain, T, NT, ad
 
 Disp = zeros(Float64, length(ts), 5)
 Disp[:,1] = ts
-ux = [reshape(domain.history["state"][i][1:(nx*porder+1)*(ny*porder+1)], ny*porder+1, nx*porder+1)[end,end] for i = 1:length(domain.history["state"])]
-uy = [reshape(domain.history["state"][i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[end,end] for i = 1:length(domain.history["state"])]
+ux = [reshape(domain.history["state"][i][1:(nx*porder+1)*(ny*porder+1)], nx*porder+1, ny*porder+1)[end,end] for i = 1:length(domain.history["state"])]
+uy = [reshape(domain.history["state"][i][(nx*porder+1)*(ny*porder+1)+1:end], nx*porder+1, ny*porder+1)[end,end] for i = 1:length(domain.history["state"])]
 Disp[:,2], Disp[:,3] = ux, uy
-ux = [reshape(domain.history["state"][i][1:(nx*porder+1)*(ny*porder+1)], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
-uy = [reshape(domain.history["state"][i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
+ux = [reshape(domain.history["state"][i][1:(nx*porder+1)*(ny*porder+1)], nx*porder+1, ny*porder+1)[div((nx*porder+1),2),end] for i = 1:length(domain.history["state"])]
+uy = [reshape(domain.history["state"][i][(nx*porder+1)*(ny*porder+1)+1:end], nx*porder+1, ny*porder+1)[div((nx*porder+1),2),end] for i = 1:length(domain.history["state"])]
 Disp[:,4], Disp[:,5]  = ux, uy
 
 #file = matopen("Plot/test_nntrain$(idx)_$(nntype)_from$(restart_id)_test$(tid).txt", "w")
@@ -121,11 +121,11 @@ function Reference(tid::Int64, nx::Int64, ny::Int64)
     ts = LinRange(0, T, N)
     Disp = zeros(Float64, N, 5)
     Disp[:,1] = ts
-    ux = [reshape(full_state_history[i][1:(nx*porder+1)*(ny*porder+1)], ny*porder+1, nx*porder+1)[end,end] for i = 1:N]
-    uy = [reshape(full_state_history[i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[end,end] for i = 1:N]
+    ux = [reshape(full_state_history[i][1:(nx*porder+1)*(ny*porder+1)], nx*porder+1, ny*porder+1)[end,end] for i = 1:N]
+    uy = [reshape(full_state_history[i][(nx*porder+1)*(ny*porder+1)+1:end], nx*porder+1, ny*porder+1)[end,end] for i = 1:N]
     Disp[:,2], Disp[:,3] = ux, uy
-    ux = [reshape(full_state_history[i][1:(nx*porder+1)*(ny*porder+1)], ny*porder+1, nx*porder+1)[1,end] for i = 1:N]
-    uy = [reshape(full_state_history[i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[1,end] for i = 1:N]
+    ux = [reshape(full_state_history[i][1:(nx*porder+1)*(ny*porder+1)], nx*porder+1, ny*porder+1)[div((nx*porder+1),2),end] for i = 1:N]
+    uy = [reshape(full_state_history[i][(nx*porder+1)*(ny*porder+1)+1:end], nx*porder+1, ny*porder+1)[div((nx*porder+1),2),end] for i = 1:N]
     Disp[:,4], Disp[:,5]  = ux, uy
     
     file = matopen("Plot/linear_reference$(tid).txt", "w")
@@ -139,15 +139,15 @@ end
 function Plot(tid::Int64)
     close("all")
     L_scale, t_scale = scales[1], scales[3]
-
+    markevery=5
     vars = matread("Plot/linear_reference$(tid).txt")
     #use fint, strain, stress, for debugging purpose
     disp_ref = vars["state"] 
 
-    plot(disp_ref[:, 1]*t_scale, disp_ref[:, 2]*L_scale, "--+r", label="Reference")
-    plot(disp_ref[:, 1]*t_scale, disp_ref[:, 3]*L_scale, "--+y")
-    plot(disp_ref[:, 1]*t_scale, disp_ref[:, 4]*L_scale, "--+b")
-    plot(disp_ref[:, 1]*t_scale, disp_ref[:, 5]*L_scale, "--+g")
+    plot(disp_ref[1:markevery:end, 1]*t_scale, disp_ref[1:markevery:end, 2]*L_scale, "or", fillstyle="none", label="Reference")
+    plot(disp_ref[1:markevery:end, 1]*t_scale, disp_ref[1:markevery:end, 3]*L_scale, "oy", fillstyle="none")
+    plot(disp_ref[1:markevery:end, 1]*t_scale, disp_ref[1:markevery:end, 4]*L_scale, "ob", fillstyle="none")
+    plot(disp_ref[1:markevery:end, 1]*t_scale, disp_ref[1:markevery:end, 5]*L_scale, "og", fillstyle="none")
    
 
     vars = matread("Plot/test_lineartrain_$(nntype)_$(tid).txt")
@@ -160,7 +160,7 @@ function Plot(tid::Int64)
 
     xlabel("Time (s)")
     ylabel("Displacement (cm)")
-
+    PyPlot.tight_layout()
     savefig("Plot/plate_multiscale_disp_linear_$(tid).pdf")
 
 end
@@ -204,7 +204,7 @@ function PlotStress(tid::Int64, nx::Int64, ny::Int64, nxf::Int64, nyf::Int64, fi
     vmin, vmax = visσ(domain, nxf, nyf,  stress[frame], full_state_history[frame+1], vmin, vmax; scaling = scales)
     xlabel("X (cm)")
     ylabel("Y (cm)")
-    savefig("Plot/plate_multiscale_stress_linear_reference$(tid).pdf")
+    savefig("Plot/plate_multiscale_stress_linear_reference$(tid).png")
 
 
     

@@ -11,7 +11,17 @@ using Distributions, Random
 using ForwardDiff
 using DelimitedFiles
 
+rcParams = PyPlot.PyDict(PyPlot.matplotlib."rcParams")
+font0 = Dict(
+        "font.size" => 12,
+        "axes.labelsize" => 12,
+        "xtick.labelsize" => 12,
+        "ytick.labelsize" => 12,
+        "legend.fontsize" => 12,
+)
+merge!(rcParams, font0)
 np = pyimport("numpy")
+
 
 
 

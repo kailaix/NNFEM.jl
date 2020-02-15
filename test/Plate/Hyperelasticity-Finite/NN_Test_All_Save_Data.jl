@@ -97,11 +97,11 @@ globdat, domain, ts = AdaptiveSolver("NewmarkSolver", globdat, domain, T, NT, ad
 
 Disp = zeros(Float64, length(ts), 5)
 Disp[:,1] = ts
-ux = [reshape(domain.history["state"][i][1:(nx*porder+1)*(ny*porder+1)], ny*porder+1, nx*porder+1)[end,end] for i = 1:length(domain.history["state"])]
-uy = [reshape(domain.history["state"][i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[end,end] for i = 1:length(domain.history["state"])]
+ux = [reshape(domain.history["state"][i][1:(nx*porder+1)*(ny*porder+1)], nx*porder+1, ny*porder+1)[end,end] for i = 1:length(domain.history["state"])]
+uy = [reshape(domain.history["state"][i][(nx*porder+1)*(ny*porder+1)+1:end], nx*porder+1, ny*porder+1)[end,end] for i = 1:length(domain.history["state"])]
 Disp[:,2], Disp[:,3] = ux, uy
-ux = [reshape(domain.history["state"][i][1:(nx*porder+1)*(ny*porder+1)], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
-uy = [reshape(domain.history["state"][i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
+ux = [reshape(domain.history["state"][i][1:(nx*porder+1)*(ny*porder+1)], nx*porder+1, ny*porder+1)[div((nx*porder+1),2),end] for i = 1:length(domain.history["state"])]
+uy = [reshape(domain.history["state"][i][(nx*porder+1)*(ny*porder+1)+1:end], nx*porder+1, ny*porder+1)[div((nx*porder+1),2),end] for i = 1:length(domain.history["state"])]
 Disp[:,4], Disp[:,5]  = ux, uy
 
 #file = matopen("Plot/test_nntrain$(idx)_$(nntype)_from$(restart_id)_test$(tid).txt", "w")
@@ -120,11 +120,11 @@ function Reference(tid::Int64, nx::Int64, ny::Int64)
     ts = LinRange(0, T, N)
     Disp = zeros(Float64, N, 5)
     Disp[:,1] = ts
-    ux = [reshape(full_state_history[i][1:(nx*porder+1)*(ny*porder+1)], ny*porder+1, nx*porder+1)[end,end] for i = 1:N]
-    uy = [reshape(full_state_history[i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[end,end] for i = 1:N]
+    ux = [reshape(full_state_history[i][1:(nx*porder+1)*(ny*porder+1)], nx*porder+1, ny*porder+1)[end,end] for i = 1:N]
+    uy = [reshape(full_state_history[i][(nx*porder+1)*(ny*porder+1)+1:end], nx*porder+1, ny*porder+1)[end,end] for i = 1:N]
     Disp[:,2], Disp[:,3] = ux, uy
-    ux = [reshape(full_state_history[i][1:(nx*porder+1)*(ny*porder+1)], ny*porder+1, nx*porder+1)[1,end] for i = 1:N]
-    uy = [reshape(full_state_history[i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[1,end] for i = 1:N]
+    ux = [reshape(full_state_history[i][1:(nx*porder+1)*(ny*porder+1)], nx*porder+1, ny*porder+1)[div((nx*porder+1),2),end] for i = 1:N]
+    uy = [reshape(full_state_history[i][(nx*porder+1)*(ny*porder+1)+1:end], nx*porder+1, ny*porder+1)[div((nx*porder+1),2),end] for i = 1:N]
     Disp[:,4], Disp[:,5]  = ux, uy
     
     file = matopen("Plot/reference$(tid).txt", "w")
@@ -142,10 +142,10 @@ function Plot(tid::Int64, restart_id::Int64)
     # Reference
     vars = matread("Plot/reference$(tid).txt")
     disp_ref = vars["state"] 
-    plot(disp_ref[1:markevery:end, 1]*t_scale, disp_ref[1:markevery:end, 2]*L_scale, "--+r", label="Reference")
-    plot(disp_ref[1:markevery:end, 1]*t_scale, disp_ref[1:markevery:end, 3]*L_scale, "--+y")
-    plot(disp_ref[1:markevery:end, 1]*t_scale, disp_ref[1:markevery:end, 4]*L_scale, "--+b")
-    plot(disp_ref[1:markevery:end, 1]*t_scale, disp_ref[1:markevery:end, 5]*L_scale, "--+g")
+    plot(disp_ref[1:markevery:end, 1]*t_scale, disp_ref[1:markevery:end, 2]*L_scale, "or", fillstyle="none", label="Reference")
+    plot(disp_ref[1:markevery:end, 1]*t_scale, disp_ref[1:markevery:end, 3]*L_scale, "oy", fillstyle="none")
+    plot(disp_ref[1:markevery:end, 1]*t_scale, disp_ref[1:markevery:end, 4]*L_scale, "ob", fillstyle="none")
+    plot(disp_ref[1:markevery:end, 1]*t_scale, disp_ref[1:markevery:end, 5]*L_scale, "og", fillstyle="none")
    
     # NNTrain
     vars = matread("Plot/test_nntrain$(idx)_$(nntype)_from$(restart_id)_test$(tid).txt")
@@ -168,6 +168,8 @@ function Plot(tid::Int64, restart_id::Int64)
     xlabel("Time (s)")
     ylabel("Displacement (cm)")
 
+    PyPlot.tight_layout()
+	
     savefig("Plot/plate_hyperelasticity_disp_nn$(idx)_$(nntype)_from$(restart_id)_test$(tid).pdf")
 
 end
@@ -245,7 +247,7 @@ end
 
 
 #####################################################
-GENERATE_DATA = true
+GENERATE_DATA = false
 PLOT = true
 restart_id_list = [3]
 tid_list = [106, 206, 300]

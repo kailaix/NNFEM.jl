@@ -174,6 +174,11 @@ end
 sess = Session(); init(sess)
 @show run(sess, loss)
 # ADCME.load(sess, "Data/$(nntype)/NNPreLSfit.mat")
+
+#ADCME.load(sess, "Data/$(nntype)/NNPreLSfit_$(idx)_$(H_function)_3.mat")
+#@show run(sess, loss)
+#error()
+
 for i = 1:5
     BFGS!(sess, loss, 1000)
     ADCME.save(sess, "Data/$(nntype)/NNPreLSfit_$(idx)_$(H_function)_$(i).mat")

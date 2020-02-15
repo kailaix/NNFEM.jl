@@ -17,6 +17,11 @@ ARGS[1]: idx
     it has "julia Train_NNPlatePull.jl 1", The source file is Train_NNPlatePull.jl, you can choose the restart output (restart_id=3) 
     from the PreLSfit results
 
+4. For postprocess
+   julia NN_Test_All_Save_Data.jl 1
+   Postprocess all paper results with idx=1
+
+
 
 The present setup is nntype=stiffmat in all files. 
 
@@ -35,3 +40,5 @@ P1 = 44800     P2 =  4480    P3 = 16800
 
 Scaling about NN
 strain_scale = 1  stress_scale = 1e5   (stress_scale/strain_scale ~ C1,C2)
+
+
