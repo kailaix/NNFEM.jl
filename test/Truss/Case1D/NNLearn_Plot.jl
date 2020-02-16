@@ -32,7 +32,7 @@ max_nn_init_id = 10
 cols = ["r", "y", "b", "g"]
 nnname=nntype
 if nntype == "piecewise"
-    nnname = "Chol-NN"
+    nnname = "CholNN"
 elseif nntype == "ae_scaled"
     nnname = "NN1"
 elseif nntype == "ae_scaled2"
