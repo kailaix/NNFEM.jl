@@ -24,6 +24,12 @@ FILEID2 = "nn_width$(nn_width)nn_depth$(nn_depth)sigmaY$(σY)dsigma$(dσ)activat
 
 @info FILEID
 
+if activation=="selu"
+    global activation = tf.nn.selu 
+elseif activation=="elu"
+    global activation = tf.nn.elu 
+end
+
 config = [[nn_width for i=1:nn_depth]...,1]
 
 stress_scale = 1e2
