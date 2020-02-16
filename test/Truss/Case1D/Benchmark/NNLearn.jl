@@ -20,7 +20,7 @@ sess = Session(); init(sess)
 @show run(sess,loss)
 
 loss_all = []
-for i = 1:1
+for i = 1:10
     println("************************** Outer Iteration = $i ************************** ")
     loss_ = BFGS!(sess, loss, 3000)
     push!(loss_all, loss_)
