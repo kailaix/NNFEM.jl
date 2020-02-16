@@ -10,7 +10,7 @@ for activation in tanh relu leaky_relu selu elu
 do 
 for exp_id in 1 2 3 4 5
 do 
-srun -n 1 -N 1 julia NNLearn $nn_depth $nn_width $sigmaY $dsigma $activation $exp_id
+srun -n 1 -N 1 julia NNLearn $nn_depth $nn_width $sigmaY $dsigma $activation $exp_id &
 done
 done 
 done
