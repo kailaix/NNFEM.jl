@@ -25,9 +25,9 @@ FILEID2 = "nn_width$(nn_width)nn_depth$(nn_depth)sigmaY$(σY)dsigma$(dσ)activat
 @info FILEID
 
 if activation=="selu"
-    global activation = tf.nn.selu 
+    global activation = x -> tf.nn.selu(x)
 elseif activation=="elu"
-    global activation = tf.nn.elu 
+    global activation = x -> tf.nn.elu(x)
 end
 
 config = [[nn_width for i=1:nn_depth]...,1]
