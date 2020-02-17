@@ -9,14 +9,11 @@ for dsigma in 0.1 1.0 10.0 100.0
 do 
 for activation in tanh
 do 
-for exp_id in 1 2 3 4 5
-do 
 srun -n 1 -N 1 ./Benchmark_.sh $nn_depth $nn_width $sigmaY $dsigma $activation &
 done
 done 
 done
 done 
-done
 done  
 
 # nn architecture 
@@ -30,13 +27,10 @@ for dsigma in 1.0
 do 
 for activation in tanh relu leaky_relu selu elu 
 do 
-for exp_id in 1 2 3 4 5
-do 
 srun -n 1 -N 1 ./Benchmark_.sh $nn_depth $nn_width $sigmaY $dsigma $activation &
 done
 done 
 done
 done 
-done
 done  
 
