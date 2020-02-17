@@ -9,7 +9,7 @@ for dsigma in 0.1 1.0 10.0 100.0
 do 
 for activation in tanh
 do 
-srun -n 1 -N 1 ./Benchmark_.sh $nn_depth $nn_width $sigmaY $dsigma $activation &
+srun -n 1 -N 1 ./Benchmark_.sh $nn_width $nn_depth $sigmaY $dsigma $activation &
 done
 done 
 done
@@ -27,7 +27,7 @@ for dsigma in 1.0
 do 
 for activation in tanh relu leaky_relu selu elu 
 do 
-srun -n 1 -N 1 ./Benchmark_.sh $nn_depth $nn_width $sigmaY $dsigma $activation &
+srun -n 1 -N 1 ./Benchmark_.sh $nn_width $nn_depth $sigmaY $dsigma $activation &
 done
 done 
 done
