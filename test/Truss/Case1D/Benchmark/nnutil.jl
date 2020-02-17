@@ -41,7 +41,7 @@ E0 = 200.0e3/(stress_scale/strain_scale)
 function nn(ε, ε0, σ0)
     @show ε, ε0, σ0
     x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
-    H = ae(x, config, "piecewise", activation = activation)^2
+    H = ae(x, config, "default", activation = activation)^2
     s = σ0^2
     i = sigmoid((s - σY^2)/(dσ*σY^2))  
 
