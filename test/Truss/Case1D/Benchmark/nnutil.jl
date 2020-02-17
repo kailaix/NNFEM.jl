@@ -6,8 +6,8 @@ using MAT
 
 nn_width = 20
 nn_depth = 3
-σY = 0.01e6
-dσ = 1.0
+σY = 100.0
+dσ = 0.1
 activation = "tanh"
 exp_id = 1
 
@@ -41,7 +41,7 @@ E0 = 200.0e3/(stress_scale/strain_scale)
 function nn(ε, ε0, σ0)
     @show ε, ε0, σ0
     x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
-    H = ae(x, config, "default", activation = activation)^2
+    H = ae(x, config, "piecewise", activation = activation)^2
     s = σ0^2
     i = sigmoid((s - σY^2)/(dσ*σY^2))  
 
@@ -57,7 +57,7 @@ end
 
 function post_nn(ε::Float64, ε0::Float64, σ0::Float64, Δt::Float64)    
     f = x -> begin
-        H = nnpiecewise(reshape([x/strain_scale;ε0/strain_scale;σ0/stress_scale],1,3))[1,1]^2
+        H = nndefault(reshape([x/strain_scale;ε0/strain_scale;σ0/stress_scale],1,3))[1,1]^2
 
         @show H
         s = σ0^2

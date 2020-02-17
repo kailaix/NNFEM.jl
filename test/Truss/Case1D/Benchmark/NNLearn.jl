@@ -26,6 +26,14 @@ for i = 1:10
     push!(loss_all, loss_)
 end 
 
+using Random;
+file = randstring(8)
+ADCME.save(sess, "$file.mat")
+nnname = "$file.mat"
+s = ae_to_code(nnname, "default")
+eval(Meta.parse(s))
+rm("$file.mat")
+
 testtype = "NeuralNetwork1D"
 include("NNTrussPull_Domain.jl")
 tid = 3
