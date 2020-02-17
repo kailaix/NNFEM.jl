@@ -53,7 +53,7 @@ function post_nn(ε::Float64, ε0::Float64, σ0::Float64, Δt::Float64)
     f = x -> begin
         H = nndefault(reshape([x/strain_scale;ε0/strain_scale;σ0/stress_scale],1,3))[1,1]^2
 
-        @show H
+        # @show H
         s = σ0^2
         i = sigmoid_((s - σY^2)/(dσ*σY^2))
 
