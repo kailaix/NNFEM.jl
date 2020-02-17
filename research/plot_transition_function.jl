@@ -7,16 +7,20 @@ function sigmoid_(z)
   
 end
 
-H = x->sigmoid_(-(x-1)*100)
+H = x->sigmoid_((x-1)*100)
 
 x = LinRange(0,2,1000)
 y = H.(x)
-plot(x, y)
-plot(ones(100), LinRange(0,1,100), "--")
-text(1.1, 0.1, "\$\\sigma_0\$", fontsize=20)
+plot(x, y, linewidth=4)
+plot(ones(100), LinRange(0,1,100), "--", linewidth=4)
+text(1.1, 0.1, "\$\\tilde\\sigma_Y\$", fontsize=20)
 
-text(1.1, 0.6, "Plasticity",  fontsize=20)
-text(0.1, 0.6, "Elasticity", fontsize=20)
+text(1.1, 0.6, "\$\\sigma_{\\mathrm{plasticity}}\$",  fontsize=20)
+text(1.1, 0.5, "dominates",  fontsize=20)
+
+text(0.1, 0.6, "\$\\sigma_{\\mathrm{elasticity}}\$", fontsize=20)
+text(1.1, 0.5, "dominates",  fontsize=20)
+
 xlabel("\$\\sigma\$")
-ylabel("\$H(\\sigma, \\sigma_0)\$")
+ylabel("\$D(\\sigma, \\tilde\\sigma_Y)\$")
 mpl.save("H.tex")
