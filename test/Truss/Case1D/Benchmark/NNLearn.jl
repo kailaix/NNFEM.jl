@@ -5,6 +5,7 @@ using JLD2
 using PyPlot
 using MAT 
 using DelimitedFiles
+using Interpolations
 reset_default_graph()
 
 include("nnutil.jl")
@@ -30,7 +31,7 @@ using Random;
 file = randstring(8)
 ADCME.save(sess, "$file.mat")
 nnname = "$file.mat"
-s = ae_to_code(nnname, "default")
+s = ae_to_code(nnname, "default", activation = activation)
 eval(Meta.parse(s))
 rm("$file.mat")
 
@@ -64,11 +65,14 @@ adaptive_solver_args = Dict("Newmark_rho"=> 0.0,
 globdat, domain, ts = AdaptiveSolver("NewmarkSolver", globdat, domain, T, NT, adaptive_solver_args)
 
 state_ = hcat(domain.history["state"]...)
-
+state2 = zeros(size(state_,1), NT+1)
+for i = 1:size(state_,1)
+    state2[i,:] = LinearInterpolation(ts, state_[i,:])(LinRange(0,T,NT+1))
+end
 
 @load "Data/domain3.jld2" domain 
 state = hcat(domain.history["state"]...)
-loss = norm(state_ - state)
+loss = sqrt(mean((state2 - state).^2))
 open("Data/$FILEID2.txt", "a") do io
     writedlm(io, [loss])
 end
