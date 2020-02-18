@@ -5,6 +5,9 @@ strain_scale = 1
 force_scale = 1.0
 fiber_size = 2
 
+using PyCall
+using Interpolations
+mpl = pyimport("tikzplotlib")
 
 
 testtype = "NeuralNetwork2D"
@@ -127,7 +130,7 @@ function Reference(tid::Int64, nx::Int64, ny::Int64)
     uy = [reshape(full_state_history[i][(nx*porder+1)*(ny*porder+1)+1:end], nx*porder+1, ny*porder+1)[div((nx*porder+1),2),end] for i = 1:N]
     Disp[:,4], Disp[:,5]  = ux, uy
     
-    file = matopen("Plot/reference$(tid).txt", "w")
+    file = matopen("Plot/reference$(tid).mat", "w")
     write(file, "state", Disp)
     write(file, "full_stress_history", stress)
     write(file, "full_state_history", full_state_history)
@@ -140,7 +143,7 @@ function Plot(tid::Int64, restart_id::Int64)
     L_scale, t_scale = scales[1], scales[3]
     markevery = 5
     # Reference
-    vars = matread("Plot/reference$(tid).txt")
+    vars = matread("Plot/reference$(tid).mat")
     disp_ref = vars["state"] 
     plot(disp_ref[1:markevery:end, 1]*t_scale, disp_ref[1:markevery:end, 2]*L_scale, "or", fillstyle="none", label="Reference")
     plot(disp_ref[1:markevery:end, 1]*t_scale, disp_ref[1:markevery:end, 3]*L_scale, "oy", fillstyle="none")
@@ -173,6 +176,54 @@ function Plot(tid::Int64, restart_id::Int64)
     savefig("Plot/plate_hyperelasticity_disp_nn$(idx)_$(nntype)_from$(restart_id)_test$(tid).pdf")
     mpl.save("Plot/plate_hyperelasticity_disp_nn$(idx)_$(nntype)_from$(restart_id)_test$(tid).tex")
 
+
+
+    ########################################################### Plot diff
+    close("all")
+    L_scale, t_scale = scales[1], scales[3]
+    markevery = 5
+    # Reference
+    vars = matread("Plot/reference$(tid).mat")
+    disp_ref = vars["state"] 
+
+    # NNTrain
+    vars = matread("Plot/test_nntrain$(idx)_$(nntype)_from$(restart_id)_test$(tid).txt")
+    disp_test = vars["state"]
+    ref = Array{Array{Float64}}(undef,4)
+    for i = 1:4
+        ref[i] = LinearInterpolation(disp_ref[1:markevery:end, 1]*t_scale, disp_ref[1:markevery:end, i+1]*L_scale)(disp_test[:, 1]*t_scale)
+    end
+    semilogy(disp_test[:, 1]*t_scale, abs.(ref[1]-disp_test[:, 2]*L_scale), "r",  label="Indirect data training")
+    semilogy(disp_test[:, 1]*t_scale, abs.(ref[2]-disp_test[:, 3]*L_scale), "y")
+    semilogy(disp_test[:, 1]*t_scale, abs.(ref[3]-disp_test[:, 4]*L_scale), "b")
+    semilogy(disp_test[:, 1]*t_scale, abs.(ref[4]-disp_test[:, 5]*L_scale), "g")
+
+
+    # NNLearn
+    vars = matread("Plot/test_nnlearn$(idx)_$(nntype)_test$(tid).txt")
+    #use fint, strain, stress, for debugging purpose
+    disp_test = vars["state"]
+    ref = Array{Array{Float64}}(undef,4)
+    for i = 1:4
+        ref[i] = LinearInterpolation(disp_ref[1:markevery:end, 1]*t_scale, disp_ref[1:markevery:end, i+1]*L_scale)(disp_test[:, 1]*t_scale)
+    end
+    semilogy(disp_test[:, 1]*t_scale, abs.(ref[1]-disp_test[:, 2]*L_scale), "r", linestyle="dotted",  label="Direct data fitting")
+    semilogy(disp_test[:, 1]*t_scale, abs.(ref[2]-disp_test[:, 3]*L_scale), "y", linestyle="dotted")
+    semilogy(disp_test[:, 1]*t_scale, abs.(ref[3]-disp_test[:, 4]*L_scale), "b", linestyle="dotted")
+    semilogy(disp_test[:, 1]*t_scale, abs.(ref[4]-disp_test[:, 5]*L_scale), "g", linestyle="dotted")
+
+    xlabel("Time (s)")
+    ylabel("Displacement (cm)")
+    legend()
+
+    PyPlot.tight_layout()
+	
+	
+    savefig("Plot/plate_hyperelasticity_disp_nn$(idx)_$(nntype)_from$(restart_id)_test$(tid)_error.pdf")
+    mpl.save("Plot/plate_hyperelasticity_disp_nn$(idx)_$(nntype)_from$(restart_id)_test$(tid)_error.tex")
+    #savefig("Plot/plate_hyperelasticity_disp_nn$(idx)_$(nntype)_from$(restart_id)_test$(tid).pdf")
+    #mpl.save("Plot/diff$(tid).tex")
+
 end
 
 
@@ -182,7 +233,7 @@ function PlotStress(tid::Int64, nx::Int64, ny::Int64, nxf::Int64, nyf::Int64, fi
     #visualize exact solution 
     close("all")
     domain, _, _ = BuildDomain(nxf, nyf, Lx, Ly, tid, porder, force_scale, prop_dummy)
-    vars = matread("Plot/reference$(tid).txt")
+    vars = matread("Plot/reference$(tid).mat")
     ts, stress, full_state_history = vars["state"][:,1], vars["full_stress_history"], vars["full_state_history"]
     # stress size is NT
     # full_state_history size is NT+1
@@ -259,6 +310,7 @@ train_id = 50
 
 
 if GENERATE_DATA
+    if !isdir("Plot"); mkdir("Plot"); end
 for restart_id in restart_id_list
     # Reference
     for tid in tid_list
