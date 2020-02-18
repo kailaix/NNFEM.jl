@@ -10,14 +10,18 @@ using LinearAlgebra
 using Distributions, Random
 using ForwardDiff
 using DelimitedFiles
+mpl = pyimport("tikzplotlib")
+
 
 rcParams = PyPlot.PyDict(PyPlot.matplotlib."rcParams")
 font0 = Dict(
-        "font.size" => 12,
-        "axes.labelsize" => 12,
-        "xtick.labelsize" => 12,
-        "ytick.labelsize" => 12,
-        "legend.fontsize" => 12,
+        #"font.family" =>"Times New Roman",
+	#"text.usetex" => true,
+        "font.size" => 16,
+        "axes.labelsize" => 16,
+        "xtick.labelsize" => 16,
+        "ytick.labelsize" => 16,
+        "legend.fontsize" => 16,
 )
 merge!(rcParams, font0)
 np = pyimport("numpy")

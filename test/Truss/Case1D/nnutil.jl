@@ -48,7 +48,7 @@ function nn(ε, ε0, σ0)
         x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
         H = ae(x, config, nntype)^2
         s = σ0^2
-        i = sigmoid((s - 0.01e6))  
+        i = sigmoid((s - 0.01e6)/1.0e3)  
  
         y = ( H.* i + E0 * (1-i) ) .* (ε-ε0)*stress_scale/strain_scale + σ0
 
@@ -85,7 +85,7 @@ function post_nn(ε::Float64, ε0::Float64, σ0::Float64, Δt::Float64)
 
             @show H
             s = σ0^2
-            i = sigmoid_((s - 0.01e6))
+            i = sigmoid_((s - 0.01e6)/1.0e3)
 
             (H * i + E0 * (1.0-i) )*stress_scale/strain_scale * (x-ε0) + σ0
 

@@ -161,6 +161,7 @@ function Plot(tid::Int64, restart_id::Int64)
     ylabel("Displacement (cm)")
     PyPlot.tight_layout()
     savefig("Plot/plate_multiscale_disp_nn$(idx)_$(nntype)_from$(restart_id)_test$(tid).pdf")
+    mpl.save("Plot/plate_multiscale_disp_nn$(idx)_$(nntype)_from$(restart_id)_test$(tid).tex")
 
 end
 
@@ -188,6 +189,7 @@ function PlotStress(tid::Int64, nx::Int64, ny::Int64, nxf::Int64, nyf::Int64, fi
     vmin, vmax = visσ(domain, nx, ny,  stress[frame-1], full_state_history[frame]; scaling = scales)
     xlabel("X (cm)")
     ylabel("Y (cm)")
+    PyPlot.tight_layout()
     savefig("Plot/plate_multiscale_stress_test_nntrain$(idx)_$(nntype)_from$(restart_id)_test$(tid).pdf")
 
 
@@ -203,6 +205,7 @@ function PlotStress(tid::Int64, nx::Int64, ny::Int64, nxf::Int64, nyf::Int64, fi
     vmin, vmax = visσ(domain, nxf, nyf,  stress[frame], full_state_history[frame+1], vmin, vmax; scaling = scales)
     xlabel("X (cm)")
     ylabel("Y (cm)")
+    PyPlot.tight_layout()
     savefig("Plot/plate_multiscale_stress_reference$(tid).png")
 
 

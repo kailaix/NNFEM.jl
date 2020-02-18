@@ -1,15 +1,15 @@
 using PyPlot
 using PyCall
-#mpl = pyimport("tikzplotlib")
+mpl = pyimport("tikzplotlib")
 using JLD2
 
 rcParams = PyPlot.PyDict(PyPlot.matplotlib."rcParams")
 font0 = Dict(
-        "font.size" => 12,
-        "axes.labelsize" => 12,
-        "xtick.labelsize" => 12,
-        "ytick.labelsize" => 12,
-        "legend.fontsize" => 12,
+        "font.size" => 16,
+        "axes.labelsize" => 16,
+        "xtick.labelsize" => 16,
+        "ytick.labelsize" => 16,
+        "legend.fontsize" => 16,
 )
 merge!(rcParams, font0)
 
@@ -33,5 +33,5 @@ xlabel("Strain")
 ylabel("Stress (MPa)")
 legend()
 PyPlot.tight_layout()
-#mpl.save("truss1d_stress$tid.tex")
 savefig("all_truss1d_strain_stress.pdf")
+mpl.save("all_truss1d_strain_stress.tex")

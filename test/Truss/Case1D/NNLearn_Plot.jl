@@ -11,14 +11,15 @@ using Statistics
 
 rcParams = PyPlot.PyDict(PyPlot.matplotlib."rcParams")
 font0 = Dict(
-        "font.size" => 12,
-        "axes.labelsize" => 12,
-        "xtick.labelsize" => 12,
-        "ytick.labelsize" => 12,
-        "legend.fontsize" => 12,
+        "font.size" => 16,
+        "axes.labelsize" => 16,
+        "xtick.labelsize" => 16,
+        "ytick.labelsize" => 16,
+        "legend.fontsize" => 16,
 )
 merge!(rcParams, font0)
 np = pyimport("numpy")
+mpl = pyimport("tikzplotlib")
 
 
 
@@ -85,6 +86,7 @@ function plot_loss(nntype::String)
     
     PyPlot.tight_layout()
     savefig("nnlearn_$(nntype)_loss.pdf")
+    mpl.save("nnlearn_$(nntype)_loss.tex")
     @show min_nn_init_ids
     return min_nn_init_ids
 end
@@ -137,7 +139,7 @@ function plot_nnlearn_p2p_strain_stress(tid::Int64, nntype::String, min_nn_init_
                 x = [ε/strain_scale ε0/strain_scale σ0/stress_scale]
                 H = ae(x, config, "piecewise")^2
                 s = σ0^2
-                i = sigmoid((s - 0.01e6))  
+                i = sigmoid((s - 0.01e6)/1.0e3)  
          
                 y = ( H.* i + E0 * (1-i) ) .* (ε-ε0)*stress_scale/strain_scale + σ0
         
@@ -168,12 +170,15 @@ function plot_nnlearn_p2p_strain_stress(tid::Int64, nntype::String, min_nn_init_
         
     end
     ylim((-0.1,0.6))
+    xlim((-0.00125, 0.015))
+
     xlabel("Strain")
     ylabel("Stress (GPa)")
     legend()
     PyPlot.tight_layout()
 
     savefig("nnlearn_$(nntype)_p2p_strain_stress_tid$(tid).pdf")
+    mpl.save("nnlearn_$(nntype)_p2p_strain_stress_tid$(tid).tex")
 end
 
 
@@ -204,16 +209,18 @@ function plot_nnlearn_fem_strain_stress(tid::Int64, nntype::String)
         
         strain = hcat(domain_te.history["strain"]...)
         stress = hcat(domain_te.history["stress"]...)
-        plot(strain[sid,:], stress[sid,:]/s_scale, "--$(cols[idx])", label="$(idx)-layer $(nnname)")
+        plot(strain[sid,1:markevery:end], stress[sid,1:markevery:end]/s_scale, "--$(cols[idx])", label="$(idx)-layer $(nnname)")
     end
 
     xlabel("Strain")
     ylabel("Stress (GPa)")
     legend()
     ylim((-0.1,0.6))
+    xlim((-0.00125, 0.015))
     PyPlot.tight_layout()
 
     savefig("nnlearn_$(nntype)_fem_strain_stress$tid.pdf")
+    mpl.save("nnlearn_$(nntype)_fem_strain_stress$tid.tex")
 end
 
 
@@ -235,7 +242,7 @@ function plot_nnlearn_fem_disp(tid::Int64, nntype::String)
         t2 = vcat([0.0], domain_te.history["time"]...)
 
         @show idx, u2[5,:]
-        plot(t2/t_scale, u2[5,:], "--$(cols[idx])", label="$(idx)-layer $(nnname)")
+        plot(t2[1:markevery:end]/t_scale, u2[5,1:markevery:end], "--$(cols[idx])", label="$(idx)-layer $(nnname)")
     end
     xlabel("Time (s)")
     ylabel("Displacement (m)")
@@ -243,7 +250,7 @@ function plot_nnlearn_fem_disp(tid::Int64, nntype::String)
     ylim((-0.005,0.06))
     PyPlot.tight_layout()
     savefig("nnlearn_$(nntype)_fem_disp$tid.pdf")
-
+    mpl.save("nnlearn_$(nntype)_fem_disp$tid.tex")
 
 end
 

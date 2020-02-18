@@ -2,12 +2,12 @@ stress_scale = 1.0e+5
 strain_scale = 1
 
 force_scale = 5.0
-tid = 205
+tid = 300
 
 testtype = "NeuralNetwork2D"
 
 nntype = "piecewise"
-#nntype = "orthpiecewise"
+
 
 include("nnutil.jl")
 printstyled("force_scale=$force_scale, tid=$tid\n", color=:green)
@@ -19,7 +19,7 @@ H0 = [1335174.0968380707 326448.3267263398   0.0
       
 H0inv = inv(H0)
 
-nn_file = "Data/$(nntype)/nn_train_$(use_reg)_$(idx)_$(H_function)_from2_ite50.mat"
+nn_file = "Data/$(nntype)/nn_train_false_$(idx)_$(H_function)_from3_ite50.mat"
 #nn_file = "Data/$(nntype)/NNPreLSfit_$(idx)_$(H_function)_2.mat"
 
 @show nn_file
@@ -92,21 +92,11 @@ adaptive_solver_args = Dict("Newmark_rho"=> 0.0,
                           "Newton_Rel_Err"=>1e-6, 
                           "damped_Newton_eta" => 1.0)
 
-# adaptive_solver_args = Dict("Newmark_rho"=> 0.0, 
-#                           "Newton_maxiter"=>10, 
-#                           "Newton_Abs_Err"=>1e-3, 
-#                           "Newton_Rel_Err"=>1e-3, 
-#                           "damped_Newton_eta" => 1.0)
-
 globdat, domain, ts = AdaptiveSolver("NewmarkSolver", globdat, domain, T, NT, adaptive_solver_args)
 
-# Δt = T/NT
-# for i = 1:NT
-#     @info i, "/" , NT
-#     ExplicitSolver(Δt, globdat, domain)
-# end
 
 # plot
+#=
 close("all")
 visσ(domain)
 savefig("Debug/test$tid.png")
@@ -125,4 +115,4 @@ close("all")
 uy = [reshape(domain.history["state"][i][(nx*porder+1)*(ny*porder+1)+1:end], ny*porder+1, nx*porder+1)[1,end] for i = 1:length(domain.history["state"])]
 plot(ts, uy)
 savefig("Debug/order$porder/test_uy_$(use_reg)_$(idx)_$H_function.png")
-
+=#
