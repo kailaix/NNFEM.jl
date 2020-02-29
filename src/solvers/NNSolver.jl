@@ -176,19 +176,19 @@ function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::A
     DynamicMatLawLoss(domain, E_all, w∂E∂u_all, F_tot, nn)
 end
 
-function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{T}, 
-    fext_history::Array{S}, nn::Function, Δt::Float64, H0::Array{Float64}, n_tail::Int64, stress_scale::Float64) where {T, S}
-    # todo convert to E_all, Ftot
-    domain.history["state"] = state_history
-    F_tot, E_all, w∂E∂u_all = preprocessing(domain, globdat, hcat(fext_history...), Δt)
-    DynamicMatLawLossWithTailLoss(domain, E_all, w∂E∂u_all, F_tot, nn, H0, n_tail, stress_scale)
-end
+# function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{T}, 
+#     fext_history::Array{S}, nn::Function, Δt::Float64, H0::Array{Float64}, n_tail::Int64, stress_scale::Float64) where {T, S}
+#     # todo convert to E_all, Ftot
+#     domain.history["state"] = state_history
+#     F_tot, E_all, w∂E∂u_all = preprocessing(domain, globdat, hcat(fext_history...), Δt)
+#     DynamicMatLawLossWithTailLoss(domain, E_all, w∂E∂u_all, F_tot, nn, H0, n_tail, stress_scale)
+# end
 
-function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{T}, fext_history::Array{S}, nn::Function, Δt::Float64, n::Int64) where {T, S}
-    domain.history["state"] = state_history
-    F_tot, E_all, w∂E∂u_all = preprocessing(domain, globdat, hcat(fext_history...), Δt, n)
-    DynamicMatLawLoss(domain, E_all, w∂E∂u_all, F_tot, nn)
-end
+# function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{T}, fext_history::Array{S}, nn::Function, Δt::Float64, n::Int64) where {T, S}
+#     domain.history["state"] = state_history
+#     F_tot, E_all, w∂E∂u_all = preprocessing(domain, globdat, hcat(fext_history...), Δt, n)
+#     DynamicMatLawLoss(domain, E_all, w∂E∂u_all, F_tot, nn)
+# end
 
 # function DynamicMatLawLossInternalVariable(domain::Domain, globdat::GlobalData, state_history::Array{T}, fext_history::Array{S}, nn::Function, Δt::Float64, n_internal::Int64) where {T, S}
 #     domain.history["state"] = state_history
@@ -274,85 +274,85 @@ function preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64
 end
 
 
-@doc """
-preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64},Δt::Float64, n::Int64)
+# @doc """
+# preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64},Δt::Float64, n::Int64)
 
-Same as `preprocessing`, except that only the first `n` steps are considered
-"""->
-function preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64},Δt::Float64, n::Int64)
-    U = hcat(domain.history["state"]...)
-    # @info " U ", size(U),  U'
-    M = globdat.M
-    MID = globdat.MID 
+# Same as `preprocessing`, except that only the first `n` steps are considered
+# """->
+# function preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64},Δt::Float64, n::Int64)
+#     U = hcat(domain.history["state"]...)
+#     # @info " U ", size(U),  U'
+#     M = globdat.M
+#     MID = globdat.MID 
 
-    NT = size(U,2)-1
+#     NT = size(U,2)-1
 
-    #Acceleration of Dirichlet nodes
-    bc_acc = zeros(sum(domain.EBC.==-2),NT)
-    if !(globdat.EBC_func===nothing)
-        for i = 1:NT
-            _, bc_acc[:,i]  = globdat.EBC_func(Δt*i)
-        end
-    end
+#     #Acceleration of Dirichlet nodes
+#     bc_acc = zeros(sum(domain.EBC.==-2),NT)
+#     if !(globdat.EBC_func===nothing)
+#         for i = 1:NT
+#             _, bc_acc[:,i]  = globdat.EBC_func(Δt*i)
+#         end
+#     end
 
     
-    ∂∂U = zeros(size(U,1), NT+1)
-    ∂∂U[:,2:NT] = (U[:,1:NT-1]+U[:,3:NT+1]-2U[:,2:NT])/Δt^2
+#     ∂∂U = zeros(size(U,1), NT+1)
+#     ∂∂U[:,2:NT] = (U[:,1:NT-1]+U[:,3:NT+1]-2U[:,2:NT])/Δt^2
  
-    if size(F_ext,2)==NT+1
-        F_tot = F_ext[:,2:end] - M*∂∂U[domain.dof_to_eq,2:end] - MID*bc_acc
-    elseif size(F_ext,2)==NT
-        F_tot = F_ext - M*∂∂U[domain.dof_to_eq,2:end] - MID*bc_acc
-    else
-        error("F size is not valid")
-    end
+#     if size(F_ext,2)==NT+1
+#         F_tot = F_ext[:,2:end] - M*∂∂U[domain.dof_to_eq,2:end] - MID*bc_acc
+#     elseif size(F_ext,2)==NT
+#         F_tot = F_ext - M*∂∂U[domain.dof_to_eq,2:end] - MID*bc_acc
+#     else
+#         error("F size is not valid")
+#     end
     
-    neles = domain.neles
-    nGauss = length(domain.elements[1].weights)
-    neqns_per_elem = length(getEqns(domain,1))
+#     neles = domain.neles
+#     nGauss = length(domain.elements[1].weights)
+#     neqns_per_elem = length(getEqns(domain,1))
 
     
-    nstrains = div((domain.elements[1].eledim + 1)*domain.elements[1].eledim, 2)
+#     nstrains = div((domain.elements[1].eledim + 1)*domain.elements[1].eledim, 2)
 
-    E_all = zeros(NT+1, neles*nGauss, nstrains)
-    w∂E∂u_all = zeros(NT+1, neles*nGauss, neqns_per_elem, nstrains)
+#     E_all = zeros(NT+1, neles*nGauss, nstrains)
+#     w∂E∂u_all = zeros(NT+1, neles*nGauss, neqns_per_elem, nstrains)
 
-    for i = 1:NT+1
-        domain.state = U[:, i]
-        # @info "domain state", domain.state
-        # Loop over the elements in the elementGroup to construct strain and geo-matrix E_all and w∂E∂u_all
-        for iele  = 1:neles
-            element = domain.elements[iele]
+#     for i = 1:NT+1
+#         domain.state = U[:, i]
+#         # @info "domain state", domain.state
+#         # Loop over the elements in the elementGroup to construct strain and geo-matrix E_all and w∂E∂u_all
+#         for iele  = 1:neles
+#             element = domain.elements[iele]
 
-            # Get the element nodes
-            el_nodes = getNodes(element)
+#             # Get the element nodes
+#             el_nodes = getNodes(element)
 
-            # Get the element nodes
-            el_eqns = getEqns(domain,iele)
+#             # Get the element nodes
+#             el_eqns = getEqns(domain,iele)
 
-            el_dofs = getDofs(domain,iele)
+#             el_dofs = getDofs(domain,iele)
 
-            el_state  = getState(domain,el_dofs)
+#             el_state  = getState(domain,el_dofs)
 
-            # Get the element contribution by calling the specified action
-            E, w∂E∂u = getStrain(element, el_state) 
-            # if i==2
-            #     @info (el_state, E)
-            # end
+#             # Get the element contribution by calling the specified action
+#             E, w∂E∂u = getStrain(element, el_state) 
+#             # if i==2
+#             #     @info (el_state, E)
+#             # end
       
-            # @show E, nGauss
-            E_all[i, (iele-1)*nGauss+1:iele*nGauss, :] = E
+#             # @show E, nGauss
+#             E_all[i, (iele-1)*nGauss+1:iele*nGauss, :] = E
 
-            w∂E∂u_all[i, (iele-1)*nGauss+1:iele*nGauss,:,:] = w∂E∂u
-        end
-    end
-    @info "preprocessing end..."
-    # # DEBUG
-    # fext = hcat(domain.history["fint"]...)
-    F_tot = F_tot'|>Array
+#             w∂E∂u_all[i, (iele-1)*nGauss+1:iele*nGauss,:,:] = w∂E∂u
+#         end
+#     end
+#     @info "preprocessing end..."
+#     # # DEBUG
+#     # fext = hcat(domain.history["fint"]...)
+#     F_tot = F_tot'|>Array
 
-    F_tot[1:n,:], E_all[1:n+1, :, :], w∂E∂u_all[1:n+1, :, :, :]
-end
+#     F_tot[1:n,:], E_all[1:n+1, :, :], w∂E∂u_all[1:n+1, :, :, :]
+# end
 
 
 
