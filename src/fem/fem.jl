@@ -16,8 +16,8 @@ Store data for finite element update, assume the problem has n freedoms
 - `M`: Float64[n,n] spares mass matrix
 - `Mlumped`: Float64[n] lumped mass array
 - `MID`: Float64[n, nd1] off-diagonal part of the mass matrix, between the active freedoms and the time-dependent Dirichlet freedoms, assume there are nd time-dependent Dirichlet freedoms
-- `EBC_func`: function Float64:t-> Float64[n_d1] float array, time-dependent Dirichlet boundary condition
-- `FBC_func`: function Float64:t-> Float64[n_t1] float array,time-dependent load boundary condition
+- `EBC_func`: function Float64:t-> Float64[n_d1] float array, time-dependent Dirichlet boundary condition (ordering is direction first then node number, u1, u3, ... v1, v4 ...)
+- `FBC_func`: function Float64:t-> Float64[n_t1] float array, time-dependent load boundary condition (ordering is direction first then node number, u1, u3, ... v1, v4 ...)
 """->   
 mutable struct GlobalData
     state::Array{Float64}    #u
@@ -57,9 +57,13 @@ Date structure for the computatational domain
 - `ndims`: Int64, dimension of the problem space 
 - `state`: Float64[nnodes*ndims] current displacement of all nodal freedoms, Float64[1:nnodes] are for the first direction.
 - `Dstate`: Float64[nnodes*ndims] previous displacement of all nodal freedoms, Float64[1:nnodes] are for the first direction.
-- 'LM':  Int64[neles][ndims], LM(e,d) is the global equation number(active freedom number) of element e's d th freedom, -1 means no freedom
+- 'LM':  Int64[neles][ndims], LM(e,d) is the global equation number(active freedom number) of element e's d th freedom, 
+         -1 means fixed (time-independent) Dirichlet
+         -2 means time-dependent Dirichlet
 - 'DOF': Int64[neles][ndims], DOF(e,d) is the global freedom number of element e's d th freedom
-- 'ID':  Int64[nnodes, ndims], ID(n,d) is the equation number(active freedom number) of node n's dth freedom, -1 means no freedom
+- 'ID':  Int64[nnodes, ndims], ID(n,d) is the equation number(active freedom number) of node n's dth freedom, 
+         -1 means fixed (time-independent) Dirichlet
+         -2 means time-dependent Dirichlet
 - 'neqs':  Int64,  number of equations or active freedoms
 - 'eq_to_dof':  Int64[neqs], map from to equation number(active freedom number) to the freedom number (Int64[1:nnodes] are for the first direction) 
 - 'dof_to_eq':  Int64[nnodes*ndims], map from freedom number(Int64[1:nnodes] are for the first direction) to active freedoms(equation number)
@@ -270,10 +274,15 @@ end
 """ -> 
 function setDirichletBoundary!(self::Domain, EBC::Array{Int64}, g::Array{Float64})
 
-    # ID(n,d) is the global equation number of node n's dth freedom, -1 means no freedom
+    # ID(n,d) is the global equation number of node n's dth freedom, 
+    # -1 means fixed (time-independent) Dirichlet
+    # -2 means time-dependent Dirichlet
+
     nnodes, ndims = self.nnodes, self.ndims
     neles, elements = self.neles, self.elements
-    ID = zeros(Int64, nnodes, ndims) .- 1
+    #ID = zeros(Int64, nnodes, ndims) .- 1
+
+    ID = copy(EBC)
 
     eq_to_dof, dof_to_eq = Int64[], zeros(Bool, nnodes * ndims)
     neqs = 0
@@ -285,6 +294,7 @@ function setDirichletBoundary!(self::Domain, EBC::Array{Int64}, g::Array{Float64
               push!(eq_to_dof,inode + (idof-1)*nnodes)
               dof_to_eq[(idof - 1)*nnodes + inode] = true
           elseif (EBC[inode, idof] == -1)
+              #update state fixed (time-independent) Dirichlet boundary conditions
               self.state[inode + (idof-1)*nnodes] = g[inode, idof]
           end
       end
@@ -402,6 +412,7 @@ function updateDomainStateBoundary!(self::Domain, globaldat::GlobalData)
     if globaldat.EBC_func != nothing
         disp, acce = globaldat.EBC_func(globaldat.time) # user defined time-dependent boundary
         dof_id = 0
+
         #update state of all nodes
         for idof = 1:self.ndims
             for inode = 1:self.nnodes
