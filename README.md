@@ -47,3 +47,23 @@ There are several applications in `test/Plate` and `test/Truss/Case1D`
 * `NN_Test_All*` substitutes the constitutive law with the learned NN and test the hybrid model (NN + FEM) on the all test cases, and visualize the time-histories of the displacement and von-Mises stress fields.
 
 
+
+
+## Installation issues
+
+
+NNFEM is based on ADCME, you need to first install ADCME
+
+
+PyCall relies on the python version installed in 'XXX/.julia/conda/3/bin/python', you can check the path with
+
+```
+julia> using PyCall
+PyCall.python
+```
+To install python packages, i.e. 'tikzplotlib'  
+```
+XXX/.julia/conda/3/bin/python -m pip install tikzplotlib
+```
+
+
