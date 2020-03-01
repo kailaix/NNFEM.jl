@@ -59,7 +59,7 @@ PyCall relies on the python version installed in 'XXX/.julia/conda/3/bin/python'
 
 ```
 julia> using PyCall
-PyCall.python
+julia> PyCall.python
 ```
 To install python packages, i.e. 'tikzplotlib'  
 ```
