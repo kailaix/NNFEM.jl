@@ -311,10 +311,11 @@ end
         if globaldat.EBC_func != nothing
             Idx = el_eqns[el_eqns_active]
             Idy = dofs_to_EBCdofs[el_dofs[el_eqns_acc_active]]
-            if length(Idy) > 0
-            @show el_eqns_acc_active, el_dofs[el_eqns_acc_active], Idy
-            end
+            
             Mlocal = lM[el_eqns_active, el_eqns_acc_active]
+
+
+
             for i = 1:length(Idx)
                 for j = 1:length(Idy)
                     push!(iiMID, Idx[i])
