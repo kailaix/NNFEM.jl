@@ -3,7 +3,8 @@ export assembleStiffAndForce,assembleInternalForce,assembleMassMatrix!,tfAssembl
 
 
 @doc """
-    Numerically assemble internal force vector, compute local internal force f_int and then assemble to F_int
+    Numerically assemble internal force vector, compute local internal force f_int 
+    from domain.state and then assemble to F_int
     - 'globdat': GlobalData
     - 'domain': Domain, finite element domain, for data structure
     - 'Δt':  Float64, current time step size
@@ -140,7 +141,7 @@ end
 
 @doc """
     Numerically assemble internal force vector and stiffness matrix, compute local internal force f_int/ 
-    stiffness matrix Slocal and then assemble to F_int/Ksparse
+    stiffness matrix Slocal from domain.state and then assemble to F_int/Ksparse
     - 'globdat': GlobalData
     - 'domain': Domain, finite element domain, for data structure
     - 'Δt':  Float64, current time step size

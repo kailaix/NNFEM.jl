@@ -1,5 +1,4 @@
-export DynamicMatLawLoss, preprocessing, DynamicMatLawLossInternalVariable,
-       DynamicMatLawLossWithTailLoss, LSfittingStress, LSfittingStressHelper
+export DynamicMatLawLoss, preprocessing, LSfittingStress, LSfittingStressHelper
 
 @doc """
     domain   : finite element domain, for data structure

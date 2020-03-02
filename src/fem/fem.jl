@@ -357,6 +357,7 @@ end
     Update the state and Dstate in Domain from GlobalData
     state and Dstate in GlobalData are only for active freedoms (equations)
     state and Dstate in Domain are only for all freedoms, they are used for constructing the internal force and/or stiffness matrix
+    update the state and acc history of the Domain
     - 'self': Domain
     - 'globaldat': GlobalData
 """ ->
