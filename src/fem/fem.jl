@@ -66,7 +66,7 @@ Date structure for the computatational domain
          -2 means time-dependent Dirichlet
 - 'neqs':  Int64,  number of equations or active freedoms
 - 'eq_to_dof':  Int64[neqs], map from to equation number(active freedom number) to the freedom number (Int64[1:nnodes] are for the first direction) 
-- 'dof_to_eq':  Int64[nnodes*ndims], map from freedom number(Int64[1:nnodes] are for the first direction) to active freedoms(equation number)
+- 'dof_to_eq':  Bool[nnodes*ndims], map from freedom number(Int64[1:nnodes] are for the first direction) to booleans (active freedoms(equation number) are true)
 - 'EBC':  Int64[nnodes, ndims], EBC[n,d] is the displacement boundary condition of node n's dth freedom,
            -1 means fixed(time-independent) Dirichlet boundary nodes
            -2 means time-dependent Dirichlet boundary nodes

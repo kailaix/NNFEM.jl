@@ -117,7 +117,7 @@ As for '\alpha_m' and '\alpha_f'
 ```
     
 use the current states `a`, `v`, `u`, `time` in globdat, and update these stetes to next time step
-update domain history 
+update domain history, when failsafe is true, and Newton's solver fails, nothing will be changed.
 
 todo
 For the first time step
