@@ -1,0 +1,51 @@
+Torch Demo
+
+This demo introduces several basic customized nerual networks
+
+Demo for Torch custom operators
+
+Mat:
+sigma = NN(eps) * eps
+here NN outputs a 3 by 3 matrix
+The result is not unique, W[3k + i,j] + W[3k + j,i] = Const. k,i,j=0,1,2
+
+OrthMat:
+sigma = NN(eps) * eps
+here NN outputs a 3 by 3 orthotropic matrix with pattern
+H0 H1  0
+H1 H2  0
+0   0  L3
+
+
+CholOrthMat:
+sigma = (NN(eps)*NN(eps)^T) * eps
+here NN outputs a 3 by 3 lower triangular matrix with pattern
+L0
+L1 L2
+0   0  L3
+The result is not unique, sign difference
+
+
+
+The CustomOp.py trains and generates the model as model.pt
+You can play with different Matrices, and different neural network hyperparameters.
+
+You can also plug your customized nerual network model.pt to the C++ FEM code
+There is an example in cpptorch.cpp
+
+Step 1: download libtorch
+wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.2.0.zip
+unzip libtorch-cxx11-abi-shared-with-deps-1.2.0.zip
+
+Step 2: modify the library files in cm, do
+source cm
+
+Step 3: compile the cpp file, do
+make
+
+Step 4: run the generated excutable file
+./cpptorch
+It will output the 1 by 3 input, 1 by 3 output, and 3 by 3 Jacobian
+
+
+
