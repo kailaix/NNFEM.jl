@@ -2,8 +2,6 @@
   <img src="docs/src/assets/nnfem.gif" alt="NNFEM"/>
 </p>
 
-# NNFEM
-
 NNFEM is a
 * lightweight educational 2D finite element library with **truss and 2D quadrilateral elements**. Different constitutive relations are supported, including **plane stress/strain**, **hyperelasticity**, **elasto-plasticity**, etc. It supports **unstructure grid**. 
 
@@ -80,7 +78,7 @@ There are several applications in `research/ConstitutiveRelations/Plate` and `re
 
 ## Troubleshooting 
 
-## Python dependencies 
+### Python dependencies 
 NNFEM is based on ADCME, you need to first install ADCME.jl, which will install a private Python environment for you. Take it easy, it will NOT mess your local environment!
 
 A bit more about what is under the hood: PyCall relies on the python version installed in `$HOME/.julia/conda/3/bin/python`, you can check the path with
@@ -95,7 +93,7 @@ If you want to use Python packages via PyCall, install python packages, e.g., `t
 $HOME/.julia/conda/3/bin/python -m pip install tikzplotlib
 ```
 
-## Build customized operators
+### Build customized operators
 
 NNFEM includes some custom operators. Those operators are implemented in C++ and will be compiled automatically when you invoke `Pkg.build("NNFEM")`. However, in the case you encounter any compilation issue, you can go into the `deps` directory, and run `build.jl`
 ```
@@ -103,5 +101,14 @@ cd deps
 julia build.jl
 ```
 
-## Submit an issue
+### Submit an issue
 You are welcome to submit an issue for any questions related to NNFEM. 
+
+
+## Research 
+
+1. Huang, Daniel Z., Kailai Xu, Charbel Farhat, and Eric Darve. "Learning Constitutive Relations from Indirect Observations Using Deep Neural Networks." arXiv preprint arXiv:1905.12530 (2019).
+
+2. Kailai Xu, Huang, Daniel Z., and Eric Darve. "Learning Constitutive Relations using  Symmetric Positive Definite Neural Networks"
+
+
