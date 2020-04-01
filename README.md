@@ -1,5 +1,12 @@
 # NNFEM
 
+#### This is a lightweight educational 2D finite element library with truss and 2D quad elements. Different constitutive relations are supported, including plane stress/strain, hyperelasticity, elasto-plasticity, etc. 
+
+#### This is also a research code to explore nerual network-enabled finite element library, which supports learning a nerual network-based constitutive relations with both direct data (i.e, strain-stress pairs) and indirect data (i.e. full displacement field), and solving finite element problems with network-based constitutive relations.
+
+
+
+
 ## Install `NNFEM`
 
 If you intend to develop the package (add new features, modify current functions, etc.), we suggest developing the package (in the current directory (NNFEM.jl))
