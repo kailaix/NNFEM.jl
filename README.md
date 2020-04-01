@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/src/assets/logo.gif" alt="ADCME"/>
+  <img src="docs/src/assets/logo.gif" alt="NNFEM"/>
 </p>
 
 # NNFEM
