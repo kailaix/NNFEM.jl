@@ -4,7 +4,7 @@
 
 NNFEM is a
 * lightweight educational 2D finite element library with **truss and 2D quadrilateral elements**. Different constitutive relations are supported, including **plane stress/strain**, **hyperelasticity**, **elasto-plasticity**, etc. It supports **unstructure grid**. 
-* nerual network-enabled finite element library, which supports learning a nerual network-based constitutive relations with both direct data (i.e, strain-stress pairs) and indirect data (i.e. full displacement field) via **automatic differentiation**, and solving finite element problems with **network-based constitutive relations**. In principle, it allows you to insert and learn a neural network anywhere in your finite element codes. 
+* neural network-enabled finite element library, which supports learning a neural network-based constitutive relations with both direct data (i.e, strain-stress pairs) and indirect data (i.e. full displacement field) via **automatic differentiation**, and solving finite element problems with **network-based constitutive relations**. In principle, it allows you to insert and learn a neural network anywhere in your finite element codes. 
 
 
 
@@ -53,11 +53,11 @@ pkg> activate .
 
 * finite element domain, and core functions are in /src/fem.
 
-### Nerual network based constitutive relations 
+### Neural network based constitutive relations 
 
-* nerual network based constitutive relations are in /src/materials/NeuralNetwork1D.jl and src/materials/NeuralNetwork2D.jl.
+* neural network based constitutive relations are in /src/materials/NeuralNetwork1D.jl and src/materials/NeuralNetwork2D.jl.
 
-* nerual network based finite element solvers are in /src/solvers/NNSolver.jl, which compute the loss for indirect data training.
+* neural network based finite element solvers are in /src/solvers/NNSolver.jl, which compute the loss for indirect data training.
 
 * different customized neural networks are in /deps/CustomOp, which enables designing constraint-embedded neural networks.
 
