@@ -4,8 +4,13 @@
 
 NNFEM is a
 * lightweight educational 2D finite element library with **truss and 2D quadrilateral elements**. Different constitutive relations are supported, including **plane stress/strain**, **hyperelasticity**, **elasto-plasticity**, etc. It supports **unstructure grid**. 
-
 * nerual network-enabled finite element library, which supports learning a nerual network-based constitutive relations with both direct data (i.e, strain-stress pairs) and indirect data (i.e. full displacement field) via **automatic differentiation**, and solving finite element problems with **network-based constitutive relations**. In principle, it allows you to insert and learn a neural network anywhere in your finite element codes. 
+
+
+
+| Documentation                                                |
+| ------------------------------------------------------------ |
+| [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://kailaix.github.io/NNFEM.jl/dev) |
 
 
 ## Install `NNFEM`
