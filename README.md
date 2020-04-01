@@ -4,14 +4,18 @@
 
 # NNFEM
 
-* This is a lightweight educational 2D finite element library with truss and 2D quad elements. Different constitutive relations are supported, including plane stress/strain, hyperelasticity, elasto-plasticity, etc. 
+NNFEM is a
+* lightweight educational 2D finite element library with **truss and 2D quadrilateral elements**. Different constitutive relations are supported, including **plane stress/strain**, **hyperelasticity**, **elasto-plasticity**, etc. It supports **unstructure grid**. 
 
-* This is also a nerual network-enabled finite element library for research, which supports learning a nerual network-based constitutive relations with both direct data (i.e, strain-stress pairs) and indirect data (i.e. full displacement field) via automatic differentiation, and solving finite element problems with network-based constitutive relations.
-
-
+* nerual network-enabled finite element library, which supports learning a nerual network-based constitutive relations with both direct data (i.e, strain-stress pairs) and indirect data (i.e. full displacement field) via **automatic differentiation**, and solving finite element problems with **network-based constitutive relations**. In principle, it allows you to insert and learn a neural network anywhere in your finite element codes. 
 
 
 ## Install `NNFEM`
+
+Install via Julia registery
+```julia
+using Pkg; Pkg.add("NNFEM")
+```
 
 If you intend to develop the package (add new features, modify current functions, etc.), we suggest developing the package (in the current directory (NNFEM.jl))
 ```
@@ -25,22 +29,12 @@ julia> ]
 pkg> rm NNFEM
 ```
 
-
 If you only want to use the package and do not want to install the dependencies manually, do
 ```
 julia> ]
 pkg> activate .
 (NNFEM) pkg> instantiate
 ```
-
-
-## Build customized operators
-There are several customized operators in deps, you need to compile them first
-```
-cd deps
-julia build.jl
-```
-
 
 
 
@@ -56,7 +50,7 @@ julia build.jl
 
 * finite element domain, and core functions are in /src/fem.
 
-### Nerual network enablers 
+### Nerual network based constitutive relations 
 
 * nerual network based constitutive relations are in /src/materials/NeuralNetwork1D.jl and src/materials/NeuralNetwork2D.jl.
 
@@ -68,7 +62,7 @@ julia build.jl
 ### Applications
 
 
-There are several applications in `test/Plate` and `test/Truss/Case1D`
+There are several applications in `research/ConstitutiveRelations/Plate` and `research/ConstitutiveRelations/Truss/Case1D`
 
 * `Data_*` runs the finite element solver to generate the test data and produces `Data/1.dat` and `Data/domain.jld2` 
 
@@ -84,21 +78,30 @@ There are several applications in `test/Plate` and `test/Truss/Case1D`
 
 
 
-## Installation issues
+## Troubleshooting 
 
+## Python dependencies 
+NNFEM is based on ADCME, you need to first install ADCME.jl, which will install a private Python environment for you. Take it easy, it will NOT mess your local environment!
 
-NNFEM is based on ADCME, you need to first install ADCME
-
-
-PyCall relies on the python version installed in 'XXX/.julia/conda/3/bin/python', you can check the path with
+A bit more about what is under the hood: PyCall relies on the python version installed in `$HOME/.julia/conda/3/bin/python`, you can check the path with
 
 ```
 julia> using PyCall
 julia> PyCall.python
 ```
-To install python packages, i.e. 'tikzplotlib'  
+
+If you want to use Python packages via PyCall, install python packages, e.g., `tikzplotlib`, via
 ```
-XXX/.julia/conda/3/bin/python -m pip install tikzplotlib
+$HOME/.julia/conda/3/bin/python -m pip install tikzplotlib
 ```
 
+## Build customized operators
 
+NNFEM includes some custom operators. Those operators are implemented in C++ and will be compiled automatically when you invoke `Pkg.build("NNFEM")`. However, in the case you encounter any compilation issue, you can go into the `deps` directory, and run `build.jl`
+```
+cd deps
+julia build.jl
+```
+
+## Submit an issue
+You are welcome to submit an issue for any questions related to NNFEM. 
