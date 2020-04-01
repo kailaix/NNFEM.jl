@@ -1,6 +1,6 @@
 # Torch Demo
 
-This demo introduces several basic customized nerual networks
+This demo introduces several basic customized neural networks
 
 ## Custom operators:
 
@@ -35,7 +35,7 @@ The CustomOp.py trains and generates the model as model.pt
 You can play with different Matrices, and different neural network hyperparameters.
 
 ## C++ wrapper:
-You can also plug your customized nerual network model.pt to the C++ FEM code
+You can also plug your customized neural network model.pt to the C++ FEM code
 There is an example in cpptorch.cpp
 
 * download libtorch
