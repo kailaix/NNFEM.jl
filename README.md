@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/src/assets/logo.gif" alt="ADCME"/>
+</p>
+
 # NNFEM
 
 #### This is a lightweight educational 2D finite element library with truss and 2D quad elements. Different constitutive relations are supported, including plane stress/strain, hyperelasticity, elasto-plasticity, etc. 
