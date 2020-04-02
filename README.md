@@ -112,8 +112,8 @@ You are welcome to submit an issue for any questions related to NNFEM.
 
 ## Research 
 
-1. Huang, Daniel Z., Kailai Xu, Charbel Farhat, and Eric Darve. "Learning Constitutive Relations from Indirect Observations Using Deep Neural Networks." arXiv preprint arXiv:1905.12530 (2019).
+1. Huang, Daniel Z., Kailai Xu, Charbel Farhat, and Eric Darve. "[Learning Constitutive Relations from Indirect Observations Using Deep Neural Networks](https://arxiv.org/pdf/1905.12530.pdf)"
 
-2. Kailai Xu, Huang, Daniel Z., and Eric Darve. "Learning Constitutive Relations using  Symmetric Positive Definite Neural Networks"
+2. Kailai Xu, Huang, Daniel Z., and Eric Darve. "[Learning Constitutive Relations using  Symmetric Positive Definite Neural Networks](https://arxiv.org/pdf/2004.00265.pdf)"
 
 
