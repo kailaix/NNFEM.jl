@@ -10,18 +10,8 @@ using LinearAlgebra
 using Distributions, Random
 using ForwardDiff
 using DelimitedFiles
-mpl = pyimport("tikzplotlib")
-
-rcParams = PyPlot.PyDict(PyPlot.matplotlib."rcParams")
-font0 = Dict(
-        "font.size" => 16,
-        "axes.labelsize" => 16,
-        "xtick.labelsize" => 16,
-        "ytick.labelsize" => 16,
-        "legend.fontsize" => 16,
-)
-merge!(rcParams, font0)
 np = pyimport("numpy")
+
 
 
 
@@ -237,7 +227,7 @@ end
 
 function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5; force_scale=5.0)
     nnodes, neles = (nx*porder + 1)*(ny*porder + 1), nx*ny
-    
+
     x = np.linspace(0.0, Lx, nx*porder + 1)
     y = np.linspace(0.0, Ly, ny*porder + 1)
 
@@ -271,9 +261,9 @@ function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5; force_scal
     # F1 = 2e2 /force_scale #gcm/ms^2 compress/pull
     # F2 = 2e1 /force_scale #gcm/ms^2 bend 
 
-    P1 = 80000 /force_scale #gcm/ms^2 compress/pull
-    P2 = 8000 /force_scale #gcm/ms^2 bend 
-    P3 = 30000/force_scale
+    P1 = 8 /force_scale #gcm/ms^2 compress/pull
+    P2 = 0.8 /force_scale #gcm/ms^2 bend 
+    P3 = 3/force_scale
     @show P1, P2
     ngp = 3
     #Bending or Pulling
@@ -359,8 +349,7 @@ function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5; force_scal
     end
 
     dof_to_active = findall(FBC[:].==-2)
-    ft = t->fext[:][dof_to_active]*sin(π*t/(T))
-    # @show ft(T)
+    ft = t->fext[:][dof_to_active] #*sin(π*t/(T))
 
 
     npoints = (nx+1)*(ny+1)

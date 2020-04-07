@@ -239,7 +239,6 @@ end
 function BoundaryCondition(tid, nx, ny, porder=2, Lx = 1.0, Ly = 0.5; force_scale=5.0)
     nnodes, neles = (nx*porder + 1)*(ny*porder + 1), nx*ny
     
-    Lx, Ly = 1.0, 0.5
     x = np.linspace(0.0, Lx, nx*porder + 1)
     y = np.linspace(0.0, Ly, ny*porder + 1)
 

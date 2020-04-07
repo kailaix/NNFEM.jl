@@ -156,7 +156,7 @@ function nn_helper(ε, ε0, σ0)
     if nntype=="linear"
         x = reshape(reshape(ε,1,3)*H0,3,1)
     elseif nntype=="ae_scaled"
-        x = reshape(ε/strain,1, 3)
+        x = reshape(ε/strain_scale,1, 3)
         reshape(nnae_scaled(x)*stress_scale,3,1)
     elseif nntype=="stiffmat"
         ε = ε/strain_scale

@@ -596,8 +596,6 @@ function assembleSparseMatrixPattern!(self::Domain)
       vv_dstrain_dstate_ele_indptr[iele+1] = vv_dstrain_dstate_ele_indptr[iele] + ngps_per_elem*nstrain*length(el_eqns_active_idx)
 
 
-
-     
     end
 
     self.ii_stiff = ii_stiff; self.jj_stiff = jj_stiff; 

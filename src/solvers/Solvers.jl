@@ -1,4 +1,75 @@
-export ExplicitSolver, NewmarkSolver, AdaptiveSolver, StaticSolver
+export ExplicitSolver, NewmarkSolver, AdaptiveSolver, SolverInitial!, StaticSolver, EigenModeHelper, EigenMode
+
+
+@doc raw"""
+compuate largest eigenvalue lambda, lambda M x = stiff*x
+"""->
+function EigenModeHelper(M, stiff, eps0 = 1.0e-12, maxite = 100)
+    #compuate largest eigenvalue lambda, lambda M x = Kx
+    x_old = ones(size(stiff)[1])
+    x_new = ones(size(stiff)[1])
+    lambda_old = lambda_new = 0.0
+    converge = false
+    ite = 0
+    while ite < maxite && converge == false
+        #solve M x_new = stiff x_old
+        x_new[:] = M \ (stiff * x_old)
+        x_new[:] = x_new/sqrt(x_new' * M * x_new)
+        lambda_new = (x_new' * stiff * x_new)/(x_new' * M * x_new)
+        if (lambda_new - lambda_old)/lambda_new < eps0 #converge
+            converge = true
+        else
+            x_old[:] = x_new
+            lambda_old = lambda_new
+            ite += 1
+        end
+    end
+    if converge == false
+        @warn("Eigen iteration does not converge in EigenModeHelper")
+    end
+    return lambda_new, x_new
+end
+
+@doc raw"""
+Compute eigenmodel using globdat.state (and domain.Dstate, Δt for path/rate-dependent 
+stiffness matrix
+
+find largest eigenvalue λ for
+ λM x= K x
+ ω^2 = λ
+"""->
+function EigenMode(Δt, globdat, domain, eps0 = 1.0e-6, maxite = 100)
+    u = globdat.state[:]  #uⁿ
+
+    M = globdat.M
+    domain.state[domain.eq_to_dof] = u
+    _, stiff = assembleStiffAndForce(globdat, domain, 0.0)
+        
+    lambda, _ = EigenModeHelper(M, stiff, eps0, maxite)
+
+    omega = sqrt(lambda)
+
+    return omega
+end
+
+
+
+
+@doc raw"""
+You need to call SolverInitial! before the first time step, if f^{ext}_0 != 0.
+This function updates a_0 in the globdat.acce
+a_0 = M^{-1}(- f^{int}(u_0) + f^{ext}_0)
+"""->
+function SolverInitial!(Δt, globdat, domain)
+    u = globdat.state[:]
+    fext = similar(u)
+    getExternalForce!(domain, globdat, fext)
+    
+    domain.state[domain.eq_to_dof] = u[:]
+    fint  = assembleInternalForce( globdat, domain, Δt)
+    globdat.acce[:] = globdat.M\(fext - fint)
+end
+
 
 @doc raw"""
 Central Difference explicit solver
@@ -23,21 +94,24 @@ M a_{n+1} =& f^{ext}_{n+1} - f^{int}(u_{n+1}) \\
 use the current states `a`, `v`, `u`, `time` in globdat, and update these stetes to next time step
 update domain history 
 
-todo
-For the first time step
+You need to call SolverInitial! before the first time step, if f^{ext}_0 != 0.
+SolverInitial! updates a_0 in the globdat.acce
 a_0 = M^{-1}(- f^{int}(u_0) + f^{ext}_0)
 
 We assume globdat.acce[:] = a_0 and so far initialized to 0
 """->
+
 function ExplicitSolver(Δt, globdat, domain)
     u = globdat.state[:]
     ∂u  = globdat.velo[:]
     ∂∂u = globdat.acce[:]
 
-    fext = domain.fext
-    
+    fext = similar(u)
+    getExternalForce!(domain, globdat, fext)
+
+    u += Δt*∂u + 0.5*Δt*Δt*∂∂u
     ∂u += 0.5*Δt * ∂∂u
-    u += Δt * ∂u
+    
     
     domain.state[domain.eq_to_dof] = u[:]
     fint  = assembleInternalForce( globdat, domain, Δt)
@@ -46,7 +120,8 @@ function ExplicitSolver(Δt, globdat, domain)
         error("globalDat is not initialized, call `assembleMassMatrix!(globaldat, domain)`")
     end
 
-    ∂∂up = (fext - fint)./globdat.Mlumped
+    ∂∂up = globdat.M\(fext - fint)
+
     ∂u += 0.5 * Δt * ∂∂up
 
     globdat.Dstate = globdat.state[:]
@@ -119,8 +194,8 @@ As for '\alpha_m' and '\alpha_f'
 use the current states `a`, `v`, `u`, `time` in globdat, and update these stetes to next time step
 update domain history, when failsafe is true, and Newton's solver fails, nothing will be changed.
 
-todo
-For the first time step
+You need to call SolverInitial! before the first time step, if f^{ext}_0 != 0.
+SolverInitial! updates a_0 in the globdat.acce
 a_0 = M^{-1}(- f^{int}(u_0) + f^{ext}_0)
 
 We assume globdat.acce[:] = a_0 and so far initialized to 0
@@ -283,7 +358,7 @@ end
 
 
 
-@doc """
+@doc raw"""
     Adaptive Solver, solve the whole process, if this step fails, redo the step with half of
     the time step size, when there are continuing 5 successful steps, double the step size when dt < T/NT
 
@@ -297,8 +372,8 @@ end
     
     return globdat, domain, ts, here ts is Float64[nteps+1] 
 
-todo
-For the first time step
+You need to call SolverInitial! before the first time step, if f^{ext}_0 != 0.
+SolverInitial! updates a_0 in the globdat.acce
 a_0 = M^{-1}(- f^{int}(u_0) + f^{ext}_0)
 
 We assume globdat.acce[:] = a_0 and so far initialized to 0
@@ -312,6 +387,8 @@ function AdaptiveSolver(solvername, globdat, domain, T, NT, args)
     dt = T/NT #current time step
     t = 0.0   #current time
     push!(ts, t)
+
+    SolverInitial!(Δt, globdat, domain)
 
     if solvername == "NewmarkSolver"
         ρ_oo = args["Newmark_rho"]
