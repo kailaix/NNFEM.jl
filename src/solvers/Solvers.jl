@@ -15,7 +15,7 @@ function EigenModeHelper(M, stiff, eps0 = 1.0e-12, maxite = 100)
         #solve M x_new = stiff x_old
         x_new[:] = M \ (stiff * x_old)
         x_new[:] = x_new/sqrt(x_new' * M * x_new)
-        lambda_new = (x_new' * stiff * x_new)/(x_new' * M * x_new)
+        lambda_new = (x_new' * stiff * x_new)
         if (lambda_new - lambda_old)/lambda_new < eps0 #converge
             converge = true
         else
@@ -121,6 +121,7 @@ function ExplicitSolver(Δt, globdat, domain)
     end
 
     ∂∂up = globdat.M\(fext - fint)
+    #∂∂up = (fext - fint)./globdat.Mlumped
 
     ∂u += 0.5 * Δt * ∂∂up
 

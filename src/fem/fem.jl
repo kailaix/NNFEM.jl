@@ -16,7 +16,7 @@ Store data for finite element update, assume the problem has n freedoms
 - `M`: Float64[n,n] spares mass matrix
 - `Mlumped`: Float64[n] lumped mass array
 - `MID`: Float64[n, nd1] off-diagonal part of the mass matrix, between the active freedoms and the time-dependent Dirichlet freedoms, assume there are nd time-dependent Dirichlet freedoms
-- `EBC_func`: function Float64:t-> Float64[n_d1] float array, time-dependent Dirichlet boundary condition (ordering is direction first then node number, u1, u3, ... v1, v4 ...)
+- `EBC_func`: function Float64:t-> (Float64[n_d1], Float64[n_d1], Float64[n_d1]) float array, time-dependent Dirichlet boundary condition disp, velo and acce (ordering is direction first then node number, u1, u3, ... v1, v4 ...)
 - `FBC_func`: function Float64:t-> Float64[n_t1] float array, time-dependent load boundary condition (ordering is direction first then node number, u1, u3, ... v1, v4 ...)
 """->   
 mutable struct GlobalData
@@ -411,7 +411,7 @@ end
     """ ->
 function updateDomainStateBoundary!(self::Domain, globaldat::GlobalData)
     if globaldat.EBC_func != nothing
-        disp, acce = globaldat.EBC_func(globaldat.time) # user defined time-dependent boundary
+        disp, _, _ = globaldat.EBC_func(globaldat.time) # user defined time-dependent boundary
         dof_id = 0
 
         #update state of all nodes
@@ -460,7 +460,7 @@ function getExternalForce!(self::Domain, globaldat::GlobalData, fext::Array{Floa
     fext[:] = self.fext
     if globaldat.EBC_func != nothing
         MID = globaldat.MID
-        _, acce = globaldat.EBC_func(globaldat.time)
+        _, _, acce = globaldat.EBC_func(globaldat.time)
 
         fext -= MID * acce
     end

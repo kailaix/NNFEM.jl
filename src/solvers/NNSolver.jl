@@ -233,7 +233,7 @@ function preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64
     bc_acc = zeros(sum(domain.EBC.==-2),NT)
     if !(globdat.EBC_func===nothing)
         for i = 1:NT
-            _, bc_acc[:,i]  = globdat.EBC_func(Δt*i)
+            _, _, bc_acc[:,i]  = globdat.EBC_func(Δt*i)
         end
     end
     
@@ -567,7 +567,7 @@ function LSfittingStress(domain::Domain, globdat::GlobalData, state_history::Arr
     bc_acc = zeros(sum(domain.EBC.==-2),NT)
     if !(globdat.EBC_func===nothing)
         for i = 1:NT
-            _, bc_acc[:,i]  = globdat.EBC_func(Δt*i)
+            _, _,bc_acc[:,i]  = globdat.EBC_func(Δt*i)
         end
     end
 

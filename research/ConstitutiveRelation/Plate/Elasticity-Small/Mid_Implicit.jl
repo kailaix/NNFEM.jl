@@ -23,8 +23,8 @@ testtype = "PlaneStress"
 prop = Dict("name"=> testtype, "rho"=> 0.0876584, "E"=>0.07180760098, "nu"=>0.4)
 
 
-NT = 100
-dt = 2.0e-2  #ms
+NT = 1000
+dt = 2.0e-3  #ms
 T = NT * dt
 
 nxc, nyc = 10, 5
@@ -52,7 +52,7 @@ for j = 1:ny
         end
 
         coords = nodes[elnodes,:]
-        push!(elements,SmallStrainContinuum(coords,elnodes, prop, 3))
+        push!(elements,FiniteStrainContinuum(coords,elnodes, prop, 3))
     end
 end
 

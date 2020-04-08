@@ -87,8 +87,9 @@ function getInternalForce(self::FiniteStrainContinuum, state::Array{Float64}, Ds
     n = dofCount(self)
     fint = zeros(Float64,n)
     out = Array{Float64}[]
-    u = state[1:4]; v = state[5:8]
-    Du = Dstate[1:4]; Dv = Dstate[5:8]
+    nnodes = length(self.elnodes)
+    u = state[1:nnodes]; v = state[nnodes+1:2*nnodes]
+    Du = Dstate[1:nnodes]; Dv = Dstate[nnodes+1:2*nnodes]
     for k = 1:length(self.weights)
         g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
         ux = u'*g1; uy = u'*g2; vx = v'*g1; vy = v'*g2 
