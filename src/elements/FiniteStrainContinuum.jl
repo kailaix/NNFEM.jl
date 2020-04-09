@@ -4,7 +4,7 @@ export FiniteStrainContinuum
 """
     FiniteStrainContinuum
 
-Implements the finite strain element. 
+Constructs a finite strain element. 
 
 - `eledim`: spatial dimension of the element (default = 2).
 - `mat`: constitutive law, a length `#elem` vector of materials such as [`PlaneStress`](@ref)
@@ -13,6 +13,32 @@ Implements the finite strain element.
 - `coords`: coordinates of the vertices of the element
 - `dhdx`, `weights`, `hs`: data for integral 
 - `stress`: stress at each quadrature points
+
+# Example
+```julia
+#   Local degrees of freedom 
+#   4 ---- 3
+#
+#   1 ---- 2
+
+nx = 10
+ny = 5
+h = 0.1
+element = FiniteStrainContinuum[]
+prop = Dict("name"=> "PlaneStrain", "rho"=> 0.0876584, "E"=>0.07180760098, "nu"=>0.4)
+for j = 1:ny
+    for i = 1:nx 
+        n = (nx+1)*(j-1) + (i-1)+1
+        elnodes = [n, n + 1, n + 1 + (nx + 1), n + (nx + 1)]
+        ngp = 3 # 3 x 3 Gauss points per element 
+        coords = [(i-1)*h (j-1)*h
+                    i*h (j-1)*h
+                    i*h j*h
+                    (i-1)*h j*h]
+        push!(element, FiniteStrainContinuum(coords,elnodes, prop, ngp))
+    end
+end
+```
 """
 mutable struct FiniteStrainContinuum
     eledim::Int64
@@ -26,6 +52,9 @@ mutable struct FiniteStrainContinuum
     stress::Array{Array{Float64}}
 end
 
+"""
+    FiniteStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, props::Dict{String, Any}, ngp::Int64=2)
+"""
 function FiniteStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, props::Dict{String, Any}, ngp::Int64=2)
     eledim = 2
     dhdx, weights, hs = get2DElemShapeData( coords, ngp )

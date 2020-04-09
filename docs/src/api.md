@@ -4,7 +4,7 @@
 
 ```@autodocs
 Modules = [NNFEM]
-Pages   = ["FiniteStrainContinuum.jl", "FiniteStrainContinuum.jl", "FiniteStrainContinuum.jl"]
+Pages   = ["FiniteStrainContinuum.jl", "SmallStrainContinuum.jl", "FiniteStrainTruss.jl"]
 ```
 
 
