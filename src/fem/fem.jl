@@ -459,7 +459,7 @@ Computes external force vector, including external force load and time-dependent
 """
 function getExternalForce!(self::Domain, globaldat::GlobalData, fext::Union{Missing,Array{Float64}}=missing)
     if ismissing(fext)
-        fext = zeros(self.nnodes)
+        fext = zeros(self.neqs)
     end
     fext[:] = self.fext
     if globaldat.EBC_func != nothing

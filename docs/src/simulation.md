@@ -15,8 +15,6 @@ NNFEM.jl supports two types of boundary conditions, the Dirichlet boundary condi
 
 
 ```julia
-prop = Dict("name"=> "PlaneStress", "rho"=> 0.0876584, "E"=>0.07180760098, "nu"=>0.4)
-
 NT = 1000
 Δt = 1.0e-3  
 T = NT * Δt
@@ -24,7 +22,6 @@ T = NT * Δt
 m, n =  20, 10
 h = 0.1
 
-# TODO: EBC, g, FBC, fext, gt, ft 
 # Create a very simple mesh
 elements = SmallStrainContinuum[]
 prop = Dict("name"=> "PlaneStrain", "rho"=> 0.0876584, "E"=>0.07180760098, "nu"=>0.4)
@@ -32,7 +29,6 @@ coords = zeros((m+1)*(n+1), 2)
 for j = 1:n
     for i = 1:m
         idx = (m+1)*(j-1)+i 
-        coords[idx, :] = [(i-1)*h;(j-1)*h]
         elnodes = [idx; idx+1; idx+1+m+1; idx+m+1]
         ngp = 3
         nodes = [
@@ -41,6 +37,7 @@ for j = 1:n
             i*h j*h
             (i-1)*h j*h
         ]
+        coords[elnodes, :] = nodes
         push!(elements, SmallStrainContinuum(nodes, elnodes, prop, ngp))
     end
 end
@@ -58,7 +55,7 @@ for i = 1:m+1
         end
         if i==m+1 && j!=n+1
             FBC[idx,1] = -1
-            f[idx,1] = -1.
+            f[idx,1] = -0.001
         end
     end
 end
@@ -82,4 +79,5 @@ for i = 1:NT
 @info i 
     global globdat, domain = ExplicitSolverStep(globdat, domain, Δt)
 end
+visualize_displacement(hcat(domain.history["state"]...), domain)
 ```

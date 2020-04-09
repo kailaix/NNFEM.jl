@@ -10,6 +10,7 @@ using ADCME
 using SparseArrays
 using ForwardDiff
 using Random
+using ADCMEKit
 
 animation = PyNULL()
 colors = PyNULL()
@@ -56,6 +57,7 @@ include("elements/FiniteStrainTruss.jl")
 include("fem/fem.jl")
 include("fem/assembly.jl")
 include("utils/Visualize.jl")
+include("utils/Visualize2.jl")
 include("utils/io.jl")
 include("utils/Testsuit.jl")
 include("utils/nnconstitutivelaw.jl")
