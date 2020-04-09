@@ -16,9 +16,17 @@ Store data for finite element updates. Assume the problem has n freedoms,
 - `M`: a matrix of size $n\times n$ spares mass matrix
 - `Mlumped`: a vector of length $n$ lumped mass array
 - `MID`: Float64[n, nd1] off-diagonal part of the mass matrix, between the active freedoms and the time-dependent Dirichlet freedoms, assume there are nd time-dependent Dirichlet freedoms
-- `EBC_func`: function Float64:t-> (Float64[n_d1], Float64[n_d1], Float64[n_d1]) float array, time-dependent Dirichlet boundary condition disp, velo and acce (ordering is direction first then node number, u1, u3, ... v1, v4 ...)
-- `FBC_func`: function Float64:t-> Float64[n_t1] float array, time-dependent load boundary condition (ordering is direction first then node number, u1, u3, ... v1, v4 ...)
-"""->   
+- `EBC_func`: displacement $d$, velocity $v$, and acceleration $a$ from time-dependent Dirichlet boundary conditions 
+
+$$d, v, a = \text{EBC\_func}(time)$$
+
+The length of each output is the same as number of "-2" in `EBC` array. The ordering is direction major, i.e., $u_1, u_3, \ldots, v_1, v_3, \ldots$ 
+
+- `FBC_func`: time-dependent load boundary condition. The ordering is direction first then node number, $u1, u3, \ldots, v1, v4, \ldots$
+
+$$f = \text{FBC\_func}(time)$$
+
+"""
 mutable struct GlobalData
     state::Array{Float64}    #u
     Dstate::Array{Float64}   #uk
@@ -49,7 +57,7 @@ function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Flo
 end
 
 
-@doc """
+@doc raw"""
     Domain
 
 Date structure for the computatational domain.
@@ -57,46 +65,48 @@ Date structure for the computatational domain.
 - `nnodes`: Int64, number of nodes (each quadratical quad element has 9 nodes)
 - `nodes`: Float64[nnodes, ndims], coordinate array of all nodes
 - `neles`: number of elements 
-- `elements`: Element[neles], element array, each element is a struct 
+- `elements`: a list of `neles` element arrays, each element is a struct 
 - `ndims`: Int64, dimension of the problem space 
-- `state`: Float64[nnodes*ndims] current displacement of all nodal freedoms, Float64[1:nnodes] are for the first direction.
-- `Dstate`: Float64[nnodes*ndims] previous displacement of all nodal freedoms, Float64[1:nnodes] are for the first direction.
-- `LM`:  Int64[neles][ndims], LM(e,d) is the global equation number (active freedom number) of element e's d th freedom, 
+- `state`: a matrix of size `nnodes×ndims`. **Current** displacement of all nodal freedoms, `state[1:nnodes]` are for the first direction.
+- `Dstate`: `nnodes×ndims`. **Previous** displacement of all nodal freedoms, `Dstate[1:nnodes]` are for the first direction.
+- `LM`:  `Int64[neles][ndims]`, LM(e,d) is the global equation number (active freedom number) of element e's d th freedom, 
          -1 means fixed (time-independent) Dirichlet
          -2 means time-dependent Dirichlet
-- `DOF`: Int64[neles][ndims], DOF(e,d) is the global freedom number of element e's d th freedom
-- `ID`:  Int64[nnodes, ndims], ID(n,d) is the equation number(active freedom number) of node n's dth freedom, 
+- `DOF`: a matrix of size `neles×ndims`, DOF(e,d) is the global freedom number of element e's d th freedom
+- `ID`:  a matrix of size `nnodes×ndims`. `ID(n,d)` is the equation number (active freedom number) of node n's $d$-th freedom, 
          -1 means fixed (time-independent) Dirichlet
          -2 means time-dependent Dirichlet
-- 'neqs':  Int64,  number of equations or active freedoms
-- 'eq_to_dof':  Int64[neqs], map from to equation number(active freedom number) to the freedom number (Int64[1:nnodes] are for the first direction) 
-- 'dof_to_eq':  Bool[nnodes*ndims], map from freedom number(Int64[1:nnodes] are for the first direction) to booleans (active freedoms(equation number) are true)
-- 'EBC':  Int64[nnodes, ndims], EBC[n,d] is the displacement boundary condition of node n's dth freedom,
+- `neqs`:  Int64,  number of equations, a.k.a., active freedoms
+- `eq_to_dof`:  an integer vector of length `neqs`, map from to equation number (active freedom number) to the freedom number (Int64[1:nnodes] are for the first direction) 
+- `dof_to_eq`:  a bolean array of size `nnodes×ndims`, map from freedom number(Int64[1:nnodes] are for the first direction) to booleans (active freedoms(equation number) are true)
+- `EBC`:  Int64[nnodes, ndims], EBC[n,d] is the displacement boundary condition of node n's dth freedom,
            -1 means fixed(time-independent) Dirichlet boundary nodes
            -2 means time-dependent Dirichlet boundary nodes
-- 'g':  Float64[nnodes, ndims], values for fixed(time-independent) Dirichlet boundary conditions of node n's dth freedom,
-- 'FBC': Int64[nnodes, ndims], FBC[n,d] is the force load boundary condition of node n's dth freedom,
+- `g`:  Float64[nnodes, ndims], values for fixed(time-independent) Dirichlet boundary conditions of node n's dth freedom,
+- `FBC`: Int64[nnodes, ndims], FBC[n,d] is the force load boundary condition of node n's dth freedom,
            -1 means constant(time-independent) force load boundary nodes
            -2 means time-dependent force load boundary nodes
-- 'fext':  Float64[neqs], constant (time-independent) force load boundary conditions for these freedoms
-- 'time': Float64, current time
-- 'npoints': Int64, number of points (each quadratical quad element has 4 points, npoints==nnodes, when porder==1)
-- 'node_to_point': Int64[nnodes]:map from node number to point point, -1 means the node is not a geometry point
+- `fext`:  Float64[neqs], constant (time-independent) force load boundary conditions for these freedoms
+- `time`: Float64, current time
+- `npoints`: Int64, number of points (each quadratical quad element has 4 points, npoints==nnodes, when porder==1)
+- `node_to_point`: Int64[nnodes]:map from node number to point point, -1 means the node is not a geometry point
 
-- 'ii_stiff': Int64[], first index of the sparse matrix representation of the stiffness matrix
-- 'jj_stiff': Int64[], second index of the sparse matrix representation of the stiffness matrix
-- 'vv_stiff_ele_indptr': Int64[], Int64[e] is the first index entry for the e's element of the sparse matrix representation of the stiffness matrix
-- 'vv_stiff': Float64[], values of the sparse matrix representation of the stiffness matrix
 
-- 'ii_dfint_dstress': Int64[], first index of the sparse matrix representation of the dfint_dstress matrix 
-- 'jj_dfint_dstress': Int64[], second index of the sparse matrix representation of the dfint_dstress matrix
-- 'vv_dfint_dstress_ele_indptr': Int64[], Int64[e] is the first index entry for the e's element of the sparse matrix representation of the dfint_dstress matrix
-- 'vv_dfint_dstress': Float64[], values of the sparse matrix representation of the dfint_dstress matrix 
+# Auxilliry Data Structures
+- `ii_stiff`: Int64[], first index of the sparse matrix representation of the stiffness matrix
+- `jj_stiff`: Int64[], second index of the sparse matrix representation of the stiffness matrix
+- `vv_stiff_ele_indptr`: Int64[], Int64[e] is the first index entry for the e's element of the sparse matrix representation of the stiffness matrix
+- `vv_stiff`: Float64[], values of the sparse matrix representation of the stiffness matrix
 
-- 'ii_dstrain_dstate': Int64[], first index of the sparse matrix representation of the dstrain_dstate matrix
-- 'jj_dstrain_dstate': Int64[], second index of the sparse matrix representation of the dstrain_dstate matrix
-- 'vv_dstrain_dstate_ele_indptr': Int64[], Int64[e] is the first index entry for the e's element of the sparse matrix representation of the stiffness matrix
-- 'vv_dstrain_dstate': Float64[], values of the sparse matrix representation of the dstrain_dstate matrix
+- `ii_dfint_dstress`: Int64[], first index of the sparse matrix representation of the dfint_dstress matrix 
+- `jj_dfint_dstress`: Int64[], second index of the sparse matrix representation of the dfint_dstress matrix
+- `vv_dfint_dstress_ele_indptr`: Int64[], Int64[e] is the first index entry for the e's element of the sparse matrix representation of the dfint_dstress matrix
+- `vv_dfint_dstress`: Float64[], values of the sparse matrix representation of the dfint_dstress matrix 
+
+- `ii_dstrain_dstate': Int64[], first index of the sparse matrix representation of the dstrain_dstate matrix
+- `jj_dstrain_dstate': Int64[], second index of the sparse matrix representation of the dstrain_dstate matrix
+- `vv_dstrain_dstate_ele_indptr': Int64[], Int64[e] is the first index entry for the e's element of the sparse matrix representation of the stiffness matrix
+- `vv_dstrain_dstate': Float64[], values of the sparse matrix representation of the dstrain_dstate matrix
 
 - 'history': Dict{String, Array{Array{Float64}}}, dictionary between string and its time-histories quantity Float64[ntime][]
 """
