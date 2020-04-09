@@ -1,18 +1,41 @@
 export  PlaneStrain
 
-"""
+@doc raw"""
+    PlaneStrain
+
+Creates a plane strain element
+
+- `H`: Linear elasticity matrix, $3\times3$
+- `E`: Young's modulus
+- `ν`: Poisson's ratio 
+- `ρ`: density 
+- `σ0`: stress at the **last** time step 
+- `σ0_`: (for internal use), stress to be updated in `commitHistory`
+- `ε0`: strain at the **last** time step 
+- `ε0_`: (for internal use), strain to be updated in `commitHistory`
+
+# Example
+```julia
+prop = Dict("name"=> "PlaneStrain", "rho"=> 0.0876584, "E"=>0.07180760098, "nu"=>0.4)
+mat = PlaneStrain(prop)
+```
 """
 mutable struct PlaneStrain
     H::Array{Float64}
     E::Float64
     ν::Float64
     ρ::Float64
-    σ0::Array{Float64} # stress at last time step
-    σ0_::Array{Float64} # σ0 to be updated in `commitHistory`
+    σ0::Array{Float64} 
+    σ0_::Array{Float64} 
     ε0::Array{Float64} 
     ε0_::Array{Float64} 
 end
 
+"""
+    PlaneStrain(prop::Dict{String, Any})
+
+`prop` should contain at least the following three fields: `E`, `nu`, `rho`
+"""
 function PlaneStrain(prop::Dict{String, Any})
     E = prop["E"]; ν = prop["nu"]; ρ = prop["rho"]
     H = zeros(3,3)
