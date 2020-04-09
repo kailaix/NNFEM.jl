@@ -45,6 +45,6 @@ Pages   = ["io.jl", "matrix.jl", "shapeFunctions", "Testsuit.jl", "Visualize.jl"
 ```
 
 ## Internals
-```@docs
+```@doc
 
 ```

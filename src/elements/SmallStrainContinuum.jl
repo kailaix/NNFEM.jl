@@ -1,7 +1,7 @@
 export SmallStrainContinuum
 
 
-@docs raw"""
+@doc raw"""
     SmallStrainContinuum
 
 Constructs a small strain element. 

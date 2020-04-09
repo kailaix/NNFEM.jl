@@ -1,5 +1,6 @@
-export Domain,GlobalData,updateStates!,updateDomainStateBoundary!,getExternalForce,
-    setNeumannBoundary!, setGeometryPoints!
+export Domain,GlobalData,updateStates!,updateDomainStateBoundary!,
+    setNeumannBoundary!, setGeometryPoints!, setDirichletBoundary!, getExternalForce!,
+    commitHistory
 
 
 @doc raw"""
@@ -103,12 +104,12 @@ Date structure for the computatational domain.
 - `vv_dfint_dstress_ele_indptr`: Int64[], Int64[e] is the first index entry for the e's element of the sparse matrix representation of the dfint_dstress matrix
 - `vv_dfint_dstress`: Float64[], values of the sparse matrix representation of the dfint_dstress matrix 
 
-- `ii_dstrain_dstate': Int64[], first index of the sparse matrix representation of the dstrain_dstate matrix
-- `jj_dstrain_dstate': Int64[], second index of the sparse matrix representation of the dstrain_dstate matrix
-- `vv_dstrain_dstate_ele_indptr': Int64[], Int64[e] is the first index entry for the e's element of the sparse matrix representation of the stiffness matrix
-- `vv_dstrain_dstate': Float64[], values of the sparse matrix representation of the dstrain_dstate matrix
+- `ii_dstrain_dstate`: Int64[], first index of the sparse matrix representation of the dstrain_dstate matrix
+- `jj_dstrain_dstate`: Int64[], second index of the sparse matrix representation of the dstrain_dstate matrix
+- `vv_dstrain_dstate_ele_indptr`: Int64[], Int64[e] is the first index entry for the e's element of the sparse matrix representation of the stiffness matrix
+- `vv_dstrain_dstate`: Float64[], values of the sparse matrix representation of the dstrain_dstate matrix
 
-- 'history': Dict{String, Array{Array{Float64}}}, dictionary between string and its time-histories quantity Float64[ntime][]
+- `history`: Dict{String, Array{Array{Float64}}}, dictionary between string and its time-histories quantity Float64[ntime][]
 """
 mutable struct Domain
     nnodes::Int64
