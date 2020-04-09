@@ -95,7 +95,7 @@ Date structure for the computatational domain
 - 'vv_dstrain_dstate': Float64[], values of the sparse matrix representation of the dstrain_dstate matrix
 
 - 'history': Dict{String, Array{Array{Float64}}}, dictionary between string and its time-histories quantity Float64[ntime][]
-"""-> 
+"""
 mutable struct Domain
     nnodes::Int64
     nodes::Array{Float64}
@@ -147,23 +147,33 @@ function Base.:copy(g::Union{GlobalData, Domain})
     GlobalData(args...)
 end
 
-@doc """
-    Creating a finite element domain
+@doc raw"""
+    Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array{Int64}, g::Array{Float64}, FBC::Array{Int64}, f::Array{Float64})
 
-    - `nodes`: Float64[nnodes, ndims], coordinate array of all nodes
-    - `elements`: Element[neles], element array, each element is a struct 
-    - `ndims`: Int64, dimension of the problem space 
-    - 'EBC':  Int64[nnodes, ndims], EBC[n,d] is the displacement boundary condition of node n's dth freedom,
-           -1 means fixed(time-independent) Dirichlet boundary nodes
-           -2 means time-dependent Dirichlet boundary nodes
-    - 'g':  Float64[nnodes, ndims], values for fixed(time-independent) Dirichlet boundary conditions of node n's dth freedom,
-    - 'FBC': Int64[nnodes, ndims], FBC[n,d] is the force load boundary condition of node n's dth freedom,
-           -1 means constant(time-independent) force load boundary nodes
-           -2 means time-dependent force load boundary nodes
-    - 'f':  Float64[nnodes, ndims], values for constant(time-independent) force load boundary conditions of node n's dth freedom,
+Creating a finite element domain.
 
-    Return: Domain, the finite element domain
-"""->
+    - `nodes`: coordinate array of all nodes, a `nnodes × 2` matrix
+    - `elements`: element array. Each element is a material struct, e.g., [`PlaneStrain`](@ref). 
+    - `ndims`: dimension of the problem space. For 2D problems, ndims = 2. 
+    - `EBC`:  `nnodes × ndims` integer matrix for essential boundary conditions
+      `EBC[n,d]`` is the displacement boundary condition of node `n`'s $d$-th freedom,
+      
+      ∘ -1: fixed (time-independent) Dirichlet boundary nodes
+
+      ∘ -2: time-dependent Dirichlet boundary nodes
+
+    - `g`:  `nnodes × ndims` double matrix, values for fixed (time-independent) Dirichlet boundary conditions of node `n`'s $d$-th freedom,
+    - `FBC`: `nnodes × ndims` integer matrix for natural boundary conditions.
+      FBC[n,d] is the force load boundary condition of node n's dth freedom,
+
+      ∘ -1 means constant(time-independent) force load boundary nodes
+
+      ∘ -2 means time-dependent force load boundary nodes
+
+    - `f`:  `nnodes × ndims` double matrix, values for constant (time-independent) force load boundary conditions of node n's $d$-th freedom,
+
+    For time-dependent boundary conditions (`EBC` or `FBC` entries are -2), the corresponding `f` or `g` entries are not used.
+"""
 function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array{Int64}, g::Array{Float64}, FBC::Array{Int64}, f::Array{Float64})
     nnodes = size(nodes,1)
     neles = size(elements,1)

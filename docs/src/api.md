@@ -37,3 +37,8 @@ Pages   = ["NNSolver.jl", "Solvers.jl"]
 Modules = [NNFEM]
 Pages   = ["io.jl", "matrix.jl", "shapeFunctions", "Testsuit.jl", "Visualize.jl", "linearConstitutiveLaw.jl"]
 ```
+
+## Internals
+```@docs
+
+```
