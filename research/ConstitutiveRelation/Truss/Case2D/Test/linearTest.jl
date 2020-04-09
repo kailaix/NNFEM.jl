@@ -28,6 +28,6 @@ updateStates!(domain, globdat)
 
 
 Fint, _ = assembleStiffAndForce(globdat, domain, Δt)
-# tfAssembleInternalForce(domain, nn, E_all, DE_all, w∂E∂u_all, σ0_all)
+# AssembleInternalForce(domain, nn, E_all, DE_all, w∂E∂u_all, σ0_all)
 
 
