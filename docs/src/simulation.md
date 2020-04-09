@@ -15,8 +15,8 @@ NNFEM.jl supports two types of boundary conditions, the Dirichlet boundary condi
 
 
 ```julia
-NT = 1000
-Δt = 1.0e-3  
+NT = 100
+Δt = 1.0e-2
 T = NT * Δt
 
 m, n =  20, 10

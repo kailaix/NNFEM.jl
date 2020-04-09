@@ -2,7 +2,47 @@ export visualize_displacement, visualize_von_mises_stress, visualize
 function visualize(domain::Domain)
 end
 
-function visualize_von_mises_stress(Se::Array{Float64}, domain::Domain)
+function visualize_von_mises_stress(domain::Domain)
+    stress = domain.history["stress"]
+    S = zeros(length(stress), length(domain.elements))
+    x = zeros(length(domain.elements))
+    y = zeros(length(domain.elements))
+    for t = 1:length(stress)
+        cnt = 1
+        for (k,e) in enumerate(domain.elements)
+            ct = mean(domain.elements[k].coords, dims=1)
+            x[k], y[k] = ct[1,1], ct[1,2]
+            
+                ss = Float64[]
+                nstress = length(e.mat)
+                for p = 1:nstress
+                    push!(ss, postprocess_stress(stress[t][cnt, :] ,"vonMises"))
+                    cnt += 1
+                end
+                S[t, k] = mean(ss)
+            
+        end
+    end   
+    
+    # function update(i)
+    # c = contour(φ[1,:,:], 10, cmap="jet", vmin=vmin,vmax=vmax)
+    close("all")
+    
+    xlabel("x")
+    ylabel("y")
+    tricontour(x, y, S[1,:], 15, linewidths=0.5, colors="k")
+    tricontourf(x, y, S[1,:], 15)
+    axis("scaled")
+    gca().invert_yaxis()
+    function update(i)
+        gca().clear()
+        tricontour(x, y, S[i,:], 15, linewidths=0.5, colors="k")
+        tricontourf(x, y, S[i,:], 15)
+        xlabel("x")
+        ylabel("y")
+    end
+
+    animate(update, Int64.(round.(LinRange(2, size(S,1),20))))
 end
 
 function visualize_displacement(u::Array{Float64, 2}, domain::Domain)
