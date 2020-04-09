@@ -23,10 +23,11 @@ $$d, v, a = \text{EBC\_func}(time)$$
 
 The length of each output is the same as number of "-2" in `EBC` array. The ordering is direction major, i.e., $u_1, u_3, \ldots, v_1, v_3, \ldots$ 
 
-- `FBC_func`: time-dependent load boundary condition. The ordering is direction first then node number, $u1, u3, \ldots, v1, v4, \ldots$
+- `FBC_func`: time-dependent load boundary condition. 
 
 $$f = \text{FBC\_func}(time)$$
 
+Here $f$ is a vector. Its length is the same as number of "-2" in `FBC` array. The ordering is direction major, i.e., $u_1, u_3, \ldots, v_1, v_3, \ldots$ 
 """
 mutable struct GlobalData
     state::Array{Float64}    #u
@@ -456,7 +457,7 @@ Computes external force vector, including external force load and time-dependent
 """
 function getExternalForce!(self::Domain, globaldat::GlobalData, fext::Union{Missing,Array{Float64}}=missing)
     if ismissing(fext)
-        fext = zeros(neqs)
+        fext = zeros(self.nnodes)
     end
     fext[:] = self.fext
     if globaldat.EBC_func != nothing

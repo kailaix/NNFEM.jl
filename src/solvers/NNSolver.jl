@@ -46,7 +46,7 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all:
         DE = E_all[i-1]
         w∂E∂u = w∂E∂u_all[i]
         σ0 = read(ta_σ, i-1)        
-        fint, σ = AssembleInternalForce(domain,nn,E,DE,w∂E∂u,σ0)
+        fint, σ = assembleInternalForce(domain,nn,E,DE,w∂E∂u,σ0)
         ta_σ = write(ta_σ, i, σ)
         ta_loss = write(ta_loss, i, sum((fint-F_tot[i-1])^2))
         i+1, ta_loss, ta_σ
@@ -90,7 +90,7 @@ end
 #        DE = E_all[i-1]
 #        w∂E∂u = w∂E∂u_all[i]
 #        σ0 = read(ta_σ, i-1)        
-#        fint, σ = AssembleInternalForce(domain,nn,E,DE,w∂E∂u,σ0)
+#        fint, σ = assembleInternalForce(domain,nn,E,DE,w∂E∂u,σ0)
 #        ta_σ = write(ta_σ, i, σ)
 #        ta_loss = write(ta_loss, i, sum((fint-F_tot[i-1])^2))
 #        tail_loss = tf.cond(i<=NT+1-n_tail,
@@ -142,7 +142,7 @@ end
 #        w∂E∂u = w∂E∂u_all[i]
 #        σ0 = read(ta_σ, i-1)
 #        α0 = read(ta_α, i-1)
-#        fint, σ, α = AssembleInternalForce(domain,nn,E,DE,w∂E∂u,σ0, α0)
+#        fint, σ, α = assembleInternalForce(domain,nn,E,DE,w∂E∂u,σ0, α0)
 #        ta_σ = write(ta_σ, i, σ)
 #        ta_loss = write(ta_loss, i, sum((fint-F_tot[i-1])^2))
 #        ta_α = write(ta_α, i, α)

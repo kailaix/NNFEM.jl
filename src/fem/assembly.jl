@@ -1,4 +1,4 @@
-export assembleStiffAndForce,assembleInternalForce,assembleMassMatrix!,AssembleInternalForce
+export assembleStiffAndForce,assembleMassMatrix!,assembleInternalForce
 
 @doc raw"""
     assembleInternalForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
@@ -41,7 +41,7 @@ end
 
 
 @doc raw"""
-    AssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, DE_all::PyObject, w∂E∂u_all::PyObject, σ0_all::PyObject)
+    assembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, DE_all::PyObject, w∂E∂u_all::PyObject, σ0_all::PyObject)
 
 Computes local internal force f_int and then assemble to F_int, which generates inverse problem automatically.
 
@@ -65,7 +65,7 @@ Return:
 - $F_{\mathrm{int}}$:  internal force vector of length `neqns`
 - $\sigma_{\mathrm{all}}$: predicted stress at **current** step, a matrix of size `(neles*nGauss) × nstrains`
 """
-function AssembleInternalForce(domain::Domain, nn::Function, 
+function assembleInternalForce(domain::Domain, nn::Function, 
         E_all::Union{Array{Float64, 2}, PyObject}, DE_all::Union{Array{Float64, 2}, PyObject}, 
         w∂E∂u_all::Union{Array{Float64, 3}, PyObject}, σ0_all::Union{Array{Float64, 2}, PyObject})
 

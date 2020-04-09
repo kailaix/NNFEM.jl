@@ -1,4 +1,5 @@
-export ExplicitSolver, NewmarkSolver, AdaptiveSolver, SolverInitial!, StaticSolver, EigenModeHelper, EigenMode
+export ExplicitSolverStep,
+    ExplicitSolver, NewmarkSolver, AdaptiveSolver, SolverInitial!, StaticSolver, EigenModeHelper, EigenMode
 
 
 @doc raw"""
@@ -56,11 +57,15 @@ end
 
 
 @doc raw"""
-You need to call SolverInitial! before the first time step, if f^{ext}_0 != 0.
-This function updates a_0 in the globdat.acce
+    SolverInitial!(Δt::Int64, globdat::GlobalData, domain::Domain)
+
+You need to call SolverInitial! before the first time step, if $f^{ext}_0 \neq 0$
+
+```math
 a_0 = M^{-1}(- f^{int}(u_0) + f^{ext}_0)
-"""->
-function SolverInitial!(Δt, globdat, domain)
+```
+"""
+function SolverInitial!(Δt::Int64, globdat::GlobalData, domain::Domain)
     u = globdat.state[:]
     fext = similar(u)
     getExternalForce!(domain, globdat, fext)
@@ -72,15 +77,9 @@ end
 
 
 @doc raw"""
-Central Difference explicit solver
+    ExplicitSolverStep(Δt::Int64, globdat::GlobalData, domain::Domain)
 
-- 'Δt': Float64,  time step size 
-- 'globdat', GlobalData
-- 'domain', Domain
-
-
-Central Difference explicit solver for `M a + fint(u) = fext(u)`, with lumped mass matrix (MID = 0)
-`a`, `v`, `u` are acceleration, velocity and displacement
+Central Difference explicit solver for `M a + fint(u) = fext(u)`. `a`, `v`, `u` are acceleration, velocity and displacement.
 
 ```math
 \begin{align}
@@ -91,37 +90,23 @@ M a_{n+1} =& f^{ext}_{n+1} - f^{int}(u_{n+1}) \\
 \end{align}
 ```
 
-use the current states `a`, `v`, `u`, `time` in globdat, and update these stetes to next time step
-update domain history 
-
-You need to call SolverInitial! before the first time step, if f^{ext}_0 != 0.
-SolverInitial! updates a_0 in the globdat.acce
-a_0 = M^{-1}(- f^{int}(u_0) + f^{ext}_0)
-
-We assume globdat.acce[:] = a_0 and so far initialized to 0
-"""->
-
-function ExplicitSolver(Δt, globdat, domain)
+!!! info 
+    You need to call SolverInitial! before the first time step, if $f^{ext}_0 \neq 0$. 
+    Otherwise we assume the initial acceleration `globdat.acce[:] = 0`.
+"""
+function ExplicitSolverStep(globdat::GlobalData, domain::Domain, Δt::Int64)
     u = globdat.state[:]
     ∂u  = globdat.velo[:]
     ∂∂u = globdat.acce[:]
 
-    fext = similar(u)
-    getExternalForce!(domain, globdat, fext)
+    fext = getExternalForce!(domain, globdat)
 
     u += Δt*∂u + 0.5*Δt*Δt*∂∂u
     ∂u += 0.5*Δt * ∂∂u
     
-    
     domain.state[domain.eq_to_dof] = u[:]
     fint  = assembleInternalForce( globdat, domain, Δt)
-
-    if length(globdat.M)==0
-        error("globalDat is not initialized, call `assembleMassMatrix!(globaldat, domain)`")
-    end
-
     ∂∂up = globdat.M\(fext - fint)
-    #∂∂up = (fext - fint)./globdat.Mlumped
 
     ∂u += 0.5 * Δt * ∂∂up
 
@@ -129,18 +114,50 @@ function ExplicitSolver(Δt, globdat, domain)
     globdat.state = u[:]
     globdat.velo = ∂u[:]
     globdat.acce = ∂∂up[:]
-
     globdat.time  += Δt
-
-    #update strain, stress history 
     commitHistory(domain)
-    #update state, acc history 
     updateStates!(domain, globdat)
-    #update fint and fext history
+
+    return globdat, domain
+end
+
+function ExplicitSolver(Δt::Int64, globdat::GlobalData, domain::Domain)
+
+    if length(globdat.M)==0
+        error("globalDat is not initialized, 
+            call `assembleMassMatrix!(globaldat, domain)`")
+    end
+
+    u = globdat.state[:]
+    ∂u  = globdat.velo[:]
+    ∂∂u = globdat.acce[:]
+
+    fext = getExternalForce!(domain, globdat)
+
+    u += Δt*∂u + 0.5*Δt*Δt*∂∂u
+    ∂u += 0.5*Δt * ∂∂u
+    
+    domain.state[domain.eq_to_dof] = u[:]
+    fint  = assembleInternalForce( globdat, domain, Δt)
+    ∂∂up = globdat.M\(fext - fint)
+
+    ∂u += 0.5 * Δt * ∂∂up
+
+    globdat.Dstate = globdat.state[:]
+    globdat.state = u[:]
+    globdat.velo = ∂u[:]
+    globdat.acce = ∂∂up[:]
+    globdat.time  += Δt
+    commitHistory(domain)
+    updateStates!(domain, globdat)
+
+    # (optional) for visualization, update fint and fext history
     fint = assembleInternalForce( globdat, domain, Δt)
     push!(domain.history["fint"], fint)
     push!(domain.history["fext"], fext)
 end
+
+
 
 
 

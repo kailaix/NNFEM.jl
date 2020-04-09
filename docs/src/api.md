@@ -31,9 +31,9 @@ getExternalForce!
 
 ## Solvers
 
-```@autodocs
-Modules = [NNFEM]
-Pages   = ["NNSolver.jl", "Solvers.jl"]
+```@docs
+ExplicitSolver
+SolverInitial!
 ```
 
 
