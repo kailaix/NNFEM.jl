@@ -18,9 +18,15 @@ Pages   = ["PlaneStress.jl", "PlaneStrain.jl", "PlaneStressIncompressibleRivlinS
 
 ## Assembly
 
-```@autodocs
-Modules = [NNFEM]
-Pages   = ["assembly.jl", "fem.jl"]
+```@docs
+Domain
+GlobalData
+commitHistory
+setDirichletBoundary!
+setNeumannBoundary!
+updateStates!
+updateDomainStateBoundary!
+getExternalForce!
 ```
 
 ## Solvers

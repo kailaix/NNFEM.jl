@@ -2,19 +2,19 @@ export Domain,GlobalData,updateStates!,updateDomainStateBoundary!,getExternalFor
     setNeumannBoundary!, setGeometryPoints!
 
 
-@doc """
-GlobalData
+@doc raw"""
+    GlobalData
 
-Store data for finite element update, assume the problem has n freedoms
+Store data for finite element updates. Assume the problem has n freedoms,
 
-- `state`: Float64[n],  displacement array at the current time, only for active freedoms, 
-   the ordering is based on the equation number, here ndims=2 is the dimension of the problem space
-- `state`: Float64[n],  displacement array at the previous time
-- `velo`: Float64[n],  velocity array at the current 
-- `acce`: Float64[n],  acceleration array at the current 
-- `time`: float, current time
-- `M`: Float64[n,n] spares mass matrix
-- `Mlumped`: Float64[n] lumped mass array
+- `state`: a vector of length $n$. Displacement array at the **current** time, only for **active** freedoms.
+   The ordering is based on the equation number.
+- `Dstate`: a vector of length $n$. Displacement array at the **previous** time.
+- `velo`: a vector of length $n$. Velocity array at the **current** time.
+- `acce`: a vector of length $n$. Acceleration array at the **current** time.
+- `time`: float, current time.
+- `M`: a matrix of size $n\times n$ spares mass matrix
+- `Mlumped`: a vector of length $n$ lumped mass array
 - `MID`: Float64[n, nd1] off-diagonal part of the mass matrix, between the active freedoms and the time-dependent Dirichlet freedoms, assume there are nd time-dependent Dirichlet freedoms
 - `EBC_func`: function Float64:t-> (Float64[n_d1], Float64[n_d1], Float64[n_d1]) float array, time-dependent Dirichlet boundary condition disp, velo and acce (ordering is direction first then node number, u1, u3, ... v1, v4 ...)
 - `FBC_func`: function Float64:t-> Float64[n_t1] float array, time-dependent load boundary condition (ordering is direction first then node number, u1, u3, ... v1, v4 ...)
@@ -35,6 +35,10 @@ mutable struct GlobalData
 end
 
 
+"""
+    GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Float64},acce::Array{Float64}, neqs::Int64,
+        EBC_func::Union{Function, Nothing}=nothing, FBC_func::Union{Function, Nothing}=nothing)
+"""
 function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Float64},acce::Array{Float64}, neqs::Int64,
         EBC_func::Union{Function, Nothing}=nothing, FBC_func::Union{Function, Nothing}=nothing)
     time = 0.0
@@ -46,9 +50,9 @@ end
 
 
 @doc """
-Domain
+    Domain
 
-Date structure for the computatational domain
+Date structure for the computatational domain.
 
 - `nnodes`: Int64, number of nodes (each quadratical quad element has 9 nodes)
 - `nodes`: Float64[nnodes, ndims], coordinate array of all nodes
@@ -57,11 +61,11 @@ Date structure for the computatational domain
 - `ndims`: Int64, dimension of the problem space 
 - `state`: Float64[nnodes*ndims] current displacement of all nodal freedoms, Float64[1:nnodes] are for the first direction.
 - `Dstate`: Float64[nnodes*ndims] previous displacement of all nodal freedoms, Float64[1:nnodes] are for the first direction.
-- 'LM':  Int64[neles][ndims], LM(e,d) is the global equation number(active freedom number) of element e's d th freedom, 
+- `LM`:  Int64[neles][ndims], LM(e,d) is the global equation number (active freedom number) of element e's d th freedom, 
          -1 means fixed (time-independent) Dirichlet
          -2 means time-dependent Dirichlet
-- 'DOF': Int64[neles][ndims], DOF(e,d) is the global freedom number of element e's d th freedom
-- 'ID':  Int64[nnodes, ndims], ID(n,d) is the equation number(active freedom number) of node n's dth freedom, 
+- `DOF`: Int64[neles][ndims], DOF(e,d) is the global freedom number of element e's d th freedom
+- `ID`:  Int64[nnodes, ndims], ID(n,d) is the equation number(active freedom number) of node n's dth freedom, 
          -1 means fixed (time-independent) Dirichlet
          -2 means time-dependent Dirichlet
 - 'neqs':  Int64,  number of equations or active freedoms
@@ -74,7 +78,7 @@ Date structure for the computatational domain
 - 'FBC': Int64[nnodes, ndims], FBC[n,d] is the force load boundary condition of node n's dth freedom,
            -1 means constant(time-independent) force load boundary nodes
            -2 means time-dependent force load boundary nodes
-- 'fext':  Float64[neqs], constant(time-independent) force load boundary conditions for these freedoms
+- 'fext':  Float64[neqs], constant (time-independent) force load boundary conditions for these freedoms
 - 'time': Float64, current time
 - 'npoints': Int64, number of points (each quadratical quad element has 4 points, npoints==nnodes, when porder==1)
 - 'node_to_point': Int64[nnodes]:map from node number to point point, -1 means the node is not a geometry point
@@ -218,7 +222,7 @@ end
     - 'npoints': Int64, number of points (each quadratical quad element has 4 points, npoints==nnodes, when porder==1)
     - 'node_to_point': Int64[nnodes]:map from node number to point point, -1 means the node is not a geometry point
 
-""" -> 
+""" 
 function setGeometryPoints!(self::Domain, npoints::Int64, node_to_point::Array{Int64})
     self.npoints = npoints
     self.node_to_point = node_to_point
@@ -227,11 +231,11 @@ end
 
 
 @doc """
-    Update current step strain, stress in the history map of the Domain
-    strain and stress are both Float[ngp, nstrain], ngp is the number of Gaussian quadrature point
-    nstrain=1 for 1D and nstrain = 3 for 2D 
-    The strain is in Voigt notation
-""" -> 
+    commitHistory(domain::Domain)
+
+Update current step strain and stress in the history map of the `domain`. 
+This is essential for visualization and time dependent constitutive relations. 
+""" 
 function commitHistory(domain::Domain)
     for e in domain.elements
         commitHistory(e)
@@ -272,15 +276,19 @@ end
 
 
 @doc """
-    In the constructor 
-    Update the fixed (time-independent Dirichlet boundary) state entries 
-    Build LM, and DOF array
-    - 'self': Domain
-    - 'EBC':  Int64[nnodes, ndims], EBC[n,d] is the displacement boundary condition of node n's dth freedom,
-           -1 means fixed(time-independent) Dirichlet boundary nodes
-           -2 means time-dependent Dirichlet boundary nodes
-    - 'g':  Float64[nnodes, ndims], values for fixed(time-independent) Dirichlet boundary conditions of node n's dth freedom,
-    ''
+    setDirichletBoundary!(self::Domain, EBC::Array{Int64}, g::Array{Float64})
+
+Bookkeepings for Dirichlet boundary conditions. Only called once in the constructor of `domain`. 
+It updates the fixed (time-independent Dirichlet boundary) state entries and builds both LM and DOF arrays.
+
+- `self`: Domain
+- `EBC`:  Int64[nnodes, ndims], EBC[n,d] is the displacement boundary condition of node n's dth freedom,
+        
+  ∘ -1 means fixed(time-independent) Dirichlet boundary nodes
+
+  ∘ -2 means time-dependent Dirichlet boundary nodes
+
+- `g`:  Float64[nnodes, ndims], values for fixed (time-independent) Dirichlet boundary conditions of node n's dth freedom,
 """ -> 
 function setDirichletBoundary!(self::Domain, EBC::Array{Int64}, g::Array{Float64})
 
@@ -335,15 +343,19 @@ end
 
 
 @doc """
-    In the constructor
-    Update the external force vector fext
-    - 'self': Domain
-    - 'FBC': Int64[nnodes, ndims], FBC[n,d] is the force load boundary condition of node n's dth freedom,
-           -1 means constant(time-independent) force load boundary nodes
-           -2 means time-dependent force load boundary nodes
-    - 'f':  Float64[nnodes, ndims], values for constant(time-independent) force load boundary conditions of node n's dth freedom,
 
-""" -> 
+Bookkeepings for Dirichlet boundary conditions. Only called once in the constructor of `domain`. 
+It updates the fixed (time-independent Neumann boundary) state entries and builds both LM and DOF arrays.
+
+- `self`: Domain
+- `FBC`:  Int64[nnodes, ndims], FBC[n,d] is the displacement boundary condition of node n's dth freedom,
+        
+    ∘ -1 means fixed (time-independent) Neumann boundary nodes
+
+    ∘ -2 means time-dependent Dirichlet boundary nodes
+
+- `f`:  Float64[nnodes, ndims], values for fixed (time-independent) Neumann boundary conditions of node n's dth freedom,
+""" 
 function setNeumannBoundary!(self::Domain, FBC::Array{Int64}, f::Array{Float64})
 
     fext = zeros(Float64, self.neqs)
@@ -363,14 +375,11 @@ end
 
 
 @doc """
-    At each time step
-    Update the state and Dstate in Domain from GlobalData
-    state and Dstate in GlobalData are only for active freedoms (equations)
-    state and Dstate in Domain are only for all freedoms, they are used for constructing the internal force and/or stiffness matrix
-    update the state and acc history of the Domain
-    - 'self': Domain
-    - 'globaldat': GlobalData
-""" ->
+    updateStates!(self::Domain, globaldat::GlobalData)
+
+At each time step, `updateStates!` needs to be called to update the full `state` and `Dstate` in `domain`
+from active ones in `globaldat`.
+""" 
 function updateStates!(self::Domain, globaldat::GlobalData)
     
     self.state[self.eq_to_dof] = globaldat.state[:]
@@ -385,40 +394,12 @@ function updateStates!(self::Domain, globaldat::GlobalData)
 end
 
 
-# @doc """
-#     :param self: Domain
-#     :param state : 1D array to convert
-#     :param compress_or_expand  : "Compress" or "Expand" 
-
-#     "Compress", the state has all freedoms on all nodes, remove these freedoms on EBC
-#     "Expand",   the state has only active freedoms on active nodes (active means not prescribed), 
-#                 set these freedoms on EBC to 0
-
-#     :return:
-# """ ->
-# function convertState(self::Domain, state::Array{Float64}, compress_or_expand::String)
-    
-#     if compress_or_expand == "Expand"
-#         new_state = zeros(Float64, self.nnodes*self.ndims)
-#         new_state[self.eq_to_dof] = state[:]
-#         return new_state
-
-#     elseif compress_or_expand == "Compress"
-#         return state[self.eq_to_dof]
-    
-#     else
-#         error("convertStats error, compress_or_expand is ", compress_or_expand)
-#     end
-
-# end
-
-
-
 @doc """
-    Update time dependent boundary of state fext in Domain based on the time-dependent boundary functions in GlobalData.
-    - 'self': Domain
-    - 'globaldat': GlobalData
-    """ ->
+    updateDomainStateBoundary!(self::Domain, globaldat::GlobalData)
+
+If there exists time-dependent boundary conditions, `updateDomainStateBoundary!` must be called to update 
+the boundaries in `domain`. This function is called by [`updateStates!`](@ref)
+"""
 function updateDomainStateBoundary!(self::Domain, globaldat::GlobalData)
     if globaldat.EBC_func != nothing
         disp, _, _ = globaldat.EBC_func(globaldat.time) # user defined time-dependent boundary
@@ -455,18 +436,17 @@ end
 
 
 @doc """
-    Compute external force vector, including external force load and time-dependent Dirichlet boundary conditions
-    The function needs to be called after
-    function updateDomainStateBoundary!(self::Domain, globaldat::GlobalData)
-    which computes the external force vector from external force load
+    getExternalForce!(self::Domain, globaldat::GlobalData, fext::Union{Missing,Array{Float64}}=missing)
 
-    - 'self': Domain
-    - 'globaldat': GlobalData
-    - 'fext': Float64[neqs], container for the external force vector
-
-    return external force vector at the present step
-""" ->
-function getExternalForce!(self::Domain, globaldat::GlobalData, fext::Array{Float64})
+Computes external force vector, including external force load and time-dependent Dirichlet boundary conditions.
+    
+!!! info 
+    The function needs to be called after [`updateDomainStateBoundary!`](@ref), which computes the external force vector from external force load
+"""
+function getExternalForce!(self::Domain, globaldat::GlobalData, fext::Union{Missing,Array{Float64}}=missing)
+    if ismissing(fext)
+        fext = zeros(neqs)
+    end
     fext[:] = self.fext
     if globaldat.EBC_func != nothing
         MID = globaldat.MID
@@ -540,7 +520,7 @@ end
 @doc """
     Compute constant stiff, dfint_dstress, dstrain_dstate matrix patterns
     - 'self': Domain
-"""->
+"""
 function assembleSparseMatrixPattern!(self::Domain)
     
     neles = self.neles
