@@ -377,7 +377,9 @@ function setNeumannBoundary!(self::Domain, FBC::Array{Int64}, f::Array{Float64})
     for idof = 1:ndims
       for inode = 1:nnodes
           if (FBC[inode, idof] == -1)
-              @assert ID[inode, idof] > 0
+              if  ID[inode, idof] <= 0
+                error("Node $inode is both a Dirichlet node and a force node.")
+              end
               fext[ID[inode, idof]] += f[inode, idof]
           end
         end

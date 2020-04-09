@@ -19,26 +19,59 @@ prop = Dict("name"=> "PlaneStress", "rho"=> 0.0876584, "E"=>0.07180760098, "nu"=
 
 NT = 1000
 Δt = 1.0e-3  
-T = NT * dt
+T = NT * Δt
 
 m, n =  20, 10
 h = 0.1
 
 # TODO: EBC, g, FBC, fext, gt, ft 
 # Create a very simple mesh
+elements = SmallStrainContinuum[]
+prop = Dict("name"=> "PlaneStrain", "rho"=> 0.0876584, "E"=>0.07180760098, "nu"=>0.4)
 coords = zeros((m+1)*(n+1), 2)
-elements = 
+for j = 1:n
+    for i = 1:m
+        idx = (m+1)*(j-1)+i 
+        coords[idx, :] = [(i-1)*h;(j-1)*h]
+        elnodes = [idx; idx+1; idx+1+m+1; idx+m+1]
+        ngp = 3
+        nodes = [
+            (i-1)*h (j-1)*h
+            i*h (j-1)*h
+            i*h j*h
+            (i-1)*h j*h
+        ]
+        push!(elements, SmallStrainContinuum(nodes, elnodes, prop, ngp))
+    end
+end
 
-
+# fixed on the bottom, push on the right
+EBC = zeros(Int64, (m+1)*(n+1), 2)
+FBC = zeros(Int64, (m+1)*(n+1), 2)
+g = zeros((m+1)*(n+1), 2)
+f = zeros((m+1)*(n+1), 2)
+for i = 1:m+1
+    for j = 1:n+1
+        idx = (j-1)*(m+1) + i 
+        if j==n+1
+            EBC[idx,:] .= -1
+        end
+        if i==m+1 && j!=n+1
+            FBC[idx,1] = -1
+            f[idx,1] = -1.
+        end
+    end
+end
 ndims = 2
-domain = Domain(nodes, elements, ndims, EBC, g, FBC, f)
-# setGeometryPoints!(domain, npoints, node_to_point)
+domain = Domain(coords, elements, ndims, EBC, g, FBC, f)
 
 
 Dstate = zeros(domain.neqs)
 state = zeros(domain.neqs)
 velo = zeros(domain.neqs)
 acce = zeros(domain.neqs)
+gt = nothing
+ft = nothing
 globdat = GlobalData(state, Dstate, velo, acce, domain.neqs, gt, ft)
 
 
@@ -46,6 +79,7 @@ assembleMassMatrix!(globdat, domain)
 updateStates!(domain, globdat)
 
 for i = 1:NT
-    globdat, domain = ExplicitSolverStep(Δt, globdat, domain)
+@info i 
+    global globdat, domain = ExplicitSolverStep(globdat, domain, Δt)
 end
 ```

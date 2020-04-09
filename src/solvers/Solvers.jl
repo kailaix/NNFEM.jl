@@ -77,7 +77,7 @@ end
 
 
 @doc raw"""
-    ExplicitSolverStep(Δt::Int64, globdat::GlobalData, domain::Domain)
+    ExplicitSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64)
 
 Central Difference explicit solver for `M a + fint(u) = fext(u)`. `a`, `v`, `u` are acceleration, velocity and displacement.
 
@@ -94,7 +94,7 @@ M a_{n+1} =& f^{ext}_{n+1} - f^{int}(u_{n+1}) \\
     You need to call SolverInitial! before the first time step, if $f^{ext}_0 \neq 0$. 
     Otherwise we assume the initial acceleration `globdat.acce[:] = 0`.
 """
-function ExplicitSolverStep(globdat::GlobalData, domain::Domain, Δt::Int64)
+function ExplicitSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64)
     u = globdat.state[:]
     ∂u  = globdat.velo[:]
     ∂∂u = globdat.acce[:]
