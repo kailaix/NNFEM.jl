@@ -64,7 +64,7 @@ include("utils/nnconstitutivelaw.jl")
 include("utils/linearConstitutiveLaw.jl")
 include("solvers/NNSolver.jl")
 include("solvers/Solvers.jl")
-include("solvers/Solvers2.jl")
+include("solvers/SolversV2.jl")
 include("solvers/AdjointSolver.jl")
 
 
