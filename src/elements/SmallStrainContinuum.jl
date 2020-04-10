@@ -1,10 +1,5 @@
-export SmallStrainContinuum,
-getStiffAndForce, getInternalForce,
-getBodyForce, getStrain, getMassMatrix,
-getNodes, getGaussPoints, commitHistory
-
-
-
+include("Continuum.jl")
+export SmallStrainContinuum 
 
 @doc raw"""
     SmallStrainContinuum
@@ -48,7 +43,7 @@ end
 ```
 
 """
-mutable struct SmallStrainContinuum
+mutable struct SmallStrainContinuum <: Continuum 
     eledim::Int64
     mat  # constitutive law
     elnodes::Array{Int64}   # the node indices in this finite element
@@ -82,7 +77,7 @@ function SmallStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, pro
         mat = [PlaneStressPlasticity(props) for i = 1:nGauss]
     elseif name=="NeuralNetwork2D"
         mat = [NeuralNetwork2D(props) for i = 1:nGauss]
-    elseif name=="PlaneStressIncompressibleRivlinSaunders"
+    elseif name=="PlaneStressInpressibleRivlinSaunders"
         mat = [PlaneStressIncompressibleRivlinSaunders(props) for i = 1:nGauss]
     else
         error("Not implemented yet: $name")
@@ -174,24 +169,6 @@ function getInternalForce(elem::SmallStrainContinuum, state::Array{Float64}, Dst
 end
 
 
-@doc raw"""
-    getBodyForce(elem::SmallStrainContinuum, fvalue::Array{Float64,2})
-
-Returns the body force
-$$\int_{e} \mathbf{f}\cdot \delta \mathbf{u} d \mathbf{x}$$
-`fvalue` is a $n_{gauss}\times 2$ matrix. 
-"""
-function getBodyForce(elem::SmallStrainContinuum, fvalue::Array{Float64,2})
-    n = dofCount(elem)
-    fbody = zeros(Float64,n)
-    out = Array{Float64}[]
-    nnodes = length(elem.elnodes)
-    for k = 1:length(elem.weights)
-        fbody[1:nnodes] += elem.hs[k] * fvalue[k,1] * elem.weights[k]
-        fbody[nnodes+1:2*nnodes] += elem.hs[k] * fvalue[k,2] * elem.weights[k]
-    end
-    return fbody
-end
 
 """
     getStrain(elem::SmallStrainContinuum, state::Array{Float64})
@@ -215,64 +192,6 @@ function getStrain(elem::SmallStrainContinuum, state::Array{Float64})
     end
     return E, w∂E∂u
 end
-
-"""
-    getMassMatrix(elem::SmallStrainContinuum)
-
-Returns the mass and lumped (diagonal) mass matrix of this element. 
-"""
-function getMassMatrix(elem::SmallStrainContinuum)
-    ndofs = dofCount(elem)
-    nnodes = length(elem.elnodes)
-    mass = zeros(ndofs,ndofs)
-    for k = 1:length(elem.weights)
-        rho = elem.mat[k].ρ
-        mass += [elem.hs[k]*elem.hs[k]' zeros(nnodes, nnodes)
-                 zeros(nnodes, nnodes)  elem.hs[k]*elem.hs[k]']  * rho * elem.weights[k]
-    end
-    lumped = sum(mass, dims=2)
-    mass, lumped
-end
-
-
-""" 
-    getNodes(elem::SmallStrainContinuum)
-
-Alias for `elem.elnodes`
-"""
-function getNodes(elem::SmallStrainContinuum)
-    return elem.elnodes
-end
-
-"""
-    getGaussPoints(elem::SmallStrainContinuum)
-
-Returns the Gauss quadrature nodes of the element
-"""
-function getGaussPoints(elem::SmallStrainContinuum)
-    x = elem.coords'
-    gnodes = zeros(length(elem.weights),2)
-    for k = 1:length(elem.weights)
-        gnodes[k,:] = x * elem.hs[k] 
-    end
-    return gnodes
-end
-
-function dofCount(elem::SmallStrainContinuum)
-    return 2length(elem.elnodes)
-end
-
-"""
-    commitHistory(elem::SmallStrainContinuum)
-
-Updates the historic parameters in the material properties. 
-"""
-function commitHistory(elem::SmallStrainContinuum)
-    for m in elem.mat 
-        commitHistory(m)
-    end
-end
-
 
 # for the adjoint solver
 

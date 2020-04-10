@@ -138,9 +138,6 @@ function GeneralizedAlphaSolverStep(globdat::GlobalData, domain::Domain, Δt::Fl
     fext = getExternalForce!(domain, globdat)
     # fext = zeros(domain.neqs)
     fbody = getBodyForce(domain, globdat)
-
-    @info sum(fext)
-
     ∂∂up = ∂∂u[:]
 
     Newtoniterstep, Newtonconverge = 0, false
