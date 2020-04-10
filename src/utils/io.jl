@@ -1,4 +1,11 @@
 export readMesh, save, load, read_data, write_data, convert_mat, read_strain_stress
+
+
+"""
+    readMesh(gmshFile::String)
+
+Reads a `gmsh` file and extracts element, coordinates and boundaries.
+"""
 function readMesh(gmshFile::String)
     fp = open(gmshFile);
     boundaries = Dict{String, Array}()

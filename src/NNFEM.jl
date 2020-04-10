@@ -10,6 +10,7 @@ using ADCME
 using SparseArrays
 using ForwardDiff
 using Random
+using ADCMEKit
 
 animation = PyNULL()
 colors = PyNULL()
@@ -50,18 +51,20 @@ include("materials/NeuralNetwork1D.jl")
 include("materials/PathDependent1D.jl")
 include("materials/PlaneStressPlasticityLawBased.jl")
 include("materials/PlaneStressIncompressibleRivlinSaunders.jl")
-include("solvers/Solvers.jl")
 include("elements/FiniteStrainContinuum.jl")
 include("elements/SmallStrainContinuum.jl")
 include("elements/FiniteStrainTruss.jl")
 include("fem/fem.jl")
 include("fem/assembly.jl")
 include("utils/Visualize.jl")
+include("utils/Visualize2.jl")
 include("utils/io.jl")
 include("utils/Testsuit.jl")
 include("utils/nnconstitutivelaw.jl")
 include("utils/linearConstitutiveLaw.jl")
 include("solvers/NNSolver.jl")
+include("solvers/Solvers.jl")
+include("solvers/SolversV2.jl")
 include("solvers/AdjointSolver.jl")
 
 

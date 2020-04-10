@@ -56,11 +56,15 @@ end
 
 
 @doc raw"""
-You need to call SolverInitial! before the first time step, if f^{ext}_0 != 0.
-This function updates a_0 in the globdat.acce
+    SolverInitial!(Δt::Int64, globdat::GlobalData, domain::Domain)
+
+You need to call SolverInitial! before the first time step, if $f^{ext}_0 \neq 0$
+
+```math
 a_0 = M^{-1}(- f^{int}(u_0) + f^{ext}_0)
-"""->
-function SolverInitial!(Δt, globdat, domain)
+```
+"""
+function SolverInitial!(Δt::Int64, globdat::GlobalData, domain::Domain)
     u = globdat.state[:]
     fext = similar(u)
     getExternalForce!(domain, globdat, fext)
@@ -71,57 +75,27 @@ function SolverInitial!(Δt, globdat, domain)
 end
 
 
-@doc raw"""
-Central Difference explicit solver
-
-- 'Δt': Float64,  time step size 
-- 'globdat', GlobalData
-- 'domain', Domain
 
 
-Central Difference explicit solver for `M a + fint(u) = fext(u)`, with lumped mass matrix (MID = 0)
-`a`, `v`, `u` are acceleration, velocity and displacement
+function ExplicitSolver(Δt::Int64, globdat::GlobalData, domain::Domain)
 
-```math
-\begin{align}
-u_{n+1} =& u_n + dtv_n + dt^2/2 a_n \\
-v_{n+1} =& v_n + dt/2(a_n + a_{n+1}) \\
-M a_{n+1} + f^{int}(u_{n+1}) =& f^{ext}_{n+1} \\
-M a_{n+1} =& f^{ext}_{n+1} - f^{int}(u_{n+1}) \\
-\end{align}
-```
+    if length(globdat.M)==0
+        error("globalDat is not initialized, 
+            call `assembleMassMatrix!(globaldat, domain)`")
+    end
 
-use the current states `a`, `v`, `u`, `time` in globdat, and update these stetes to next time step
-update domain history 
-
-You need to call SolverInitial! before the first time step, if f^{ext}_0 != 0.
-SolverInitial! updates a_0 in the globdat.acce
-a_0 = M^{-1}(- f^{int}(u_0) + f^{ext}_0)
-
-We assume globdat.acce[:] = a_0 and so far initialized to 0
-"""->
-
-function ExplicitSolver(Δt, globdat, domain)
     u = globdat.state[:]
     ∂u  = globdat.velo[:]
     ∂∂u = globdat.acce[:]
 
-    fext = similar(u)
-    getExternalForce!(domain, globdat, fext)
+    fext = getExternalForce!(domain, globdat)
 
     u += Δt*∂u + 0.5*Δt*Δt*∂∂u
     ∂u += 0.5*Δt * ∂∂u
     
-    
     domain.state[domain.eq_to_dof] = u[:]
     fint  = assembleInternalForce( globdat, domain, Δt)
-
-    if length(globdat.M)==0
-        error("globalDat is not initialized, call `assembleMassMatrix!(globaldat, domain)`")
-    end
-
     ∂∂up = globdat.M\(fext - fint)
-    #∂∂up = (fext - fint)./globdat.Mlumped
 
     ∂u += 0.5 * Δt * ∂∂up
 
@@ -129,25 +103,19 @@ function ExplicitSolver(Δt, globdat, domain)
     globdat.state = u[:]
     globdat.velo = ∂u[:]
     globdat.acce = ∂∂up[:]
-
     globdat.time  += Δt
-
-    #update strain, stress history 
     commitHistory(domain)
-    #update state, acc history 
     updateStates!(domain, globdat)
-    #update fint and fext history
+
+    # (optional) for visualization, update fint and fext history
     fint = assembleInternalForce( globdat, domain, Δt)
     push!(domain.history["fint"], fint)
     push!(domain.history["fext"], fext)
 end
 
-
-
-
-
 @doc raw"""
-NewmarkSolver (Generalized-alpha) implicit solver
+    NewmarkSolver (Generalized-alpha) implicit solver
+
 - 'Δt': Float64,  time step size 
 - 'globdat', GlobalData
 - 'domain', Domain

@@ -1,15 +1,14 @@
-export assembleStiffAndForce,assembleInternalForce,assembleMassMatrix!,tfAssembleInternalForce
+export assembleStiffAndForce,assembleMassMatrix!,assembleInternalForce
 
+@doc raw"""
+    assembleInternalForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
 
-
-@doc """
-    Numerically assemble internal force vector, compute local internal force f_int 
-    from domain.state and then assemble to F_int
-    - 'globdat': GlobalData
-    - 'domain': Domain, finite element domain, for data structure
-    - 'Δt':  Float64, current time step size
-    Return F_int: Float64[neqs], internal force vector
-"""->function assembleInternalForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
+Computes the internal force vector $F_\mathrm{int}$ of length `neqs`
+- `globdat`: GlobalData
+- `domain`: Domain, finite element domain, for data structure
+- `Δt`:  Float64, current time step size
+"""
+function assembleInternalForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
     Fint = zeros(Float64, domain.neqs)
     neles = domain.neles
   
@@ -41,26 +40,36 @@ export assembleStiffAndForce,assembleInternalForce,assembleMassMatrix!,tfAssembl
 end
 
 
-@doc """
-    Tensorflow version of assembling internal force vector, compute local internal 
-    force f_int and then assemble to F_int, which generates inverse problem automatically.
-    
-    - 'domain': Domain, finite element domain, for data structure
-    - 'nn': Function strain -> stress, neural network constitutive law function 
-    - 'E_all': PyObject(Float64)[neles*nGauss, nstrains], neles*nGauss is the number of Gaussian quadrature points, 
-               nstrain is the number of strain components. All strains for the current time-step
-    - 'DE_all': PyObject(Float64)[neles*nGauss, nstrains], neles*nGauss is the number of Gaussian quadrature points, 
-                nstrain is the number of strain components. All strains for the previous time-step
-    - 'w∂E∂u_all': PyObject(Float64)[neles*nGauss, ndofs_per_element, nstrains], neles*nGauss is the number of Gaussian quadrature points, 
-                   ndofs_per_element is the number of freedoms per element, nstrain is the number of strain components.
-                   Multiplication of the Gaussian weight and ∂E∂u^T for current time-step, 
-            
-    - 'σ0_all': PyObject(Float64)[neles*nGauss, nstrains], neles*nGauss is the number of Gaussian quadrature points, 
-    nstrain is the number of strain components.  All stresses for the last time-step
+@doc raw"""
+    assembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, DE_all::PyObject, w∂E∂u_all::PyObject, σ0_all::PyObject)
 
-    Return: internal force vector F_int, PyObject(Float64)[neqns] and the predicted stresses at the 
-            current step σ_all, PyObject(Float64)[neles*nGauss, nstrains]
-"""->function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, DE_all::PyObject, w∂E∂u_all::PyObject, σ0_all::PyObject)
+Computes local internal force f_int and then assemble to F_int, which generates inverse problem automatically.
+
+- `domain`: finite element domain
+- `nn`: constitutive relation for expressing `stress = f(strain)`, assuming `stress` and `strain` are defined on Gauss points (`(neles*nGauss) × nstrains`).
+- `E_all`: strain data of size `(neles*nGauss) × nstrains` at the **current** time step.
+- `DE_all`: strain data of size `(neles*nGauss) × nstrains` at the **last** time step.
+- `w∂E∂u_all`: sensitivity matrix of size `(neles*nGauss) x ndofs_per_element x nstrains`; `neles*nGauss` is the number of Gaussian quadrature points, 
+  `ndofs_per_element` is the number of freedoms per element, and `nstrain` is the number of strain components.
+  The sensitivity matrix already considers the quadrature weights. 
+
+```math
+s_{g,j,i}^e = w_g^e\frac{\partial \epsilon_g^e}{\partial u_j^e}
+```
+where $e$ is the element index, $g$ is the Gaussian index. 
+        
+- `σ0_all`: stress data of size `neles*nGauss×nstrains` at the **last** time step. 
+
+Return: 
+
+- $F_{\mathrm{int}}$:  internal force vector of length `neqns`
+- $\sigma_{\mathrm{all}}$: predicted stress at **current** step, a matrix of size `(neles*nGauss) × nstrains`
+"""
+function assembleInternalForce(domain::Domain, nn::Function, 
+        E_all::Union{Array{Float64, 2}, PyObject}, DE_all::Union{Array{Float64, 2}, PyObject}, 
+        w∂E∂u_all::Union{Array{Float64, 3}, PyObject}, σ0_all::Union{Array{Float64, 2}, PyObject})
+
+    E_all, DE_all, w∂E∂u_all, σ0_all = convert_to_tensor([E_all, DE_all, w∂E∂u_all, σ0_all], [Float64, Float64, Float64, Float64])
     neles = domain.neles
     nGauss = length(domain.elements[1].weights)
     neqns_per_elem = length(getEqns(domain, 1))
@@ -99,55 +108,18 @@ end
 end
 
 
+@doc raw"""
+    assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
 
+Computes the internal force and stiffness matrix. 
 
-# function tfAssembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, DE_all::PyObject,
-#      w∂E∂u_all::PyObject, σ0_all::PyObject, α::PyObject)
-#   neles = domain.neles
-#   nGauss = length(domain.elements[1].weights)
-#   neqns_per_elem = length(getEqns(domain,1))
-#   nstrains = size(E_all,2) #todo
- 
-  
-#   @assert size(E_all)==(neles*nGauss, nstrains)
-#   @assert size(DE_all)==(neles*nGauss, nstrains)
-#   @assert size(σ0_all)==(neles*nGauss, nstrains)
-  
-#   # el_eqns_all, the equation numbers related to the Gaussian point, negative value means Drichlet boundary
-#   el_eqns_all = zeros(Int32, neles*nGauss, neqns_per_elem)
-#   # el_eqns_active_all = el_eqns_all > 0
-#   el_eqns_active_all = zeros(Bool, neles*nGauss, neqns_per_elem)
-#   # Loop over the elements in the elementGroup to construct el_eqns_active_all , el_eqns_all and w∂E∂u_all
-#   for iele  = 1:neles
-#     # Get the element nodes
-#     el_eqns = getEqns(domain,iele)
- 
-#     # Assemble in the global array
-#     el_eqns_active_all[(iele-1)*nGauss+1:iele*nGauss,:] = repeat((el_eqns .>= 1)', nGauss, 1)
-#     el_eqns_all[(iele-1)*nGauss+1:iele*nGauss,:] = repeat(el_eqns', nGauss, 1)
-#   end
+- `globdat`: GlobalData
+- `domain`: Domain, finite element domain, for data structure
+- `Δt`:  Float64, current time step size
 
-#   # get stress at each Gaussian points
-#   # @info "* ", E_all, DE_all, σ0_all
-#   σ_all, α = nn(E_all, DE_all, σ0_all, α) # α is the internal variable
-#   fints = squeeze(tf.matmul(w∂E∂u_all, tf.expand_dims(σ_all,2)))
-#   Fint = cpp_fint(fints,constant(el_eqns_all, dtype=Int32),constant(domain.neqs, dtype=Int32))
-#   return Fint, σ_all, α
-# end
-
-
-
-
-
-@doc """
-    Numerically assemble internal force vector and stiffness matrix, compute local internal force f_int/ 
-    stiffness matrix Slocal from domain.state and then assemble to F_int/Ksparse
-    - 'globdat': GlobalData
-    - 'domain': Domain, finite element domain, for data structure
-    - 'Δt':  Float64, current time step size
-    Return F_int: Float64[neqs], internal force vector
-    Return Ksparse: Float64[neqs, neqns], sparse stiffness matrix
-"""->function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
+Returns a length `neqs` vector $F_{\mathrm{int}}$ and `neqs×neqs` sparse stiffness matrix. 
+"""
+function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
     Fint = zeros(Float64, domain.neqs)
   # K = zeros(Float64, domain.neqs, domain.neqs)
     ii = Int64[]; jj = Int64[]; vv = Float64[]
@@ -192,60 +164,26 @@ end
     return Fint, Ksparse
 end
 
-# function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
-#   Fint = zeros(Float64, domain.neqs)
-#   K = zeros(Float64, domain.neqs, domain.neqs)
-#   neles = domain.neles
 
-#   # Loop over the elements in the elementGroup
-#   for iele  = 1:neles
-#     element = domain.elements[iele]
+@doc raw"""
+    assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
 
-#     # Get the element nodes
-#     el_nodes = getNodes(element)
+Computes the constant sparse mass matrix $M_{\mathrm{mass}}$, the lumped mass matrix $M_{\mathrm{lump}}$
+due to time-dependent Dirichlet boundary conditions, and store them in `globaldat`. 
 
-#     # Get the element nodes
-#     el_eqns = getEqns(domain,iele)
+```math
+M_{\mathrm{mass}}\begin{bmatrix}
+M & M_{ID}\\ 
+M_{ID}^T & M_{DD} 
+\end{bmatrix}
+```
 
-#     el_dofs = getDofs(domain,iele)
+Here M is a `neqns×neqns` matrix, and $M_{ID}$ is a `neqns×nd` matrix. $M_{\mathrm{lump}}$ assumes that the local mass matrix is a diagonal matrix. 
 
-#     #@show "iele", iele, el_dofs 
-    
-#     #@show "domain.state", iele, domain.state 
-
-#     el_state  = getState(domain,el_dofs)
-
-#     el_Dstate = getDstate(domain,el_dofs)
-#     # #@show "+++++", el_state, el_Dstate
-
-#     # Get the element contribution by calling the specified action
-#     #@info "ele id is ", iele
-#     fint, stiff  = getStiffAndForce(element, el_state, el_Dstate, Δt)
-
-#     # Assemble in the global array
-#     el_eqns_active = el_eqns .>= 1
-#     K[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += stiff[el_eqns_active,el_eqns_active]
-#     Fint[el_eqns[el_eqns_active]] += fint[el_eqns_active]
-
-#     # @info "Fint is ", Fint
-#   end
-#   return Fint, sparse(K)
-# end
-
-@doc """
-    compute constant sparse mass matrix
-    due to the time-dependent Dirichlet boundary condition
-    mass matrix = M,    MID
-                  MID'  MDD
-
-    - 'globdat': GlobalData
-    - 'domain': Domain, finite element domain, for data structure
-    here M is Float64[neqns, neqns]
-         MID is Float64[neqns, nd1]
-         Mlumped is Float64[neqns]
-
-    update M and MID and Mlumpe in globaldat
-"""->function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
+- `globdat`: `GlobalData`
+- `domain`: `Domain`, finite element domain, for data structure
+"""
+function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
     Mlumped = zeros(Float64, domain.neqs)
     # M = zeros(Float64, domain.neqs, domain.neqs)
     iiM = Int64[]; jjM = Int64[]; vvM = Float64[]
@@ -334,48 +272,3 @@ end
 
 
 end
-
-
-# @doc """
-#     compute constant mass matrix as sparse matrix
-#     due to the time-dependent Dirichlet boundary condition
-#     mass matrix = M,    MID
-#                   MID'  MDD
-#     save M and MID and lump(M)
-# """->
-
-# function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
-#   Mlumped = zeros(Float64, domain.neqs)
-#   M = zeros(Float64, domain.neqs, domain.neqs)
-#   Mlumped = zeros(Float64, domain.neqs)
-#   neles = domain.neles
-
-#   MID = zeros(domain.neqs, sum(domain.EBC .== -2))
-#   # Loop over the elements in the elementGroup
-#   for iele = 1:neles
-#       element = domain.elements[iele]
-
-#       # Get the element nodes
-#       el_nodes = getNodes(element)
-  
-#       # Get the element nodes
-#       el_eqns = getEqns(domain,iele)
-
-#       # Get the element contribution by calling the specified action
-#       lM, lumped = getMassMatrix(element)
-
-#       # Assemble in the global array
-      
-#       el_eqns_active = (el_eqns .>= 1)
-#       el_eqns_acc_active = (el_eqns .== -2)
-      
-#       M[el_eqns[el_eqns_active], el_eqns[el_eqns_active]] += lM[el_eqns_active, el_eqns_active]
-#       Mlumped[el_eqns[el_eqns_active]] += lumped[el_eqns_active]
-#       MID[el_eqns[el_eqns_active], el_eqns[el_eqns_acc_active]] += lM[el_eqns_active, el_eqns_acc_active]
-      
-#   end
-
-#   globaldat.M = sparse(M)
-#   globaldat.Mlumped = sparse(Mlumped)
-#   globaldat.MID = MID
-# end

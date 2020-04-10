@@ -1,18 +1,47 @@
 export SmallStrainContinuum
 
 
-"""
+@doc raw"""
     SmallStrainContinuum
 
-Implements the small strain element. 
+Constructs a small strain element. 
 
 - `eledim`: spatial dimension of the element (default = 2).
 - `mat`: constitutive law, a length `#elem` vector of materials such as [`PlaneStress`](@ref)
 - `elnodes`: the node indices in this finite element, an integer array 
 - `props`: property dictionary 
 - `coords`: coordinates of the vertices of the element
-- `dhdx`, `weights`, `hs`: data for integral 
-- `stress`: stress at each quadrature points
+- `dhdx`: list of `ngp` shape functions for first order derivatives $\nabla \phi(x)$ (`ndof×2`) on the Gaussian points
+- `weights`: weight vector of length `n_gauss_points`, for numerical quadrature
+- `hs`: list of `ngp` shape functions for function values $\phi(x)$ (length `ndof` vectors) on the Gaussian points
+- `stress`: stress at each quadrature points; this field is reserved for visualization. 
+
+# Example
+```julia
+#   Local degrees of freedom 
+#   4 ---- 3
+#
+#   1 ---- 2
+
+nx = 10
+ny = 5
+h = 0.1
+element = SmallStrainContinuum[]
+prop = Dict("name"=> "PlaneStrain", "rho"=> 0.0876584, "E"=>0.07180760098, "nu"=>0.4)
+for j = 1:ny
+    for i = 1:nx 
+        n = (nx+1)*(j-1) + (i-1)+1
+        elnodes = [n, n + 1, n + 1 + (nx + 1), n + (nx + 1)]
+        ngp = 3 # 3 x 3 Gauss points per element 
+        coords = [(i-1)*h (j-1)*h
+                    i*h (j-1)*h
+                    i*h j*h
+                    (i-1)*h j*h]
+        push!(element, SmallStrainContinuum(coords,elnodes, prop, ngp))
+    end
+end
+```
+
 """
 mutable struct SmallStrainContinuum
     eledim::Int64
@@ -26,6 +55,9 @@ mutable struct SmallStrainContinuum
     stress::Array{Array{Float64}}
 end
 
+"""
+    SmallStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, props::Dict{String, Any}, ngp::Int64=2)
+"""
 function SmallStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, props::Dict{String, Any}, ngp::Int64=2)
     eledim = 2
     # @show coords, ngp

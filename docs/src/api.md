@@ -4,7 +4,7 @@
 
 ```@autodocs
 Modules = [NNFEM]
-Pages   = ["FiniteStrainContinuum.jl", "FiniteStrainContinuum.jl", "FiniteStrainContinuum.jl"]
+Pages   = ["FiniteStrainContinuum.jl", "SmallStrainContinuum.jl", "FiniteStrainTruss.jl"]
 ```
 
 
@@ -18,16 +18,23 @@ Pages   = ["PlaneStress.jl", "PlaneStrain.jl", "PlaneStressIncompressibleRivlinS
 
 ## Assembly
 
-```@autodocs
-Modules = [NNFEM]
-Pages   = ["assembly.jl", "fem.jl"]
+```@docs
+Domain
+GlobalData
+commitHistory
+setDirichletBoundary!
+setNeumannBoundary!
+updateStates!
+updateDomainStateBoundary!
+getExternalForce!
 ```
 
 ## Solvers
 
-```@autodocs
-Modules = [NNFEM]
-Pages   = ["NNSolver.jl", "Solvers.jl"]
+```@docs
+ExplicitSolverStep
+NewmarkSolverStep
+SolverInitial!
 ```
 
 
@@ -36,4 +43,9 @@ Pages   = ["NNSolver.jl", "Solvers.jl"]
 ```@autodocs
 Modules = [NNFEM]
 Pages   = ["io.jl", "matrix.jl", "shapeFunctions", "Testsuit.jl", "Visualize.jl", "linearConstitutiveLaw.jl"]
+```
+
+## Internals
+```@doc
+
 ```
