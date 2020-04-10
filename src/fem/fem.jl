@@ -483,7 +483,7 @@ function getExternalForce!(self::Domain, globaldat::GlobalData, fext::Union{Miss
         fext = zeros(self.neqs)
     end
     fext[:] = self.fext
-    if globaldat.EBC_func != nothing
+    if globaldat.EBC_func != nothing        
         MID = globaldat.MID
         _, _, acce = globaldat.EBC_func(globaldat.time)
         fext -= MID * acce

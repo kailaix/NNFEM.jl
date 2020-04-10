@@ -90,7 +90,7 @@ M ((1-\alpha_m)a_{n+1} + \alpha_m a_{n})
 ```
 
 
-As for '\alpha_m' and '\alpha_f'
+As for ```\alpha_m``` and ``\alpha_f``
 ```math
 \alpha_m = (2\rho_{\infty} - 1)/(\rho_{\infty} + 1)
 \alpha_f = \rho_{\infty}/(\rho_{\infty} + 1)
@@ -106,7 +106,7 @@ a_0 = M^{-1}(- f^{int}(u_0) + f^{ext}_0)
 We assume globdat.acce[:] = a_0 and so far initialized to 0
 We also assume the external force is conservative (it does not depend on the current deformation)
 """
-function GeneralizedAlphaSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64, 
+function GeneralizedAlphaSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64; 
         ρ::Float64 = 0.0, ε::Float64 = 1e-8, ε0::Float64 = 1e-8, maxiterstep::Int64=100, 
         η::Float64 = 1.0, failsafe::Bool = false, verbose::Bool = false)
 
@@ -136,7 +136,10 @@ function GeneralizedAlphaSolverStep(globdat::GlobalData, domain::Domain, Δt::Fl
     ∂u  = globdat.velo[:] #∂uⁿ
 
     fext = getExternalForce!(domain, globdat)
+    # fext = zeros(domain.neqs)
     fbody = getBodyForce(domain, globdat)
+
+    @info sum(fext)
 
     ∂∂up = ∂∂u[:]
 
