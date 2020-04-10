@@ -83,3 +83,40 @@ end
 visualize_displacement(domain)
 visualize_von_mises_stress(domain)
 ```
+
+The explicit solver is implemented as follows
+
+```julia
+function ExplicitSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64)
+    u = globdat.state[:]
+    ∂u  = globdat.velo[:]
+    ∂∂u = globdat.acce[:]
+
+    fext = getExternalForce!(domain, globdat)
+
+    u += Δt*∂u + 0.5*Δt*Δt*∂∂u
+    ∂u += 0.5*Δt * ∂∂u
+    
+    domain.state[domain.eq_to_dof] = u[:]
+    fint  = assembleInternalForce( globdat, domain, Δt)
+    ∂∂up = globdat.M\(fext - fint)
+
+    ∂u += 0.5 * Δt * ∂∂up
+
+    globdat.Dstate = globdat.state[:]
+    globdat.state = u[:]
+    globdat.velo = ∂u[:]
+    globdat.acce = ∂∂up[:]
+    globdat.time  += Δt
+    commitHistory(domain)
+    updateStates!(domain, globdat)
+
+    return globdat, domain
+end
+```
+
+We show the follow chart of the implementation. Note inside the `ExplicitSolverStep` function, the data is exchanged between `globdat` and `domain`. In general, `globdat` saves only the active components of the degrees of freedom (excluding Dirichlet boundary nodes) while `domain` maintains the full information. 
+
+
+
+![image-20200409172855057](./assets/flowchart.png)
