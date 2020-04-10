@@ -1,4 +1,9 @@
-export SmallStrainContinuum
+export SmallStrainContinuum,
+getStiffAndForce, getInternalForce,
+getBodyForce, getStrain, getMassMatrix,
+getNodes, getGaussPoints, commitHistory
+
+
 
 
 @doc raw"""
@@ -55,6 +60,8 @@ mutable struct SmallStrainContinuum
     stress::Array{Array{Float64}}
 end
 
+Base.show(io::IO, z::SmallStrainContinuum) = print(io, "SmallStrainContinuum with $(length(z.weights)) Gauss quadrature points and $(z.props["name"]) material.")
+
 """
     SmallStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, props::Dict{String, Any}, ngp::Int64=2)
 """
@@ -84,9 +91,14 @@ function SmallStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, pro
     SmallStrainContinuum(eledim, mat, elnodes, props, coords, dhdx, weights, hs, strain)
 end
 
-function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64}, Dstate::Array{Float64}, Δt::Float64)
-    ndofs = dofCount(self); 
-    nnodes = length(self.elnodes)
+"""
+    getStiffAndForce(elem::SmallStrainContinuum, state::Array{Float64}, Dstate::Array{Float64}, Δt::Float64)
+
+Returns the internal force term and the stiffness matrix. `state` and `Dstate` are restriction of full state variables to this element. 
+"""
+function getStiffAndForce(elem::SmallStrainContinuum, state::Array{Float64}, Dstate::Array{Float64}, Δt::Float64)
+    ndofs = dofCount(elem); 
+    nnodes = length(elem.elnodes)
     fint = zeros(Float64, ndofs)
     stiff = zeros(Float64, ndofs,ndofs)
     out = Array{Float64}[]
@@ -95,9 +107,9 @@ function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64}, Dst
     # #@show "u ", u, " Du ", Du
     # #@show "v " v, " Dv " Dv
 
-    for k = 1:length(self.weights)
+    for k = 1:length(elem.weights)
         # #@show "Gaussian point ", k
-        g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
+        g1 = elem.dhdx[k][:,1]; g2 = elem.dhdx[k][:,2]
         
         ux = u'*g1; uy = u'*g2; vx = v'*g1; vy = v'*g2
         Dux = Du'*g1; Duy = Du'*g2; Dvx = Dv'*g1; Dvy = Dv'*g2
@@ -113,28 +125,35 @@ function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64}, Dst
         
 
         # #@show E, DE
-        S, dS_dE = getStress(self.mat[k], E, DE, Δt)
+        S, dS_dE = getStress(elem.mat[k], E, DE, Δt)
 
         # @info "gauss ", k, " E ", E, " S ", S
 
-        self.stress[k] = S
+        elem.stress[k] = S
         # @show size(S), size(∂E∂u)
-        fint += ∂E∂u * S * self.weights[k] # 1x8
+        fint += ∂E∂u * S * elem.weights[k] # 1x8
         
-        stiff += (∂E∂u * dS_dE * ∂E∂u')*self.weights[k] # 8x8
+        stiff += (∂E∂u * dS_dE * ∂E∂u')*elem.weights[k] # 8x8
+
     end
+    
     return fint, stiff
 end
 
-function getInternalForce(self::SmallStrainContinuum, state::Array{Float64}, Dstate::Array{Float64}, Δt::Float64)
-    n = dofCount(self)
-    nnodes = length(self.elnodes)
+"""
+    getInternalForce(elem::SmallStrainContinuum, state::Array{Float64}, Dstate::Array{Float64}, Δt::Float64)
+
+Returns the internal force term. `state` and `Dstate` are restriction of full state variables to this element. 
+"""
+function getInternalForce(elem::SmallStrainContinuum, state::Array{Float64}, Dstate::Array{Float64}, Δt::Float64)
+    n = dofCount(elem)
+    nnodes = length(elem.elnodes)
     fint = zeros(Float64,n)
     out = Array{Float64}[]
     u = state[1:nnodes]; v = state[nnodes+1:end]
     Du = Dstate[1:nnodes]; Dv = Dstate[nnodes+1:end]
-    for k = 1:length(self.weights)
-        g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
+    for k = 1:length(elem.weights)
+        g1 = elem.dhdx[k][:,1]; g2 = elem.dhdx[k][:,2]
         
         ux = u'*g1; uy = u'*g2; vx = v'*g1; vy = v'*g2
         Dux = Du'*g1; Duy = Du'*g2; Dvx = Dv'*g1; Dvy = Dv'*g2
@@ -145,57 +164,111 @@ function getInternalForce(self::SmallStrainContinuum, state::Array{Float64}, Dst
         E = [ux; vy; uy+vx]
         DE = [Dux; Dvy; Duy+Dvx]
 
-        S, dS_dE = getStress(self.mat[k], E, DE, Δt)
+        S, dS_dE = getStress(elem.mat[k], E, DE, Δt)
 
-        self.stress[k] = S
+        elem.stress[k] = S
 
-        fint += ∂E∂u * S * self.weights[k] # 1x8
+        fint += ∂E∂u * S * elem.weights[k] # 1x8
     end
     return fint
 end
 
-function getStrain(self::SmallStrainContinuum, state::Array{Float64})
-    n = dofCount(self)
-    nnodes = length(self.elnodes)
+
+@doc raw"""
+    getBodyForce(elem::SmallStrainContinuum, fvalue::Array{Float64,2})
+
+Returns the body force
+$$\int_{e} \mathbf{f}\cdot \delta \mathbf{u} d \mathbf{x}$$
+`fvalue` is a $n_{gauss}\times 2$ matrix. 
+"""
+function getBodyForce(elem::SmallStrainContinuum, fvalue::Array{Float64,2})
+    n = dofCount(elem)
+    fbody = zeros(Float64,n)
+    out = Array{Float64}[]
+    nnodes = length(elem.elnodes)
+    for k = 1:length(elem.weights)
+        fbody[1:nnodes] += elem.hs[k] * fvalue[k,1] * elem.weights[k]
+        fbody[nnodes+1:2*nnodes] += elem.hs[k] * fvalue[k,2] * elem.weights[k]
+    end
+    return fbody
+end
+
+"""
+    getStrain(elem::SmallStrainContinuum, state::Array{Float64})
+
+Returns the strain of this element.  `state` is restricted to this variable. 
+"""
+function getStrain(elem::SmallStrainContinuum, state::Array{Float64})
+    n = dofCount(elem)
+    nnodes = length(elem.elnodes)
     u = state[1:nnodes]; v = state[nnodes+1:end]
-    nGauss = length(self.weights)
+    nGauss = length(elem.weights)
     E = zeros(nGauss, 3)
     w∂E∂u = zeros(nGauss, 2nnodes, 3)
     for k = 1:nGauss
-        g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
+        g1 = elem.dhdx[k][:,1]; g2 = elem.dhdx[k][:,2]
         ux = u'*g1; uy = u'*g2; vx = v'*g1; vy = v'*g2
         # compute  ∂E∂u.T, 8 by 3 array 
         w∂E∂u[k,:,:] = [g1   zeros(nnodes)    g2;
-                zeros(nnodes)    g2   g1;] * self.weights[k]
+                zeros(nnodes)    g2   g1;] * elem.weights[k]
         E[k,:] = [ux; vy; uy+vx]
     end
     return E, w∂E∂u
 end
 
-function getMassMatrix(self::SmallStrainContinuum)
-    ndofs = dofCount(self)
-    nnodes = length(self.elnodes)
+"""
+    getMassMatrix(elem::SmallStrainContinuum)
+
+Returns the mass and lumped (diagonal) mass matrix of this element. 
+"""
+function getMassMatrix(elem::SmallStrainContinuum)
+    ndofs = dofCount(elem)
+    nnodes = length(elem.elnodes)
     mass = zeros(ndofs,ndofs)
-    for k = 1:length(self.weights)
-        rho = self.mat[k].ρ
-        mass += [self.hs[k]*self.hs[k]' zeros(nnodes, nnodes)
-                 zeros(nnodes, nnodes)  self.hs[k]*self.hs[k]']  * rho * self.weights[k]
+    for k = 1:length(elem.weights)
+        rho = elem.mat[k].ρ
+        mass += [elem.hs[k]*elem.hs[k]' zeros(nnodes, nnodes)
+                 zeros(nnodes, nnodes)  elem.hs[k]*elem.hs[k]']  * rho * elem.weights[k]
     end
     lumped = sum(mass, dims=2)
     mass, lumped
 end
 
 
-function getNodes(self::SmallStrainContinuum)
-    return self.elnodes
+""" 
+    getNodes(elem::SmallStrainContinuum)
+
+Alias for `elem.elnodes`
+"""
+function getNodes(elem::SmallStrainContinuum)
+    return elem.elnodes
 end
 
-function dofCount(self::SmallStrainContinuum)
-    return 2length(self.elnodes)
+"""
+    getGaussPoints(elem::SmallStrainContinuum)
+
+Returns the Gauss quadrature nodes of the element
+"""
+function getGaussPoints(elem::SmallStrainContinuum)
+    x = elem.coords'
+    gnodes = zeros(length(elem.weights),2)
+    for k = 1:length(elem.weights)
+        gnodes[k,:] = x * elem.hs[k] 
+    end
+    return gnodes
 end
 
-function commitHistory(self::SmallStrainContinuum)
-    for m in self.mat 
+function dofCount(elem::SmallStrainContinuum)
+    return 2length(elem.elnodes)
+end
+
+"""
+    commitHistory(elem::SmallStrainContinuum)
+
+Updates the historic parameters in the material properties. 
+"""
+function commitHistory(elem::SmallStrainContinuum)
+    for m in elem.mat 
         commitHistory(m)
     end
 end
@@ -207,17 +280,17 @@ end
 # Return: 
 #    strain{ngps_per_elem, nstrain} 
 #    dstrain_dstate_tran{neqs_per_elem, ngps_per_elem*nstrain}  
-function getStrainState(self::SmallStrainContinuum, state::Array{Float64})
-    n = dofCount(self)
-    nnodes = length(self.elnodes)
+function getStrainState(elem::SmallStrainContinuum, state::Array{Float64})
+    n = dofCount(elem)
+    nnodes = length(elem.elnodes)
     u = state[1:nnodes]; v = state[nnodes+1:end]
-    nGauss = length(self.weights)
+    nGauss = length(elem.weights)
     nStrain = 3
     E = zeros(nGauss, nStrain)
     ∂E∂u = zeros(nGauss * nStrain, 2nnodes)
 
     for k = 1:nGauss
-        g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
+        g1 = elem.dhdx[k][:,1]; g2 = elem.dhdx[k][:,2]
         ux = u'*g1; uy = u'*g2; vx = v'*g1; vy = v'*g2
         E[k,:] = [ux; vy; uy+vx]
 
@@ -231,17 +304,17 @@ function getStrainState(self::SmallStrainContinuum, state::Array{Float64})
 end
 
 
-function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64},
+function getStiffAndForce(elem::SmallStrainContinuum, state::Array{Float64},
                           stress::Array{Float64,2}, dstress_dstrain_T::Array{Float64,3})
-    ndofs = dofCount(self); 
-    nnodes = length(self.elnodes)
+    ndofs = dofCount(elem); 
+    nnodes = length(elem.elnodes)
     fint = zeros(Float64, ndofs)
     stiff = zeros(Float64, ndofs,ndofs)
 
     u = state[1:nnodes]; v = state[nnodes+1:2*nnodes]
 
-    for k = 1:length(self.weights)
-        g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
+    for k = 1:length(elem.weights)
+        g1 = elem.dhdx[k][:,1]; g2 = elem.dhdx[k][:,2]
         
         # compute  ∂E∂u.T, 8 by 3 array 
         ∂E∂u = [g1   zeros(nnodes)    g2;
@@ -250,28 +323,28 @@ function getStiffAndForce(self::SmallStrainContinuum, state::Array{Float64},
         S, dS_dE_T = stress[k, :], dstress_dstrain_T[k,:,:]
 
 
-        self.stress[k] = S
+        elem.stress[k] = S
         # @show size(S), size(∂E∂u)
-        fint += ∂E∂u * S * self.weights[k] # 1x8
+        fint += ∂E∂u * S * elem.weights[k] # 1x8
         
-        stiff += (∂E∂u * dS_dE_T' * ∂E∂u')*self.weights[k] # 8x8
+        stiff += (∂E∂u * dS_dE_T' * ∂E∂u')*elem.weights[k] # 8x8
     end
     return fint, stiff
 end
 
-function  getStiffAndDforceDstress(self::SmallStrainContinuum, state::Array{Float64},  
+function  getStiffAndDforceDstress(elem::SmallStrainContinuum, state::Array{Float64},  
     stress::Array{Float64,2}, dstress_dstrain_T::Array{Float64,3})
-    ndofs = dofCount(self); 
-    nnodes = length(self.elnodes)
+    ndofs = dofCount(elem); 
+    nnodes = length(elem.elnodes)
     nStrain = 3
-    nGauss = length(self.weights)
+    nGauss = length(elem.weights)
     stiff = zeros(Float64, ndofs,ndofs)
     dfint_dstress = zeros(Float64,  ndofs, nGauss * nStrain)
 
     u = state[1:nnodes]; v = state[nnodes+1:2*nnodes]
 
-    for k = 1:length(self.weights)
-        g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
+    for k = 1:length(elem.weights)
+        g1 = elem.dhdx[k][:,1]; g2 = elem.dhdx[k][:,2]
 
         
         # compute  ∂E∂u, 3 by 2nnodes array 
@@ -281,32 +354,32 @@ function  getStiffAndDforceDstress(self::SmallStrainContinuum, state::Array{Floa
         # #@show E, DE
         S, dS_dE_T = stress[k, :], dstress_dstrain_T[k,:,:]
 
-        self.stress[k] = S
+        elem.stress[k] = S
 
-        #fint += ∂E∂u * S * self.weights[k] # 1x8
+        #fint += ∂E∂u * S * elem.weights[k] # 1x8
         
-        dfint_dstress[:, (k-1)*nStrain+1:k*nStrain] = ∂E∂u * self.weights[k]
+        dfint_dstress[:, (k-1)*nStrain+1:k*nStrain] = ∂E∂u * elem.weights[k]
 
-        stiff += (∂E∂u * dS_dE_T' * ∂E∂u')*self.weights[k] # 8x8
+        stiff += (∂E∂u * dS_dE_T' * ∂E∂u')*elem.weights[k] # 8x8
     end
     return stiff , dfint_dstress
 end
 
 
 
-function  getForceAndDforceDstress(self::SmallStrainContinuum, state::Array{Float64},  
+function  getForceAndDforceDstress(elem::SmallStrainContinuum, state::Array{Float64},  
     stress::Array{Float64,2})
-    ndofs = dofCount(self); 
-    nnodes = length(self.elnodes)
+    ndofs = dofCount(elem); 
+    nnodes = length(elem.elnodes)
     nStrain = 3
-    nGauss = length(self.weights)
+    nGauss = length(elem.weights)
     fint = zeros(Float64, ndofs)
     dfint_dstress = zeros(Float64,  ndofs, nGauss * nStrain)
 
     u = state[1:nnodes]; v = state[nnodes+1:2*nnodes]
 
-    for k = 1:length(self.weights)
-        g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
+    for k = 1:length(elem.weights)
+        g1 = elem.dhdx[k][:,1]; g2 = elem.dhdx[k][:,2]
 
         # compute  ∂E∂u, 3 by 2nnodes array 
         ∂E∂u = [g1   zeros(nnodes)    g2;
@@ -315,11 +388,11 @@ function  getForceAndDforceDstress(self::SmallStrainContinuum, state::Array{Floa
         # #@show E, DE
         S = stress[k, :]
 
-        self.stress[k] = S
+        elem.stress[k] = S
 
-        fint += ∂E∂u * S * self.weights[k] # 1x8
+        fint += ∂E∂u * S * elem.weights[k] # 1x8
         
-        dfint_dstress[:, (k-1)*nStrain+1:k*nStrain] = ∂E∂u * self.weights[k]
+        dfint_dstress[:, (k-1)*nStrain+1:k*nStrain] = ∂E∂u * elem.weights[k]
 
     end
     return fint , dfint_dstress

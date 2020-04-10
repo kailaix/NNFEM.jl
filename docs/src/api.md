@@ -33,7 +33,7 @@ getExternalForce!
 
 ```@docs
 ExplicitSolverStep
-NewmarkSolverStep
+GeneralizedAlphaSolverStep
 SolverInitial!
 ```
 

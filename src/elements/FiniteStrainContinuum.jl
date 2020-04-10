@@ -52,6 +52,9 @@ mutable struct FiniteStrainContinuum
     stress::Array{Array{Float64}}
 end
 
+Base.show(io::IO, z::FiniteStrainContinuum) = print(io, "FiniteStrainContinuum with $(length(z.weights)) Gauss quadrature points and $(z.props["name"]) material.")
+
+
 """
     FiniteStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, props::Dict{String, Any}, ngp::Int64=2)
 """

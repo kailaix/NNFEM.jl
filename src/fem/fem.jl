@@ -1,6 +1,6 @@
 export Domain,GlobalData,updateStates!,updateDomainStateBoundary!,
     setNeumannBoundary!, setGeometryPoints!, setDirichletBoundary!, getExternalForce!,
-    commitHistory
+    commitHistory, getBodyForce
 
 
 @doc raw"""
@@ -41,22 +41,39 @@ mutable struct GlobalData
 
     EBC_func::Union{Function,Nothing}  #time dependent Dirichlet boundary condition
     FBC_func::Union{Function,Nothing}  #time force load boundary condition
+    Body_func::Union{Function,Nothing}
     
 end
 
+function Base.show(io::IO, z::GlobalData)  
+    yes = "✔️"
+    no = "✘"
+print(io, """GlobalData with $(length(z.state)) active DOFs, time=$(z.time)
+Mass matrix ... $(length(z.M)==0 ? no : yes)
+EBC_func    ... $(isnothing(z.EBC_func) ? no : yes)
+FBC_func    ... $(isnothing(z.FBC_func) ? no : yes)
+Body_func   ... $(isnothing(z.Body_func) ? no : yes)
+""")
+end
 
-"""
+
+
+@doc raw"""
     GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Float64},acce::Array{Float64}, neqs::Int64,
-        EBC_func::Union{Function, Nothing}=nothing, FBC_func::Union{Function, Nothing}=nothing)
+        EBC_func::Union{Function, Nothing}=nothing, FBC_func::Union{Function, Nothing}=nothing,
+        Body_func::Union{Function,Nothing}=nothing)
 """
 function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Float64},acce::Array{Float64}, neqs::Int64,
-        EBC_func::Union{Function, Nothing}=nothing, FBC_func::Union{Function, Nothing}=nothing)
+        EBC_func::Union{Function, Nothing}=nothing, FBC_func::Union{Function, Nothing}=nothing,
+        Body_func::Union{Function,Nothing}=nothing)
     time = 0.0
     M = Float64[]
     Mlumped = Float64[]
     MID = Float64[]
-    GlobalData(state, Dstate, velo, acce, time, M, Mlumped, MID, EBC_func, FBC_func)
+    GlobalData(state, Dstate, velo, acce, time, M, Mlumped, MID, EBC_func, FBC_func, Body_func)
 end
+
+
 
 
 @doc raw"""
@@ -156,6 +173,10 @@ mutable struct Domain
 
 
 end
+
+Base.show(io::IO, z::Domain) = 
+print(io, "Domain with $(length(z.elements)) elements, $(z.nnodes) nodes and $(z.neqs) active equations")
+
 
 function Base.:copy(g::Union{GlobalData, Domain}) 
     names = fieldnames(g)
@@ -389,22 +410,22 @@ end
 
 
 @doc """
-    updateStates!(self::Domain, globaldat::GlobalData)
+    updateStates!(domain::Domain, globaldat::GlobalData)
 
 At each time step, `updateStates!` needs to be called to update the full `state` and `Dstate` in `domain`
 from active ones in `globaldat`.
 """ 
-function updateStates!(self::Domain, globaldat::GlobalData)
+function updateStates!(domain::Domain, globaldat::GlobalData)
     
-    self.state[self.eq_to_dof] = globaldat.state[:]
+    domain.state[domain.eq_to_dof] = globaldat.state[:]
     
-    self.time = globaldat.time
-    push!(self.history["state"], copy(self.state))
-    push!(self.history["acc"], copy(globaldat.acce))
+    domain.time = globaldat.time
+    push!(domain.history["state"], copy(domain.state))
+    push!(domain.history["acc"], copy(globaldat.acce))
 
-    updateDomainStateBoundary!(self, globaldat)
+    updateDomainStateBoundary!(domain, globaldat)
     
-    self.Dstate = self.state[:]
+    domain.Dstate = domain.state[:]
 end
 
 
@@ -465,10 +486,44 @@ function getExternalForce!(self::Domain, globaldat::GlobalData, fext::Union{Miss
     if globaldat.EBC_func != nothing
         MID = globaldat.MID
         _, _, acce = globaldat.EBC_func(globaldat.time)
-
         fext -= MID * acce
     end
     fext
+end
+
+@doc raw"""
+    getBodyForce(domain::Domain, globdat::GlobalData)
+
+Computes the body force vector $F_\mathrm{body}$ of length `neqs`
+- `globdat`: GlobalData
+- `domain`: Domain, finite element domain, for data structure
+- `Δt`:  Float64, current time step size
+"""
+function getBodyForce(domain::Domain, globdat::GlobalData)
+    
+    Fbody = zeros(Float64, domain.neqs)
+    neles = domain.neles
+
+    if isnothing(globdat.Body_func)
+        return Fbody
+    end
+
+    # Loop over the elements in the elementGroup
+    for iele  = 1:neles
+        element = domain.elements[iele]
+  
+        gauss_pts = getGaussPoints(element)
+        fvalue = globdat.Body_func(gauss_pts[:,1], gauss_pts[:,2], globdat.time)
+  
+        fbody = getBodyForce(element, fvalue)
+
+      # Assemble in the global array
+        el_eqns = getEqns(domain, iele)
+        el_eqns_active = (el_eqns .>= 1)
+        Fbody[el_eqns[el_eqns_active]] += fbody[el_eqns_active]
+    end
+  
+    return Fbody
 end
 
 

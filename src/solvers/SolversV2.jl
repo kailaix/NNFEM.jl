@@ -1,4 +1,4 @@
-export ExplicitSolverStep, NewmarkSolverStep
+export ExplicitSolverStep, GeneralizedAlphaSolverStep
 @doc raw"""
     ExplicitSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64)
 
@@ -22,6 +22,7 @@ function ExplicitSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64)
     ∂u  = globdat.velo[:]
     ∂∂u = globdat.acce[:]
 
+    fbody = getBodyForce(domain, globdat)
     fext = getExternalForce!(domain, globdat)
 
     u += Δt*∂u + 0.5*Δt*Δt*∂∂u
@@ -29,7 +30,7 @@ function ExplicitSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64)
     
     domain.state[domain.eq_to_dof] = u[:]
     fint  = assembleInternalForce( globdat, domain, Δt)
-    ∂∂up = globdat.M\(fext - fint)
+    ∂∂up = globdat.M\(fext + fbody - fint)
 
     ∂u += 0.5 * Δt * ∂∂up
 
@@ -48,9 +49,9 @@ end
 
 
 @doc raw"""
-    GeneralizedAlphaSolver(globdat::GlobalData, domain::Domain, Δt::Float64, 
+    GeneralizedAlphaSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64, 
     ρ::Float64 = 0.0, ε::Float64 = 1e-8, ε0::Float64 = 1e-8, maxiterstep::Int64=100, 
-    η::Float64 = 1.0, failsafe::Bool = false)
+    η::Float64 = 1.0, failsafe::Bool = false, verbose::Bool = false)
 
 
 Implicit solver for 
@@ -105,9 +106,9 @@ a_0 = M^{-1}(- f^{int}(u_0) + f^{ext}_0)
 We assume globdat.acce[:] = a_0 and so far initialized to 0
 We also assume the external force is conservative (it does not depend on the current deformation)
 """
-function GeneralizedAlphaSolver(globdat::GlobalData, domain::Domain, Δt::Float64, 
+function GeneralizedAlphaSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64, 
         ρ::Float64 = 0.0, ε::Float64 = 1e-8, ε0::Float64 = 1e-8, maxiterstep::Int64=100, 
-        η::Float64 = 1.0, failsafe::Bool = false)
+        η::Float64 = 1.0, failsafe::Bool = false, verbose::Bool = false)
 
     @assert 0<=ρ<=1
     αm = (2ρ-1)/(1+ρ)
@@ -135,6 +136,7 @@ function GeneralizedAlphaSolver(globdat::GlobalData, domain::Domain, Δt::Float6
     ∂u  = globdat.velo[:] #∂uⁿ
 
     fext = getExternalForce!(domain, globdat)
+    fbody = getBodyForce(domain, globdat)
 
     ∂∂up = ∂∂u[:]
 
@@ -148,7 +150,7 @@ function GeneralizedAlphaSolver(globdat::GlobalData, domain::Domain, Δt::Float6
         
         domain.state[domain.eq_to_dof] = (1 - αf)*(u + Δt*∂u + 0.5 * Δt * Δt * ((1 - β2)*∂∂u + β2*∂∂up)) + αf*u
         fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
-        res = M * (∂∂up *(1 - αm) + αm*∂∂u)  + fint - fext
+        res = M * (∂∂up *(1 - αm) + αm*∂∂u)  + fint - fext - fbody
         if Newtoniterstep==1
             res0 = res 
         end
@@ -158,12 +160,12 @@ function GeneralizedAlphaSolver(globdat::GlobalData, domain::Domain, Δt::Float6
 
         while η * norm(Δ∂∂u) > norm0
             η /= 2.0
-            @info "η", η
+            verbose && (@info "η", η)
         end
         ∂∂up -= η*Δ∂∂u
 
 
-        println("$Newtoniterstep/$maxiterstep, $(norm(res))")
+        verbose && println("$Newtoniterstep/$maxiterstep, $(norm(res))")
         if (norm(res)< ε || norm(res)< ε0*norm(res0) ||Newtoniterstep > maxiterstep)
             if Newtoniterstep > maxiterstep
                 # Newton method does not converge
@@ -183,7 +185,7 @@ function GeneralizedAlphaSolver(globdat::GlobalData, domain::Domain, Δt::Float6
                 @warn("Newton iteration cannot converge $(norm(res))"); Newtonconverge = true
             else
                 Newtonconverge = true
-                printstyled("[Newmark] Newton converged $Newtoniterstep\n", color=:green)
+                verbose && printstyled("[Newmark] Newton converged $Newtoniterstep\n", color=:green)
             end
         end
 
