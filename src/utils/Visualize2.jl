@@ -83,8 +83,9 @@ function visualize_displacement(domain::Domain)
         p.set_data(U0[:,frame], V0[:,frame])
         t.set_text("Snapshot = $frame")
     end
-    animate(update, Int64.(round.(LinRange(1, NT, 20))))
+    out = animate(update, Int64.(round.(LinRange(1, NT, 20))))
     xlabel("x")
     ylabel("y")
     gca().invert_yaxis()
+    out
 end
