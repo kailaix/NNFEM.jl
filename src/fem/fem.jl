@@ -478,17 +478,17 @@ Computes external force vector, including external force load and time-dependent
 !!! info 
     The function needs to be called after [`updateDomainStateBoundary!`](@ref), which computes the external force vector from external force load
 """
-function getExternalForce!(self::Domain, globaldat::GlobalData, fext::Union{Missing,Array{Float64}}=missing)
+function getExternalForce!(domain::Domain, globaldat::GlobalData, fext::Union{Missing,Array{Float64}}=missing)
     if ismissing(fext)
-        fext = zeros(self.neqs)
+        fext = zeros(domain.neqs)
     end
-    fext[:] = self.fext
+    fext[:] = domain.fext
     if globaldat.EBC_func != nothing        
         MID = globaldat.MID
         _, _, acce = globaldat.EBC_func(globaldat.time)
         fext -= MID * acce
     end
-    fbody = getBodyForce(domain, globdat)
+    fbody = getBodyForce(domain, globaldat)
     fext + fbody
 end
 

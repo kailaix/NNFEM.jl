@@ -29,7 +29,7 @@ function ExplicitSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64)
     
     domain.state[domain.eq_to_dof] = u[:]
     fint  = assembleInternalForce( globdat, domain, Δt)
-    ∂∂up = globdat.M\(fext + fbody - fint)
+    ∂∂up = globdat.M\(fext - fint)
 
     ∂u += 0.5 * Δt * ∂∂up
 
@@ -148,7 +148,7 @@ function GeneralizedAlphaSolverStep(globdat::GlobalData, domain::Domain, Δt::Fl
         
         domain.state[domain.eq_to_dof] = (1 - αf)*(u + Δt*∂u + 0.5 * Δt * Δt * ((1 - β2)*∂∂u + β2*∂∂up)) + αf*u
         fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
-        res = M * (∂∂up *(1 - αm) + αm*∂∂u)  + fint - fext - fbody
+        res = M * (∂∂up *(1 - αm) + αm*∂∂u)  + fint - fext
         if Newtoniterstep==1
             res0 = res 
         end
