@@ -7,7 +7,8 @@ using NNFEM
 makedocs(sitename="NNFEM", modules=[NNFEM],
 pages = Any[
     "index.md",
-    "api.md"
+    "Examples"=>["ex_simulation.md"]
+    "api.md",
 ],
 authors = "Kailai Xu and Daniel (Zhengyu) Huang")
 

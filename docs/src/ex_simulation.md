@@ -1,4 +1,4 @@
-# Simulation 
+# Simulaton Code Structure  
 
 We use the Newmark method or the generalized $\alpha$ scheme to solve the dynamics equation numerically. 
 
@@ -14,6 +14,7 @@ For a detailed description of the generalized $\alpha$ scheme, see [this post](h
 NNFEM.jl supports two types of boundary conditions, the Dirichlet boundary condition and the Neumann boundary condition. Both boundary conditions can be time independent or dependent. Read [] for how to specify time dependent boundary conditions and [] for how to specify time independent boundary conditions. 
 
 
+Here is a script for simulation using an explicit solver. 
 ```julia
 NT = 100
 Δt = 1.0e-2
@@ -79,5 +80,6 @@ for i = 1:NT
 @info i 
     global globdat, domain = ExplicitSolverStep(globdat, domain, Δt)
 end
-visualize_displacement(hcat(domain.history["state"]...), domain)
+visualize_displacement(domain)
+visualize_von_mises_stress(domain)
 ```

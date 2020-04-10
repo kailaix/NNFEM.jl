@@ -2,6 +2,11 @@ export visualize_displacement, visualize_von_mises_stress, visualize
 function visualize(domain::Domain)
 end
 
+"""
+    visualize_von_mises_stress(domain::Domain)
+
+Animation of von Mises stress tensors. 
+"""
 function visualize_von_mises_stress(domain::Domain)
     stress = domain.history["stress"]
     S = zeros(length(stress), length(domain.elements))
@@ -45,7 +50,14 @@ function visualize_von_mises_stress(domain::Domain)
     animate(update, Int64.(round.(LinRange(2, size(S,1),20))))
 end
 
-function visualize_displacement(u::Array{Float64, 2}, domain::Domain)
+
+"""
+    visualize_displacement(domain::Domain)
+
+Animation of displacements. 
+"""
+function visualize_displacement(domain::Domain)
+    u = hcat(domain.history["state"]...)
     X0, Y0 = domain.nodes[1:domain.nnodes], domain.nodes[domain.nnodes+1:end]
     NT = size(u, 2)
     U0 = zeros(domain.nnodes, NT)
