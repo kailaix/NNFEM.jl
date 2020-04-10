@@ -22,7 +22,6 @@ function ExplicitSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64)
     ∂u  = globdat.velo[:]
     ∂∂u = globdat.acce[:]
 
-    fbody = getBodyForce(domain, globdat)
     fext = getExternalForce!(domain, globdat)
 
     u += Δt*∂u + 0.5*Δt*Δt*∂∂u
@@ -137,7 +136,6 @@ function GeneralizedAlphaSolverStep(globdat::GlobalData, domain::Domain, Δt::Fl
 
     fext = getExternalForce!(domain, globdat)
     # fext = zeros(domain.neqs)
-    fbody = getBodyForce(domain, globdat)
     ∂∂up = ∂∂u[:]
 
     Newtoniterstep, Newtonconverge = 0, false

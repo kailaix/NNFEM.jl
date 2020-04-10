@@ -488,7 +488,8 @@ function getExternalForce!(self::Domain, globaldat::GlobalData, fext::Union{Miss
         _, _, acce = globaldat.EBC_func(globaldat.time)
         fext -= MID * acce
     end
-    fext
+    fbody = getBodyForce(domain, globdat)
+    fext + fbody
 end
 
 @doc raw"""
