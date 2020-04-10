@@ -12,7 +12,7 @@ m, n =  15, 15
 h = 1/m
 
 # Create a very simple mesh
-elements = SmallStrainContinuum[]
+elements = []
 prop = Dict("name"=> "PlaneStrain", "rho"=> 1.0, "E"=> 2.0, "nu"=> 0.35)
 coords = zeros((m+1)*(n+1), 2)
 for j = 1:n
@@ -27,7 +27,7 @@ for j = 1:n
             (i-1)*h j*h
         ]
         coords[elnodes, :] = nodes
-        push!(elements, SmallStrainContinuum(nodes, elnodes, prop, ngp))
+        push!(elements, FiniteStrainContinuum(nodes, elnodes, prop, ngp))
     end
 end
 
@@ -99,6 +99,7 @@ updateStates!(domain, globdat)
 for i = 1:NT
     @info i 
     global globdat, domain = GeneralizedAlphaSolverStep(globdat, domain, Δt)
+    # global globdat, domain = ExplicitSolverStep(globdat, domain, Δt)
 end
 # # # visualize_displacement(domain)
 # plot(hcat(domain.history["state"]...)[n*(m+1)+1,:])
