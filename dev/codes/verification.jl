@@ -27,7 +27,7 @@ for j = 1:n
             (i-1)*h j*h
         ]
         coords[elnodes, :] = nodes
-        push!(elements, FiniteStrainContinuum(nodes, elnodes, prop, ngp))
+        push!(elements, SmallStrainContinuum(nodes, elnodes, prop, ngp))
     end
 end
 
