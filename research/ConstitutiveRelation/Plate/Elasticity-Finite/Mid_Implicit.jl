@@ -1,6 +1,6 @@
 # default values 
 force_scale = 200.0 
-tid = 400
+tid = 200
 fiber_size = 1
 porder = 2
 if length(ARGS) == 4
@@ -23,11 +23,11 @@ testtype = "PlaneStress"
 prop = Dict("name"=> testtype, "rho"=> 0.0876584, "E"=>0.07180760098, "nu"=>0.4)
 
 
-NT = Int64(1e5)
+NT = 1000
 dt = 2.0e-3  #ms
 T = NT * dt
 
-nxc, nyc = 10,5
+nxc, nyc = 10, 5
 nx, ny =  nxc*fiber_size, nyc*fiber_size
 Lx, Ly = 0.2, 0.1 #m
 nodes, EBC, g, gt, FBC, fext, ft, npoints, node_to_point = BoundaryCondition(tid, nx, ny, porder, Lx, Ly; force_scale=force_scale)
@@ -52,7 +52,7 @@ for j = 1:ny
         end
 
         coords = nodes[elnodes,:]
-        push!(elements,SmallStrainContinuum(coords,elnodes, prop, 3))
+        push!(elements,FiniteStrainContinuum(coords,elnodes, prop, 3))
     end
 end
 
@@ -72,47 +72,21 @@ updateStates!(domain, globdat)
 
 Δt = T/NT
 
-####
-# M = globdat.M
-# _, stiff = assembleStiffAndForce(globdat, domain, 0.0)
-# n = size(stiff)[1]
-# M_d, stiff_d = Array(M), Array(stiff)
-# # H1 q^{n+1} = H0 q^n + b
-# # q = (dot{u}, u)
 
-# H1 = zeros(Float64, 2*n, 2*n)
-# H1[1:n,1:n] = M_d
-# H1[1:n,n+1:2*n] = Δt/2.0*stiff_d
-# H1[n+1:2*n,n+1:2*n] = M_d
+#Midpoint rule solver
+ρ_oo = 1.0
+αm = (2*ρ_oo - 1)/(ρ_oo + 1)
+αf = ρ_oo/(ρ_oo + 1)
 
-# H0 = zeros(Float64, 2*n, 2*n)
-# H0[1:n,1:n] = M_d 
-# H0[n+1:2*n,1:n] = Δt*M_d 
-# H0[1:n,n+1:2*n] = -Δt/2.0*stiff_d
-# H0[n+1:2*n,n+1:2*n] = M_d - Δt^2/2.0*stiff_d
-
-# b = zeros(Float64, 2*n)
-# b[1:n] = Δt*domain.fext
-# b[n+1:2*n] = Δt^2/2.0*domain.fext
-
-# q = zeros(Float64, 2*n)
-# q_err = zeros(Float64, 2*n)
-##
-
-
-#explicit solver
 SolverInitial!(Δt, globdat, domain)
-
 ω = EigenMode(Δt, globdat, domain)
 @show "stable time step is ", 0.8 * 2/ω, " current time step is ", Δt
 for i = 1:NT
     @info i, "/" , NT
-    solver = ExplicitSolver(Δt, globdat, domain)
-    if i%10 == 0
-        ω = EigenMode(Δt, globdat, domain)
-        @show "stable time step is ", 0.8 * 2/ω, " current time step is ", Δt
-    end
+    solver = NewmarkSolver(Δt, globdat, domain, αm, αf, 1e-4, 1e-6, 10)
+
 end
+
 
 # error()
 if !isdir("$(@__DIR__)/Data")
