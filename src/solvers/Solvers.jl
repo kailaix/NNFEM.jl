@@ -1,5 +1,4 @@
-export ExplicitSolverStep,
-    ExplicitSolver, NewmarkSolver, AdaptiveSolver, SolverInitial!, StaticSolver, EigenModeHelper, EigenMode
+export ExplicitSolver, NewmarkSolver, AdaptiveSolver, SolverInitial!, StaticSolver, EigenModeHelper, EigenMode
 
 
 @doc raw"""
@@ -76,50 +75,7 @@ function SolverInitial!(Δt::Int64, globdat::GlobalData, domain::Domain)
 end
 
 
-@doc raw"""
-    ExplicitSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64)
 
-Central Difference explicit solver for `M a + fint(u) = fext(u)`. `a`, `v`, `u` are acceleration, velocity and displacement.
-
-```math
-\begin{align}
-u_{n+1} =& u_n + dtv_n + dt^2/2 a_n \\
-v_{n+1} =& v_n + dt/2(a_n + a_{n+1}) \\
-M a_{n+1} + f^{int}(u_{n+1}) =& f^{ext}_{n+1} \\
-M a_{n+1} =& f^{ext}_{n+1} - f^{int}(u_{n+1}) \\
-\end{align}
-```
-
-!!! info 
-    You need to call SolverInitial! before the first time step, if $f^{ext}_0 \neq 0$. 
-    Otherwise we assume the initial acceleration `globdat.acce[:] = 0`.
-"""
-function ExplicitSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64)
-    u = globdat.state[:]
-    ∂u  = globdat.velo[:]
-    ∂∂u = globdat.acce[:]
-
-    fext = getExternalForce!(domain, globdat)
-
-    u += Δt*∂u + 0.5*Δt*Δt*∂∂u
-    ∂u += 0.5*Δt * ∂∂u
-    
-    domain.state[domain.eq_to_dof] = u[:]
-    fint  = assembleInternalForce( globdat, domain, Δt)
-    ∂∂up = globdat.M\(fext - fint)
-
-    ∂u += 0.5 * Δt * ∂∂up
-
-    globdat.Dstate = globdat.state[:]
-    globdat.state = u[:]
-    globdat.velo = ∂u[:]
-    globdat.acce = ∂∂up[:]
-    globdat.time  += Δt
-    commitHistory(domain)
-    updateStates!(domain, globdat)
-
-    return globdat, domain
-end
 
 function ExplicitSolver(Δt::Int64, globdat::GlobalData, domain::Domain)
 
@@ -157,14 +113,9 @@ function ExplicitSolver(Δt::Int64, globdat::GlobalData, domain::Domain)
     push!(domain.history["fext"], fext)
 end
 
-
-
-
-
-
-
 @doc raw"""
-NewmarkSolver (Generalized-alpha) implicit solver
+    NewmarkSolver (Generalized-alpha) implicit solver
+
 - 'Δt': Float64,  time step size 
 - 'globdat', GlobalData
 - 'domain', Domain

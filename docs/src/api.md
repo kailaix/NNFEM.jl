@@ -32,7 +32,8 @@ getExternalForce!
 ## Solvers
 
 ```@docs
-ExplicitSolver
+ExplicitSolverStep
+NewmarkSolverStep
 SolverInitial!
 ```
 
