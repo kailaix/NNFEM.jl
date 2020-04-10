@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(TFApp)
+set (CMAKE_CXX_STANDARD 11)
+
 
 
 execute_process(COMMAND julia -e "import ADCME; print(ADCME.__STR__)" OUTPUT_VARIABLE JL_OUT)
