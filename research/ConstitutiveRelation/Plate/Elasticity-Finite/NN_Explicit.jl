@@ -16,21 +16,32 @@ if Sys.MACHINE=="x86_64-apple-darwin18.6.0"
 end
 np = pyimport("numpy")
 
-testtype = "PlaneStress"
 
-#ρ = 1153.4 kg/m^3 = 1153.4 kg/m^3 * 0.000076 m = 0.0876584 kg/m^2
-#E = 944836855.0kg/m/s^2 * 0.000076m = 71807.60098kg/s^2 = 0.07180760098kg/ms^2
-prop = Dict("name"=> testtype, "rho"=> 0.0876584, "E"=>0.07180760098, "nu"=>0.4)
 
+stress_scale = 1.0
+strain_scale = 1.0
+nntype = "ae_scaled"
+idx = 1
+H_function = "None"
+include("nnutil.jl")
+
+testtype = "NeuralNetwork2D"
+
+
+s = ae_to_code("Data/NNLearn_$(nntype)_ite10.mat", nntype)
+eval(Meta.parse(s))
+
+prop = Dict("name"=> testtype, "rho"=> 0.0876584, "nn"=>post_nn)
 
 NT = Int64(1e5)
 dt = 2.0e-3  #ms
 T = NT * dt
 
-nxc, nyc = 10,5
-nx, ny =  nxc*fiber_size, nyc*fiber_size
+nx, ny = 10, 5
 Lx, Ly = 0.2, 0.1 #m
-nodes, EBC, g, gt, FBC, fext, ft, npoints, node_to_point = BoundaryCondition(tid, nx, ny, porder, Lx, Ly; force_scale=force_scale)
+nodes, EBC, g, gt, FBC, fext, ft, npoints, node_to_point = BoundaryCondition(tid, nx, ny,porder, Lx, Ly; force_scale=force_scale)
+
+ndofs=2
 elements = []
 for j = 1:ny
     for i = 1:nx 
@@ -50,17 +61,14 @@ for j = 1:ny
         else
             error("polynomial order error, porder= ", porder)
         end
-
         coords = nodes[elnodes,:]
-        push!(elements,SmallStrainContinuum(coords,elnodes, prop, 3))
+        push!(elements,FiniteStrainContinuum(coords,elnodes, prop, 3))
     end
 end
 
 
-ndofs = 2
-domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
-setGeometryPoints!(domain, npoints, node_to_point)
 
+domain = Domain(nodes, elements, ndofs, EBC, g, FBC, fext)
 state = zeros(domain.neqs)
 ∂u = zeros(domain.neqs)
 globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.neqs, gt, ft)
@@ -68,37 +76,9 @@ globdat = GlobalData(state,zeros(domain.neqs), zeros(domain.neqs),∂u, domain.n
 assembleMassMatrix!(globdat, domain)
 updateStates!(domain, globdat)
 
-@show norm(domain.fext)
+
 
 Δt = T/NT
-
-####
-# M = globdat.M
-# _, stiff = assembleStiffAndForce(globdat, domain, 0.0)
-# n = size(stiff)[1]
-# M_d, stiff_d = Array(M), Array(stiff)
-# # H1 q^{n+1} = H0 q^n + b
-# # q = (dot{u}, u)
-
-# H1 = zeros(Float64, 2*n, 2*n)
-# H1[1:n,1:n] = M_d
-# H1[1:n,n+1:2*n] = Δt/2.0*stiff_d
-# H1[n+1:2*n,n+1:2*n] = M_d
-
-# H0 = zeros(Float64, 2*n, 2*n)
-# H0[1:n,1:n] = M_d 
-# H0[n+1:2*n,1:n] = Δt*M_d 
-# H0[1:n,n+1:2*n] = -Δt/2.0*stiff_d
-# H0[n+1:2*n,n+1:2*n] = M_d - Δt^2/2.0*stiff_d
-
-# b = zeros(Float64, 2*n)
-# b[1:n] = Δt*domain.fext
-# b[n+1:2*n] = Δt^2/2.0*domain.fext
-
-# q = zeros(Float64, 2*n)
-# q_err = zeros(Float64, 2*n)
-##
-
 
 #explicit solver
 SolverInitial!(Δt, globdat, domain)
@@ -112,6 +92,7 @@ for i = 1:NT
         ω = EigenMode(Δt, globdat, domain)
         @show "stable time step is ", 0.8 * 2/ω, " current time step is ", Δt
     end
+
 end
 
 # error()
@@ -123,15 +104,15 @@ if !isdir("$(@__DIR__)/Debug")
     mkdir("$(@__DIR__)/Debug")
 end
 
-if !isdir("$(@__DIR__)/Data/order$porder")
-    mkdir("$(@__DIR__)/Data/order$porder")
+if !isdir("$(@__DIR__)/Data/$nntype")
+    mkdir("$(@__DIR__)/Data/$nntype")
 end
-if !isdir("$(@__DIR__)/Debug/order$porder")
-    mkdir("$(@__DIR__)/Debug/order$porder")
+if !isdir("$(@__DIR__)/Debug/$nntype")
+    mkdir("$(@__DIR__)/Debug/$nntype")
 end
 
-write_data("$(@__DIR__)/Data/order$porder/$(tid)_$(force_scale)_$(fiber_size).dat", domain)
-@save "Data/order$porder/domain$(tid)_$(force_scale)_$(fiber_size).jld2" domain
+write_data("$(@__DIR__)/Data/$nntype/$(tid)_$(force_scale)_$(fiber_size).dat", domain)
+@save "Data/$nntype/domain$(tid)_$(force_scale)_$(fiber_size).jld2" domain
 
 close("all")
 frame = NT
@@ -141,7 +122,7 @@ visσ(domain, nx, ny,  domain.history["stress"][frame], domain.history["state"][
 xlabel("X (cm)")
 ylabel("Y (cm)")
 PyPlot.tight_layout()
-savefig("Debug/order$porder/terminal$(tid)_$(force_scale)_$(fiber_size).png")
+savefig("Debug/$nntype/terminal$(tid)_$(force_scale)_$(fiber_size).png")
 
 
 close("all")
@@ -158,4 +139,4 @@ plot(Disp[:, 1]*scales[3], Disp[:, 3]*scales[1], "--y")
 plot(Disp[:, 1]*scales[3], Disp[:, 4]*scales[1], "--b")
 plot(Disp[:, 1]*scales[3], Disp[:, 5]*scales[1], "--g")
 
-savefig("Debug/order$porder/disp$(tid)_$(force_scale)_$(fiber_size).png")
+savefig("Debug/$nntype/disp$(tid)_$(force_scale)_$(fiber_size).png")

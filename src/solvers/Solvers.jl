@@ -56,7 +56,7 @@ end
 
 
 @doc raw"""
-    SolverInitial!(Δt::Int64, globdat::GlobalData, domain::Domain)
+    SolverInitial!(Δt::Float64, globdat::GlobalData, domain::Domain)
 
 You need to call SolverInitial! before the first time step, if $f^{ext}_0 \neq 0$
 
@@ -64,7 +64,7 @@ You need to call SolverInitial! before the first time step, if $f^{ext}_0 \neq 0
 a_0 = M^{-1}(- f^{int}(u_0) + f^{ext}_0)
 ```
 """
-function SolverInitial!(Δt::Int64, globdat::GlobalData, domain::Domain)
+function SolverInitial!(Δt::Float64, globdat::GlobalData, domain::Domain)
     u = globdat.state[:]
     fext = similar(u)
     getExternalForce!(domain, globdat, fext)
@@ -77,7 +77,7 @@ end
 
 
 
-function ExplicitSolver(Δt::Int64, globdat::GlobalData, domain::Domain)
+function ExplicitSolver(Δt::Float64, globdat::GlobalData, domain::Domain)
 
     if length(globdat.M)==0
         error("globalDat is not initialized, 

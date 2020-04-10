@@ -52,7 +52,7 @@ for j = 1:ny
         end
 
         coords = nodes[elnodes,:]
-        push!(elements,SmallStrainContinuum(coords,elnodes, prop, 3))
+        push!(elements,FiniteStrainContinuum(coords,elnodes, prop, 3))
     end
 end
 
