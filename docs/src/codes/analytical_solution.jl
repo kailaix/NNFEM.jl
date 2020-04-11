@@ -2,7 +2,7 @@ using SymPy
 
 x, y, t = @syms x y t
 u1 = (x^2+y^2)*exp(-t)*0.1
-u2 = (x^2+y^2)*exp(-t)*0.1
+u2 = (x^2-y^2)*exp(-t)*0.1
 ε = [
     diff(u1, x)
     diff(u2, y)

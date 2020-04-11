@@ -1,6 +1,6 @@
 export Domain,GlobalData,updateStates!,updateDomainStateBoundary!,
     setNeumannBoundary!, setGeometryPoints!, setDirichletBoundary!, getExternalForce!,
-    commitHistory, getBodyForce
+    commitHistory, getBodyForce, getNGauss
 
 
 @doc raw"""
@@ -549,6 +549,14 @@ end
 """ ->
 function getDofs(self::Domain, iele::Int64)    
     return self.DOF[iele]
+end
+
+function getNGauss(domain::Domain)
+    ng = 0
+    for e in domain.elements
+        ng += length(e.weights)
+    end
+    ng
 end
 
 @doc """

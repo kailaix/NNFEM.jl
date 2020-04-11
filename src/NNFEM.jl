@@ -67,6 +67,7 @@ include("solvers/Solvers.jl")
 include("solvers/SolversV2.jl")
 include("solvers/AdjointSolver.jl")
 include("AD/kernels.jl")
+include("AD/solvers.jl")
 
 
 end

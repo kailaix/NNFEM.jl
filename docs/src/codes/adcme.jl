@@ -13,7 +13,6 @@ NT = 100
 bd = bcnode("all", m, n, h)
 function solver(A, rhs, i)
     A, Abd = fem_impose_Dirichlet_boundary_condition(A, bd, m, n, h)
-    tf.compat.v1.add_to_collection("Abd", Abd[nbd,:])
     rhs = rhs - Abd * abd[i]
     rhs = scatter_update(rhs, [bd; bd .+ (m+1)*(n+1)], abd[i]) 
     # op = tf.print(i, sum(Abd * abd[i]))
@@ -30,9 +29,11 @@ nbd[[bd; bd.+(m+1)*(n+1)]] .= false
 ts = αscheme_time(Δt*ones(NT); ρ=0.0)
 for i = 1:NT 
     t = ts[i]
-    f1 = eval_f_on_gauss_pts((x,y)->(x^2 + y^2)*exp(-t) - 7.90123456790123*exp(-t), m, n, h)
-    f2= eval_f_on_gauss_pts((x,y)->(x^2 + y^2)*exp(-t) - 7.90123456790123*exp(-t), m, n, h)
-    F[i,:] = compute_fem_source_term(f1*0.1, f2*0.1, m, n, h)
+    f1 = (x,y)->0.1*(x^2 + y^2)*exp(-t) - 0.790123456790123*exp(-t)
+    f2 = (x,y)->0.1*(x^2 - y^2)*exp(-t) + 0.493827160493827*exp(-t)
+    f1 = eval_f_on_gauss_pts(f1, m, n, h)
+    f2= eval_f_on_gauss_pts(f2, m, n, h)
+    F[i,:] = compute_fem_source_term(f1, f2, m, n, h)
     
     F[i, [bd; bd.+(m+1)*(n+1)]] .= 0.0
     # @info sum(F[i,:])
@@ -71,12 +72,20 @@ d, u, a = αscheme(M, spzero(2(m+1)*(n+1)), K, F, d0, u0, a0, Δt*ones(NT); exts
 # d, u, a = fast_αscheme(m, n, h, M, spzero(2(m+1)*(n+1)), K, F, d0, u0, a0, Δt, bd, dbd, -dbd, abd )
 
 sess = Session(); init(sess)
-D = run(sess, d)
+d_ = run(sess, d)
 # PoreFlow.visualize_displacement(D, m, n, h)
 
-plot(D[:,(div(n,2)+1)*(m+1)+div(m,2)+1])
+# plot(D[:,(div(n,2)+1)*(m+1)+div(m,2)+1])
 
-ts = LinRange(0,1,NT+1)
-x0 = div(m,2)*h 
-y0 = (div(n,2)+1)*h 
+# ts = LinRange(0,1,NT+1)
+# x0 = div(m,2)*h 
+# y0 = (div(n,2)+1)*h 
+# plot((@. (x0^2+y0^2)*exp(-ts))*0.1,"--")
+
+# d_ = hcat(domain.history["state"]...)'
+i = 3
+j = 4
+plot(d_[:,(j-1)*(m+1)+i])
+x0 = (i-1)*h 
+y0 = (j-1)*h
 plot((@. (x0^2+y0^2)*exp(-ts))*0.1,"--")
