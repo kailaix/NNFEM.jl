@@ -155,7 +155,9 @@ end
         domain::Domain)
 
 Computes the internal force for finite strain continuum
+
 $$\int_\Omega \sigma : \delta \epsilon dx$$
+
 Only active DOFs are considered. 
 """
 function f_compute_internal_force_term(stress::Union{Array{Float64,2}, PyObject}, 

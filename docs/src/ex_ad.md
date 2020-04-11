@@ -2,9 +2,73 @@
 
 ## Data Structure
 
+To facilitate implementing custom operators, we made a shared library for storing all FEM data structures that do not participate in automatic differentiation. In the shared library, there are mainly two data structures
 
+* `domain`
 
+  ```c++
+  class Domain{
+  public:
+      MatrixXd nodes;
+      int neqs;
+      int nnodes;
+      int neles;
+      int ngauss;
+  };
+  ```
 
+  Here 
+
+  * `nodes`: coordinates of all nodes, a $n_v\times 2$ matrix.
+  * `neqs`: number of all active DOFs among $2n_v$ equations.
+  * `nnodes`: number of nodes, $n_v$
+  * `neles`: number of elements $n_e$, which is also the size of `mesh` vector (see below). 
+  * `ngauss`: total number of Gauss points. It is equal to `getNGauss(domain)` in Julia. 
+
+* `continuum`
+
+  ```c++
+  class Continuum{
+  public:
+      VectorXi elnodes;
+      MatrixXd coords;
+      vector<MatrixXd> dhdx;
+      Eigen::VectorXd weights;
+      vector<VectorXd> hs;
+      VectorXi el_eqns_active;
+      VectorXi el_eqns;
+      int nGauss;
+      int nnodes;
+  
+      Continuum(const int *elnodes_, const double *coords_, 
+          const double *dhdx_, const double *weights_, const double *hs_, int n_nodes, int n_gauss,
+          const int *el_eqns_active, int n_active, const int *el_eqns);
+  };
+  ```
+
+  * `elnodes`: the global index of the nodes for this specific element, $n^e_v$.
+
+  * `coords`: coordinates of the element vertices, it is of size $n^e_v\times2$
+
+  * `dhdx`: a list (length = $n_g$) of  $n_v^e\times 2$ matrices, representing the contribution of  $\nabla \phi_i(x)$ to each nodes. $n_g$ is the number of Gauss points.
+
+  * `weights`: weight vector of Gauss quadrature
+
+  * `hs`: a list (length = $n_g$) of length $n_v^e $ vector, representing the contribution of  $\phi_i(x)$ to each nodes. $n_g$ is the number of Gauss points.
+
+  * `el_eqns`: global indices of active DOFs for each vertex and each direction ($u$ and $v$). It has length $2n_v^e$ and each value is within ${0,1,\ldots, 2n_v-1}$. 
+
+  * `el_eqns_active`: local indices of actives DOFs for each vertex and each direction ($u$ and $v$). It has length **at most** $2n_v^e$ and each value is within ${0,1,\ldots, 2n_v^e-1}$. A typical  usuage is 
+
+    ```c++
+    // fint: local internal force
+    // Fint: global internal force
+    for(int i = 0; i< elem.el_eqns_active.size(); i++){
+      int ix = elem.el_eqns_active[i];
+      int eix = elem.el_eqns[ix];
+      Fint[eix] += fint[ix];
+    }
+    ```
 
 ## Examples
 
