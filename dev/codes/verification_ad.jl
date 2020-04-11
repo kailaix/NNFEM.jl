@@ -11,6 +11,16 @@ T = 1.0
 m, n =  15, 15
 h = 1/m
 
+ν = 0.35
+E = 2.0
+H = zeros(3,3)
+H[1,1] = E*(1. -ν)/((1+ν)*(1. -2. *ν));
+H[1,2] = H[1,1]*ν/(1-ν);
+H[2,1] = H[1,2];
+H[2,2] = H[1,1];
+H[3,3] = H[1,1]*0.5*(1. -2. *ν)/(1. -ν);
+
+
 # Create a very simple mesh
 elements = []
 prop = Dict("name"=> "PlaneStrain", "rho"=> 1.0, "E"=> 2.0, "nu"=> 0.35)
@@ -93,22 +103,77 @@ acce =  @. [x^2+y^2;x^2-y^2]* 0.1
 globdat = GlobalData(state, Dstate, velo, acce, domain.neqs, gt, nothing, bt)
 
 assembleMassMatrix!(globdat, domain)
-updateDomainStateBoundary!(domain,globdat)
-updateStates!(domain, globdat)
+# updateDomainStateBoundary!(domain,globdat)
+# updateStates!(domain, globdat)
 
-for i = 1:NT
-    @info i 
-    global globdat, domain = GeneralizedAlphaSolverStep(globdat, domain, Δt)
-    # global globdat, domain = ExplicitSolverStep(globdat, domain, Δt)
+# for i = 1:NT
+#     @info i 
+#     # global globdat, domain = GeneralizedAlphaSolverStep(globdat, domain, Δt)
+#     global globdat, domain = ExplicitSolverStep(globdat, domain, Δt)
+# end
+
+
+# d_ = hcat(domain.history["state"]...)'
+# i = 3
+# j = 4
+# plot(d_[:,(j-1)*(m+1)+i])
+# x0 = (i-1)*h 
+# y0 = (j-1)*h
+# ts = LinRange(0, 1, NT+1)
+# plot((@. (x0^2+y0^2)*exp(-ts))*0.1,"--")
+
+
+# error()
+Hs = zeros(domain.neles*length(domain.elements[1].weights), 3, 3)
+for i = 1:size(Hs,1)
+    Hs[i,:,:] = H 
 end
-# # # visualize_displacement(domain)
-# plot(hcat(domain.history["state"]...)[n*(m+1)+1,:])
-# plot(exp.(-LinRange(0,1,NT+1)))
 
-plot(hcat(domain.history["state"]...)[(div(n,2)+1)*(m+1)+div(m,2)+1,:])
-ts = LinRange(0,1,NT+1)
-x0 = div(m,2)*h 
-y0 = (div(n,2)+1)*h 
-plot((@. (x0^2+y0^2)*exp(-ts))*0.1,"--")
-# visualize_von_mises_stress(domain)
+# ts = GeneralizedAlphaSolverTime(Δt, NT)
+ts = ExplicitSolverTime(Δt, NT)
+
+ubd = zeros(NT,sum(domain.EBC[:].!=0))
+abd = zeros(NT,sum(domain.EBC[:].!=0))
+Fext = zeros(NT,domain.neqs)
+
+idx = findall(domain.EBC[:,1].!=0)
+x = domain.nodes[idx,1]
+y = domain.nodes[idx,2]
+for i = 1:NT
+    t = ts[i]
+    ubd[i,:] = [
+        @. (x^2+y^2)*0.1*exp(-t)
+        @. (x^2-y^2)*0.1*exp(-t)
+    ]
+    abd[i,:] = [
+        @. (x^2+y^2)*0.1*exp(-t)
+        @. (x^2-y^2)*0.1*exp(-t)
+    ]
+    globdat.time = t
+    Fext[i,:] = getBodyForce(domain, globdat)
+end
+
+x = domain.nodes[:,1]
+y = domain.nodes[:,2]
+a0 = @. [x^2+y^2;x^2-y^2]* 0.1
+v0 =  @. -[x^2+y^2;x^2-y^2]* 0.1
+d0 =  @. [x^2+y^2;x^2-y^2]* 0.1
+
+
+H = constant(Hs)
+# d, v, a= GeneralizedAlphaSolver(globdat, domain, d0, v0, a0, Δt, NT, H, Fext, ubd, abd)
+d, v, a= ExplicitSolver(globdat, domain, d0, v0, a0, Δt, NT, H, Fext, ubd, abd)
+
+sess = Session(); init(sess)
+d_, v_, a_ = run(sess, [d,v,a])
+
+for i = 1:5
+i = rand(1:m+1)
+j = rand(1:n+1)
+plot(d_[:,(j-1)*(m+1)+i], color = "C$i")
+x0 = (i-1)*h 
+y0 = (j-1)*h
+plot((@. (x0^2+y0^2)*exp(-ts))*0.1,"--", color="C$i")
+end
+
 
