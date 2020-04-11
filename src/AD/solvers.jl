@@ -301,3 +301,88 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
     sp = (NT+1, 2domain.nnodes)
     set_shape(d, sp), set_shape(v, sp), set_shape(a, sp)
 end
+
+@doc raw"""
+    ExplicitSolver(globdat::GlobalData, domain::Domain,
+        d0::Union{Array{Float64, 1}, PyObject}, 
+        v0::Union{Array{Float64, 1}, PyObject}, 
+        a0::Union{Array{Float64, 1}, PyObject}, 
+        σ0::Union{Array{Float64, 1}, PyObject}, 
+        ε0::Union{Array{Float64, 1}, PyObject}, 
+        Δt::Float64, NT::Int64, 
+        nn::Function,
+        Fext::Union{Array{Float64, 2}, PyObject, Missing}=missing,
+        ubd::Union{Array{Float64, 2}, PyObject, Missing}=missing,
+        abd::Union{Array{Float64, 2}, PyObject, Missing}=missing)
+
+Similar to [`ExplicitSolver`](@ref); however, the constitutive relation has the form 
+
+$$\sigma^{n+1} = \mathrm{nn}(\epsilon^{n+1}, \epsilon^n, \sigma^n)$$
+
+Here the strain and stress are $n \times 3$ tensors. $n$ is the total number of Gaussian points and can be 
+obtained via `getNGauss(domain)`.
+"""
+function ExplicitSolver(globdat::GlobalData, domain::Domain,
+    d0::Union{Array{Float64, 1}, PyObject}, 
+    v0::Union{Array{Float64, 1}, PyObject}, 
+    a0::Union{Array{Float64, 1}, PyObject}, 
+    σ0::Union{Array{Float64, 1}, PyObject}, 
+    ε0::Union{Array{Float64, 1}, PyObject}, 
+    Δt::Float64, NT::Int64, 
+    nn::Function,
+    Fext::Union{Array{Float64, 2}, PyObject, Missing}=missing,
+    ubd::Union{Array{Float64, 2}, PyObject, Missing}=missing,
+    abd::Union{Array{Float64, 2}, PyObject, Missing}=missing)
+
+    init_nnfem(domain)
+    M = factorize(constant(globdat.M))
+    bddof = findall(domain.EBC[:] .== -2)
+
+    Fext, ubd, abd, H = convert_to_tensor([Fext, ubd, abd, H], [Float64, Float64, Float64, Float64])
+
+    function condition(i, tas...)
+        i<=NT
+    end
+    function body(i, tas...)
+        d_arr, v_arr, a_arr, σ_arr, ε_arr = tas
+        u, ∂u, ∂∂u = read(d_arr, i), read(v_arr, i), read(a_arr, i)
+        σc, εc = read(σ_arr, i), read(ε_arr, i)
+
+        u +=  Δt*∂u + 0.5*Δt*Δt*∂∂u
+        ∂u += 0.5*Δt * ∂∂u
+
+        if !ismissing(abd)
+            u = scatter_update(u, bddof, ubd[i])
+        end
+
+        ε = s_eval_strain_on_gauss_points(u, domain)
+        σ = nn(ε, εc, σc)
+        fint  = s_compute_internal_force_term(σ, domain)
+        if ismissing(Fext)
+            fext = zeros(length(fint))
+        else
+            fext = Fext[i]
+        end
+        ∂∂up = vector(findall(domain.dof_to_eq), M\(fext - fint), domain.nnodes*2)
+        
+        if !ismissing(abd)
+            ∂∂up = scatter_update(∂∂up, bddof, abd[i])
+        end
+
+        ∂u += 0.5 * Δt * ∂∂up
+
+        i+1, write(d_arr, i+1, u), write(v_arr, i+1, ∂u), write(a_arr, i+1, ∂∂u), write(σ_arr, i+1, σ), write(ε_arr, i+1, ε)
+    end
+
+    arr_d = TensorArray(NT+1); arr_d = write(arr_d, 1, d0)
+    arr_v = TensorArray(NT+1); arr_v = write(arr_v, 1, v0)
+    arr_a = TensorArray(NT+1); arr_a = write(arr_a, 1, a0)
+    arr_σ = TensorArray(NT+1); arr_σ = write(arr_a, 1, σ0)
+    arr_ε = TensorArray(NT+1); arr_ε = write(arr_a, 1, ε0)
+    i = constant(1, dtype=Int32)
+    tas = [arr_d, arr_v, arr_a, arr_σ, arr_ε]
+    _, d, v, a, σ, ε = while_loop(condition, body, [i, tas...])
+    d, v, a, σ, ε = stack(d), stack(v), stack(a), σ, ε
+    sp = (NT+1, 2domain.nnodes)
+    set_shape(d, sp), set_shape(v, sp), set_shape(a, sp), set_shape(σ, (NT+1, getNGauss(domain))), set_shape(ε, (NT+1, getNGauss(domain)))
+end
