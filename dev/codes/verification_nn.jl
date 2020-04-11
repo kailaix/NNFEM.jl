@@ -2,6 +2,7 @@ using Revise
 using NNFEM
 using PyPlot
 using MAT
+using ADCME
 
 
 NT = 100
@@ -172,29 +173,31 @@ function nn_law(ε)
     ae(ε, [20,20,20,3])
 end
 # d, v, a= GeneralizedAlphaSolver(globdat, domain, d0, v0, a0, Δt, NT, H, Fext, ubd, abd)
-d, v, a= ExplicitSolver(globdat, domain, d0, v0, a0, Δt, NT, nn_law, Fext, ubd, abd)
+# d, v, a= ExplicitSolver(globdat, domain, d0, v0, a0, Δt, NT, nn_law, Fext, ubd, abd)
+d, v, a= ExplicitSolver(globdat, domain, d0, v0, a0, Δt, NT, nn_law, Fext, ubd, abd; strain_type="finite")
 
 
-# ...1... use `linear_law` for 8th argument in the last line to generate data
-sess = Session(); init(sess)
-d_, v_, a_ = run(sess, [d,v,a])
-matwrite("data.mat", Dict("d"=>d_, "v"=>v_, "a"=>a_))
-using Random; Random.seed!(233)
-k = 0
-for i = 1:5
-    i = rand(2:m)
-    j = rand(2:n)
-    x0 = (i-1)*h 
-    y0 = (j-1)*h
-    global k += 1
-    plot(d_[:,(j-1)*(m+1)+i], "o", markersize=2,color = "C$k")
-    plot((@. (x0^2+y0^2)*exp(-ts))*0.1,"-", color="C$k")
 
-    global k += 1
-    plot(d_[:,(j-1)*(m+1)+i+(m+1)*(n+1)], "o", markersize=2,color = "C$i")
-    plot((@. (x0^2-y0^2)*exp(-ts))*0.1,"-", color="C$i")
-end
-error()
+# # ...1... use `linear_law` for 8th argument in the last line to generate data
+# sess = Session(); init(sess)
+# d_, v_, a_ = run(sess, [d,v,a])
+# matwrite("data.mat", Dict("d"=>d_, "v"=>v_, "a"=>a_))
+# using Random; Random.seed!(233)
+# k = 0
+# for i = 1:5
+#     i = rand(2:m)
+#     j = rand(2:n)
+#     x0 = (i-1)*h 
+#     y0 = (j-1)*h
+#     global k += 1
+#     plot(d_[:,(j-1)*(m+1)+i], "o", markersize=2,color = "C$k")
+#     plot((@. (x0^2+y0^2)*exp(-ts))*0.1,"-", color="C$k")
+
+#     global k += 1
+#     plot(d_[:,(j-1)*(m+1)+i+(m+1)*(n+1)], "o", markersize=2,color = "C$i")
+#     plot((@. (x0^2-y0^2)*exp(-ts))*0.1,"-", color="C$i")
+# end
+# error()
 
 
 # ...2...comment the last block and replace `linear_law` with `nn_law` to train a neural network
