@@ -29,6 +29,8 @@ if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 5.0 OR CMAKE_CXX_COMPILER_VERSION
   set(CMAKE_CXX_FLAGS "-D_GLIBCXX_USE_CXX11_ABI=${TF_ABI} ${CMAKE_CXX_FLAGS}")
 endif()
 
+# set(CMAKE_BUILD_TYPE Debug)
+
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
@@ -36,9 +38,12 @@ include_directories(${TF_INC} ${HEADERS} ${EIGEN_INC} ${CMAKE_SOURCE_DIR}/DataSt
 link_directories(${TF_LIB} ${CMAKE_SOURCE_DIR}/DataStructure/build)
 
 set(LIBDIR_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp DataStructure 
-  SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint FinitContinuumStrain)
+  SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint FinitContinuumStrain FiniteContinuumFint)
 set(LIB_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp data 
-  SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint FinitContinuumStrain)
+  SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint FinitContinuumStrain FiniteContinuumFint)
+
+include_directories(${LIBDIR}/Adept-2/include)
+link_directories(${LIBDIR}/Adept-2/adept/.libs)
 
 # Copy and paste the following lines (no modification is required)
 list(LENGTH "LIBDIR_NAME" LIBLENGTH)
@@ -59,5 +64,7 @@ target_link_libraries(SmallContinuumStrain data)
 target_link_libraries(SmallContinuumStiffness data)
 target_link_libraries(SmallContinuumFint data)
 target_link_libraries(FinitContinuumStrain data)
+target_link_libraries(FiniteContinuumFint data adept)
+
 
 

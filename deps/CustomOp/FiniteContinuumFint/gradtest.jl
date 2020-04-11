@@ -1,32 +1,26 @@
-using Revise
-using NNFEM
-using PoreFlow
 using ADCME
 using PyCall
 using LinearAlgebra
 using PyPlot
 using Random
+using NNFEM
 Random.seed!(233)
 
-function small_continuum_fint(stress)
-    small_continuum_fint_ = load_op_and_grad("./build/libSmallContinuumFint","small_continuum_fint")
-    stress = convert_to_tensor([stress], [Float64]); stress = stress[1]
-    small_continuum_fint_(stress)
+function finite_continuum_fint(stress,state)
+    finite_continuum_fint_ = load_op_and_grad("./build/libFiniteContinuumFint","finite_continuum_fint")
+    stress,state = convert_to_tensor([stress,state], [Float64,Float64])
+    finite_continuum_fint_(stress,state)
 end
 
-m = 10
-n = 10
-h = 0.1
-domain = example_domain(m, n, h)
+domain = example_domain(1,1,1.)
 init_nnfem(domain)
-ngauss = domain.neles * length(domain.elements[1].weights)
 
-stress = rand(ngauss, 3)
+state = rand(domain.nnodes*2)
+stress = rand(getNGauss(domain), 3)
 # TODO: specify your input parameters
-u = small_continuum_fint(stress)
+u = finite_continuum_fint(stress,state)
 sess = Session(); init(sess)
-s = compute_strain_energy_term(stress, m, n, h)
-@show maximum(abs.(run(sess, u) - s))
+@show run(sess, u)
 
 # uncomment it for testing gradients
 # error() 
@@ -36,14 +30,21 @@ s = compute_strain_energy_term(stress, m, n, h)
 #       in the case of `multiple=true`, you also need to specify which component you are testings
 # gradient check -- v
 function scalar_function(m)
-    return sum(small_continuum_fint(m)^2)
+    # return sum(finite_continuum_fint(m, state)^2)
+    return sum(finite_continuum_fint(stress,m)^2)
 end
 
 # TODO: change `m_` and `v_` to appropriate values
-m_ = constant(rand(ngauss, 3))
-v_ = rand(ngauss, 3)
+# m_ = constant(rand(getNGauss(domain), 3))
+# v_ = rand(getNGauss(domain), 3)
+
+m_ = constant(rand(domain.nnodes*2))
+v_ = rand(domain.nnodes*2)
 y_ = scalar_function(m_)
 dy_ = gradients(y_, m_)
+
+run(sess, dy_)
+# error()
 ms_ = Array{Any}(undef, 5)
 ys_ = Array{Any}(undef, 5)
 s_ = Array{Any}(undef, 5)

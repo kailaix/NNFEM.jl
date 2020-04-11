@@ -54,7 +54,7 @@ Pages   = ["io.jl", "matrix.jl", "shapeFunctions", "Testsuit.jl", "Visualize.jl"
 ```@docs
 init_nnfem
 s_eval_strain_on_gauss_points
-s_compute_stiffness_matrix,
+s_compute_stiffness_matrix
 s_compute_internal_force_term
 f_eval_strain_on_gauss_points
 f_compute_internal_force_term
