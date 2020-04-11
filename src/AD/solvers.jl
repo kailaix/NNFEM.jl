@@ -256,7 +256,7 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
     M = factorize(constant(globdat.M))
     bddof = findall(domain.EBC[:] .== -2)
 
-    Fext, ubd, abd, H = convert_to_tensor([Fext, ubd, abd, H], [Float64, Float64, Float64, Float64])
+    Fext, ubd, abd = convert_to_tensor([Fext, ubd, abd], [Float64, Float64, Float64])
 
     function condition(i, tas...)
         i<=NT
