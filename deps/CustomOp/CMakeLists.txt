@@ -32,11 +32,11 @@ endif()
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
-include_directories(${TF_INC} ${HEADERS} ${EIGEN_INC})
-link_directories(${TF_LIB})
+include_directories(${TF_INC} ${HEADERS} ${EIGEN_INC} ${CMAKE_SOURCE_DIR}/DataStructure)
+link_directories(${TF_LIB} ${CMAKE_SOURCE_DIR}/DataStructure/build)
 
-set(LIBDIR_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp)
-set(LIB_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp)
+set(LIBDIR_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp DataStructure SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint)
+set(LIB_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp data SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint)
 
 # Copy and paste the following lines (no modification is required)
 list(LENGTH "LIBDIR_NAME" LIBLENGTH)
@@ -52,3 +52,8 @@ foreach(IDX RANGE 0 ${LIBLENGTH})
   set_target_properties(${_LIB_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/${_LIB_DIR}/build)
   target_link_libraries(${_LIB_NAME} ${TF_LIB_FILE})
 endforeach(IDX)
+
+target_link_libraries(SmallContinuumStrain data)
+target_link_libraries(SmallContinuumStiffness data)
+target_link_libraries(SmallContinuumFint data)
+

@@ -1,4 +1,4 @@
-export assembleStiffAndForce,assembleMassMatrix!,assembleInternalForce
+export assembleStiffAndForce,assembleMassMatrix!,assembleInternalForce, getEqns
 
 @doc raw"""
     assembleInternalForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)

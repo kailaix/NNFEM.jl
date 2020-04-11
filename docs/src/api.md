@@ -49,3 +49,11 @@ Pages   = ["io.jl", "matrix.jl", "shapeFunctions", "Testsuit.jl", "Visualize.jl"
 ```@doc
 
 ```
+
+## Automatic Differentiation
+```@doc
+init_nnfem
+s_eval_strain_on_gauss_points
+s_compute_stiffness_matrix,
+s_compute_internal_force_term
+```
