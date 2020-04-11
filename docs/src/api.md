@@ -1,5 +1,11 @@
 # API Reference
 
+## Core Data Structure
+```@docs
+Domain
+GlobalData
+```
+
 ## Elements
 
 ```@autodocs
@@ -16,11 +22,18 @@ Pages   = ["PlaneStress.jl", "PlaneStrain.jl", "PlaneStressIncompressibleRivlinS
             "PlaneStressPlasticity"]
 ```
 
-## Assembly
+## Matrix and Vector Assembly
+```@docs
+assembleInternalForce
+assembleStiffAndForce
+assembleMassMatrix!
+```
+
+## State Updates
+
+This set of functions include boundary condition updates, data transfer, and other bookkeeping utilities.
 
 ```@docs
-Domain
-GlobalData
 commitHistory
 setDirichletBoundary!
 setNeumannBoundary!
@@ -43,11 +56,6 @@ SolverInitial!
 ```@autodocs
 Modules = [NNFEM]
 Pages   = ["io.jl", "matrix.jl", "shapeFunctions", "Testsuit.jl", "Visualize.jl", "linearConstitutiveLaw.jl"]
-```
-
-## Internals
-```@doc
-
 ```
 
 ## Automatic Differentiation

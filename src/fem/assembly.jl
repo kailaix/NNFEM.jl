@@ -182,6 +182,8 @@ Here M is a `neqns×neqns` matrix, and $M_{ID}$ is a `neqns×nd` matrix. $M_{\ma
 
 - `globdat`: `GlobalData`
 - `domain`: `Domain`, finite element domain, for data structure
+
+![](./assets/massmatrix.png)
 """
 function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
     Mlumped = zeros(Float64, domain.neqs)

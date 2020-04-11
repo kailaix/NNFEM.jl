@@ -89,12 +89,22 @@ Date structure for the computatational domain.
 - `state`: a matrix of size `nnodes×ndims`. **Current** displacement of all nodal freedoms, `state[1:nnodes]` are for the first direction.
 - `Dstate`: `nnodes×ndims`. **Previous** displacement of all nodal freedoms, `Dstate[1:nnodes]` are for the first direction.
 - `LM`:  `Int64[neles][ndims]`, LM(e,d) is the global equation number (active freedom number) of element e's d th freedom, 
-         -1 means fixed (time-independent) Dirichlet
-         -2 means time-dependent Dirichlet
+         
+         ∘ -1 means fixed (time-independent) Dirichlet
+
+         ∘ -2 means time-dependent Dirichlet
+
+         ∘ >0 means the global equation number
+
 - `DOF`: a matrix of size `neles×ndims`, DOF(e,d) is the global freedom number of element e's d th freedom
 - `ID`:  a matrix of size `nnodes×ndims`. `ID(n,d)` is the equation number (active freedom number) of node n's $d$-th freedom, 
-         -1 means fixed (time-independent) Dirichlet
-         -2 means time-dependent Dirichlet
+         
+         ∘ -1 means fixed (time-independent) Dirichlet
+
+         ∘ -2 means time-dependent Dirichlet
+
+         ∘ >0 means the global equation number
+
 - `neqs`:  Int64,  number of equations, a.k.a., active freedoms
 - `eq_to_dof`:  an integer vector of length `neqs`, map from to equation number (active freedom number) to the freedom number (Int64[1:nnodes] are for the first direction) 
 - `dof_to_eq`:  a bolean array of size `nnodes×ndims`, map from freedom number(Int64[1:nnodes] are for the first direction) to booleans (active freedoms(equation number) are true)
