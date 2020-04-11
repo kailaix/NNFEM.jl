@@ -35,8 +35,10 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 include_directories(${TF_INC} ${HEADERS} ${EIGEN_INC} ${CMAKE_SOURCE_DIR}/DataStructure)
 link_directories(${TF_LIB} ${CMAKE_SOURCE_DIR}/DataStructure/build)
 
-set(LIBDIR_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp DataStructure SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint)
-set(LIB_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp data SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint)
+set(LIBDIR_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp DataStructure 
+  SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint FinitContinuumStrain)
+set(LIB_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp data 
+  SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint FinitContinuumStrain)
 
 # Copy and paste the following lines (no modification is required)
 list(LENGTH "LIBDIR_NAME" LIBLENGTH)
@@ -56,4 +58,6 @@ endforeach(IDX)
 target_link_libraries(SmallContinuumStrain data)
 target_link_libraries(SmallContinuumStiffness data)
 target_link_libraries(SmallContinuumFint data)
+target_link_libraries(FinitContinuumStrain data)
+
 
