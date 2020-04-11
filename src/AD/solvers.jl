@@ -47,7 +47,8 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
     H::Union{Array{Float64, 3}, Array{Float64, 2}, PyObject},
     Fext::Union{Array{Float64, 2}, PyObject, Missing}=missing,
     ubd::Union{Array{Float64, 2}, PyObject, Missing}=missing,
-    abd::Union{Array{Float64, 2}, PyObject, Missing}=missing; strain_type::String = "small")
+    abd::Union{Array{Float64, 2}, PyObject, Missing}=missing; 
+    strain_type::String = "small")
 
     if !(strain_type in ["small", "finite"])
         error("Only small strain or finite strain are supported. Unknown strain type $strain_type")

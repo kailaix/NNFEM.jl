@@ -1,6 +1,7 @@
 using Revise
 using NNFEM
 using PyPlot
+using ADCME
 
 
 
@@ -37,7 +38,7 @@ for j = 1:n
             (i-1)*h j*h
         ]
         coords[elnodes, :] = nodes
-        push!(elements, SmallStrainContinuum(nodes, elnodes, prop, ngp))
+        push!(elements, FiniteStrainContinuum(nodes, elnodes, prop, ngp))
     end
 end
 
@@ -162,7 +163,7 @@ d0 =  @. [x^2+y^2;x^2-y^2]* 0.1
 
 H = constant(Hs)
 # d, v, a= GeneralizedAlphaSolver(globdat, domain, d0, v0, a0, Δt, NT, H, Fext, ubd, abd)
-d, v, a= ExplicitSolver(globdat, domain, d0, v0, a0, Δt, NT, H, Fext, ubd, abd)
+d, v, a= ExplicitSolver(globdat, domain, d0, v0, a0, Δt, NT, H, Fext, ubd, abd; strain_type="small")
 
 sess = Session(); init(sess)
 d_, v_, a_ = run(sess, [d,v,a])

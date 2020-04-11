@@ -98,17 +98,20 @@ updateStates!(domain, globdat)
 
 for i = 1:NT
     @info i 
-    global globdat, domain = GeneralizedAlphaSolverStep(globdat, domain, Δt)
-    # global globdat, domain = ExplicitSolverStep(globdat, domain, Δt)
+    # global globdat, domain = GeneralizedAlphaSolverStep(globdat, domain, Δt)
+    global globdat, domain = ExplicitSolverStep(globdat, domain, Δt)
 end
 # # # visualize_displacement(domain)
 # plot(hcat(domain.history["state"]...)[n*(m+1)+1,:])
 # plot(exp.(-LinRange(0,1,NT+1)))
 
-plot(hcat(domain.history["state"]...)[(div(n,2)+1)*(m+1)+div(m,2)+1,:])
-ts = LinRange(0,1,NT+1)
-x0 = div(m,2)*h 
-y0 = (div(n,2)+1)*h 
-plot((@. (x0^2+y0^2)*exp(-ts))*0.1,"--")
-# visualize_von_mises_stress(domain)
-
+d = hcat(domain.history["state"]...)'
+for i = 1:5
+    i = rand(1:m+1)
+    j = rand(1:n+1)
+    plot(d_[:,(j-1)*(m+1)+i], color = "C$i")
+    x0 = (i-1)*h 
+    y0 = (j-1)*h
+    plot((@. (x0^2+y0^2)*exp(-ts))*0.1,"--", color="C$i")
+end
+    

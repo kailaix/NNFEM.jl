@@ -126,7 +126,7 @@ end
 Computes the strain on Gauss points in the finite strain case. `state` is the full displacement vector. 
 """
 function f_eval_strain_on_gauss_points(state::Union{Array{Float64,1}, PyObject}, domain::Domain)
-    finit_continuum_strain_ = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/FiniteContinuumStrain//build/libFinitContinuumStrain","finit_continuum_strain")
+    finit_continuum_strain_ = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/FinitContinuumStrain//build/libFinitContinuumStrain","finit_continuum_strain")
     state = convert_to_tensor([state], [Float64]); state = state[1]
     ep = finit_continuum_strain_(state)
     set_shape(ep, (getNGauss(domain), 3))
