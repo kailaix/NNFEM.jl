@@ -483,7 +483,7 @@ end
 @doc """
     getExternalForce!(self::Domain, globaldat::GlobalData, fext::Union{Missing,Array{Float64}}=missing)
 
-Computes external force vector, including external force load and time-dependent Dirichlet boundary conditions.
+Computes external force vector, including both external force load and time-dependent Dirichlet boundary conditions.
     
 !!! info 
     The function needs to be called after [`updateDomainStateBoundary!`](@ref), which computes the external force vector from external force load
@@ -561,6 +561,11 @@ function getDofs(self::Domain, iele::Int64)
     return self.DOF[iele]
 end
 
+@doc """
+    getNGauss(domain::Domain)
+
+Gets the total number of Gauss quadrature points. 
+"""
 function getNGauss(domain::Domain)
     ng = 0
     for e in domain.elements
@@ -570,14 +575,12 @@ function getNGauss(domain::Domain)
 end
 
 @doc """
-    Get the equation numbers(active freedom numbers) of the element
-    - 'self': Domain
-    - 'iele': Int64, element number
+    getEqns(domain::Domain, iele::Int64)
 
-    Return: Int64[], the equation numbers(active freedom numbers) of the element (ordering in local element ordering)
-
+Gets the equation numbers(active freedom numbers) of the element. 
+This excludes both the time-dependent and time-independent Dirichlet boundary conditions. 
 """ ->
-function getEqns(self::Domain, iele::Int64)
+function getEqns(domain::Domain, iele::Int64)
     return self.LM[iele]
 end
 

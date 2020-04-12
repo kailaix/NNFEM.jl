@@ -6,6 +6,12 @@ Domain
 GlobalData
 ```
 
+## Core Data Structure Utilities
+```@docs
+getEqns
+getNGauss
+```
+
 ## Elements
 
 ```@autodocs
@@ -27,6 +33,8 @@ Pages   = ["PlaneStress.jl", "PlaneStrain.jl", "PlaneStressIncompressibleRivlinS
 assembleInternalForce
 assembleStiffAndForce
 assembleMassMatrix!
+getBodyForce
+getExternalForce!
 ```
 
 ## State Updates
@@ -39,7 +47,6 @@ setDirichletBoundary!
 setNeumannBoundary!
 updateStates!
 updateDomainStateBoundary!
-getExternalForce!
 ```
 
 ## Solvers
