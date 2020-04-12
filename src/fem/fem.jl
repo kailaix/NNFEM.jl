@@ -104,12 +104,22 @@ Date structure for the computatational domain.
 - `state`: a matrix of size `nnodes×ndims`. **Current** displacement of all nodal freedoms, `state[1:nnodes]` are for the first direction.
 - `Dstate`: `nnodes×ndims`. **Previous** displacement of all nodal freedoms, `Dstate[1:nnodes]` are for the first direction.
 - `LM`:  `Int64[neles][ndims]`, LM(e,d) is the global equation number (active freedom number) of element e's d th freedom, 
-         -1 means fixed (time-independent) Dirichlet
-         -2 means time-dependent Dirichlet
+         
+         ∘ -1 means fixed (time-independent) Dirichlet
+
+         ∘ -2 means time-dependent Dirichlet
+
+         ∘ >0 means the global equation number
+
 - `DOF`: a matrix of size `neles×ndims`, DOF(e,d) is the global freedom number of element e's d th freedom
 - `ID`:  a matrix of size `nnodes×ndims`. `ID(n,d)` is the equation number (active freedom number) of node n's $d$-th freedom, 
-         -1 means fixed (time-independent) Dirichlet
-         -2 means time-dependent Dirichlet
+         
+         ∘ -1 means fixed (time-independent) Dirichlet
+
+         ∘ -2 means time-dependent Dirichlet
+
+         ∘ >0 means the global equation number
+
 - `neqs`:  Int64,  number of equations, a.k.a., active freedoms
 - `eq_to_dof`:  an integer vector of length `neqs`, map from to equation number (active freedom number) to the freedom number (Int64[1:nnodes] are for the first direction) 
 - `dof_to_eq`:  a bolean array of size `nnodes×ndims`, map from freedom number(Int64[1:nnodes] are for the first direction) to booleans (active freedoms(equation number) are true)
@@ -494,7 +504,7 @@ end
 @doc """
     getExternalForce!(self::Domain, globaldat::GlobalData, fext::Union{Missing,Array{Float64}}=missing)
 
-Computes external force vector, including external force load and time-dependent Dirichlet boundary conditions.
+Computes external force vector, including both external force load and time-dependent Dirichlet boundary conditions.
     
 !!! info 
     The function needs to be called after [`updateDomainStateBoundary!`](@ref), which computes the external force vector from external force load
@@ -612,6 +622,11 @@ function getDofs(self::Domain, iele::Int64)
     return self.DOF[iele]
 end
 
+@doc """
+    getNGauss(domain::Domain)
+
+Gets the total number of Gauss quadrature points. 
+"""
 function getNGauss(domain::Domain)
     ng = 0
     for e in domain.elements
@@ -621,14 +636,12 @@ function getNGauss(domain::Domain)
 end
 
 @doc """
-    Get the equation numbers(active freedom numbers) of the element
-    - 'self': Domain
-    - 'iele': Int64, element number
+    getEqns(domain::Domain, iele::Int64)
 
-    Return: Int64[], the equation numbers(active freedom numbers) of the element (ordering in local element ordering)
-
+Gets the equation numbers(active freedom numbers) of the element. 
+This excludes both the time-dependent and time-independent Dirichlet boundary conditions. 
 """ ->
-function getEqns(self::Domain, iele::Int64)
+function getEqns(domain::Domain, iele::Int64)
     return self.LM[iele]
 end
 

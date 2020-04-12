@@ -23,7 +23,7 @@ end
         H::Union{Array{Float64, 3}, Array{Float64, 2}, PyObject},
         Fext::Union{Array{Float64, 2}, PyObject, Missing}=missing,
         ubd::Union{Array{Float64, 2}, PyObject, Missing}=missing,
-        abd::Union{Array{Float64, 2}, PyObject, Missing}=missing)
+        abd::Union{Array{Float64, 2}, PyObject, Missing}=missing; strain::String = "small")
 
 Differentiable Explicit Solver. 
 
@@ -36,6 +36,8 @@ Differentiable Explicit Solver.
 - `Fext`: external force, $\mathrm{NT}\times n$, where $n$ is the active dof. 
 
 - `ubd`, `abd`: boundary displacementt and acceleration, $\mathrm{NT}\times m$, where $m$ is boundary DOF. 
+
+- `strain_type` (default = "small"): small strain or finite strain
 """
 function ExplicitSolver(globdat::GlobalData, domain::Domain,
     d0::Union{Array{Float64, 1}, PyObject}, 
@@ -45,8 +47,12 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
     H::Union{Array{Float64, 3}, Array{Float64, 2}, PyObject},
     Fext::Union{Array{Float64, 2}, PyObject, Missing}=missing,
     ubd::Union{Array{Float64, 2}, PyObject, Missing}=missing,
-    abd::Union{Array{Float64, 2}, PyObject, Missing}=missing)
+    abd::Union{Array{Float64, 2}, PyObject, Missing}=missing; 
+    strain_type::String = "small")
 
+    if !(strain_type in ["small", "finite"])
+        error("Only small strain or finite strain are supported. Unknown strain type $strain_type")
+    end
     init_nnfem(domain)
     M = factorize(constant(globdat.M))
     bddof = findall(domain.EBC[:] .== -2)
@@ -67,13 +73,21 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
             u = scatter_update(u, bddof, ubd[i])
         end
 
-        ε = s_eval_strain_on_gauss_points(u, domain)
+        if strain_type=="small"
+            ε = s_eval_strain_on_gauss_points(u, domain)
+        else
+            ε = f_eval_strain_on_gauss_points(u, domain)
+        end
         if length(size(H))==2
             σ = tf.matmul(ε, H)
         else
             σ = batch_matmul(H, ε)
         end 
-        fint  = s_compute_internal_force_term(σ, domain)
+        if strain_type=="small"
+            fint  = s_compute_internal_force_term(σ, domain)
+        else 
+            fint  = f_compute_internal_force_term(σ, u, domain)
+        end
         if ismissing(Fext)
             fext = zeros(length(fint))
         else
@@ -237,7 +251,7 @@ end
         nn::Function,
         Fext::Union{Array{Float64, 2}, PyObject, Missing}=missing,
         ubd::Union{Array{Float64, 2}, PyObject, Missing}=missing,
-        abd::Union{Array{Float64, 2}, PyObject, Missing}=missing)
+        abd::Union{Array{Float64, 2}, PyObject, Missing}=missing; strain_type::String = "small"))
 
 Similar to [`ExplicitSolver`](@ref); however, the constituve relation from $\epsilon$ to $\sigma$ must be provided by 
 the function `nn`.
@@ -250,7 +264,11 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
     nn::Function,
     Fext::Union{Array{Float64, 2}, PyObject, Missing}=missing,
     ubd::Union{Array{Float64, 2}, PyObject, Missing}=missing,
-    abd::Union{Array{Float64, 2}, PyObject, Missing}=missing)
+    abd::Union{Array{Float64, 2}, PyObject, Missing}=missing; strain_type::String = "small")
+
+    if !(strain_type in ["small", "finite"])
+        error("Only small strain or finite strain are supported. Unknown strain type $strain_type")
+    end
 
     init_nnfem(domain)
     M = factorize(constant(globdat.M))
@@ -272,9 +290,19 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
             u = scatter_update(u, bddof, ubd[i])
         end
 
-        ε = s_eval_strain_on_gauss_points(u, domain)
+        if strain_type=="small"
+            ε = s_eval_strain_on_gauss_points(u, domain)
+        else
+            ε = f_eval_strain_on_gauss_points(u, domain)
+        end
+        
         σ = nn(ε)
-        fint  = s_compute_internal_force_term(σ, domain)
+
+        if strain_type=="small"
+            fint  = s_compute_internal_force_term(σ, domain)
+        else 
+            fint  = f_compute_internal_force_term(σ, u, domain)
+        end
         if ismissing(Fext)
             fext = zeros(length(fint))
         else
@@ -313,7 +341,7 @@ end
         nn::Function,
         Fext::Union{Array{Float64, 2}, PyObject, Missing}=missing,
         ubd::Union{Array{Float64, 2}, PyObject, Missing}=missing,
-        abd::Union{Array{Float64, 2}, PyObject, Missing}=missing)
+        abd::Union{Array{Float64, 2}, PyObject, Missing}=missing; strain_type::String = "small")
 
 Similar to [`ExplicitSolver`](@ref); however, the constitutive relation has the form 
 
@@ -332,7 +360,11 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
     nn::Function,
     Fext::Union{Array{Float64, 2}, PyObject, Missing}=missing,
     ubd::Union{Array{Float64, 2}, PyObject, Missing}=missing,
-    abd::Union{Array{Float64, 2}, PyObject, Missing}=missing)
+    abd::Union{Array{Float64, 2}, PyObject, Missing}=missing; strain_type::String = "small")
+
+    if !(strain_type in ["small", "finite"])
+        error("Only small strain or finite strain are supported. Unknown strain type $strain_type")
+    end
 
     init_nnfem(domain)
     M = factorize(constant(globdat.M))
@@ -355,9 +387,19 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
             u = scatter_update(u, bddof, ubd[i])
         end
 
-        ε = s_eval_strain_on_gauss_points(u, domain)
+        if strain_type=="small"
+            ε = s_eval_strain_on_gauss_points(u, domain)
+        else
+            ε = f_eval_strain_on_gauss_points(u, domain)
+        end
+
         σ = nn(ε, εc, σc)
-        fint  = s_compute_internal_force_term(σ, domain)
+        if strain_type=="small"
+            fint  = s_compute_internal_force_term(σ, domain)
+        else 
+            fint  = f_compute_internal_force_term(σ, u, domain)
+        end
+
         if ismissing(Fext)
             fext = zeros(length(fint))
         else

@@ -120,3 +120,27 @@ We show the follow chart of the implementation. Note inside the `ExplicitSolverS
 
 
 ![image-20200409172855057](./assets/flowchart.png)
+
+## Updating the Boundary Conditions
+
+We give a short description on how the boundary conditions are tackled in NNFEM. In general, we have two kinds of boundary conditions; namely, they are **Dirichlet boundary conditions** (also known as **essential boundary conditions**) and **Neumann boundary conditions** (also known as **natural boundary conditions**). They can be both time dependent or time independent. 
+
+### Dirichlet Boundary Conditions
+
+The basic idea for tackling Dirichlet boundary conditions is to trim the coefficient matrices $M$ and $K$, and update the right hand side force vectors (consider a linear problem)
+
+$$M \ddot \mathbf{u} + K \mathbf{u} = \mathbf{f}$$
+
+We have
+
+$$M_{II} {\ddot \mathbf{u}}_I + M_{ID} \ddot \mathbf{u}_D + K_{I:} \mathbf{u} = \mathbf{f}$$
+
+Here $I$ stands for the active DOF, and $D$ stands for **time-dependent** Dirichlet boundary condition DOF. Note $\ddot\mathbf{u} = \mathbf{0}$ for time-independent Dirichlet nodes. 
+
+[`assembleMassMatrix!`](@ref) computes and stores `M_{II}` and `M_{ID}` in [`GlobalData`](@ref). In the time stepping, when [`getExternalForce!`](@ref) is called, $M_{ID} \ddot \mathbf{u}_D$ is computed and substracted from right hand side. 
+
+For the stiffness matrix $K_{I:} \mathbf{u}$, in every iteration, given a candidate $\mathbf{u}$, [`assembleStiffAndForce`](@ref) computes 
+
+$$K_{II}, K_{I:} \mathbf{u}$$
+
+This information is sufficient to solve for $\ddot \mathbf{u}$ or $\mathbf{u}$. 
