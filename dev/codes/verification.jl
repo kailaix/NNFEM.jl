@@ -106,10 +106,11 @@ end
 # plot(exp.(-LinRange(0,1,NT+1)))
 
 d = hcat(domain.history["state"]...)'
+ts = LinRange(0,T,NT+1)
 for i = 1:5
     i = rand(1:m+1)
     j = rand(1:n+1)
-    plot(d_[:,(j-1)*(m+1)+i], color = "C$i")
+    plot(d[:,(j-1)*(m+1)+i], color = "C$i")
     x0 = (i-1)*h 
     y0 = (j-1)*h
     plot((@. (x0^2+y0^2)*exp(-ts))*0.1,"--", color="C$i")
