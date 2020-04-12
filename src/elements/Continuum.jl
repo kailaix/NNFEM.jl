@@ -47,21 +47,22 @@ $$\int_{s} \mathbf{f}(\mathbf{x})\cdot \delta \mathbf{u}(\mathbf{x}) d s
 
 todo force in the deformed domain
 """
-function getEdgeForce(elem::Continuum, iedge::Float64, fvalue::Array{Float64,2})
+function getEdgeForce(elem::Continuum, iedge::Int64, fvalue::Array{Float64,2})
     n = length(elem.elnodes)
     ngp = Int64(sqrt(length(elem.weights)))
     @assert(n == 4 || n == 9)
 
-    loc_id = (n == 4 ? [iedge, (iedge+1)%4] : [iedge, (iedge+1)%4, idege+4])
+    n1, n2 = iedge, ((iedge+1)==5 ? 1 : iedge+1)
+    loc_id = (n == 4 ? [n1, n2] : [n1, n2, iedge+4])
 
-    x = elem.coords'[:, loc_id]
+    x = elem.coords[loc_id,:]
 
     weights, hs = get1DElemShapeData(x, ngp)  
 
     fedge = zeros(Float64,2n)
     for igp = 1:ngp
         fedge[loc_id] += hs[igp] * fvalue[igp,1] * weights[igp]
-        fedge[n+loc_id] += hs[igp] * fvalue[k,2] * weights[igp]
+        fedge[n .+ loc_id] += hs[igp] * fvalue[igp,2] * weights[igp]
     end
     return fedge
 
@@ -127,18 +128,18 @@ function getEdgeGaussPoints(elem::Continuum, iedge::Int64)
 
     @assert(n == 4 || n == 9)
 
-    loc_id = (n == 4 ? [iedge, (iedge+1)%4] : [iedge, (iedge+1)%4, idege+4])
+    n1, n2 = iedge, ((iedge+1)==5 ? 1 : iedge+1)
+    loc_id = (n == 4 ? [n1, n2] : [n1, n2, iedge+4])
 
-    x = elem.coords'[:, loc_id]
+    x = elem.coords[loc_id, :]
 
     gnodes = zeros(ngp,2)
-
 
     _, hs = get1DElemShapeData(x, ngp)  
 
     gnodes = zeros(ngp,2)   
     for igp = 1:ngp
-        gnodes[igp,:] = x * hs[igp] 
+        gnodes[igp,:] = x' * hs[igp] 
     end
 
     return gnodes

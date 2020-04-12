@@ -28,6 +28,19 @@ The length of each output is the same as number of "-2" in `EBC` array. The orde
 $$f = \text{FBC\_func}(time)$$
 
 Here $f$ is a vector. Its length is the same as number of "-2" in `FBC` array. The ordering is direction major, i.e., $u_1, u_3, \ldots, v_1, v_3, \ldots$ 
+
+- `Body_func`: time-dependent/independent body force function. 
+
+$$f = \text{Body\_func}(x_array, y_array, time)$$
+
+Here $f$ is a vector. Its length is the same as the length of x_array or y_array.
+
+- `Edge_func`: time-dependent/independent traction load. 
+
+$$f = \text{Edge\_func}(x_array, y_array, time, id)$$
+
+Here $f$ is a vector. Its length is the same as the length of x_array or y_array.
+
 """
 mutable struct GlobalData
     state::Array{Float64}    #u
@@ -41,8 +54,8 @@ mutable struct GlobalData
 
     EBC_func::Union{Function,Nothing}  #time dependent Dirichlet boundary condition f(t)
     FBC_func::Union{Function,Nothing}  #time dependent nodal force  boundary condition f(t)
-    Body_func::Union{Function,Nothing} #body force function f(x, y, t)
-    Edge_func::Union{Function,Nothing} #edge traction function f(x, y, t, id)
+    Body_func::Union{Function,Nothing} #body force function f(x_array, y_array, t)
+    Edge_func::Union{Function,Nothing} #edge traction function f(x_array, y_array, t, id)
     
 end
 
@@ -149,7 +162,7 @@ mutable struct Domain
     g::Array{Float64}  # Value for Dirichlet boundary condition
     FBC::Array{Int64}  # Nodal force boundary condition
     fext::Array{Float64}  # Value for Nodal force boundary condition
-    Edge_Traction_Data::Array{Int64} # traction force location, [element id, local edge id, force id]
+    edge_traction_data::Array{Int64} # traction force location, [element id, local edge id, force id]
     time::Float64
 
     npoints::Int64     # number of mesh points(the same as nodes, when porder==1)
@@ -219,7 +232,7 @@ Creating a finite element domain.
 
     For time-dependent boundary conditions (`EBC` or `FBC` entries are -2), the corresponding `f` or `g` entries are not used.
 """
-function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array{Int64}, g::Array{Float64}, FBC::Array{Int64}, f::Array{Float64}, Edge_Traction_Data::Array{Int64,2}=zeros(Int64))
+function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array{Int64}, g::Array{Float64}, FBC::Array{Int64}, f::Array{Float64}, edge_traction_data::Array{Int64,2}=zeros(Int64))
     nnodes = size(nodes,1)
     neles = size(elements,1)
     state = zeros(nnodes * ndims)
@@ -240,7 +253,7 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array
     
     domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, 
     LM, DOF, ID, neqs, eq_to_dof, dof_to_eq, 
-    EBC, g, FBC, fext, Edge_Traction_Data, 0.0, npoints, node_to_point,
+    EBC, g, FBC, fext, edge_traction_data, 0.0, npoints, node_to_point,
     Int64[], Int64[], Int64[], Float64[], 
     Int64[], Int64[], Int64[], Float64[], 
     Int64[], Int64[], Int64[], Float64[], history)
@@ -544,7 +557,7 @@ Computes the body force vector $F_\mathrm{body}$ of length `neqs`
 - `domain`: Domain, finite element domain, for data structure
 - `Δt`:  Float64, current time step size
 """
-function getEdgeForce(domain::Domain, globdat::GlobalData)
+function getEdgeForce(domain::Domain, globdat::GlobalData, time::Float64)
     Fedge = zeros(Float64, domain.neqs)
     neles = domain.neles
 
@@ -554,17 +567,17 @@ function getEdgeForce(domain::Domain, globdat::GlobalData)
 
     # Loop over the elements in the elementGroup
 
-    for i = 1:length(domain.Edge_traction_data) 
+    for i = 1:size(domain.edge_traction_data)[1]
 
-        iele, iedge, ifunc = domain.Edge_traction_data[i, :]
+        iele, iedge, ifunc = domain.edge_traction_data[i, :]
 
         element = domain.elements[iele]
   
         gauss_pts = getEdgeGaussPoints(element, iedge)
 
-        fvalue = globdat.Edge_func(gauss_pts[:,1], gauss_pts[:,2], globdat.time, ifunc)
+        fvalue = globdat.Edge_func(gauss_pts[:,1], gauss_pts[:,2], time, ifunc)
   
-        fedge = getEdgeForce(element, fvalue, edgeid)
+        fedge = getEdgeForce(element, iedge, fvalue)
 
       # Assemble in the global array
         el_eqns = getEqns(domain, iele)
