@@ -1,6 +1,6 @@
 export Domain,GlobalData,updateStates!,updateDomainStateBoundary!,
     setNeumannBoundary!, setGeometryPoints!, setDirichletBoundary!, getExternalForce!,
-    commitHistory, getBodyForce, getNGauss
+    commitHistory, getBodyForce, getEdgeForce, getNGauss
 
 
 @doc raw"""
@@ -39,9 +39,10 @@ mutable struct GlobalData
     Mlumped::Array{Float64}
     MID::Array{Float64}
 
-    EBC_func::Union{Function,Nothing}  #time dependent Dirichlet boundary condition
-    FBC_func::Union{Function,Nothing}  #time force load boundary condition
-    Body_func::Union{Function,Nothing}
+    EBC_func::Union{Function,Nothing}  #time dependent Dirichlet boundary condition f(t)
+    FBC_func::Union{Function,Nothing}  #time dependent nodal force  boundary condition f(t)
+    Body_func::Union{Function,Nothing} #body force function f(x, y, t)
+    Edge_func::Union{Function,Nothing} #edge traction function f(x, y, t, id)
     
 end
 
@@ -53,6 +54,7 @@ Mass matrix ... $(length(z.M)==0 ? no : yes)
 EBC_func    ... $(isnothing(z.EBC_func) ? no : yes)
 FBC_func    ... $(isnothing(z.FBC_func) ? no : yes)
 Body_func   ... $(isnothing(z.Body_func) ? no : yes)
+Edge_func   ... $(isnothing(z.Edge_func) ? no : yes)
 """)
 end
 
@@ -65,12 +67,12 @@ end
 """
 function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Float64},acce::Array{Float64}, neqs::Int64,
         EBC_func::Union{Function, Nothing}=nothing, FBC_func::Union{Function, Nothing}=nothing,
-        Body_func::Union{Function,Nothing}=nothing)
+        Body_func::Union{Function,Nothing}=nothing, Edge_func::Union{Function,Nothing}=nothing)
     time = 0.0
     M = Float64[]
     Mlumped = Float64[]
     MID = Float64[]
-    GlobalData(state, Dstate, velo, acce, time, M, Mlumped, MID, EBC_func, FBC_func, Body_func)
+    GlobalData(state, Dstate, velo, acce, time, M, Mlumped, MID, EBC_func, FBC_func, Body_func, Edge_func)
 end
 
 
@@ -147,6 +149,7 @@ mutable struct Domain
     g::Array{Float64}  # Value for Dirichlet boundary condition
     FBC::Array{Int64}  # Nodal force boundary condition
     fext::Array{Float64}  # Value for Nodal force boundary condition
+    Edge_Traction_Data::Array{Int64} # traction force location, [element id, local edge id, force id]
     time::Float64
 
     npoints::Int64     # number of mesh points(the same as nodes, when porder==1)
@@ -200,7 +203,7 @@ Creating a finite element domain.
       ∘ -2: time-dependent Dirichlet boundary nodes
 
     - `g`:  `nnodes × ndims` double matrix, values for fixed (time-independent) Dirichlet boundary conditions of node `n`'s $d$-th freedom,
-    - `FBC`: `nnodes × ndims` integer matrix for natural boundary conditions.
+    - `FBC`: `nnodes × ndims` integer matrix for nodal force boundary conditions.
       FBC[n,d] is the force load boundary condition of node n's dth freedom,
 
       ∘ -1 means constant(time-independent) force load boundary nodes
@@ -209,9 +212,14 @@ Creating a finite element domain.
 
     - `f`:  `nnodes × ndims` double matrix, values for constant (time-independent) force load boundary conditions of node n's $d$-th freedom,
 
+    - `Edge_Traction_Data`: `n × 3` integer matrix for natural boundary conditions.
+      Edge_Traction_Data[i,1] is the element id,
+      Edge_Traction_Data[i,2] is the local edge id in the element, where the force is exterted (should be on the boundary, but not required)
+      Edge_Traction_Data[i,3] is the force id, which should be consistent with the last component of the Edge_func in the Globdat
+
     For time-dependent boundary conditions (`EBC` or `FBC` entries are -2), the corresponding `f` or `g` entries are not used.
 """
-function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array{Int64}, g::Array{Float64}, FBC::Array{Int64}, f::Array{Float64})
+function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array{Int64}, g::Array{Float64}, FBC::Array{Int64}, f::Array{Float64}, Edge_Traction_Data::Array{Int64,2}=zeros(Int64))
     nnodes = size(nodes,1)
     neles = size(elements,1)
     state = zeros(nnodes * ndims)
@@ -232,7 +240,7 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array
     
     domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, 
     LM, DOF, ID, neqs, eq_to_dof, dof_to_eq, 
-    EBC, g, FBC, fext, 0.0, npoints, node_to_point,
+    EBC, g, FBC, fext, Edge_Traction_Data, 0.0, npoints, node_to_point,
     Int64[], Int64[], Int64[], Float64[], 
     Int64[], Int64[], Int64[], Float64[], 
     Int64[], Int64[], Int64[], Float64[], history)
@@ -525,6 +533,46 @@ function getBodyForce(domain::Domain, globdat::GlobalData)
     end
   
     return Fbody
+end
+
+
+@doc raw"""
+    getEdgeForce(domain::Domain, globdat::GlobalData)
+
+Computes the body force vector $F_\mathrm{body}$ of length `neqs`
+- `globdat`: GlobalData
+- `domain`: Domain, finite element domain, for data structure
+- `Δt`:  Float64, current time step size
+"""
+function getEdgeForce(domain::Domain, globdat::GlobalData)
+    Fedge = zeros(Float64, domain.neqs)
+    neles = domain.neles
+
+    if isnothing(globdat.Edge_func)
+        return Fedge
+    end
+
+    # Loop over the elements in the elementGroup
+
+    for i = 1:length(domain.Edge_traction_data) 
+
+        iele, iedge, ifunc = domain.Edge_traction_data[i, :]
+
+        element = domain.elements[iele]
+  
+        gauss_pts = getEdgeGaussPoints(element, iedge)
+
+        fvalue = globdat.Edge_func(gauss_pts[:,1], gauss_pts[:,2], globdat.time, ifunc)
+  
+        fedge = getEdgeForce(element, fvalue, edgeid)
+
+      # Assemble in the global array
+        el_eqns = getEqns(domain, iele)
+        el_eqns_active = (el_eqns .>= 1)
+        Fedge[el_eqns[el_eqns_active]] += fedge[el_eqns_active]
+    end
+  
+    return Fedge
 end
 
 

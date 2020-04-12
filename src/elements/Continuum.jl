@@ -1,26 +1,71 @@
 export getStiffAndForce, getInternalForce,
-getBodyForce, getStrain, getMassMatrix,
-getNodes, getGaussPoints, commitHistory
+getBodyForce, getEdgeForce, getStrain, getMassMatrix,
+getNodes, getGaussPoints, getEdgeGaussPoints, commitHistory
 
 abstract type Continuum end 
 
 @doc raw"""
     getBodyForce(elem::Continuum, fvalue::Array{Float64,2})
+    `fvalue` is a $n_{gauss}\times 2$ matrix, which is ordered the same as 
+    Gaussian points in the undeformed parent element.
 
-Returns the body force
-$$\int_{e} \mathbf{f}\cdot \delta \mathbf{u} d \mathbf{x}$$
-`fvalue` is a $n_{gauss}\times 2$ matrix. 
+Returns the nodal force due to the body force
+$$\int_{e} \mathbf{f}(\mathbf{x})\cdot \delta \mathbf{u}(\mathbf{x}) d \mathbf{x} 
+  = \int_{e} \mathbf{f}(\mathbf{\xi})\cdot \delta \mathbf{u}(\mathbf{\xi}) 
+  |\frac{\partial \mathbf{x}}{\partial \mathbf{\xi}}| d \mathbf{\xi}  $$
+
+todo force in the deformed domain
 """
 function getBodyForce(elem::Continuum, fvalue::Array{Float64,2})
     n = dofCount(elem)
     fbody = zeros(Float64,n)
-    out = Array{Float64}[]
+
     nnodes = length(elem.elnodes)
     for k = 1:length(elem.weights)
         fbody[1:nnodes] += elem.hs[k] * fvalue[k,1] * elem.weights[k]
         fbody[nnodes+1:2*nnodes] += elem.hs[k] * fvalue[k,2] * elem.weights[k]
     end
     return fbody
+end
+
+@doc raw"""
+    getEdgeForce(elem::Continuum, iedge::Float64, fvalue::Array{Float64,2})
+    `fvalue` is a $n_{edge_gauss}\times 2$ matrix, which is ordered the same as the
+    Gaussian points in undeformed parent edge element.
+    The element nodes are ordered as 
+    #   4 ---- 3             #   4 --7-- 3
+    #                        #   8   9   6 
+    #   1 ---- 2             #   1 --5-- 2
+    for porder=1     or          porder=2
+    iedge 1, 2, 3, 4 are (1,2), (2,3), (3,4), (4,1)
+                    are (1,2,5), (2,3,6), (3,4,7), (4,1,8)
+
+Returns the nodal force due to the traction on the iedge-th edge of the element
+$$\int_{s} \mathbf{f}(\mathbf{x})\cdot \delta \mathbf{u}(\mathbf{x}) d s 
+  = \int_{e} \mathbf{f}(\xi)\cdot \delta \mathbf{u}(\xi) 
+  |\frac{\partial \mathbf{x}}{\partial \xi}| d \xi  $$
+
+todo force in the deformed domain
+"""
+function getEdgeForce(elem::Continuum, iedge::Float64, fvalue::Array{Float64,2})
+    n = length(elem.elnodes)
+    ngp = Int64(sqrt(length(elem.weights)))
+    @assert(n == 4 || n == 9)
+
+    loc_id = (n == 4 ? [iedge, (iedge+1)%4] : [iedge, (iedge+1)%4, idege+4])
+
+    x = elem.coords'[:, loc_id]
+
+    weights, hs = get1DElemShapeData(x, ngp)  
+
+    fedge = zeros(Float64,2n)
+    for igp = 1:ngp
+        fedge[loc_id] += hs[igp] * fvalue[igp,1] * weights[igp]
+        fedge[n+loc_id] += hs[igp] * fvalue[k,2] * weights[igp]
+    end
+    return fedge
+
+
 end
 
 """
@@ -53,7 +98,7 @@ end
 """
     getGaussPoints(elem::Continuum)
 
-Returns the Gauss quadrature nodes of the element
+Returns the Gauss quadrature nodes of the element in the undeformed domain
 """
 function getGaussPoints(elem::Continuum)
     x = elem.coords'
@@ -63,6 +108,43 @@ function getGaussPoints(elem::Continuum)
     end
     return gnodes
 end
+
+"""
+    getEdgeGaussPoints(elem::Continuum, iedge::Int64)
+    The element nodes are ordered as 
+    #   4 ---- 3             #   4 --7-- 3
+    #                        #   8   9   6 
+    #   1 ---- 2             #   1 --5-- 2
+    for porder=1     or          porder=2
+    edge 1, 2, 3, 4 are (1,2), (2,3), (3,4), (4,1)
+                    are (1,2,5), (2,3,6), (3,4,7), (4,1,8)
+
+Returns the Gauss quadrature nodes of the element on its iedge-th edge in the undeformed domain
+"""
+function getEdgeGaussPoints(elem::Continuum, iedge::Int64)
+    n = length(elem.elnodes)
+    ngp = Int64(sqrt(length(elem.weights)))
+
+    @assert(n == 4 || n == 9)
+
+    loc_id = (n == 4 ? [iedge, (iedge+1)%4] : [iedge, (iedge+1)%4, idege+4])
+
+    x = elem.coords'[:, loc_id]
+
+    gnodes = zeros(ngp,2)
+
+
+    _, hs = get1DElemShapeData(x, ngp)  
+
+    gnodes = zeros(ngp,2)   
+    for igp = 1:ngp
+        gnodes[igp,:] = x * hs[igp] 
+    end
+
+    return gnodes
+end
+
+
 
 function dofCount(elem::Continuum)
     return 2length(elem.elnodes)

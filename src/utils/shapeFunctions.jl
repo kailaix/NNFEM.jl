@@ -213,6 +213,7 @@ end
 
 @doc """
     :elemCoords nnodesx2, nnodes=3 => Line3 ; nnodes=2 => Line2
+    #   1 --3-- 2 or 1 -- 2
     dhdx: list of ngp shape function first order derivatives dphi/dx (nf×ndim) on the Gaussian points
     weights: list of ngp weights,  gaussian point weight and Jacobian determinant
     hs: list of ngp shape function values(nf×1) on the Gaussian points
@@ -226,8 +227,7 @@ function get1DElemShapeData( elem_coords::Array{Float64} , npoints::Int64 = 0)
   ndim = 1
   
   (int_coords,int_weights) = getIntegrationPoints( npoints , ndim)
-#   #@show intCrds, intWghts
-  dhdx = Array{Float64}[]
+
   weights = Float64[]
   hs = Array{Float64}[]
   for k = 1:length(int_weights)
