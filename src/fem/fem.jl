@@ -131,6 +131,11 @@ Date structure for the computatational domain.
            -1 means constant(time-independent) force load boundary nodes
            -2 means time-dependent force load boundary nodes
 - `fext`:  Float64[neqs], constant (time-independent) force load boundary conditions for these freedoms
+- `Edge_Traction_Data`: `n × 3` integer matrix for natural boundary conditions.
+      Edge_Traction_Data[i,1] is the element id,
+      Edge_Traction_Data[i,2] is the local edge id in the element, where the force is exterted (should be on the boundary, but not required)
+      Edge_Traction_Data[i,3] is the force id, which should be consistent with the last component of the Edge_func in the Globdat
+
 - `time`: Float64, current time
 - `npoints`: Int64, number of points (each quadratical quad element has 4 points, npoints==nnodes, when porder==1)
 - `node_to_point`: Int64[nnodes]:map from node number to point point, -1 means the node is not a geometry point
