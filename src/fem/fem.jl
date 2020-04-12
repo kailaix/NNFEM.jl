@@ -242,7 +242,7 @@ Creating a finite element domain.
 
     For time-dependent boundary conditions (`EBC` or `FBC` entries are -2), the corresponding `f` or `g` entries are not used.
 """
-function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array{Int64}, g::Array{Float64}, FBC::Array{Int64}, f::Array{Float64}, edge_traction_data::Array{Int64,2}=zeros(Int64))
+function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array{Int64}, g::Array{Float64}, FBC::Array{Int64}, f::Array{Float64}, edge_traction_data::Array{Int64,2}=zeros(Int64,0,3))
     nnodes = size(nodes,1)
     neles = size(elements,1)
     state = zeros(nnodes * ndims)
@@ -519,19 +519,20 @@ function getExternalForce!(domain::Domain, globaldat::GlobalData, fext::Union{Mi
         _, _, acce = globaldat.EBC_func(globaldat.time)
         fext -= MID * acce
     end
-    fbody = getBodyForce(domain, globaldat)
-    fext + fbody
+    fbody = getBodyForce(domain, globaldat, globaldat.time)
+    fedge = getEdgeForce(domain, globaldat, globaldat.time)
+    fext + fbody + fedge
 end
 
 @doc raw"""
-    getBodyForce(domain::Domain, globdat::GlobalData)
+    getBodyForce(domain::Domain, globdat::GlobalData, time::Float64)
 
 Computes the body force vector $F_\mathrm{body}$ of length `neqs`
 - `globdat`: GlobalData
 - `domain`: Domain, finite element domain, for data structure
 - `Δt`:  Float64, current time step size
 """
-function getBodyForce(domain::Domain, globdat::GlobalData)
+function getBodyForce(domain::Domain, globdat::GlobalData, time::Float64)
     
     Fbody = zeros(Float64, domain.neqs)
     neles = domain.neles
@@ -545,7 +546,7 @@ function getBodyForce(domain::Domain, globdat::GlobalData)
         element = domain.elements[iele]
   
         gauss_pts = getGaussPoints(element)
-        fvalue = globdat.Body_func(gauss_pts[:,1], gauss_pts[:,2], globdat.time)
+        fvalue = globdat.Body_func(gauss_pts[:,1], gauss_pts[:,2], time)
   
         fbody = getBodyForce(element, fvalue)
 
@@ -642,7 +643,7 @@ Gets the equation numbers(active freedom numbers) of the element.
 This excludes both the time-dependent and time-independent Dirichlet boundary conditions. 
 """ ->
 function getEqns(domain::Domain, iele::Int64)
-    return self.LM[iele]
+    return domain.LM[iele]
 end
 
 
