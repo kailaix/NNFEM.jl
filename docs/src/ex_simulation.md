@@ -139,7 +139,7 @@ Here $I$ stands for the active DOF, and $D$ stands for **time-dependent** Dirich
 
 [`assembleMassMatrix!`](@ref) computes and stores `M_{II}` and `M_{ID}` in [`GlobalData`](@ref). In the time stepping, when [`getExternalForce!`](@ref) is called, $M_{ID} \ddot \mathbf{u}_D$ is computed and substracted from right hand side. 
 
-For the stiffness matrix $K_{I:} \mathbf{u}$, in every iteration, given a candidate $\mathbf{u}$, [`assembleStiffAndForce`] computes 
+For the stiffness matrix $K_{I:} \mathbf{u}$, in every iteration, given a candidate $\mathbf{u}$, [`assembleStiffAndForce`](@ref) computes 
 
 $$K_{II}, K_{I:} \mathbf{u}$$
 
