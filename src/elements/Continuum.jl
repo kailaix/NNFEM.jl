@@ -6,13 +6,16 @@ abstract type Continuum end
 
 @doc raw"""
     getBodyForce(elem::Continuum, fvalue::Array{Float64,2})
-    `fvalue` is a $n_{gauss}\times 2$ matrix, which is ordered the same as 
+
+Returns the body force. 
+
+- `fvalue` is a $n_{gauss}\times 2$ matrix, which is ordered the same as 
     Gaussian points in the undeformed parent element.
 
 Returns the nodal force due to the body force
 $$\int_{e} \mathbf{f}(\mathbf{x})\cdot \delta \mathbf{u}(\mathbf{x}) d \mathbf{x} 
   = \int_{e} \mathbf{f}(\mathbf{\xi})\cdot \delta \mathbf{u}(\mathbf{\xi}) 
-  |\frac{\partial \mathbf{x}}{\partial \mathbf{\xi}}| d \mathbf{\xi}  $$
+  |\frac{\partial \mathbf{x}}{\partial \mathbf{\xi}}| d \mathbf{\xi}$$
 
 todo force in the deformed domain
 """
@@ -30,7 +33,10 @@ end
 
 @doc raw"""
     getEdgeForce(elem::Continuum, iedge::Float64, fvalue::Array{Float64,2})
-    `fvalue` is a $n_{edge_gauss}\times 2$ matrix, which is ordered the same as the
+    
+Returns the force imposed by boundary tractions.
+
+`fvalue` is a $n_{edge_gauss}\times 2$ matrix, which is ordered the same as the
     Gaussian points in undeformed parent edge element.
     The element nodes are ordered as 
     #   4 ---- 3             #   4 --7-- 3
@@ -43,7 +49,7 @@ end
 Returns the nodal force due to the traction on the iedge-th edge of the element
 $$\int_{s} \mathbf{f}(\mathbf{x})\cdot \delta \mathbf{u}(\mathbf{x}) d s 
   = \int_{e} \mathbf{f}(\xi)\cdot \delta \mathbf{u}(\xi) 
-  |\frac{\partial \mathbf{x}}{\partial \xi}| d \xi  $$
+  |\frac{\partial \mathbf{x}}{\partial \xi}| d \xi$$
 
 todo force in the deformed domain
 """

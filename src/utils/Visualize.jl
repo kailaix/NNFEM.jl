@@ -255,9 +255,6 @@ function VisualizeStress2D(σ_ref::Array{Float64}, σ_comp::Array{Float64}, NT::
     end
 end
 
-
-
-
 function VisualizeStrainStressSurface(X::Array{Float64}, Y::Array{Float64}, seed::Int64=233)
     n = size(X,1)
     Random.seed!(seed)
