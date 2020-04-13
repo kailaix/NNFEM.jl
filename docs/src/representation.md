@@ -46,12 +46,15 @@ In NNFEM, we provide a set of tools to enforce physical constraints.
 isotropic_function
 ```
 
-!!! Tip
+!!! info
     To construct a constitutive relation that has the form 
+
     ```math
     T = s_0(\sigma_1, \sigma_2)  + s_1(\sigma_1, \sigma_2) S  + s_2(\sigma_1, \sigma_2) S^2
     ```
-    where $\sigma_1$ and $\sigma_2$ are the two eigenvalues of $S$, we can use [`strain_voigt_to_tensor`](@ref) to extract eigenvalues.
+
+    Here $\sigma_1$ and $\sigma_2$ are the two eigenvalues of $S$, we can use [`strain_voigt_to_tensor`](@ref) to extract eigenvalues.
+
     ```julia
     using NNFEM, ADCME
     strain = rand(100,3)
