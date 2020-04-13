@@ -5,7 +5,7 @@ export consistent_tangent_matrix, isotropic_function, strain_voigt_to_tensor
 Returns the consistent tangent matrices. The size of the return is $N\times 3 \times 3$. 
 
 
-$$D_c^{ep} = D_c - \frac{D_c\frac{\partial g}{\partial \sigma}\left(\frac{\partial f}{\partial \sigma}Dc \right)^T D_c }{E_p + \frac{\partial g}{\partial \sigma} Dc \left(\frac{\partial f}{\partial \sigma}Dc \right)^T}$$
+$$D_c^{ep} = D_c - \frac{D_c\frac{\partial g}{\partial \sigma}\left(\frac{\partial f}{\partial \sigma}Dc \right)^T D_c }{E_p + \frac{\partial g}{\partial \sigma} Dc \left(\frac{\partial f}{\partial \sigma} \right)^T}$$
 
 
 Here `inputs` is a $N\times 7$ matrix, where each row is 
@@ -13,6 +13,9 @@ Here `inputs` is a $N\times 7$ matrix, where each row is
 $$\left[\frac{\partial g}{\partial \sigma}, \frac{\partial f}{\partial \sigma}, E_p\right]$$
 
 `Dc` is a $3\times 3$ **row-major** matrix; each row is a linear elasticity matrix.  
+
+!!! note 
+    Gradients for `Dc` are not implemented. 
 """
 function consistent_tangent_matrix(inputs::Union{Array{Float64, 2}, PyObject},H::Union{Array{Float64,2}, PyObject})
     @assert size(inputs,2)==7
