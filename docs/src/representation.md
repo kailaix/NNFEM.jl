@@ -43,6 +43,7 @@ In NNFEM, we provide a set of tools to enforce physical constraints.
 * Isotropic functions for on tensor
 
 ```@docs
+isotropic_function
 ```
 
 

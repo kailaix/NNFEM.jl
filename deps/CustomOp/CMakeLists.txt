@@ -39,10 +39,10 @@ link_directories(${TF_LIB} ${CMAKE_SOURCE_DIR}/DataStructure/build)
 
 set(LIBDIR_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp DataStructure 
   SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint FinitContinuumStrain FiniteContinuumFint
-  Plasticity)
+  Plasticity Isotropic)
 set(LIB_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp data 
   SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint FinitContinuumStrain FiniteContinuumFint
-  Plasticity)
+  Plasticity Isotropic)
 
 include_directories(${LIBDIR}/Adept-2/include)
 link_directories(${LIBDIR}/Adept-2/adept/.libs)
