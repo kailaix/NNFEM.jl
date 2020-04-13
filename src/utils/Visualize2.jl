@@ -1,6 +1,5 @@
-export visualize_displacement, visualize_von_mises_stress, visualize
-function visualize(domain::Domain)
-end
+export visualize_displacement, visualize_von_mises_stress, visualize_mesh
+
 
 """
     visualize_von_mises_stress(domain::Domain)
@@ -88,4 +87,18 @@ function visualize_displacement(domain::Domain)
     ylabel("y")
     gca().invert_yaxis()
     out
+end
+
+function visualize_mesh(nodes::Array{Float64,2}, elems::Array{Int64, 2})
+    patches = PyObject[]
+    for i = 1:size(elems,1)
+        e = elems[i,:]
+        p = plt.Polygon(nodes[e,:],edgecolor="k",lw=1,fc=nothing,fill=false)
+        push!(patches, p)
+    end
+    p = matplotlib.collections.PatchCollection(patches, match_original=true)
+    gca().add_collection(p)
+    axis("scaled")
+    xlabel("x")
+    ylabel("y")
 end

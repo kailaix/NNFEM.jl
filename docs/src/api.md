@@ -61,8 +61,9 @@ SolverInitial!
 ## Utilities
 
 ```@autodocs
-Modules = [NNFEM]
-Pages   = ["io.jl", "matrix.jl", "shapeFunctions", "Testsuit.jl", "Visualize.jl", "linearConstitutiveLaw.jl"]
+meshread
+visualize_von_mises_stress
+visualize_displacement
 ```
 
 ## Automatic Differentiation
