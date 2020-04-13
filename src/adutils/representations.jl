@@ -1,4 +1,4 @@
-export consistent_tangent_matrix, isotropic_function
+export consistent_tangent_matrix, isotropic_function, strain_voigt_to_tensor
 @doc raw"""
     consistent_tangent_matrix(inputs::Union{Array{Float64, 2}, PyObject},Dc::Union{Array{Float64,2}, PyObject})
 
@@ -51,14 +51,22 @@ end
 
 
 @doc raw"""
-    tensor_rep(inp::Union{Array{Float64,2}, PyObject})
+    strain_voigt_to_tensor(inp::Union{Array{Float64,2}, PyObject})
 
 Converts Voigt strain tensors to matrix form  
 
 $$\begin{bmatrix}
+\epsilon_{11}\\
+\epsilon_{22}\\
+2\epsilon_{12}\\
+\end{bmatrix} \rightarrow \begin{bmatrix}
+\epsilon_{11} &  \epsilon_{12}\\
+\epsilon_{12} & \epsilon_{22}
 \end{bmatrix}$$
+
+The input is $N\times 3$ and the output is $N\times 2 \times 2$
 """
-function tensor_rep(inp::Union{Array{Float64,2}, PyObject})
+function strain_voigt_to_tensor(inp::Union{Array{Float64,2}, PyObject})
     @assert size(inp,2)==3
     tensor_rep_ = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/TensorRep/build/libTensorRep","tensor_rep")
     inp = convert_to_tensor([inp], [Float64]); inp = inp[1]
