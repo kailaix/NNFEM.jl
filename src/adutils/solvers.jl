@@ -56,6 +56,7 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
     init_nnfem(domain)
     M = factorize(constant(globdat.M))
     bddof = findall(domain.EBC[:] .== -2)
+    fixed_bddof = findall(domain.EBC[:] .== -1)
 
     Fext, ubd, abd, H = convert_to_tensor([Fext, ubd, abd, H], [Float64, Float64, Float64, Float64])
 
@@ -71,6 +72,9 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
 
         if !ismissing(abd)
             u = scatter_update(u, bddof, ubd[i])
+        end
+        if length(sum(fixed_bddof))>0
+            u = scatter_update(u, fixed_bddof, d0[fixed_bddof])
         end
 
         if strain_type=="small"
@@ -206,6 +210,7 @@ function GeneralizedAlphaSolver(globdat::GlobalData, domain::Domain,
     A = M*(1 - αm) + (1 - αf) * 0.5 * β2 * Δt^2 * stiff
     A = factorize(A)
     bddof = findall(domain.EBC[:] .== -2)
+    fixed_bddof = findall(domain.EBC[:] .== -1)
     nbddof = findall(domain.dof_to_eq)
 
     function condition(i, tas...)
@@ -224,6 +229,11 @@ function GeneralizedAlphaSolver(globdat::GlobalData, domain::Domain,
         if !ismissing(abd)
             up = scatter_update(up, bddof, ubd[i])
         end
+
+        if length(sum(fixed_bddof))>0
+            up = scatter_update(up, fixed_bddof, d0[fixed_bddof])
+        end
+
         ε = s_eval_strain_on_gauss_points(up, domain)
         if length(size(Hs))==2
             σ = tf.matmul(ε, Hs)
@@ -242,6 +252,10 @@ function GeneralizedAlphaSolver(globdat::GlobalData, domain::Domain,
         # updaet 
         u += Δt * ∂u + Δt^2/2 * ((1 - β2) * ∂∂u + β2 * ∂∂up)
         ∂u += Δt * ((1 - γ) * ∂∂u + γ * ∂∂up)
+
+        if length(sum(fixed_bddof))>0
+            u = scatter_update(u, fixed_bddof, d0[fixed_bddof])
+        end
 
         i+1, write(d_arr, i+1, u), write(v_arr, i+1, ∂u), write(a_arr, i+1, ∂∂up)
     end
@@ -292,6 +306,7 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
     init_nnfem(domain)
     M = factorize(constant(globdat.M))
     bddof = findall(domain.EBC[:] .== -2)
+    fixed_bddof = findall(domain.EBC[:] .== -1)
 
     Fext, ubd, abd = convert_to_tensor([Fext, ubd, abd], [Float64, Float64, Float64])
 
@@ -307,6 +322,10 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
 
         if !ismissing(abd)
             u = scatter_update(u, bddof, ubd[i])
+        end
+
+        if length(sum(fixed_bddof))>0
+            u = scatter_update(u, fixed_bddof, d0[fixed_bddof])
         end
 
         if strain_type=="small"
@@ -388,6 +407,7 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
     init_nnfem(domain)
     M = factorize(constant(globdat.M))
     bddof = findall(domain.EBC[:] .== -2)
+    fixed_bddof = findall(domain.EBC[:] .== -1)
 
     Fext, ubd, abd, H = convert_to_tensor([Fext, ubd, abd, H], [Float64, Float64, Float64, Float64])
 
@@ -404,6 +424,9 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
 
         if !ismissing(abd)
             u = scatter_update(u, bddof, ubd[i])
+        end
+        if length(sum(fixed_bddof))>0
+            u = scatter_update(u, fixed_bddof, d0[fixed_bddof])
         end
 
         if strain_type=="small"
