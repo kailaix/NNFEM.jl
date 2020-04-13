@@ -1,4 +1,5 @@
-export ExplicitSolver, ExplicitSolverTime, GeneralizedAlphaSolver, GeneralizedAlphaSolverTime, compute_boundary_info
+export ExplicitSolver, ExplicitSolverTime, GeneralizedAlphaSolver, GeneralizedAlphaSolverTime, 
+compute_boundary_info, compute_external_force
 
 
 @doc raw"""
@@ -143,6 +144,22 @@ function compute_boundary_info(domain::Domain, globdat::GlobalData, ts::Array{Fl
     return ubd, abd
 end
 
+"""
+    compute_external_force(domain::Domain, globdat::GlobalData, ts::Array{Float64})
+
+Computes the external force (body force, edge force and force due to boundary acceleration).
+"""
+function compute_external_force(domain::Domain, globdat::GlobalData, ts::Array{Float64})
+    NT = length(ts)
+    fext = zeros(NT, 2domain.nnodes)
+    for i = 1:length(ts)
+        time = ts[i]
+        globdat.time = time 
+        fext[i,:] = getExternalForce!(domain, globdat)
+    end
+    globdat.time = 0.0
+    fext
+end
 
 @doc raw"""
     GeneralizedAlphaSolverTime(Δt::Float64, NT::Int64;ρ::Float64 = 0.0)
