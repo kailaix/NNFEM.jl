@@ -102,6 +102,7 @@ function assembleInternalForce(domain::Domain, nn::Function,
     fints = squeeze(tf.matmul(w∂E∂u_all, tf.expand_dims(σ_all, 2)))
 
   # call the Cpp assembler to construct Fint
+    cpp_fint = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/FintComp/build/libFintComp", "fint_comp")
     Fint = cpp_fint(fints, constant(el_eqns_all, dtype = Int32), constant(domain.neqs, dtype = Int32))
 
     return Fint, σ_all

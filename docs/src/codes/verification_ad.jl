@@ -169,12 +169,12 @@ sess = Session(); init(sess)
 d_, v_, a_ = run(sess, [d,v,a])
 
 for i = 1:5
-i = rand(1:m+1)
-j = rand(1:n+1)
-plot(d_[:,(j-1)*(m+1)+i], color = "C$i")
-x0 = (i-1)*h 
-y0 = (j-1)*h
-plot((@. (x0^2+y0^2)*exp(-ts))*0.1,"--", color="C$i")
+    i = rand(1:m+1)
+    j = rand(1:n+1)
+    plot(d_[:,(j-1)*(m+1)+i], color = "C$i")
+    x0 = (i-1)*h 
+    y0 = (j-1)*h
+    plot((@. (x0^2+y0^2)*exp(-ts))*0.1,"--", color="C$i")
 end
 
 

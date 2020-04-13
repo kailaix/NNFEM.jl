@@ -19,27 +19,27 @@ Store data for finite element updates. Assume the problem has n freedoms,
 - `MID`: Float64[n, nd1] off-diagonal part of the mass matrix, between the active freedoms and the time-dependent Dirichlet freedoms, assume there are nd time-dependent Dirichlet freedoms
 - `EBC_func`: displacement $d$, velocity $v$, and acceleration $a$ from time-dependent Dirichlet boundary conditions 
 
-$$d, v, a = \text{EBC\_func}(time)$$
+$$d, v, a = \text{EBC\_func}(\text{time})$$
 
 The length of each output is the same as number of "-2" in `EBC` array. The ordering is direction major, i.e., $u_1, u_3, \ldots, v_1, v_3, \ldots$ 
 
 - `FBC_func`: time-dependent load boundary condition. 
 
-$$f = \text{FBC\_func}(time)$$
+$$f = \text{FBC\_func}(\text{time})$$
 
 Here $f$ is a vector. Its length is the same as number of "-2" in `FBC` array. The ordering is direction major, i.e., $u_1, u_3, \ldots, v_1, v_3, \ldots$ 
 
 - `Body_func`: time-dependent/independent body force function. 
 
-$$f = \text{Body\_func}(x_array, y_array, time)$$
+$$f = \text{Body\_func}(x_{\text{array}}, y_{\text{array}}, \text{time})$$
 
-Here $f$ is a vector. Its length is the same as the length of x_array or y_array.
+Here $f$ is a vector. Its length is the same as the length of $x_{\text{array}}$ or $y_{\text{array}}$.
 
 - `Edge_func`: time-dependent/independent traction load. 
 
-$$f = \text{Edge\_func}(x_array, y_array, time, id)$$
+$$f = \text{Edge\_func}(x_{\text{array}}, y_{\text{array}}, \text{time}, \text{id})$$
 
-Here $f$ is a vector. Its length is the same as the length of x_array or y_array.
+Here $f$ is a vector. Its length is the same as the length of $x_{\text{array}}$ or $y_{\text{array}}$.
 
 """
 mutable struct GlobalData

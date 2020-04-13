@@ -38,9 +38,11 @@ include_directories(${TF_INC} ${HEADERS} ${EIGEN_INC} ${CMAKE_SOURCE_DIR}/DataSt
 link_directories(${TF_LIB} ${CMAKE_SOURCE_DIR}/DataStructure/build)
 
 set(LIBDIR_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp DataStructure 
-  SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint FinitContinuumStrain FiniteContinuumFint)
+  SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint FinitContinuumStrain FiniteContinuumFint
+  Plasticity)
 set(LIB_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp data 
-  SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint FinitContinuumStrain FiniteContinuumFint)
+  SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint FinitContinuumStrain FiniteContinuumFint
+  Plasticity)
 
 include_directories(${LIBDIR}/Adept-2/include)
 link_directories(${LIBDIR}/Adept-2/adept/.libs)
@@ -65,6 +67,7 @@ target_link_libraries(SmallContinuumStiffness data)
 target_link_libraries(SmallContinuumFint data)
 target_link_libraries(FinitContinuumStrain data)
 target_link_libraries(FiniteContinuumFint data adept)
+target_link_libraries(Plasticity adept)
 
 
 

@@ -17,25 +17,16 @@ colors = PyNULL()
 cmx = PyNULL()
 clb = PyNULL()
 
-cpp_fint = nothing
-sym_op = nothing
-orthotropic_op = nothing
-spd_op = nothing
-chol_op = nothing
-chol_orth_op = nothing
 function __init__()
-    global jet, cpp_fint, orthotropic_op, sym_op, spd_op, chol_op, chol_orth_op
+    global jet
     copy!(animation, pyimport("matplotlib.animation"))
     copy!(colors, pyimport("matplotlib.colors"))
     copy!(cmx, pyimport("matplotlib.cm"))
     jet = plt.get_cmap("jet")
     copy!(clb, pyimport("matplotlib.colorbar"))
-    cpp_fint = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/FintComp/build/libFintComp", "fint_comp")
     # sym_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/SymOp/build/libSymOp", "sym_op")
     # orthotropic_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/OrthotropicOp/build/libOrthotropicOp", "orthotropic_op")
-    spd_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/SPDOp/build/libSPDOp", "spd_op")
     #chol_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/CholOp/build/libCholOp", "chol_op")
-    chol_orth_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/CholOrthOp/build/libCholOrthOp", "chol_orth_op")
 end
 
 include("utils/shapeFunctions.jl")
@@ -66,8 +57,8 @@ include("solvers/NNSolver.jl")
 include("solvers/Solvers.jl")
 include("solvers/SolversV2.jl")
 include("solvers/AdjointSolver.jl")
-include("AD/kernels.jl")
-include("AD/solvers.jl")
-
+include("ad/kernels.jl")
+include("ad/solvers.jl")
+include("ad/representations.jl")
 
 end
