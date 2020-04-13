@@ -9,7 +9,7 @@ pages = Any[
     "index.md",
     "Examples"=>["ex_simulation.md", "ex_ad.md"],
     "Manual"=>["representation.md"],
-    "api.md",
+    "api.md"
 ],
 authors = "Kailai Xu and Daniel (Zhengyu) Huang")
 
