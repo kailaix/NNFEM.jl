@@ -57,6 +57,13 @@ Animation of displacements.
 """
 function visualize_displacement(domain::Domain)
     u = hcat(domain.history["state"]...)
+    visualize_displacement(u, domain)
+end
+
+function visualize_displacement(u::Array{Float64, 2}, domain::Domain)
+    if size(u,2)==2domain.nnodes 
+        u = Array(u')
+    end
     X0, Y0 = domain.nodes[1:domain.nnodes], domain.nodes[domain.nnodes+1:end]
     NT = size(u, 2)
     U0 = zeros(domain.nnodes, NT)
@@ -101,4 +108,12 @@ function visualize_mesh(nodes::Array{Float64,2}, elems::Array{Int64, 2})
     axis("scaled")
     xlabel("x")
     ylabel("y")
+end
+
+function visualize_mesh(domain::Domain) 
+    elements = zeros(Int64, length(domain.elements), 4)
+    for (k,e) in enumerate(domain.elements)
+        elements[k,:] = e.elnodes
+    end
+    visualize_mesh(domain.nodes, elements)
 end

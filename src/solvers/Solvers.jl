@@ -1,4 +1,4 @@
-export ExplicitSolver, NewmarkSolver, AdaptiveSolver, SolverInitial!, StaticSolver, EigenModeHelper, EigenMode
+export ExplicitSolver, NewmarkSolver, AdaptiveSolver, SolverInitial!, StaticSolver, EigenModeHelper, EigenMode, SolverInitial
 
 
 @doc raw"""
@@ -73,6 +73,22 @@ function SolverInitial!(Δt::Float64, globdat::GlobalData, domain::Domain)
     fint  = assembleInternalForce( globdat, domain, Δt)
     globdat.acce[:] = globdat.M\(fext - fint)
 end
+
+"""
+    SolverInitial(Δt::Float64, globdat::GlobalData, domain::Domain)
+
+Similar to [`SolverInitial!`](@ref), but returns the (displacement, velocity, acceleartion) tuple. 
+"""
+function SolverInitial(Δt::Float64, globdat::GlobalData, domain::Domain)
+    SolverInitial!(Δt, globdat, domain)
+    u0 = domain.state 
+    v0 = similar(u0)
+    v0[domain.eq_to_dof] = globdat.velo[:]
+    a0 = similar(u0)
+    a0[domain.eq_to_dof] = globdat.acce[:]
+    u0, v0, a0
+end
+
 
 
 

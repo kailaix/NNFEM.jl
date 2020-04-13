@@ -1,4 +1,4 @@
-export ExplicitSolver, ExplicitSolverTime, GeneralizedAlphaSolver, GeneralizedAlphaSolverTime
+export ExplicitSolver, ExplicitSolverTime, GeneralizedAlphaSolver, GeneralizedAlphaSolverTime, compute_boundary_info
 
 
 @doc raw"""
@@ -35,7 +35,7 @@ Differentiable Explicit Solver.
 
 - `Fext`: external force, $\mathrm{NT}\times n$, where $n$ is the active dof. 
 
-- `ubd`, `abd`: boundary displacementt and acceleration, $\mathrm{NT}\times m$, where $m$ is boundary DOF. 
+- `ubd`, `abd`: boundary displacementt and acceleration, $\mathrm{NT}\times m$, where $m$ is time-dependent boundary DOF. 
 
 - `strain_type` (default = "small"): small strain or finite strain
 """
@@ -116,6 +116,30 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
 end
 
 
+"""
+    compute_boundary_info(domain::Domain, globdat::GlobalData, ts::Array{Float64})
+
+Computes the boundary information `ubd` and `abd`
+"""
+function compute_boundary_info(domain::Domain, globdat::GlobalData, ts::Array{Float64})
+    bd = domain.EBC[:] .== -2 
+    if sum(bd)==0
+        return missing, missing 
+    end
+
+    @assert globaldat.FBC!=nothing 
+
+    ubd = zeros(length(ts), sum(bd))
+    abd = zeros(length(ts), sum(bd))
+    for i = 1:length(ts)
+        time = ts[i]
+        ubd[i,:], _, abd[i,:] = globaldat.EBC_func(time) # user defined time-dependent boundary
+    end
+
+    return ubd, abd
+end
+
+
 @doc raw"""
     GeneralizedAlphaSolverTime(Δt::Float64, NT::Int64;ρ::Float64 = 0.0)
 
@@ -191,7 +215,7 @@ function GeneralizedAlphaSolver(globdat::GlobalData, domain::Domain,
         d_arr, v_arr, a_arr = tas 
         u, ∂u, ∂∂u = read(d_arr, i), read(v_arr, i), read(a_arr, i)
         if ismissing(Fext)
-            fext = zeros(length(fint))
+            fext = zeros(domain.neqs)
         else
             fext = Fext[i]
         end
@@ -208,11 +232,6 @@ function GeneralizedAlphaSolver(globdat::GlobalData, domain::Domain,
             σ = batch_matmul(Hs, ε)
         end 
         fint  = s_compute_internal_force_term(σ, domain)
-        if ismissing(Fext)
-            fext = zeros(length(fint))
-        else
-            fext = Fext[i]
-        end
         res = M * (∂∂up[nbddof] *(1 - αm) + αm*∂∂u[nbddof])  + fint - fext
         Δ = -(A\res)
         ∂∂up= scatter_add(∂∂up, nbddof, Δ)

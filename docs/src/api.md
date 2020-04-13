@@ -55,6 +55,7 @@ updateDomainStateBoundary!
 ExplicitSolverStep
 GeneralizedAlphaSolverStep
 SolverInitial!
+SolverInitial
 ```
 
 
@@ -78,4 +79,5 @@ ExplicitSolver
 ExplicitSolverTime
 GeneralizedAlphaSolver
 GeneralizedAlphaSolverTime
+compute_boundary_info
 ```
