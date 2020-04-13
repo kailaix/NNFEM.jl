@@ -82,9 +82,9 @@ Similar to [`SolverInitial!`](@ref), but returns the (displacement, velocity, ac
 function SolverInitial(Δt::Float64, globdat::GlobalData, domain::Domain)
     SolverInitial!(Δt, globdat, domain)
     u0 = domain.state 
-    v0 = zeros(u0)
+    v0 = zeros(length(u0))
     v0[domain.eq_to_dof] = globdat.velo[:]
-    a0 = zeros(u0)
+    a0 = zeros(length(u0))
     a0[domain.eq_to_dof] = globdat.acce[:]
     u0, v0, a0
 end
