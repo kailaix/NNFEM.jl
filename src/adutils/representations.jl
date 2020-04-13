@@ -43,8 +43,24 @@ where $S_{ij}$ is the $i$-th row and $j$-th column of `strain`
 function isotropic_function(coef::Union{Array{Float64,2}, PyObject},strain::Union{Array{Float64,2}, PyObject})
     @assert size(strain,2)==size(coef,2)==3
     @assert size(coef,1)==size(strain,1)
-    isotropic_ = load_op_and_grad("./build/libIsotropic","isotropic")
+    isotropic_ = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/Isotropic/build/libIsotropic","isotropic")
     coef,strain = convert_to_tensor([coef,strain], [Float64,Float64])
     out = isotropic_(coef,strain)
     set_shape(out, (size(coef,1), 3))
+end
+
+
+@doc raw"""
+    tensor_rep(inp::Union{Array{Float64,2}, PyObject})
+
+Converts Voigt strain tensors to matrix form  
+
+$$\begin{bmatrix}
+\end{bmatrix}$$
+"""
+function tensor_rep(inp::Union{Array{Float64,2}, PyObject})
+    @assert size(inp,2)==3
+    tensor_rep_ = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/TensorRep/build/libTensorRep","tensor_rep")
+    inp = convert_to_tensor([inp], [Float64]); inp = inp[1]
+    set_shape(tensor_rep_(inp), (size(inp,1), 2,2))
 end
