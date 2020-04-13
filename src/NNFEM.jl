@@ -57,8 +57,8 @@ include("solvers/NNSolver.jl")
 include("solvers/Solvers.jl")
 include("solvers/SolversV2.jl")
 include("solvers/AdjointSolver.jl")
-include("ad/kernels.jl")
-include("ad/solvers.jl")
-include("ad/representations.jl")
+include("adutils/kernels.jl")
+include("adutils/solvers.jl")
+include("adutils/representations.jl")
 
 end
