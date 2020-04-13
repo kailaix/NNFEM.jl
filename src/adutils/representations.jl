@@ -4,13 +4,15 @@ export consistent_tangent_matrix, isotropic_function, strain_voigt_to_tensor
 
 Returns the consistent tangent matrices. The size of the return is $N\times 3 \times 3$. 
 
-$$D_c^{ep} = D_c - \frac{D_c\frac{\partial g}{\partial \sigma}\left(\frac{\partial f}{\partial \sigma}Dc \right)^T D_c }{E_p + \frac{\partial g}{\partial \sigma} Dc \left(\frac{\partial f}{\partial \sigma}Dc \right)^T} $$
+
+$$D_c^{ep} = D_c - \frac{D_c\frac{\partial g}{\partial \sigma}\left(\frac{\partial f}{\partial \sigma}Dc \right)^T D_c }{E_p + \frac{\partial g}{\partial \sigma} Dc \left(\frac{\partial f}{\partial \sigma}Dc \right)^T}$$
+
 
 Here `inputs` is a $N\times 7$ matrix, where each row is 
 
 $$\left[\frac{\partial g}{\partial \sigma}, \frac{\partial f}{\partial \sigma}, E_p\right]$$
 
-`Dc` is a $3\times 3$ **row-major** matrix. 
+`Dc` is a $3\times 3$ **row-major** matrix; each row is a linear elasticity matrix.  
 """
 function consistent_tangent_matrix(inputs::Union{Array{Float64, 2}, PyObject},H::Union{Array{Float64,2}, PyObject})
     @assert size(inputs,2)==7
@@ -33,10 +35,10 @@ Here
 
 $$\texttt{coef(i,:)} = [s_0\ s_1\ s_2]$$
 
-$$A = \begin{bmatrix}
+$$A = \left[\begin{matrix}
 S_{i1} & S_{i3}/2\\ 
-S_{i3} & S_{i2}
-\end{bmatrix}$$
+S_{i3}/2 & S_{i2}
+\end{matrix}\right]$$
 
 where $S_{ij}$ is the $i$-th row and $j$-th column of `strain`
 """
