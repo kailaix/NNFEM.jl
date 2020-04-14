@@ -26,7 +26,7 @@ np = pyimport("numpy")
 
 
 Δt = 2.0e-4
-NT = 10
+NT = 100
 T = Δt * NT #50.0 #500.0
 
 
@@ -98,6 +98,14 @@ d, v, a, σ, ε =  ExplicitSolver(globdat, domain, d0, v0, a0, σ0, ε0, Δt, NT
 # Step 7: Start optimization 
 sess = Session(); init(sess)
 dobs = matread("Data/order$(porder)/data$(tid).mat")["d"]
-loss = sum((d - dobs)^2)
+loss = sum((d - dobs)^2*1.0e6)
 @show run(sess, loss)
+
+@info "Start"
 BFGS!(sess, loss)
+
+
+d_, v_, a_ = run(sess, [d,v,a])
+matwrite("Data/order$(porder)/data-nn$(tid).mat", Dict("d"=>d_, "v"=>v_, "a"=>a_))
+
+
