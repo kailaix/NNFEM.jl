@@ -1,4 +1,4 @@
-export consistent_tangent_matrix, isotropic_function, strain_voigt_to_tensor
+export consistent_tangent_matrix, isotropic_function, strain_voigt_to_tensor, bi_isotropic_function
 @doc raw"""
     consistent_tangent_matrix(inputs::Union{Array{Float64, 2}, PyObject},Dc::Union{Array{Float64,2}, PyObject})
 
@@ -14,8 +14,8 @@ $$\left[\frac{\partial g}{\partial \sigma}, \frac{\partial f}{\partial \sigma}, 
 
 `Dc` is a $3\times 3$ **row-major** matrix; each row is a linear elasticity matrix.  
 
-!!! note 
-    Gradients for `Dc` are not implemented. 
+!!! info 
+    The gradients with respect to both `inputs` and `H` are available. 
 """
 function consistent_tangent_matrix(inputs::Union{Array{Float64, 2}, PyObject},H::Union{Array{Float64,2}, PyObject})
     @assert size(inputs,2)==7
@@ -30,7 +30,7 @@ end
 @doc raw"""
     isotropic_function(coef::Union{Array{Float64,2}, PyObject},strain::Union{Array{Float64,2}, PyObject})
 
-isotropic function of a symmetric tensor.
+Isotropic function of a symmetric tensor.
 
 $$T = s_0 I + s_1 A + s_2 A^2$$
 
@@ -76,4 +76,38 @@ function strain_voigt_to_tensor(inp::Union{Array{Float64,2}, PyObject})
     tensor_rep_ = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/TensorRep/build/libTensorRep","tensor_rep")
     inp = convert_to_tensor([inp], [Float64]); inp = inp[1]
     set_shape(tensor_rep_(inp), (size(inp,1), 2,2))
+end
+
+
+@doc raw"""
+    bi_isotropic_function(coef::Union{Array{Float64,2}, PyObject},strain::Union{Array{Float64,2}, PyObject},
+    strainrate::Union{Array{Float64,2}, PyObject})
+
+Isotropic function of two symmetric tensors $A$ and $B$
+
+$$\begin{aligned}
+T(A, B) &= \gamma_0 I + \gamma_1 A + \gamma_2 B + \gamma_3 A^2 + \gamma_4 (A*B+B*A)\\ 
+& + \gamma_5 B^2 + \gamma_6 (A^2 B + BA^2) + \gamma_7 (AB^2 + B^2 A) + \gamma_8 (A^2B^2+B^2A^2)
+\end{aligned}$$
+
+This is useful for rate-dependent constitutive relation. For example, 
+
+$$\sigma^{n+1} = \mathcal{C}(\epsilon^{n+1}, \dot\epsilon^{n+1})$$
+
+
+Here 
+
+- `coef`: $N\times 9$ coefficient array
+
+- `strain`: $N\times 3$ strain tensor in Voigt notation
+
+- `strainrate`: $N\times 3$ strain rate tensor in Voigt notation
+"""
+function bi_isotropic_function(coef::Union{Array{Float64,2}, PyObject},strain::Union{Array{Float64,2}, PyObject},
+    strainrate::Union{Array{Float64,2}, PyObject})
+    @assert size(coef, 2)==9
+    isotropic_two_ = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/IsotropicTwo/build/libIsotropicTwo","isotropic_two")
+    coef,strain,strainrate = convert_to_tensor([coef,strain,strainrate], [Float64,Float64,Float64])
+    T = isotropic_two_(coef,strain,strainrate)
+    set_shape(T, (size(strain, 1), 3))
 end

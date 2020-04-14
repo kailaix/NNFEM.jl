@@ -67,6 +67,20 @@ isotropic_function
 
 * Isotropic functions for two tensors
 ```@docs
+bi_isotropic_function
+```
+
+Similar to the isotropic function for one tensor, we can construct a constitutive relation that is an isotropic function of two tensors. 
+```julia
+using NNFEM, ADCME
+strain = rand(100,3)
+strain_rate = rand(100,3)
+strain_tensor = strain_voigt_to_tensor(strain)
+strain_rate_tensor = strain_voigt_to_tensor(strain_rate)
+e1, v = tf.linalg.eigh(strain_tensor)
+e2, v = tf.linalg.eigh(strain_rate_tensor)
+coef = ae([e1 e2], [20,20,20,9])
+stress = isotropic_function(coef, strain)
 ```
 
 * Plasticity 

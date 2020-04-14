@@ -150,7 +150,7 @@ public:
 
     // TODO:
     int N = val_shape.dim_size(0);
-    backward(grad_val_tensor, grad_de_tensor, de_tensor, h_tensor, val_tensor, N);
+    backward(grad_val_tensor, grad_h_tensor, grad_de_tensor, de_tensor, h_tensor, val_tensor, N);
     
   }
 };
