@@ -432,7 +432,7 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
     bddof = findall(domain.EBC[:] .== -2)
     fixed_bddof = findall(domain.EBC[:] .== -1)
 
-    Fext, ubd, abd = convert_to_tensor([Fext, ubd, abd], [Float64, Float64, Float64, Float64])
+    Fext, ubd, abd = convert_to_tensor([Fext, ubd, abd], [Float64, Float64, Float64])
 
     function condition(i, tas...)
         i<=NT
