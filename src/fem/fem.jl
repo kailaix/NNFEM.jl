@@ -85,6 +85,9 @@ function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Flo
     M = Float64[]
     Mlumped = Float64[]
     MID = Float64[]
+    if !isnothing(EBC_func) && !isnothing(Edge_func)
+        error("EBC_func and Edge_func cannot be provided at the same time")
+    end
     GlobalData(state, Dstate, velo, acce, time, M, Mlumped, MID, EBC_func, FBC_func, Body_func, Edge_func)
 end
 
@@ -526,6 +529,7 @@ function getExternalForce!(domain::Domain, globaldat::GlobalData, fext::Union{Mi
     end
     fbody = getBodyForce(domain, globaldat, globaldat.time)
     fedge = getEdgeForce(domain, globaldat, globaldat.time)
+    @info sum(abs.(fedge))
     fext + fbody + fedge
 end
 
