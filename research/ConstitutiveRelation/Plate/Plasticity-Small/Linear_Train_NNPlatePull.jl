@@ -64,11 +64,12 @@ function compute_loss(tid, force_scale)
     state_history = [x[fine_to_coarse] for x in full_state_history]
 
     fext_history = []
-    setNeumannBoundary!(domain, FBC, fext)
+    setConstantNodalForces!(domain, FBC, fext)
     for i = 1:NT
         globdat.time = Δt*i
         updateDomainStateBoundary!(domain, globdat)
-        push!(fext_history, domain.fext[:])
+        fext = getExternalForce!(domain, globaldat)
+        push!(fext_history, fext)
     end
 
     # domain.state = state_history[end]
