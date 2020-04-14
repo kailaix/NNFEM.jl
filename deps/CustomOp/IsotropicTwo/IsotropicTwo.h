@@ -25,7 +25,6 @@ void forward(double *stress, const double *strain, const double *strain_rate, co
     stress[3*i] = T(0,0);
     stress[3*i+1] = T(1,1);
     stress[3*i+2] = T(1,0);
-    coef += 9;
   }
 
 }
@@ -40,6 +39,7 @@ void backward(
   adouble A11, A12, A22;
   adouble B11, B12, B22;
   aVector coef(9);
+  for(int i=0;i<9;i++) grad_coef[i] = 0.0;
   for(int i=0;i<n;i++){
     A11.set_value(strain[3*i]);
     A12.set_value(strain[3*i+2]);
@@ -47,7 +47,7 @@ void backward(
     B11.set_value(strain_rate[3*i]);
     B12.set_value(strain_rate[3*i+2]);
     B22.set_value(strain_rate[3*i+1]);
-    for(int j=0;j<9;j++) coef[j] = coef_ipt[9*i+j];
+    for(int j=0;j<9;j++) coef[j] = coef_ipt[j];
     aMatrix22 A, B;
     Matrix22 I;
     I << 1.0, 0.0, 0.0, 1.0;
@@ -57,16 +57,18 @@ void backward(
     A(0,1) = A12/2; A(1,1) = A22;
     B(0,0) = B11; B(0,1) = B12/2;
     B(0,1) = B12/2; B(1,1) = B22;
-    aMatrix A2 = A * A;
-    aMatrix B2 = B * B;
-    aMatrix AB = A * B;
-    aMatrix BA = B * A;
+    aMatrix A2 = A ** A;
+    aMatrix B2 = B ** B;
+    aMatrix AB = A ** B;
+    aMatrix BA = B ** A;
     
-    aMatrix T = coef[0] * I + coef[1] * A + coef[2] * B + coef[3] * A2 + coef[4] * (A*B+B*A) +
-        coef[5] * B2 + coef[6] * (A2*B + B * A2) + coef[7] * (A*B2+B2*A) + coef[8]*(A2*B2+B2*A2);
+    aMatrix T = coef[0] * I + coef[1] * A + coef[2] * B + coef[3] * A2 + coef[4] * (A**B+B**A) +
+        coef[5] * B2 + coef[6] * (A2**B + B ** A2) + coef[7] * (A**B2+B2**A) + coef[8]*(A2**B2+B2**A2);
 
     adouble l = T(0,0) * grad_stress[3*i] + T(1,1) * grad_stress[3*i+1] + T(1,0) * grad_stress[3*i+2];
 
+    std::cout << T << std::endl;
+    std::cout <<  stress[3*i] << "  " <<  stress[3*i+1] << "  " <<  stress[3*i+2]<< std::endl;
     l.set_gradient(1.0);
     stack.compute_adjoint();
     grad_strain[3*i] = A11.get_gradient();
@@ -75,6 +77,10 @@ void backward(
     grad_strain_rate[3*i] = B11.get_gradient();
     grad_strain_rate[3*i+2] = B12.get_gradient();
     grad_strain_rate[3*i+1] = B22.get_gradient();
+    auto gc = coef.get_gradient();
+    for(int i=0;i<9;i++){
+      grad_coef[i] += gc(i);
+    }
   }
 
 }
