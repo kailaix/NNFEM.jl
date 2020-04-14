@@ -81,6 +81,7 @@ end
 
 @doc raw"""
     bi_isotropic_function(coef::Union{Array{Float64,2}, PyObject},strain::Union{Array{Float64,2}, PyObject},
+    strainrate::Union{Array{Float64,2}, PyObject})
 
 Isotropic function of two symmetric tensors $A$ and $B$
 
@@ -93,8 +94,14 @@ This is useful for rate-dependent constitutive relation. For example,
 
 $$\sigma^{n+1} = \mathcal{C}(\epsilon^{n+1}, \dot\epsilon^{n+1})$$
 
-!!! note 
-    The input `coef` must be $N\times 9$
+
+Here 
+
+- `coef`: $N\times 9$ coefficient array
+
+- `strain`: $N\times 3$ strain tensor in Voigt notation
+
+- `strainrate`: $N\times 3$ strain rate tensor in Voigt notation
 """
 function bi_isotropic_function(coef::Union{Array{Float64,2}, PyObject},strain::Union{Array{Float64,2}, PyObject},
     strainrate::Union{Array{Float64,2}, PyObject})
