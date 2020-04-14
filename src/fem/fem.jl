@@ -539,7 +539,7 @@ function getExternalForce!(domain::Domain, globaldat::GlobalData, fext::Union{Mi
 
     #Update time-dependent edge traction force
     fedge = getEdgeForce(domain, globaldat, globaldat.time)
-
+    
     fext + fbody + fedge
 end
 
