@@ -151,11 +151,11 @@ Computes the external force (body force, edge force and force due to boundary ac
 """
 function compute_external_force(domain::Domain, globdat::GlobalData, ts::Array{Float64})
     NT = length(ts)
-    fext = zeros(NT, 2domain.nnodes)
+    fext = zeros(NT, domain.neqs)
     for i = 1:length(ts)
         time = ts[i]
         globdat.time = time 
-        fext[i,:] = getExternalForce!(domain, globdat)
+        fext[i, :] = getExternalForce!(domain, globdat)
     end
     globdat.time = 0.0
     fext
@@ -409,8 +409,8 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
     d0::Union{Array{Float64, 1}, PyObject}, 
     v0::Union{Array{Float64, 1}, PyObject}, 
     a0::Union{Array{Float64, 1}, PyObject}, 
-    σ0::Union{Array{Float64, 1}, PyObject}, 
-    ε0::Union{Array{Float64, 1}, PyObject}, 
+    σ0::Union{Array{Float64, 2}, PyObject}, 
+    ε0::Union{Array{Float64, 2}, PyObject}, 
     Δt::Float64, NT::Int64, 
     nn::Function,
     Fext::Union{Array{Float64, 2}, PyObject, Missing}=missing,
@@ -426,7 +426,7 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
     bddof = findall(domain.EBC[:] .== -2)
     fixed_bddof = findall(domain.EBC[:] .== -1)
 
-    Fext, ubd, abd, H = convert_to_tensor([Fext, ubd, abd, H], [Float64, Float64, Float64, Float64])
+    Fext, ubd, abd = convert_to_tensor([Fext, ubd, abd], [Float64, Float64, Float64, Float64])
 
     function condition(i, tas...)
         i<=NT
