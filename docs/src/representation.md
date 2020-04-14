@@ -70,7 +70,7 @@ isotropic_function
 bi_isotropic_function
 ```
 
-Similar to the isotropic function for one tensor, we have 
+Similar to the isotropic function for one tensor, we can construct a constitutive relation that is an isotropic function of two tensors. 
 ```julia
 using NNFEM, ADCME
 strain = rand(100,3)

@@ -86,7 +86,7 @@ Isotropic function of two symmetric tensors $A$ and $B$
 
 $$\begin{aligned}
 T(A, B) &= \gamma_0 I + \gamma_1 A + \gamma_2 B + \gamma_3 A^2 + \gamma_4 (A*B+B*A)\\ 
-+ \gamma_5 B^2 + \gamma_6 (A^2 B + BA^2) + \gamma_7 (AB^2 + B^2 A) + \gamma_8 (A^2B^2+B^2A^2)
+& + \gamma_5 B^2 + \gamma_6 (A^2 B + BA^2) + \gamma_7 (AB^2 + B^2 A) + \gamma_8 (A^2B^2+B^2A^2)
 \end{aligned}$$
 
 This is useful for rate-dependent constitutive relation. For example, 
