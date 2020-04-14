@@ -491,6 +491,5 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
     _, d, v, a, σ, ε = while_loop(condition, body, [i, tas...])
     d, v, a, σ, ε = stack(d), stack(v), stack(a), σ, ε
     sp = (NT+1, 2domain.nnodes)
-    set_shape(d, sp), set_shape(v, sp), set_shape(a, sp), 
-        set_shape(σ, (NT+1, getNGauss(domain),3)), set_shape(ε, (NT+1, getNGauss(domain),3))
+    set_shape(d, sp), set_shape(v, sp), set_shape(a, sp), set_shape(σ, (NT+1, getNGauss(domain),3)), set_shape(ε, (NT+1, getNGauss(domain),3))
 end

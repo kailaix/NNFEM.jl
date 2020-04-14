@@ -22,7 +22,7 @@ function consistent_tangent_matrix(inputs::Union{Array{Float64, 2}, PyObject},H:
     @assert size(H,1)==size(H,2)==3
     plasticity_ = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/Plasticity/build/libPlasticity","plasticity")
     inputs,H = convert_to_tensor([inputs,H], [Float64,Float64])
-    out = plasticity_(val,H)
+    out = plasticity_(inputs,H)
     set_shape(out, (size(inputs, 1), 3, 3))
 end
 

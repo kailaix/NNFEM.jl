@@ -36,7 +36,9 @@ Lx, Ly = 1.0, 0.5
 nxc, nyc = 10,5
 nx, ny =  nxc*fiber_size, nyc*fiber_size
 ngp = 3
-prop = Dict("name"=> "PlaneStress", "rho"=> 4.5, "E"=> 1.0, "nu"=> 0.4)
+prop = Dict("name"=> "PlaneStress","rho"=> 4.5, "E"=> 1e+4, "nu"=> 0.2)
+Dc = PlaneStress(prop).H
+
 nodes, EBC, g, gt, FBC, fext, ft, npoints, node_to_point = BoundaryCondition(tid, nx, ny, porder, Lx, Ly; force_scale=force_scale)
 elements = []
 for j = 1:ny
