@@ -14,8 +14,8 @@ $$\left[\frac{\partial g}{\partial \sigma}, \frac{\partial f}{\partial \sigma}, 
 
 `Dc` is a $3\times 3$ **row-major** matrix; each row is a linear elasticity matrix.  
 
-!!! note 
-    Gradients for `Dc` are not implemented. 
+!!! info 
+    The gradients with respect to both `inputs` and `H` are available. 
 """
 function consistent_tangent_matrix(inputs::Union{Array{Float64, 2}, PyObject},H::Union{Array{Float64,2}, PyObject})
     @assert size(inputs,2)==7

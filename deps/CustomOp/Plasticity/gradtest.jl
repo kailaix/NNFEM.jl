@@ -3,13 +3,14 @@ using PyCall
 using LinearAlgebra
 using PyPlot
 using Random
+using NNFEM
 Random.seed!(233)
 
-function plasticity(val,h)
-    plasticity_ = load_op_and_grad("./build/libPlasticity","plasticity")
-    val,h = convert_to_tensor([val,h], [Float64,Float64])
-    plasticity_(val,h)
-end
+# function plasticity(val,h)
+#     plasticity_ = load_op_and_grad("./build/libPlasticity","plasticity")
+#     val,h = convert_to_tensor([val,h], [Float64,Float64])
+#     plasticity_(val,h)
+# end
 
 # TODO: specify your input parameters
 N = 2
@@ -25,7 +26,7 @@ for i = N:1
 end
 
 h = Array(h')
-u = plasticity(val,h)
+u = consistent_tangent_matrix(val,h)
 sess = Session(); init(sess)
 @show run(sess, u)-out
 
@@ -37,12 +38,16 @@ sess = Session(); init(sess)
 #       in the case of `multiple=true`, you also need to specify which component you are testings
 # gradient check -- v
 function scalar_function(m)
-    return sum(plasticity(m,h)^2)
+    # return sum(consistent_tangent_matrix(m,h)^2)
+    return sum(consistent_tangent_matrix(val,m)^2)
 end
 
 # TODO: change `m_` and `v_` to appropriate values
-m_ = constant(rand(N,7))
-v_ = rand(N,7)
+# m_ = constant(rand(N,7))
+# v_ = rand(N,7)
+
+m_ = constant(rand(3,3))
+v_ = rand(3,3)
 y_ = scalar_function(m_)
 dy_ = gradients(y_, m_)
 ms_ = Array{Any}(undef, 5)
