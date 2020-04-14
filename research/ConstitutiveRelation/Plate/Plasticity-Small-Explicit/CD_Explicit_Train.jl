@@ -87,15 +87,17 @@ Fext = compute_external_force(domain, globdat, ts)
 # Step 5 get initial state, velo, acceleration with SovlerInitial
 d0, v0, a0 = SolverInitial(Δt, globdat, domain)
 
-# Step 6 Solve the equation
+# Step 6: Solve the equation
 #d, v, a =  ExplicitSolver(globdat, domain, d0, v0, a0, Δt, NT, nn_law, Fext, ubd, abd; strain_type="small")
 
 #TODO assume no prestress/prestrain
 ngpt = getNGauss(domain)
 σ0, ε0 = zeros(ngpt, 3), zeros(ngpt, 3)
 d, v, a, σ, ε =  ExplicitSolver(globdat, domain, d0, v0, a0, σ0, ε0, Δt, NT, nn_nonassociated_plasticity, Fext, ubd, abd; strain_type="small")
-sess = Session(); init(sess)
 
+# Step 7: Start optimization 
+sess = Session(); init(sess)
 dobs = matread("Data/order$(porder)/data$(tid).mat")["d"]
 loss = sum((d - dobs)^2)
+@show run(sess, loss)
 BFGS!(sess, loss)
