@@ -93,7 +93,7 @@ d0, v0, a0 = SolverInitial(Δt, globdat, domain)
 #TODO assume no prestress/prestrain
 ngpt = getNGauss(domain)
 σ0, ε0 = zeros(ngpt, 3), zeros(ngpt, 3)
-d, v, a, σ, ε =  ExplicitSolver(globdat, domain, d0, v0, a0, σ0, ε0, Δt, NT, nn_nonassociated_plasticity, Fext, ubd, abd; strain_type="small")
+d, v, a, σ, ε =  ExplicitSolver(globdat, domain, d0, v0, a0, σ0, ε0, Δt, NT, nn_associated_plasticity, Fext, ubd, abd; strain_type="small")
 
 # Step 7: Start optimization 
 sess = Session(); init(sess)
