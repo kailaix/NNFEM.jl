@@ -15,6 +15,7 @@ end
 N = 10
 ε = zeros(N, 3)
 dotε = zeros(N,3)
+out = zeros(N,3)
 for i = 1:N 
     A = [ε[i,1] ε[i,3]/2
         ε[i,3]/2 ε[i,2]]
@@ -22,9 +23,10 @@ for i = 1:N
         dotε[i,3]/2 dotε[i,2]]
     T = γ[1] * I + γ[2] * A + γ[3] * B + γ[4] * A * A + γ[5] * (A*B+B*A) + 
         γ[6] * B * B + γ[7] * (A * A * B + B * A * A) + γ[8] * (A * B * B + B * B * A) + γ[9] * (A * A * B * B + B * B * A * A)
-    out[i, :] 
+    out[i, :] = [T[1,1];T[2,2];T[1,2]]
+end
 # TODO: specify your input parameters
-u = isotropic_two(coef,strain,strainrate)
+u = isotropic_two(γ,ε,dotε)
 sess = Session(); init(sess)
 @show run(sess, u)
 
