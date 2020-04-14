@@ -34,9 +34,11 @@ Differentiable Explicit Solver.
 
 - `Hs`: linear elasticity matrix at each Gauss point 
 
-- `Fext`: external force, $\mathrm{NT}\times n$, where $n$ is the active dof. 
+- `Fext`: external force, $\mathrm{NT}\times n$, where $n$ is the active dof.
+   The external force includes all **body forces**, **external load forces** (also called **edge forces** in NNFEM) and **boundary acceleration-induced forces**.
 
-- `ubd`, `abd`: boundary displacementt and acceleration, $\mathrm{NT}\times m$, where $m$ is time-dependent boundary DOF. 
+- `ubd`, `abd`: boundary displacementt and acceleration, $\mathrm{NT}\times m$, where $m$ is **time-dependent** boundary DOF. 
+   Time-independent boundary conditions are extracted from `domain`. 
 
 - `strain_type` (default = "small"): small strain or finite strain
 """
@@ -203,8 +205,12 @@ provided in ADCME. This function does not support damping and variable time step
 - `Hs`: linear elasticity matrix at each Gauss point 
 
 - `Fext`: external force, $\mathrm{NT}\times n$, where $n$ is the active dof. 
+  The external force includes all **body forces**, **external load forces** (also called **edge forces** in NNFEM) and **boundary acceleration-induced forces**.
 
 - `ubd`, `abd`: boundary displacementt and acceleration, $\mathrm{NT}\times m$, where $m$ is boundary DOF. 
+  Time-independent boundary conditions are extracted from `domain`. 
+
+`GeneralizedAlphaSolver` does not support finite-strain continuum yet.  
 """
 function GeneralizedAlphaSolver(globdat::GlobalData, domain::Domain,
     d0::Union{Array{Float64, 1}, PyObject}, 

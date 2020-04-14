@@ -70,6 +70,16 @@ To facilitate implementing custom operators, we made a shared library for storin
     }
     ```
 
+
+## A Typical Simulation Routine 
+
+1. Make an instance of [`Domain`](@ref) and [`GlobalData`](@ref)
+2. Assemble mass matrices using `assembleMassMatrix!`
+3. Compute boundary information using [`compute_boundary_info`](@ref)
+4. Compute the external force (body force + external load force + boundary-acceleration-induced force) using [`compute_external_force`](@erf)
+5. Compute initial $a_0$ using [`SolverInitial`](@ref)
+6. Invoke solver [`ExplicitSolver`](@ref) or [`GeneralizedAlphaSolver`](@ref)
+
 ## Examples
 
 

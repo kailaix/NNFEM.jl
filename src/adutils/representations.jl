@@ -5,7 +5,7 @@ export consistent_tangent_matrix, isotropic_function, strain_voigt_to_tensor
 Returns the consistent tangent matrices. The size of the return is $N\times 3 \times 3$. 
 
 
-$$D_c^{ep} = D_c - \frac{D_c\frac{\partial g}{\partial \sigma}\left(\frac{\partial f}{\partial \sigma}Dc \right)^T D_c }{E_p + \frac{\partial g}{\partial \sigma} Dc \left(\frac{\partial f}{\partial \sigma} \right)^T}$$
+$$D_c^{ep} = D_c - \frac{D_c\frac{\partial g}{\partial \sigma}\left(\frac{\partial f}{\partial \sigma} \right)^T D_c }{E_p + \frac{\partial g}{\partial \sigma} Dc \left(\frac{\partial f}{\partial \sigma} \right)^T}$$
 
 
 Here `inputs` is a $N\times 7$ matrix, where each row is 
