@@ -8,12 +8,12 @@ Random.seed!(233)
 function isotropic_two(coef,strain,strainrate)
     isotropic_two_ = load_op_and_grad("./build/libIsotropicTwo","isotropic_two")
     coef,strain,strainrate = convert_to_tensor([coef,strain,strainrate], [Float64,Float64,Float64])
-    coef = reshape(coef, (1, 9))
     isotropic_two_(coef,strain,strainrate)
 end
 
-γ = rand(9)
+
 N = 1
+γ = rand(N,9)
 ε = rand(N, 3)
 dotε = rand(N,3)
 out = zeros(N,3)
@@ -41,18 +41,20 @@ sess = Session(); init(sess)
 function scalar_function(m)
     # return sum(isotropic_two(γ,ε,dotε)^2)
 
-    return sum(isotropic_two(γ,ε,m)^2)
+    # return sum(isotropic_two(γ,ε,m)^2)
+
+    return sum(isotropic_two(γ,m,dotε)^2)
 
     # return sum(isotropic_two(m,ε,dotε)^2)
 
 end
 
 # TODO: change `m_` and `v_` to appropriate values
-# m_ = constant(rand(9))
-# v_ = rand(9)
+# m_ = constant(rand(N, 9))
+# v_ = rand(N, 9)
 
 m_ = constant(rand(N,3))
-v_ = rand(N,3)
+v_ = [rand(N,1) rand(N,1) rand(N,1)]
 y_ = scalar_function(m_)
 dy_ = gradients(y_, m_)
 ms_ = Array{Any}(undef, 5)
