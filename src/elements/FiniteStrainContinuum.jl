@@ -1,10 +1,11 @@
+include("Continuum.jl")
 export FiniteStrainContinuum
 
 
 """
     FiniteStrainContinuum
 
-Implements the finite strain element. 
+Constructs a finite strain element. 
 
 - `eledim`: spatial dimension of the element (default = 2).
 - `mat`: constitutive law, a length `#elem` vector of materials such as [`PlaneStress`](@ref)
@@ -13,8 +14,34 @@ Implements the finite strain element.
 - `coords`: coordinates of the vertices of the element
 - `dhdx`, `weights`, `hs`: data for integral 
 - `stress`: stress at each quadrature points
+
+# Example
+```julia
+#   Local degrees of freedom 
+#   4 ---- 3
+#
+#   1 ---- 2
+
+nx = 10
+ny = 5
+h = 0.1
+element = FiniteStrainContinuum[]
+prop = Dict("name"=> "PlaneStrain", "rho"=> 0.0876584, "E"=>0.07180760098, "nu"=>0.4)
+for j = 1:ny
+    for i = 1:nx 
+        n = (nx+1)*(j-1) + (i-1)+1
+        elnodes = [n, n + 1, n + 1 + (nx + 1), n + (nx + 1)]
+        ngp = 3 # 3 x 3 Gauss points per element 
+        coords = [(i-1)*h (j-1)*h
+                    i*h (j-1)*h
+                    i*h j*h
+                    (i-1)*h j*h]
+        push!(element, FiniteStrainContinuum(coords,elnodes, prop, ngp))
+    end
+end
+```
 """
-mutable struct FiniteStrainContinuum
+mutable struct FiniteStrainContinuum <: Continuum
     eledim::Int64
     mat  # constitutive law
     elnodes::Array{Int64}   # the node indices in this finite element
@@ -26,6 +53,12 @@ mutable struct FiniteStrainContinuum
     stress::Array{Array{Float64}}
 end
 
+Base.show(io::IO, z::FiniteStrainContinuum) = print(io, "FiniteStrainContinuum with $(length(z.weights)) Gauss quadrature points and $(z.props["name"]) material.")
+
+
+"""
+    FiniteStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, props::Dict{String, Any}, ngp::Int64=2)
+"""
 function FiniteStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, props::Dict{String, Any}, ngp::Int64=2)
     eledim = 2
     dhdx, weights, hs = get2DElemShapeData( coords, ngp )
@@ -87,8 +120,9 @@ function getInternalForce(self::FiniteStrainContinuum, state::Array{Float64}, Ds
     n = dofCount(self)
     fint = zeros(Float64,n)
     out = Array{Float64}[]
-    u = state[1:4]; v = state[5:8]
-    Du = Dstate[1:4]; Dv = Dstate[5:8]
+    nnodes = length(self.elnodes)
+    u = state[1:nnodes]; v = state[nnodes+1:2*nnodes]
+    Du = Dstate[1:nnodes]; Dv = Dstate[nnodes+1:2*nnodes]
     for k = 1:length(self.weights)
         g1 = self.dhdx[k][:,1]; g2 = self.dhdx[k][:,2]
         ux = u'*g1; uy = u'*g2; vx = v'*g1; vy = v'*g2 
@@ -108,18 +142,7 @@ function getInternalForce(self::FiniteStrainContinuum, state::Array{Float64}, Ds
     return fint
 end
 
-function getMassMatrix(self::FiniteStrainContinuum)
-    ndofs = dofCount(self)
-    nnodes = length(self.elnodes)
-    mass = zeros(ndofs,ndofs)
-    for k = 1:length(self.weights)
-        rho = self.mat[k].ρ
-        mass += [self.hs[k]*self.hs[k]' zeros(nnodes, nnodes)
-                 zeros(nnodes, nnodes)  self.hs[k]*self.hs[k]']  * rho * self.weights[k]
-    end
-    lumped = sum(mass, dims=2)
-    mass, lumped
-end
+
 
 function getStrain(self::FiniteStrainContinuum, state::Array{Float64})
     ndofs = dofCount(self); 
@@ -147,19 +170,6 @@ function getStrain(self::FiniteStrainContinuum, state::Array{Float64})
 end
 
 
-function getNodes(self::FiniteStrainContinuum)
-    return self.elnodes
-end
-
-function dofCount(self::FiniteStrainContinuum)
-    return 2length(self.elnodes)
-end
-
-function commitHistory(self::FiniteStrainContinuum)
-    for m in self.mat 
-        commitHistory(m)
-    end
-end
 
 
 function  getForceAndDforceDstress(self::FiniteStrainContinuum, state::Array{Float64},  

@@ -1,12 +1,14 @@
+cd(@__DIR__)
+using Pkg
+Pkg.activate(@__DIR__)
+Pkg.instantiate()
 using Documenter
 using NNFEM
 makedocs(sitename="NNFEM", modules=[NNFEM],
 pages = Any[
     "index.md",
-    "api.md",
-    "method.md",
-    "plasticity.md",
-    "instructions.md",
+    "Examples"=>["ex_simulation.md", "ex_ad.md"],
+    "Manual"=>["representation.md"],
     "api.md"
 ],
 authors = "Kailai Xu and Daniel (Zhengyu) Huang")

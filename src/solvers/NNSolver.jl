@@ -1,22 +1,25 @@
-export DynamicMatLawLoss, preprocessing, DynamicMatLawLossInternalVariable,
-       DynamicMatLawLossWithTailLoss, LSfittingStress, LSfittingStressHelper
+export DynamicMatLawLoss, preprocessing, LSfittingStress, LSfittingStressHelper
 
 @doc """
-    domain   : finite element domain, for data structure
-    E_all    : all strains for the whole simulation, with size (NT+1, neles*nGauss, nstrains)
-    w∂E∂u_all: multiplication of the Gaussian weight and ∂E∂u^T for the whole simulation, 
-               with size (NT+1, neles*nGauss, ndofs_per_element, nstrains)
-    F_tot : approximated internal force for the whole simulation, with size(NT, ndofs), 
-            from time n=1 to time n=NT
+    - 'domain': Domain, finite element domain, for data structure
+    - 'E_all':  Float64[NT+1, neles*nGauss, nstrains], all strains for the whole simulation from training data
+    - 'w∂E∂u_all': Float64[NT+1, neles*nGauss, ndofs_per_element, nstrains], 
+                multiplication of the Gaussian weight and ∂E∂u^T for the whole simulation from training data 
+    - 'F_tot': Float64[NT, neqs] approximated internal force for the whole simulation, from time n=1 to time n=NT
 
     form the loss function, based on dynamic equilibrium 
         (Mddu + fint(NN, E, DE) + MIDddu_bc = fext
 
-    loss = ∑ ||fint(NN, E, DE) - (fext - MIDddu_bc - Mddu)||^2
+    we have  
+        F_tot  = fext - MIDddu_bc - Mddu
+    loss = ∑ ||fint(NN, E, DE) - F_tot||^2
+
+    todo
+    We assume the time step is constant for the training data
 """->
 function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all::Array{Float64},
      F_tot::Array{Float64}, nn::Function)
-    # todo, use fint instead of computed F_tot 
+    # you can use fint instead of computed F_tot to debug
     # F_tot =  hcat(domain.history["fint"]...)'
     # define variables
     neles = domain.neles
@@ -26,10 +29,14 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all:
     NT = size(E_all,1)-1
     @assert size(E_all)==(NT+1, neles*nGauss, nstrains)
     @assert size(F_tot)==(NT, domain.neqs)
+
+    #convert to tensors (Tensorflow variables)
     E_all = constant(E_all)
     F_tot = constant(F_tot)
     w∂E∂u_all = constant(w∂E∂u_all)
 
+    #instead using for loop for time step update, while loop is used for efficiency (specifically for Tensorflow)
+    #time step is 1, 2, 3, ....NT+1, 1 is the initial condition 
     function cond0(i, ta_loss, ta_σ)
         i<=NT+1
     end
@@ -39,14 +46,16 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all:
         DE = E_all[i-1]
         w∂E∂u = w∂E∂u_all[i]
         σ0 = read(ta_σ, i-1)        
-        fint, σ = tfAssembleInternalForce(domain,nn,E,DE,w∂E∂u,σ0)
+        fint, σ = assembleInternalForce(domain,nn,E,DE,w∂E∂u,σ0)
         ta_σ = write(ta_σ, i, σ)
         ta_loss = write(ta_loss, i, sum((fint-F_tot[i-1])^2))
         i+1, ta_loss, ta_σ
     end
 
     σ0 = constant(zeros(neles*nGauss, nstrains))
+    # tensorflow stress collection at each time step 
     ta_σ = TensorArray(NT+1); ta_σ = write(ta_σ, 1, σ0)
+    # tensorflow loss collection at each time step 
     ta_loss = TensorArray(NT+1); ta_loss = write(ta_loss, 1, constant(0.0))
     i = constant(2, dtype=Int32)
     _, out, _ = while_loop(cond0, body, [i,ta_loss, ta_σ]; parallel_iterations=20)
@@ -56,114 +65,113 @@ function DynamicMatLawLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all:
 end
 
 
-function DynamicMatLawLossWithTailLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all::Array{Float64},
-    F_tot::Array{Float64}, nn::Function, H0::Array{Float64}, n_tail::Int64, stress_scale::Float64)
-   # todo, use fint instead of computed F_tot 
-   # F_tot =  hcat(domain.history["fint"]...)'
-   # define variables
-   neles = domain.neles
-   nGauss = length(domain.elements[1].weights)
-   nstrains = size(E_all,3)
+# function DynamicMatLawLossWithTailLoss(domain::Domain, E_all::Array{Float64}, w∂E∂u_all::Array{Float64},
+#     F_tot::Array{Float64}, nn::Function, H0::Array{Float64}, n_tail::Int64, stress_scale::Float64)
+#    # todo, use fint instead of computed F_tot 
+#    # F_tot =  hcat(domain.history["fint"]...)'
+#    # define variables
+#    neles = domain.neles
+#    nGauss = length(domain.elements[1].weights)
+#    nstrains = size(E_all,3)
 
-   NT = size(E_all,1)-1
-   @assert size(E_all)==(NT+1, neles*nGauss, nstrains)
-   @assert size(F_tot)==(NT, domain.neqs)
-   E_all = constant(E_all)
-   F_tot = constant(F_tot)
-   w∂E∂u_all = constant(w∂E∂u_all)
+#    NT = size(E_all,1)-1
+#    @assert size(E_all)==(NT+1, neles*nGauss, nstrains)
+#    @assert size(F_tot)==(NT, domain.neqs)
+#    E_all = constant(E_all)
+#    F_tot = constant(F_tot)
+#    w∂E∂u_all = constant(w∂E∂u_all)
 
-   function cond0(i, ta_loss, ta_σ, ta_tail)
-       i<=NT+1
-   end
+#    function cond0(i, ta_loss, ta_σ, ta_tail)
+#        i<=NT+1
+#    end
 
-   function body(i, ta_loss, ta_σ, ta_tail)
-       E = E_all[i]
-       DE = E_all[i-1]
-       w∂E∂u = w∂E∂u_all[i]
-       σ0 = read(ta_σ, i-1)        
-       fint, σ = tfAssembleInternalForce(domain,nn,E,DE,w∂E∂u,σ0)
-       ta_σ = write(ta_σ, i, σ)
-       ta_loss = write(ta_loss, i, sum((fint-F_tot[i-1])^2))
-       tail_loss = tf.cond(i<=NT+1-n_tail,
-            ()->constant(0.0),
-            ()->begin
-                σ_all = nn(E, DE, σ0)
-                norm( (E-DE)*H0 + σ0/stress_scale - σ_all/stress_scale )
-            end
-       )
-       ta_tail = write(ta_tail, i, tail_loss)
-       i+1, ta_loss, ta_σ, ta_tail
-   end
+#    function body(i, ta_loss, ta_σ, ta_tail)
+#        E = E_all[i]
+#        DE = E_all[i-1]
+#        w∂E∂u = w∂E∂u_all[i]
+#        σ0 = read(ta_σ, i-1)        
+#        fint, σ = assembleInternalForce(domain,nn,E,DE,w∂E∂u,σ0)
+#        ta_σ = write(ta_σ, i, σ)
+#        ta_loss = write(ta_loss, i, sum((fint-F_tot[i-1])^2))
+#        tail_loss = tf.cond(i<=NT+1-n_tail,
+#             ()->constant(0.0),
+#             ()->begin
+#                 σ_all = nn(E, DE, σ0)
+#                 norm( (E-DE)*H0 + σ0/stress_scale - σ_all/stress_scale )
+#             end
+#        )
+#        ta_tail = write(ta_tail, i, tail_loss)
+#        i+1, ta_loss, ta_σ, ta_tail
+#    end
 
-   σ0 = constant(zeros(neles*nGauss, nstrains))
-   ta_σ = TensorArray(NT+1); ta_σ = write(ta_σ, 1, σ0)
-   ta_tail = TensorArray(NT+1); ta_tail = write(ta_tail, 1, constant(0.0))
-   ta_loss = TensorArray(NT+1); ta_loss = write(ta_loss, 1, constant(0.0))
-   i = constant(2, dtype=Int32)
-   _, out, _, tout = while_loop(cond0, body, [i,ta_loss, ta_σ, ta_tail]; parallel_iterations=20)
+#    σ0 = constant(zeros(neles*nGauss, nstrains))
+#    ta_σ = TensorArray(NT+1); ta_σ = write(ta_σ, 1, σ0)
+#    ta_tail = TensorArray(NT+1); ta_tail = write(ta_tail, 1, constant(0.0))
+#    ta_loss = TensorArray(NT+1); ta_loss = write(ta_loss, 1, constant(0.0))
+#    i = constant(2, dtype=Int32)
+#    _, out, _, tout = while_loop(cond0, body, [i,ta_loss, ta_σ, ta_tail]; parallel_iterations=20)
 
-   total_loss = sum(stack(out)[2:NT])
-   tail_loss = sum(stack(tout)[2:NT])
-   return total_loss, tail_loss
-end
+#    total_loss = sum(stack(out)[2:NT])
+#    tail_loss = sum(stack(tout)[2:NT])
+#    return total_loss, tail_loss
+# end
 
-function DynamicMatLawLossInternalVariable(domain::Domain, E_all::Array{Float64}, 
-    w∂E∂u_all::Array{Float64}, F_tot::Array{Float64}, nn::Function, n_internal::Int64=128)
-   # todo, use fint instead of computed F_tot 
-   # F_tot =  hcat(domain.history["fint"]...)'
-   # define variables
-   neles = domain.neles
-   nGauss = length(domain.elements[1].weights)
-   nstrains = size(E_all,3)
+# function DynamicMatLawLossInternalVariable(domain::Domain, E_all::Array{Float64}, 
+#     w∂E∂u_all::Array{Float64}, F_tot::Array{Float64}, nn::Function, n_internal::Int64=128)
+#    # todo, use fint instead of computed F_tot 
+#    # F_tot =  hcat(domain.history["fint"]...)'
+#    # define variables
+#    neles = domain.neles
+#    nGauss = length(domain.elements[1].weights)
+#    nstrains = size(E_all,3)
 
-   NT = size(E_all,1)-1
-   @assert size(E_all)==(NT+1, neles*nGauss, nstrains)
-   @assert size(F_tot)==(NT, domain.neqs)
-   E_all = constant(E_all)
-   F_tot = constant(F_tot)
-   w∂E∂u_all = constant(w∂E∂u_all)
+#    NT = size(E_all,1)-1
+#    @assert size(E_all)==(NT+1, neles*nGauss, nstrains)
+#    @assert size(F_tot)==(NT, domain.neqs)
+#    E_all = constant(E_all)
+#    F_tot = constant(F_tot)
+#    w∂E∂u_all = constant(w∂E∂u_all)
 
-   function cond0(i, ta_loss, ta_σ, ta_α)
-       i<=NT+1
-   end
+#    function cond0(i, ta_loss, ta_σ, ta_α)
+#        i<=NT+1
+#    end
 
-   function body(i, ta_loss, ta_σ, ta_α)
-       E = E_all[i]
-       DE = E_all[i-1]
-       w∂E∂u = w∂E∂u_all[i]
-       σ0 = read(ta_σ, i-1)
-       α0 = read(ta_α, i-1)
-       fint, σ, α = tfAssembleInternalForce(domain,nn,E,DE,w∂E∂u,σ0, α0)
-       ta_σ = write(ta_σ, i, σ)
-       ta_loss = write(ta_loss, i, sum((fint-F_tot[i-1])^2))
-       ta_α = write(ta_α, i, α)
-       i+1, ta_loss, ta_σ, ta_α
-   end
+#    function body(i, ta_loss, ta_σ, ta_α)
+#        E = E_all[i]
+#        DE = E_all[i-1]
+#        w∂E∂u = w∂E∂u_all[i]
+#        σ0 = read(ta_σ, i-1)
+#        α0 = read(ta_α, i-1)
+#        fint, σ, α = assembleInternalForce(domain,nn,E,DE,w∂E∂u,σ0, α0)
+#        ta_σ = write(ta_σ, i, σ)
+#        ta_loss = write(ta_loss, i, sum((fint-F_tot[i-1])^2))
+#        ta_α = write(ta_α, i, α)
+#        i+1, ta_loss, ta_σ, ta_α
+#    end
 
-   σ0 = constant(zeros(neles*nGauss, nstrains))
-   ta_σ = TensorArray(NT+1); ta_σ = write(ta_σ, 1, σ0)
-   ta_loss = TensorArray(NT+1); ta_loss = write(ta_loss, 1, constant(0.0))
-   ta_α = TensorArray(NT+1);  ta_α = write(ta_α, 1, constant(zeros(neles*nGauss, n_internal)))
-   i = constant(2, dtype=Int32)
-   _, out, _ = while_loop(cond0, body, [i,ta_loss, ta_σ, ta_α]; parallel_iterations=20)
+#    σ0 = constant(zeros(neles*nGauss, nstrains))
+#    ta_σ = TensorArray(NT+1); ta_σ = write(ta_σ, 1, σ0)
+#    ta_loss = TensorArray(NT+1); ta_loss = write(ta_loss, 1, constant(0.0))
+#    ta_α = TensorArray(NT+1);  ta_α = write(ta_α, 1, constant(zeros(neles*nGauss, n_internal)))
+#    i = constant(2, dtype=Int32)
+#    _, out, _ = while_loop(cond0, body, [i,ta_loss, ta_σ, ta_α]; parallel_iterations=20)
 
-   total_loss = sum(stack(out)[2:NT])
-   return total_loss
-end
+#    total_loss = sum(stack(out)[2:NT])
+#    return total_loss
+# end
 
 
 
 
 
 @doc """
-    domain   : finite element domain
-    globdat  : finite element data structure
-    state_history : displace history of all time steps and all nodes, 
-                    a list of NT+1  ndof-displacement vectors, including time 0
-                    hcat(state_history...) gives a matrix of size(ndof-displacement, NT+1)
-    fext_history  : external force load of all time steps and all nodes, 
-                    a list of NT+1 ndof-external-force vectors, including time 0
-                    hcat(fext_history...) gives a matrix of size(ndof-external-force, NT+1)
+    - 'domain': Domain,  finite element domain
+    - 'globdat': GlobalData,  finite element data structure
+    - 'state_history': Float64[NT+1][ndofs], displace history of all time steps and all nodes, including time 0
+                    hcat(state_history...) gives a matrix of Float64[NT+1, ndofs]
+    - 'fext_history': Float64[NT+1][neqns] or Float64[NT][neqns]: external force load of all time steps and all equations, 
+                    with or without the initial step
+                    hcat(fext_history...) gives a matrix of size(neqns, NT+1)
     nn: Neural network
     Δt: time step size
     
@@ -176,53 +184,66 @@ function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::A
     DynamicMatLawLoss(domain, E_all, w∂E∂u_all, F_tot, nn)
 end
 
-function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{T}, 
-    fext_history::Array{S}, nn::Function, Δt::Float64, H0::Array{Float64}, n_tail::Int64, stress_scale::Float64) where {T, S}
-    # todo convert to E_all, Ftot
-    domain.history["state"] = state_history
-    F_tot, E_all, w∂E∂u_all = preprocessing(domain, globdat, hcat(fext_history...), Δt)
-    DynamicMatLawLossWithTailLoss(domain, E_all, w∂E∂u_all, F_tot, nn, H0, n_tail, stress_scale)
-end
+# function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{T}, 
+#     fext_history::Array{S}, nn::Function, Δt::Float64, H0::Array{Float64}, n_tail::Int64, stress_scale::Float64) where {T, S}
+#     # todo convert to E_all, Ftot
+#     domain.history["state"] = state_history
+#     F_tot, E_all, w∂E∂u_all = preprocessing(domain, globdat, hcat(fext_history...), Δt)
+#     DynamicMatLawLossWithTailLoss(domain, E_all, w∂E∂u_all, F_tot, nn, H0, n_tail, stress_scale)
+# end
 
-function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{T}, fext_history::Array{S}, nn::Function, Δt::Float64, n::Int64) where {T, S}
-    domain.history["state"] = state_history
-    F_tot, E_all, w∂E∂u_all = preprocessing(domain, globdat, hcat(fext_history...), Δt, n)
-    DynamicMatLawLoss(domain, E_all, w∂E∂u_all, F_tot, nn)
-end
+# function DynamicMatLawLoss(domain::Domain, globdat::GlobalData, state_history::Array{T}, fext_history::Array{S}, nn::Function, Δt::Float64, n::Int64) where {T, S}
+#     domain.history["state"] = state_history
+#     F_tot, E_all, w∂E∂u_all = preprocessing(domain, globdat, hcat(fext_history...), Δt, n)
+#     DynamicMatLawLoss(domain, E_all, w∂E∂u_all, F_tot, nn)
+# end
 
-function DynamicMatLawLossInternalVariable(domain::Domain, globdat::GlobalData, state_history::Array{T}, fext_history::Array{S}, nn::Function, Δt::Float64, n_internal::Int64) where {T, S}
-    domain.history["state"] = state_history
-    F_tot, E_all, w∂E∂u_all = preprocessing(domain, globdat, hcat(fext_history...), Δt)
-    DynamicMatLawLossInternalVariable(domain, E_all, w∂E∂u_all, F_tot, nn, n_internal)
-end
+# function DynamicMatLawLossInternalVariable(domain::Domain, globdat::GlobalData, state_history::Array{T}, fext_history::Array{S}, nn::Function, Δt::Float64, n_internal::Int64) where {T, S}
+#     domain.history["state"] = state_history
+#     F_tot, E_all, w∂E∂u_all = preprocessing(domain, globdat, hcat(fext_history...), Δt)
+#     DynamicMatLawLossInternalVariable(domain, E_all, w∂E∂u_all, F_tot, nn, n_internal)
+# end
 
 @doc """
-    compute F_tot ≈ F_int , ane E_all
+    Postprocess the data from domain.history and F_ext
+    - 'domain': Domain, domain.history["state"] is Float64[NT+1][ndofs] 
+    - 'globdat': GlobalData, for mass matrix
+    - 'F_ext': Float64[neqns, NT+1] or Float64[neqns, NT], external force history with/without the initial step
+    - 'Δt': Float64, time step size
+
+    Return:
+    - 'F_tot': Float64[NT, neqns], approxmiated internal force
+    - 'E_all': Float64[NT+1, neles*nGauss, nstrains], all strains for the whole simulation from training data
+    - 'w∂E∂u_all': Float64[NT+1, neles*nGauss, neqns_per_elem, nstrains], multiplication of the Gaussian weight and ∂E∂u^T 
+    for the whole simulation from training data 
+
+
+    todo
+    We assume the time step is constant for the training data
 """->
 function preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64},Δt::Float64)
     U = hcat(domain.history["state"]...)
-    # @show size(U)
-    # @info " U ", size(U),  U'
+
     M = globdat.M
     MID = globdat.MID 
 
     NT = size(U,2)-1
 
-    #Acceleration of Dirichlet nodes
+    #Acceleration of the time-dependent Dirichlet boundary nodes
     bc_acc = zeros(sum(domain.EBC.==-2),NT)
     if !(globdat.EBC_func===nothing)
         for i = 1:NT
-            _, bc_acc[:,i]  = globdat.EBC_func(Δt*i)
+            _, _, bc_acc[:,i]  = globdat.EBC_func(Δt*i)
         end
     end
     
     ∂∂U = zeros(size(U,1), NT+1)
     ∂∂U[:,2:NT] = (U[:,1:NT-1]+U[:,3:NT+1]-2U[:,2:NT])/Δt^2
-    # @show size(∂∂U),size(U)
+  
     if size(F_ext,2)==NT+1
         F_tot = F_ext[:,2:end] - M*∂∂U[domain.dof_to_eq,2:end] - MID*bc_acc
     elseif size(F_ext,2)==NT
-        # @show size(∂∂U)
+
         F_tot = F_ext - M*∂∂U[domain.dof_to_eq,2:end] - MID*bc_acc
     else
         error("F size is not valid")
@@ -240,7 +261,6 @@ function preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64
 
     for i = 1:NT+1
         domain.state = U[:, i]
-        # @info "domain state", domain.state
         # Loop over the elements in the elementGroup to construct strain and geo-matrix E_all and w∂E∂u_all
         for iele  = 1:neles
             element = domain.elements[iele]
@@ -257,102 +277,96 @@ function preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64
 
             # Get the element contribution by calling the specified action
             E, w∂E∂u = getStrain(element, el_state) 
-            # if i==2
-            #     @info (el_state, E)
-            # end
-      
-            # @show E, nGauss
+            
             E_all[i, (iele-1)*nGauss+1:iele*nGauss, :] = E
 
             w∂E∂u_all[i, (iele-1)*nGauss+1:iele*nGauss,:,:] = w∂E∂u
         end
     end
     @info "preprocessing end..."
-    # # DEBUG
-    # fext = hcat(domain.history["fint"]...)
     return F_tot'|>Array, E_all, w∂E∂u_all
 end
 
 
-@doc """
-preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64},Δt::Float64, n::Int64)
+# @doc """
+# preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64},Δt::Float64, n::Int64)
 
-Same as `preprocessing`, except that only the first `n` steps are considered
-"""->
-function preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64},Δt::Float64, n::Int64)
-    U = hcat(domain.history["state"]...)
-    # @info " U ", size(U),  U'
-    M = globdat.M
-    MID = globdat.MID 
+# Same as `preprocessing`, except that only the first `n` steps are considered
+# """->
+# function preprocessing(domain::Domain, globdat::GlobalData, F_ext::Array{Float64},Δt::Float64, n::Int64)
+#     U = hcat(domain.history["state"]...)
+#     # @info " U ", size(U),  U'
+#     M = globdat.M
+#     MID = globdat.MID 
 
-    NT = size(U,2)-1
+#     NT = size(U,2)-1
 
-    #Acceleration of Dirichlet nodes
-    bc_acc = zeros(sum(domain.EBC.==-2),NT)
-    if !(globdat.EBC_func===nothing)
-        for i = 1:NT
-            _, bc_acc[:,i]  = globdat.EBC_func(Δt*i)
-        end
-    end
+#     #Acceleration of Dirichlet nodes
+#     bc_acc = zeros(sum(domain.EBC.==-2),NT)
+#     if !(globdat.EBC_func===nothing)
+#         for i = 1:NT
+#             _, bc_acc[:,i]  = globdat.EBC_func(Δt*i)
+#         end
+#     end
 
     
-    ∂∂U = zeros(size(U,1), NT+1)
-    ∂∂U[:,2:NT] = (U[:,1:NT-1]+U[:,3:NT+1]-2U[:,2:NT])/Δt^2
+#     ∂∂U = zeros(size(U,1), NT+1)
+#     ∂∂U[:,2:NT] = (U[:,1:NT-1]+U[:,3:NT+1]-2U[:,2:NT])/Δt^2
  
-    if size(F_ext,2)==NT+1
-        F_tot = F_ext[:,2:end] - M*∂∂U[domain.dof_to_eq,2:end] - MID*bc_acc
-    elseif size(F_ext,2)==NT
-        F_tot = F_ext - M*∂∂U[domain.dof_to_eq,2:end] - MID*bc_acc
-    else
-        error("F size is not valid")
-    end
+#     if size(F_ext,2)==NT+1
+#         F_tot = F_ext[:,2:end] - M*∂∂U[domain.dof_to_eq,2:end] - MID*bc_acc
+#     elseif size(F_ext,2)==NT
+#         F_tot = F_ext - M*∂∂U[domain.dof_to_eq,2:end] - MID*bc_acc
+#     else
+#         error("F size is not valid")
+#     end
     
-    neles = domain.neles
-    nGauss = length(domain.elements[1].weights)
-    neqns_per_elem = length(getEqns(domain,1))
+#     neles = domain.neles
+#     nGauss = length(domain.elements[1].weights)
+#     neqns_per_elem = length(getEqns(domain,1))
 
     
-    nstrains = div((domain.elements[1].eledim + 1)*domain.elements[1].eledim, 2)
+#     nstrains = div((domain.elements[1].eledim + 1)*domain.elements[1].eledim, 2)
 
-    E_all = zeros(NT+1, neles*nGauss, nstrains)
-    w∂E∂u_all = zeros(NT+1, neles*nGauss, neqns_per_elem, nstrains)
+#     E_all = zeros(NT+1, neles*nGauss, nstrains)
+#     w∂E∂u_all = zeros(NT+1, neles*nGauss, neqns_per_elem, nstrains)
 
-    for i = 1:NT+1
-        domain.state = U[:, i]
-        # @info "domain state", domain.state
-        # Loop over the elements in the elementGroup to construct strain and geo-matrix E_all and w∂E∂u_all
-        for iele  = 1:neles
-            element = domain.elements[iele]
+#     for i = 1:NT+1
+#         domain.state = U[:, i]
+#         # @info "domain state", domain.state
+#         # Loop over the elements in the elementGroup to construct strain and geo-matrix E_all and w∂E∂u_all
+#         for iele  = 1:neles
+#             element = domain.elements[iele]
 
-            # Get the element nodes
-            el_nodes = getNodes(element)
+#             # Get the element nodes
+#             el_nodes = getNodes(element)
 
-            # Get the element nodes
-            el_eqns = getEqns(domain,iele)
+#             # Get the element nodes
+#             el_eqns = getEqns(domain,iele)
 
-            el_dofs = getDofs(domain,iele)
+#             el_dofs = getDofs(domain,iele)
 
-            el_state  = getState(domain,el_dofs)
+#             el_state  = getState(domain,el_dofs)
 
-            # Get the element contribution by calling the specified action
-            E, w∂E∂u = getStrain(element, el_state) 
-            # if i==2
-            #     @info (el_state, E)
-            # end
+#             # Get the element contribution by calling the specified action
+#             E, w∂E∂u = getStrain(element, el_state) 
+#             # if i==2
+#             #     @info (el_state, E)
+#             # end
       
-            # @show E, nGauss
-            E_all[i, (iele-1)*nGauss+1:iele*nGauss, :] = E
+#             # @show E, nGauss
+#             E_all[i, (iele-1)*nGauss+1:iele*nGauss, :] = E
 
-            w∂E∂u_all[i, (iele-1)*nGauss+1:iele*nGauss,:,:] = w∂E∂u
-        end
-    end
-    @info "preprocessing end..."
-    # # DEBUG
-    # fext = hcat(domain.history["fint"]...)
-    F_tot = F_tot'|>Array
+#             w∂E∂u_all[i, (iele-1)*nGauss+1:iele*nGauss,:,:] = w∂E∂u
+#         end
+#     end
+#     @info "preprocessing end..."
+#     # # DEBUG
+#     # fext = hcat(domain.history["fint"]...)
+#     F_tot = F_tot'|>Array
 
-    F_tot[1:n,:], E_all[1:n+1, :, :], w∂E∂u_all[1:n+1, :, :, :]
-end
+#     F_tot[1:n,:], E_all[1:n+1, :, :], w∂E∂u_all[1:n+1, :, :, :]
+# end
 
 
 
@@ -365,8 +379,17 @@ end
 
 ##########################################################
 @doc """
-Compute the stiff and dfint_dstress, based on the state in domain
-and dstrain_dstate
+
+Compute the Fint, dFint_dS_comp, E_all, S_all and dfint_dstress, based on the state in domain and the stress in S_comp
+- 'domain': Domain
+- 'S_comp': Float64[neles, nstrain] or Float64[npoints, nstrain], the stresses in each element(Constant) or at each geometric point(Linear)
+- 'method': String "Constant" or "Linear" for Constant approach or Linear approach
+
+Return 
+    Fint: Float64[neqns], constructed from state in domain
+    dFint_dS_comp: Float64[neqs,  size(S_comp,1)*nstrain], sparse matrix representation
+    E_all: Float64[neles*ngps_per_elem, nstrain], strains at each Gaussian quadrature point ,constructed from state in domain
+    S_all: Float64[neles*ngps_per_elem, nstrain], stresses at each Gaussian quadrature point ,constructed from S_comp
 """->
 function LSfittingStressHelper(domain, S_comp::Array{Float64}, method::String)
     neles = domain.neles
@@ -381,11 +404,8 @@ function LSfittingStressHelper(domain, S_comp::Array{Float64}, method::String)
 
     node_to_point = domain.node_to_point
 
-    
-
     #check
     @assert(method=="Constant" || method=="Linear")
-    #@show size(S_comp,1), npoints, neles
     method=="Constant" ? @assert(size(S_comp,1) == neles) : @assert(size(S_comp,1) == npoints)
 
 
@@ -506,12 +526,25 @@ function LSfittingStressHelper(domain, S_comp::Array{Float64}, method::String)
   end
 
 @doc """
-    LSfittingStress(domain::Domain, globdat::GlobalData, state_history::Array{Float64}, F_ext::Array{Float64},Δt::Float64, method::String)
+    Fit the stress from the strain and external load conditions, 
+    For quadratic element, nx, ny, ... elements in each direction
+    The number of equations are neqs ≈ 2*(2nx + 1)*(2ny + 1)
+    Linear approach : Assume the stress in each element is constant, the number of unknows are 3*nx*ny
+    Constant approach: Assume the stress in each element is linear, the number of unknows are 3*(nx+1)*(ny+1) on each nodes
+    Least Square problem is solving for stress
 
-For quadratic element, nx, ny, ... elements in each direction
-The number of equations are neqs ≈ 2*(2nx + 1)*(2ny + 1)
-Plan 1: Assume the stress in each element is constant, the number of unknows are 3*nx*ny
-Plan 2: Assume the stress in each element is linear, the number of unknows are 3*(nx+1)*(ny+1) on each nodes
+    - 'domain': Domain 
+    - 'globdat': GlobalData
+    - 'state_history': Float64[NT+1, ndofs], displacement fields for each freedoms
+    - 'F_ext': Float64[neqns, NT+1] or Float64[neqns, NT+1], external force vector for each equations
+    - 'Δt': Float64, time step size
+    - 'method': String "Constant" or "Linear" for Constant approach or Linear approach
+
+    Return: 
+    - 'E_all':  Float64[NT+1, neles*ngps_per_elem, nstrain], strain fields
+    - 'S_all':  Float64[NT+1, neles*ngps_per_elem, nstrain], fitted stress fields at each Gaussian quadratic point
+
+    Remark: Turss 1D requires method == "Constant", otherwise the system is under constraint
 """->
 function LSfittingStress(domain::Domain, globdat::GlobalData, state_history::Array{Float64}, F_ext::Array{Float64},Δt::Float64, method::String)
     nnodes = domain.nnodes
@@ -525,7 +558,6 @@ function LSfittingStress(domain::Domain, globdat::GlobalData, state_history::Arr
     
 
     U = state_history
-    # @info " U ", size(U),  U'
     M = globdat.M
     MID = globdat.MID 
 
@@ -535,7 +567,7 @@ function LSfittingStress(domain::Domain, globdat::GlobalData, state_history::Arr
     bc_acc = zeros(sum(domain.EBC.==-2),NT)
     if !(globdat.EBC_func===nothing)
         for i = 1:NT
-            _, bc_acc[:,i]  = globdat.EBC_func(Δt*i)
+            _, _,bc_acc[:,i]  = globdat.EBC_func(Δt*i)
         end
     end
 
@@ -576,8 +608,7 @@ function LSfittingStress(domain::Domain, globdat::GlobalData, state_history::Arr
         domain.state = U[:, it-1]
 
         Fint, dFint_dS_comp, E, S = LSfittingStressHelper(domain, S_comp_all[it, :, :], method)
-        #@show size(Fint), size(dFint_dS_comp), size(F_ext)
-        # F_tot[it-1,:]
+        
 
         #min ||F_tot -  F_int(E, S)||^2 = min ||F_tot -  dF_int/dS_comp * S_comp||^2 
 
@@ -594,14 +625,6 @@ function LSfittingStress(domain::Domain, globdat::GlobalData, state_history::Arr
         S_comp_all[it,:,:] = S_comp
     
     end
-
-
-
-
-
-
-
-
 
     E_all, S_all
 end

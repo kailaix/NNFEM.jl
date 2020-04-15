@@ -1,4 +1,65 @@
-export readMesh, save, load, read_data, write_data, convert_mat, read_strain_stress
+export readMesh, save, load, read_data, write_data, convert_mat, read_strain_stress, 
+        meshread
+
+
+"""
+    meshread(gmshfile::String)
+
+Reads a gmsh file `gmshfile` and return (nodes, elements) tuple.
+"""
+function meshread(gmshfile::String)
+    cnt = read(gmshfile, String)
+    r = r"\$MeshFormat\n(\S*).*\n\$EndMeshFormat"s
+    version = match(r, cnt)[1]
+    println("Gmsh file version ... $version")
+
+    r = r"\$Nodes\n(.*)\n\$EndNodes"s
+    nodes = match(r, cnt)[1]
+    nodes = split(nodes,'\n')
+    nodes = [parse.(Float64, split(x)) for x in nodes]
+    nodes = filter(x->length(x)==3,nodes)
+    nodes = hcat(nodes...)'[:,1:2]
+    println("Nodes ... $(size(nodes,1))")
+
+    r = r"\$Elements\n(.*)\n\$EndElements"s
+    elems = match(r, cnt)[1]
+    elems = split(elems,'\n')
+    elems = [parse.(Int64, split(x)) for x in elems]
+    elems = filter(x->length(x)==5,elems)
+    elems = hcat(elems...)'[:,2:5]
+    println("Elements ... $(size(elems,1))")
+
+    println("Remove redundant nodes...")
+    s = Set(unique(elems[:]))
+    k = 1
+    node_new_id = Dict()
+    new_id = Int64[]
+    for i = 1:size(nodes, 1)
+        if i in s 
+            node_new_id[i] = k 
+            push!(new_id, i)
+            k += 1
+        end
+    end
+    for i = 1:size(elems,1)
+        for j = 1:4
+            elems[i,j] = node_new_id[elems[i,j]]
+        end
+    end
+    nodes = nodes[new_id,:]
+    println("Preprocessed nodes ... $(size(nodes,1))")
+    println("Preprocessed elements ... $(size(elems,1))")
+
+
+
+    return nodes, elems 
+end
+
+"""
+    readMesh(gmshFile::String)
+
+Reads a `gmsh` file and extracts element, coordinates and boundaries.
+"""
 function readMesh(gmshFile::String)
     fp = open(gmshFile);
     boundaries = Dict{String, Array}()

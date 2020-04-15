@@ -79,7 +79,6 @@ function AssembleStiffAndForce(domain, stress::Array{Float64}, dstress_dstrain_T
   fint = zeros(Float64, domain.neqs)
   # K = zeros(Float64, domain.neqs, domain.neqs)
   
-  
   # Loop over the elements in the elementGroup
   for iele  = 1:neles
     element = domain.elements[iele]

@@ -1,98 +1,195 @@
-export ExplicitSolver, NewmarkSolver, AdaptiveSolver, StaticSolver
+export ExplicitSolver, NewmarkSolver, AdaptiveSolver, SolverInitial!, StaticSolver, EigenModeHelper, EigenMode, SolverInitial
+
 
 @doc raw"""
-ExplicitSolver(Δt, globdat, domain)
+compuate largest eigenvalue lambda, lambda M x = stiff*x
+"""->
+function EigenModeHelper(M, stiff, eps0 = 1.0e-12, maxite = 100)
+    #compuate largest eigenvalue lambda, lambda M x = Kx
+    x_old = ones(size(stiff)[1])
+    x_new = ones(size(stiff)[1])
+    lambda_old = lambda_new = 0.0
+    converge = false
+    ite = 0
+    while ite < maxite && converge == false
+        #solve M x_new = stiff x_old
+        x_new[:] = M \ (stiff * x_old)
+        x_new[:] = x_new/sqrt(x_new' * M * x_new)
+        lambda_new = (x_new' * stiff * x_new)
+        if (lambda_new - lambda_old)/lambda_new < eps0 #converge
+            converge = true
+        else
+            x_old[:] = x_new
+            lambda_old = lambda_new
+            ite += 1
+        end
+    end
+    if converge == false
+        @warn("Eigen iteration does not converge in EigenModeHelper")
+    end
+    return lambda_new, x_new
+end
 
-Central Difference Explicit solver for `Ma + fint = fext`, `a`, `v`, `u` are acceleration, velocity and displacement
+@doc raw"""
+Compute eigenmodel using globdat.state (and domain.Dstate, Δt for path/rate-dependent 
+stiffness matrix
+
+find largest eigenvalue λ for
+ λM x= K x
+ ω^2 = λ
+"""->
+function EigenMode(Δt, globdat, domain, eps0 = 1.0e-6, maxite = 100)
+    u = globdat.state[:]  #uⁿ
+
+    M = globdat.M
+    domain.state[domain.eq_to_dof] = u
+    _, stiff = assembleStiffAndForce(globdat, domain, 0.0)
+        
+    lambda, _ = EigenModeHelper(M, stiff, eps0, maxite)
+
+    omega = sqrt(lambda)
+
+    return omega
+end
+
+
+
+
+@doc raw"""
+    SolverInitial!(Δt::Float64, globdat::GlobalData, domain::Domain)
+
+You need to call SolverInitial! before the first time step, if $f^{ext}_0 \neq 0$
 
 ```math
-\begin{align}
-u_{n+1} =& u_n + dtv_n + dt^2/2 a_n \\
-v_{n+1} =& v_n + dt/2(a_n + a_{n+1}) \\
-M a_{n+1} + C v_{n+1} + R(u_{n+1}) =& P_{n+1} \\
-(M + dt/2 C) a_{n+1} =& P_{n+1} - R(u_{n+1}) - C(v_n + dt/2 a_{n}) \\
-\end{align}
+a_0 = M^{-1}(- f^{int}(u_0) + f^{ext}_0)
 ```
-
-    Alternative, todo:
-    M a_n + C v_n + R(u_n) = P_n
-    M(u_{n+1} - 2u_n + u_{n-1}) + dt/2*C(u_{n+1} - u_{n-1}) + dt^2 R(u_n) = dt^2 P_n
-    (M + dt/2 C) u_{n+1} = dt^2(P_n - R(u_n) + dt/2 C u_{n-1} + M(2u_n - u_{n-1})
-
-    For the first step
-    u_{-1} = u_0 - dt*v_0 + dt^2/2 a_0
-    a_0 = M^{-1}(-Cv_0 - R(u_0) + P_0)
-"""->
-function ExplicitSolver(Δt, globdat, domain)
+"""
+function SolverInitial!(Δt::Float64, globdat::GlobalData, domain::Domain)
     u = globdat.state[:]
-    ∂u  = globdat.velo[:]
-    ∂∂u = globdat.acce[:]
-
-    fext = domain.fext
-    
-    ∂u += 0.5*Δt * ∂∂u
-    u += Δt * ∂u
+    fext = similar(u)
+    getExternalForce!(domain, globdat, fext)
     
     domain.state[domain.eq_to_dof] = u[:]
     fint  = assembleInternalForce( globdat, domain, Δt)
+    globdat.acce[:] = globdat.M\(fext - fint)
+end
 
-    #@show fint, fext
+"""
+    SolverInitial(Δt::Float64, globdat::GlobalData, domain::Domain)
 
-    if length(globdat.M)==0
-        error("globalDat is not initialized, call `assembleMassMatrix!(globaldat, domain)`")
-    end
-
-    ∂∂up = (fext - fint)./globdat.Mlumped
-    ∂u += 0.5 * Δt * ∂∂up
-
-    globdat.Dstate = globdat.state[:]
-    globdat.state = u[:]
-    globdat.velo = ∂u[:]
-    globdat.acce = ∂∂up[:]
-
-    globdat.time  += Δt
-
-    commitHistory(domain)
-    updateStates!(domain, globdat)
-    fint = assembleInternalForce( globdat, domain, Δt)
-    push!(domain.history["fint"], fint)
-    push!(domain.history["fext"], fext)
+Similar to [`SolverInitial!`](@ref), but returns the (displacement, velocity, acceleartion) tuple. 
+"""
+function SolverInitial(Δt::Float64, globdat::GlobalData, domain::Domain)
+    SolverInitial!(Δt, globdat, domain)
+    u0 = domain.state 
+    v0 = zeros(length(u0))
+    v0[domain.eq_to_dof] = globdat.velo[:]
+    a0 = zeros(length(u0))
+    a0[domain.eq_to_dof] = globdat.acce[:]
+    u0, v0, a0
 end
 
 
 
 
 
-@doc raw"""
-    NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, ε0 = 1e-8, maxiterstep=100, η = 1.0, failsafe = false)
+function ExplicitSolver(Δt::Float64, globdat::GlobalData, domain::Domain)
 
-Implicit solver for ``Ma + C v + R(u) = P``
+    if length(globdat.M)==0
+        error("globalDat is not initialized, 
+            call `assembleMassMatrix!(globaldat, domain)`")
+    end
+
+    u = globdat.state[:]
+    ∂u  = globdat.velo[:]
+    ∂∂u = globdat.acce[:]
+
+    globdat.time  += Δt
+    #get fext at t + Δt
+    fext = getExternalForce!(domain, globdat)
+
+    u += Δt*∂u + 0.5*Δt*Δt*∂∂u
+    ∂u += 0.5*Δt * ∂∂u
+    
+    domain.state[domain.eq_to_dof] = u[:]
+    fint  = assembleInternalForce( globdat, domain, Δt)
+    ∂∂up = globdat.M\(fext - fint)
+
+    ∂u += 0.5 * Δt * ∂∂up
+
+    globdat.Dstate = globdat.state[:]
+    globdat.state = u[:]
+    globdat.velo = ∂u[:]
+    globdat.acce = ∂∂up[:]
+    
+    commitHistory(domain)
+    updateStates!(domain, globdat)
+
+    # (optional) for visualization, update fint and fext history
+    fint = assembleInternalForce( globdat, domain, Δt)
+    push!(domain.history["fint"], fint)
+    push!(domain.history["fext"], fext)
+end
+
+@doc raw"""
+    NewmarkSolver (Generalized-alpha) implicit solver
+
+- 'Δt': Float64,  time step size 
+- 'globdat', GlobalData
+- 'domain', Domain
+- 'αm', Float64
+- 'αf', Float64 
+- 'ε', Float64, absolute error for Newton convergence
+- 'ε0', Float64, relative error for Newton convergence
+-  'maxiterstep', Int64, maximum iteration number for Newton convergence
+-  'η', Float64, Newton step size at the first iteration
+- 'failsafe', Bool, if failsafe is true, when the Newton fails to converge, 
+              revert back, and return false
+
+Implicit solver for ``Ma  + fint(u) = fext``
 ``a``, ``v``, ``u`` are acceleration, velocity and displacement respectively.
 ```math
 u_{n+1} = u_n + dtv_n + dt^2/2 ((1 - 2\beta)a_n + 2\beta a_{n+1})
-v_{n+1} = v_n + dt((1 - gamma)a_n + gamma a_{n+1})
+v_{n+1} = v_n + dt((1 - \gamma)a_n + \gamma a_{n+1})
+2\beta = 0.5*(1 - αm + αf)^2
+\gamma = 0.5 - \alpha_m + \alpha_f
+
 ```
 
 ```math
-M a_{n+0.5} + f_{\mathrm{int}}(u_{n+0.f}) = fext_{n+0.5}
+a_{n+1-\alpha_m} = (1-\alpha_m)a_{n+1} + \alpha_m a_{n} 
+v_{n+1-\alpha_f} = (1-\alpha_f)v_{n+1} + \alpha_f v_{n}
+u_{n+1-\alpha_f} = (1-\alpha_f)u_{n+1} + \alpha_f u_{n}
+M a_{n+1-\alpha_m} + f^{int}(u_{n+1-\alpha_f}) = f^{ext}_{n+1-\alpha_f}
 ```
 
-    αm = (2\rho_oo - 1)/(\rho_oo + 1)
-    αf = \rho_oo/(\rho_oo + 1)
-    
-    β2 = 0.5*(1 - αm + αf)^2
-    γ = 0.5 - αm + αf
+'a_{n+1}' is solved by 
 
-    absolution error ε = 1e-8, 
-    relative error ε0 = 1e-8  
+```math
+M ((1-\alpha_m)a_{n+1} + \alpha_m a_{n})  
++ f^{int}((1-\alpha_f)(u_n + dtv_n + dt^2/2 ((1 - 2\beta)a_n + 2\beta a_{n+1}))) + \alpha_f u_{n}) 
+= f^{ext}_{n+1-\alpha_f}
+```
+
+
+As for '\alpha_m' and '\alpha_f'
+```math
+\alpha_m = (2\rho_{\infty} - 1)/(\rho_{\infty} + 1)
+\alpha_f = \rho_{\infty}/(\rho_{\infty} + 1)
+```
     
-    return true or false indicating converging or not
+use the current states `a`, `v`, `u`, `time` in globdat, and update these stetes to next time step
+update domain history, when failsafe is true, and Newton's solver fails, nothing will be changed.
+
+You need to call SolverInitial! before the first time step, if f^{ext}_0 != 0.
+SolverInitial! updates a_0 in the globdat.acce
+a_0 = M^{-1}(- f^{int}(u_0) + f^{ext}_0)
+
+We assume globdat.acce[:] = a_0 and so far initialized to 0
+We also assume the external force is conservative (it does not depend on the current deformation)
 """->
 function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, ε0 = 1e-8, maxiterstep=100, η = 1.0, failsafe = false)
     local res0
-    # @info maxiterstep
-    # error()
-    #@info NewmarkSolver
     
     β2 = 0.5*(1 - αm + αf)^2
     γ = 0.5 - αm + αf
@@ -124,73 +221,45 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, �
 
     norm0 = Inf
 
-    # @show "start Newton u ", u
-    # @show "start Newton du ", ∂u
-    # @show "start Newton ddu ", ∂∂u
-
     while !Newtonconverge
         
         Newtoniterstep += 1
         
         domain.state[domain.eq_to_dof] = (1 - αf)*(u + Δt*∂u + 0.5 * Δt * Δt * ((1 - β2)*∂∂u + β2*∂∂up)) + αf*u
-
         fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
-
-        # error()
         res = M * (∂∂up *(1 - αm) + αm*∂∂u)  + fint - fext
-        # @show fint, fext
         if Newtoniterstep==1
             res0 = res 
         end
-
         A = M*(1 - αm) + (1 - αf) * 0.5 * β2 * Δt^2 * stiff
-        
         Δ∂∂u = A\res
 
-        #@info " norm(Δ∂∂u) ", norm(Δ∂∂u) 
+
         while η * norm(Δ∂∂u) > norm0
             η /= 2.0
             @info "η", η
         end
-            
-
-
         ∂∂up -= η*Δ∂∂u
 
-        # @show norm(A*Δ∂∂u-res)
-        # r, B = f(∂∂u)
-        # #@show norm(res), norm(r), norm(B)
-        # error()
-        # #@show Δ∂∂u
-        # if globdat.time>0.0001
-        #     function f(∂∂up)
-        #         domain.state[domain.eq_to_dof] = (1 - αf)*(u + Δt*∂u + 0.5 * Δt * Δt * ((1 - β2)*∂∂u + β2*∂∂up)) + αf*u
-        #         fint, stiff = assembleStiffAndForce( globdat, domain )
-        #         fint, (1 - αf) * 0.5 * β2 * Δt^2 * stiff
-        #     end
-        #     gradtest(f, ∂∂up)
-        #     error()
-        # end
+
         println("$Newtoniterstep/$maxiterstep, $(norm(res))")
         if (norm(res)< ε || norm(res)< ε0*norm(res0) ||Newtoniterstep > maxiterstep)
-
             if Newtoniterstep > maxiterstep
+                # Newton method does not converge
                 if failsafe 
                     globdat.time = failsafe_time
                     domain.state = failsafe_state[:]
                     domain.Dstate = failsafe_Dstate[:]
                     return false 
                 end
+                # When failsafe is not on, test the gradient 
                 function f(∂∂up)
                     domain.state[domain.eq_to_dof] = (1 - αf)*(u + Δt*∂u + 0.5 * Δt * Δt * ((1 - β2)*∂∂u + β2*∂∂up)) + αf*u
                     fint, stiff = assembleStiffAndForce( globdat, domain )
                     fint, (1 - αf) * 0.5 * β2 * Δt^2 * stiff
                 end
                 gradtest(f, ∂∂up)
-                # error()
                 @warn("Newton iteration cannot converge $(norm(res))"); Newtonconverge = true
-
-                
             else
                 Newtonconverge = true
                 printstyled("[Newmark] Newton converged $Newtoniterstep\n", color=:green)
@@ -199,27 +268,19 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, �
 
         η = min(1.0, 2η)
         norm0 = norm(Δ∂∂u)
-        # println("================ time = $(globdat.time) $Newtoniterstep =================")
     end
     
 
-
+    #update globdat to the next time step
     globdat.Dstate = globdat.state[:]
     globdat.state += Δt * ∂u + Δt^2/2 * ((1 - β2) * ∂∂u + β2 * ∂∂up)
-
-    
     globdat.velo += Δt * ((1 - γ) * ∂∂u + γ * ∂∂up)
     globdat.acce = ∂∂up[:]
-
-   
     globdat.time  += αf*Δt
-    #@info "After Newmark, at T = ", globdat.time, " the disp is ", domain.state
+
+    #commit history in domain
     commitHistory(domain)
     updateStates!(domain, globdat)
-
-    
-    
-
     fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
     push!(domain.history["fint"], fint)
     push!(domain.history["fext"], fext)
@@ -231,16 +292,22 @@ end
 
 
 @doc raw"""
-    StaticSolver(globdat, domain, loaditerstep = 10, ε = 1.e-8, maxiterstep=100)
+Static implicit solver
+- 'globdat', GlobalData
+- 'domain', Domain
+- 'loaditerstep', Int64, load stepping steps
+- 'ε', Float64, absolute error for Newton convergence
+-  'maxiterstep', Int64, maximum iteration number for Newton convergence
 
-Implicit solver for 
+Solver for ``fint(u) = fext`` with load stepping, ``u`` is the displacement.
+Iteratively solve u_{i}
 ```math
-f_{\mathrm{int}}(u) = f_{\mathrm{ext}}
+f^{int}(u_i) = i/loaditerstep f^{ext}
 ```
-``u`` is the displacement. We apply the Newton-Raphson algorithm
-```math
-u_{n+1} = u_n -  \nabla f_{\mathrm{int}}(u^n)^{-1} *( f_{\mathrm{int}}(u^n) -  f_{\mathrm{ext}})
-```
+
+todo
+We assume the external force is conservative (it does not depend on the current deformation)
+
 """
 function StaticSolver(globdat, domain, loaditerstep = 10, ε = 1.e-8, maxiterstep=100)
     
@@ -256,8 +323,6 @@ function StaticSolver(globdat, domain, loaditerstep = 10, ε = 1.e-8, maxiterste
             Newtoniterstep += 1
             
             fint, stiff = assembleStiffAndForce( globdat, domain )
-            # #@show "fint", fint, "stiff", stiff
-            # #@show "fext", fext
        
             res = fint - iterstep/loaditerstep * fext
 
@@ -280,11 +345,25 @@ end
 
 
 
-@doc """
-    Adaptive Solver, adjust the time step, if this step fails, redo the step with half of
-    the time step size
+@doc raw"""
+    Adaptive Solver, solve the whole process, if this step fails, redo the step with half of
+    the time step size, when there are continuing 5 successful steps, double the step size when dt < T/NT
+
+    - 'solvername': String,  so far only NewmarkSolver is supported
+    - 'globdat', GlobalData
+    - 'domain', Domain
+    - 'T', Float64, total simulation time
+    - 'NT', Int64, planned time steps
+    - 'args', Dict{String, Value}, arguments for the solver
+
     
-    return globdat, domain
+    return globdat, domain, ts, here ts is Float64[nteps+1] 
+
+You need to call SolverInitial! before the first time step, if f^{ext}_0 != 0.
+SolverInitial! updates a_0 in the globdat.acce
+a_0 = M^{-1}(- f^{int}(u_0) + f^{ext}_0)
+
+We assume globdat.acce[:] = a_0 and so far initialized to 0
 """->
 function AdaptiveSolver(solvername, globdat, domain, T, NT, args)
 
@@ -296,8 +375,9 @@ function AdaptiveSolver(solvername, globdat, domain, T, NT, args)
     t = 0.0   #current time
     push!(ts, t)
 
-    if solvername == "NewmarkSolver"
+    SolverInitial!(Δt, globdat, domain)
 
+    if solvername == "NewmarkSolver"
         ρ_oo = args["Newmark_rho"]
         η = args["damped_Newton_eta"]
         maxiterstep = args["Newton_maxiter"]
@@ -322,11 +402,10 @@ function AdaptiveSolver(solvername, globdat, domain, T, NT, args)
                 t += dt
                 push!(ts, t)
                 @assert globdat.time ≈ t
+                #todo hardcode it to be 5
                 if dt < 0.8*Δt  && convergeCounter >=5
                     dt = 2*dt
                 end
-
-                
 
             else
                 @assert globdat.time ≈ t

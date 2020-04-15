@@ -1,8 +1,11 @@
 name = "NNFEM"
 uuid = "9fbee185-08cf-5df3-934a-20f446aa0bf6"
+authors = ["Kailai Xu <kailaix@hotmail.com>", "Daniel Z. Huang <hzyhzy2014@gmail.com>"]
+version = "0.1.0"
 
 [deps]
 ADCME = "07b341a0-ce75-57c6-b2de-414ffdc00be5"
+ADCMEKit = "b6719975-6fcd-4453-92fa-4206f52c3839"
 Conda = "8f4d0f93-b110-5947-807f-2305c1781a2d"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
@@ -15,5 +18,12 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
-ADCME = "0.4"
+ADCME = "0.4, 0.5"
+ADCMEKit = "0"
+Conda = "1"
+ForwardDiff = "0"
+JLD2 = "0"
+MAT = "0"
+PyCall = "1.91"
+PyPlot = "2.8"
 julia = "1"

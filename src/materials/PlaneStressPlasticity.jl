@@ -18,11 +18,11 @@ end
 
 
 
-function f(σ, α, σY, K)
+function f(σ::Array{Float64}, α::Float64, σY::Float64, K::Float64)
     return sqrt(σ[1]^2-σ[1]*σ[2]+σ[2]^2+3*σ[3]^2)-σY-K*α
 end
 
-function fσ(σ)
+function fσ(σ::Array{Float64})
     σ1, σ2, σ3 = σ[1], σ[2], σ[3]
     J2 = sqrt(σ1^2-σ1*σ2+σ2^2+3*σ3^2)
     z = [(σ1 - σ2/2)/J2;
@@ -30,7 +30,7 @@ function fσ(σ)
         3*σ3/J2]
 end
 
-function fσσ(σ)
+function fσσ(σ::Array{Float64})
     σ1, σ2, σ3 = σ[1], σ[2], σ[3]
     J2 = sqrt(σ1^2-σ1*σ2+σ2^2+3*σ3^2)
     [     (-σ1 + σ2/2)*(σ1 - σ2/2)/J2^3 + 1/J2 (σ1/2 - σ2)*(σ1 - σ2/2)/J2^3 - 1/(2*J2)                                   -3*σ3*(σ1 - σ2/2)/J2^3;

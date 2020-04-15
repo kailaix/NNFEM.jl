@@ -1,10 +1,22 @@
 # API Reference
 
+## Core Data Structure
+```@docs
+Domain
+GlobalData
+```
+
+## Core Data Structure Utilities
+```@docs
+getEqns
+getNGauss
+```
+
 ## Elements
 
 ```@autodocs
 Modules = [NNFEM]
-Pages   = ["FiniteStrainContinuum.jl", "FiniteStrainContinuum.jl", "FiniteStrainContinuum.jl"]
+Pages   = ["FiniteStrainContinuum.jl", "SmallStrainContinuum.jl", "FiniteStrainTruss.jl"]
 ```
 
 
@@ -16,24 +28,57 @@ Pages   = ["PlaneStress.jl", "PlaneStrain.jl", "PlaneStressIncompressibleRivlinS
             "PlaneStressPlasticity"]
 ```
 
-## Assembly
+## Matrix and Vector Assembly
+```@docs
+assembleInternalForce
+assembleStiffAndForce
+assembleMassMatrix!
+getBodyForce
+getExternalForce!
+```
 
-```@autodocs
-Modules = [NNFEM]
-Pages   = ["assembly.jl", "fem.jl"]
+## State Updates
+
+This set of functions include boundary condition updates, data transfer, and other bookkeeping utilities.
+
+```@docs
+commitHistory
+setConstantDirichletBoundary!
+setConstantNodalForces!
+updateStates!
+updateDomainStateBoundary!
 ```
 
 ## Solvers
 
-```@autodocs
-Modules = [NNFEM]
-Pages   = ["NNSolver.jl", "Solvers.jl"]
+```@docs
+ExplicitSolverStep
+GeneralizedAlphaSolverStep
+SolverInitial!
+SolverInitial
 ```
 
 
 ## Utilities
 
 ```@autodocs
-Modules = [NNFEM]
-Pages   = ["io.jl", "matrix.jl", "shapeFunctions", "Testsuit.jl", "Visualize.jl", "linearConstitutiveLaw.jl"]
+meshread
+visualize_von_mises_stress
+visualize_displacement
+```
+
+## Automatic Differentiation
+```@docs
+init_nnfem
+s_eval_strain_on_gauss_points
+s_compute_stiffness_matrix
+s_compute_internal_force_term
+f_eval_strain_on_gauss_points
+f_compute_internal_force_term
+ExplicitSolver
+ExplicitSolverTime
+GeneralizedAlphaSolver
+GeneralizedAlphaSolverTime
+compute_boundary_info
+compute_external_force
 ```

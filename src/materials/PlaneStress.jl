@@ -1,4 +1,25 @@
 export  PlaneStress
+
+@doc raw"""
+    PlaneStress
+
+Creates a plane stress element
+
+- `H`: Linear elasticity matrix, $3\times3$
+- `E`: Young's modulus
+- `ν`: Poisson's ratio 
+- `ρ`: density 
+- `σ0`: stress at the **last** time step 
+- `σ0_`: (for internal use), stress to be updated in `commitHistory`
+- `ε0`: strain at the **last** time step 
+- `ε0_`: (for internal use), strain to be updated in `commitHistory`
+
+# Example
+```julia
+prop = Dict("name"=> "PlaneStress", "rho"=> 0.0876584, "E"=>0.07180760098, "nu"=>0.4)
+mat = PlaneStress(prop)
+```
+"""
 mutable struct PlaneStress
     H::Array{Float64}
     E::Float64
@@ -10,6 +31,11 @@ mutable struct PlaneStress
     ε0_::Array{Float64} 
 end
 
+"""
+    PlaneStress(prop::Dict{String, Any})
+
+`prop` should contain at least the following three fields: `E`, `nu`, `rho`
+"""
 function PlaneStress(prop::Dict{String, Any})
     E = prop["E"]; ν = prop["nu"]; ρ = prop["rho"]
     H = zeros(3,3)
@@ -19,11 +45,6 @@ function PlaneStress(prop::Dict{String, Any})
     H[2,1] = H[1,2]
     H[2,2] = H[1,1]
     H[3,3] = E/(2.0*(1.0+ν))
-    # @show H
-    # # ! remove it!!!
-    # H = [ 4.09627e12  2.88053e11  -1.77231   
-    #     2.88053e11  8.29483e11   0.616748  
-    # -1.77231     0.616748     3.43662e11]
     σ0 = zeros(3); σ0_ = zeros(3); ε0 = zeros(3); ε0_ = zeros(3)
     PlaneStress(H, E, ν, ρ, σ0, σ0_,ε0,ε0_)
 end
