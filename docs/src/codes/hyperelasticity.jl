@@ -14,7 +14,7 @@ h = 1/n
 
 # Create a very simple mesh
 elements = FiniteStrainContinuum[]
-prop = Dict("name"=> "PlaneStressIncompressibleRivlinSaunders", "rho"=> 1.0,  "C1"=>1e-3, "C2"=>1e-1)
+prop = Dict("name"=> "PlaneStressIncompressibleRivlinSaunders", "rho"=> 1.0,  "C1"=>1e-1, "C2"=>1e-1)
 coords = zeros((m+1)*(n+1), 2)
 for j = 1:n
     for i = 1:m

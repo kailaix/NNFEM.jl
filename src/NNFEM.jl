@@ -60,5 +60,6 @@ include("solvers/AdjointSolver.jl")
 include("adutils/kernels.jl")
 include("adutils/solvers.jl")
 include("adutils/representations.jl")
+include("adutils/materials.jl")
 
 end

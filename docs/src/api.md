@@ -90,4 +90,5 @@ GeneralizedAlphaSolver
 GeneralizedAlphaSolverTime
 compute_boundary_info
 compute_external_force
+compute_stress_rivlin_saunders
 ```
