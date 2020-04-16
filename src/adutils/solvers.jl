@@ -134,13 +134,13 @@ function compute_boundary_info(domain::Domain, globdat::GlobalData, ts::Array{Fl
         return missing, missing 
     end
 
-    @assert globaldat.FBC!=nothing 
+    @assert globdat.EBC_func!=nothing 
 
     ubd = zeros(length(ts), sum(bd))
     abd = zeros(length(ts), sum(bd))
     for i = 1:length(ts)
         time = ts[i]
-        ubd[i,:], _, abd[i,:] = globaldat.EBC_func(time) # user defined time-dependent boundary
+        ubd[i,:], _, abd[i,:] = globdat.EBC_func(time) # user defined time-dependent boundary
     end
 
     return ubd, abd

@@ -1,4 +1,4 @@
-export visualize_displacement, visualize_von_mises_stress, visualize_mesh
+export visualize_displacement, visualize_von_mises_stress, visualize_mesh, visualize_boundary
 
 
 """
@@ -116,4 +116,53 @@ function visualize_mesh(domain::Domain)
         elements[k,:] = e.elnodes
     end
     visualize_mesh(domain.nodes, elements)
+end
+
+
+
+function visualize_boundary(domain::Domain, direction::String="x")
+    visualize_mesh(domain)
+    direction = direction == "x" ? 1 : 2;
+
+    function _helper(idx, marker, Label)
+        if length(idx)==0
+            return 
+        end
+        x, y = domain.nodes[idx,1], domain.nodes[idx,2]
+        plot(x, y, marker, markersize=10, label="$Label")
+    end
+    _helper(findall(domain.EBC[:,direction] .== -1), ".", "Fixed Dirichlet")
+    _helper(findall(domain.EBC[:,direction] .== -2), ".", "Time-dependent Dirichlet")
+    _helper(findall(domain.FBC[:,direction] .== -1), "+", "Fixed Neumann")
+    _helper(findall(domain.FBC[:,direction] .== -2), "+", "Time-dependent Neumann")
+
+    if size(domain.edge_traction_data,1)>0
+        ids = unique(domain.edge_traction_data[:,3])
+        for (k, ids_) in enumerate(ids)
+            data = domain.edge_traction_data[domain.edge_traction_data[:,3].==ids_,1:2]
+                        
+            for i = 1:size(data, 1)
+                elem = domain.elements[data[i,1]]
+                if data[i,2]==1
+                    idx = [1;2]
+                elseif data[i,2]==2
+                    idx = [2;3]
+                elseif data[i,2]==3
+                    idx = [3;4]
+                elseif data[i,2]==4
+                    idx = [4;1]
+                end
+                x = elem.coords[idx,1]
+                y = elem.coords[idx,2]
+                if i==1
+                    plot(x, y, "--",linewidth=2, color="C$(k+3)", label="Edge Traction (ID=$ids_)")
+                else
+                    plot(x, y, "--",linewidth=2, color="C$(k+3)")
+                end
+            end
+        end 
+
+    end
+    legend()
+    
 end

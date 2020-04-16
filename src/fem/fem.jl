@@ -538,6 +538,7 @@ function getExternalForce!(domain::Domain, globaldat::GlobalData, fext::Union{Mi
         end
     end
 
+
     #Update the acceleration effect from the time-dependent Dirichlet boundary condition
     if globaldat.EBC_func != nothing        
         MID = globaldat.MID
@@ -601,6 +602,10 @@ Computes the body force vector $F_\mathrm{body}$ of length `neqs`
 function getEdgeForce(domain::Domain, globdat::GlobalData, time::Float64)
     Fedge = zeros(Float64, domain.neqs)
     neles = domain.neles
+
+    if isnothing(globdat.Edge_func) && size(domain.edge_traction_data, 1)!=0
+        error("`GlobalData` does not have `Edge_func` but `Domain` has `edge_traction_data`")
+    end
 
     if isnothing(globdat.Edge_func)
         return Fedge
