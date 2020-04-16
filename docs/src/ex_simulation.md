@@ -92,6 +92,7 @@ function ExplicitSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64)
     ∂u  = globdat.velo[:]
     ∂∂u = globdat.acce[:]
 
+    globdat.time  += Δt
     fext = getExternalForce!(domain, globdat)
 
     u += Δt*∂u + 0.5*Δt*Δt*∂∂u
@@ -107,7 +108,7 @@ function ExplicitSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64)
     globdat.state = u[:]
     globdat.velo = ∂u[:]
     globdat.acce = ∂∂up[:]
-    globdat.time  += Δt
+    
     commitHistory(domain)
     updateStates!(domain, globdat)
 

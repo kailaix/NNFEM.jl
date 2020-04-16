@@ -4,7 +4,7 @@ using PyPlot
 
 
 
-NT = 100
+NT = 200
 T = 1.0
 Δt = T/NT
 
@@ -96,9 +96,16 @@ assembleMassMatrix!(globdat, domain)
 updateDomainStateBoundary!(domain,globdat)
 updateStates!(domain, globdat)
 
+
+
+SolverInitial!(Δt, globdat, domain)
+
+ω = EigenMode(Δt, globdat, domain)
+@show "stable time step is ", 0.8 * 2/ω, " current time step is ", Δt
+
 for i = 1:NT
     @info i 
-    # global globdat, domain = GeneralizedAlphaSolverStep(globdat, domain, Δt)
+    #global globdat, domain = GeneralizedAlphaSolverStep(globdat, domain, Δt)
     global globdat, domain = ExplicitSolverStep(globdat, domain, Δt)
 end
 # # # visualize_displacement(domain)
