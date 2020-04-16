@@ -57,23 +57,23 @@ EBC = zeros(Int64, (m+1)*(n+1), 2)
 FBC = zeros(Int64, (m+1)*(n+1), 2)
 g = zeros((m+1)*(n+1), 2)
 f = zeros((m+1)*(n+1), 2)
-for j = 1:n
+for j = 1:n+1
     idx = (j-1)*(m+1) + m+1
     EBC[idx,:] .= -2 # time-dependent boundary
 
-    idx = (j-1)*(m+1) + 1
-    EBC[idx,:] .= -2 # time-dependent boundary
+    # idx = (j-1)*(m+1) + 1
+    # EBC[idx,:] .= -2 # time-dependent boundary
 end
 for i = 1:m+1
-    idx = i 
-    EBC[idx,:] .= -2 # fixed boundary 
+    # idx = i 
+    # EBC[idx,:] .= -2 # fixed boundary 
 
     idx = n*(m+1) + i 
     EBC[idx,:] .= -1 # fixed boundary 
 end
 
 dimension = 2
-domain = Domain(coords, elements, dimension, EBC, g, FBC, f) #, Edge_Traction_Data)
+domain = Domain(coords, elements, dimension, EBC, g, FBC, f, Edge_Traction_Data)
 
 x = domain.nodes[domain.dof_to_eq]
 y = domain.nodes[domain.dof_to_eq]
@@ -95,10 +95,15 @@ function EBC_func(t)
   out, -out, out
 end
 
+function Body_func_linear_elasticity(x, y, t)
+    f1 = @. 0.0512911435571429*x*y*exp(-t) + 0.0205164574228571*y^2*exp(-t) - (0.00512911435571429 - 0.00512911435571429*y^2)*exp(-t) - (0.0307746861342857 - 0.0307746861342857*y^2)*exp(-t) + (0.1 - 0.1*y^2)*(x^2 + y^2)*exp(-t) - (-0.00512911435571429*x^2 - 0.00512911435571429*y^2)*exp(-t)
+    f2 = @. 0.0512911435571429*x*y*exp(-t) + 0.123098744537143*y^2*exp(-t) - (0.00512911435571429 - 0.00512911435571429*y^2)*exp(-t) - (0.0307746861342857 - 0.0307746861342857*y^2)*exp(-t) + (0.1 - 0.1*y^2)*(x^2 + y^2)*exp(-t) - (-0.0307746861342857*x^2 - 0.0307746861342857*y^2)*exp(-t)
+    [f1 f2]
+end
+
 FBC_func = nothing 
-Body_func = nothing # this needs to be set when known 
 Edge_func = nothing
-globaldata = GlobalData(state, Dstate, velo, acce, domain.neqs, EBC_func, FBC_func,Body_func, Edge_func)
+globaldata = GlobalData(state, Dstate, velo, acce, domain.neqs, EBC_func, FBC_func,Body_func_linear_elasticity, Edge_func)
 
 x = domain.nodes[:,1]
 y = domain.nodes[:,2]
@@ -125,8 +130,7 @@ function Edge_func_linear_elasticity(x, y, t, idx)
     end
     return [f1 f2]
 end
-
-# globaldata.Edge_func = Edge_func_linear_elasticity
+globaldata.Edge_func = Edge_func_linear_elasticity
   
 ts = ExplicitSolverTime(Δt, NT)
 ubd, abd = compute_boundary_info(domain, globaldata, ts)

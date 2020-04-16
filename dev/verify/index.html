@@ -5,14 +5,14 @@ In NNFEM, the boundary information are marked in `EBC` and `FBC` arrays in the g
 
 If we express Equation 2 in terms of matrices, we have
 
-$$M \ddot{\mathbf{u}} + K (\mathbf{u}) = \mathbf{f} + \mathbf{t}\]</div><p>Here <span>$K(\mathbf{u})$</span> can be nonlinear. </p><p>There are two solver implemented in NNFEM: the explicit solver and the generalized alpha solver. Both solvers support automatic differentiation for a linear <span>$K$</span>. The explicit solver also supports automatic differentiation for nonlinear <span>$K$</span>. </p><p>To get started, you can study the following examples. Most likely you only need to modify the script to meet your own needs. </p><h2 id="Settings-1"><a class="docs-heading-anchor" href="#Settings-1">Settings</a><a class="docs-heading-anchor-permalink" href="#Settings-1" title="Permalink"></a></h2><p>In the following examples, we consider the following domain. </p><p><img src="../assets/geom.png" alt="Untitled"/></p><p>The manufactured is given by </p><div>\[u(x, y, t) = (1-y^2)(x^2+y^2) e^{-t}, v(x, y, t)=(1-y^2)(x^2-y^2)e^{-t}\]</div><p>The domain for small strain can be constructed as follows</p><pre><code class="language-julia">using Revise
+$$M \ddot{\mathbf{u}} + K (\mathbf{u}) = \mathbf{f} + \mathbf{t}\]</div><p>Here <span>$K(\mathbf{u})$</span> can be nonlinear. </p><p>There are two solver implemented in NNFEM: the explicit solver and the generalized alpha solver. Both solvers support automatic differentiation for a linear <span>$K$</span>. The explicit solver also supports automatic differentiation for nonlinear <span>$K$</span>. </p><p>To get started, you can study the following examples. Most likely you only need to modify the script to meet your own needs. </p><h2 id="Settings-1"><a class="docs-heading-anchor" href="#Settings-1">Settings</a><a class="docs-heading-anchor-permalink" href="#Settings-1" title="Permalink"></a></h2><p>In the following examples, we consider the following domain. </p><p><img src="../assets/geom.png" alt="Untitled"/></p><p>The manufactured is given by </p><div>\[u(x, y, t) = 0.1(1-y^2)(x^2+y^2) e^{-t}, v(x, y, t)=0.1(1-y^2)(x^2-y^2)e^{-t}\]</div><p>The domain for small strain can be constructed as follows</p><pre><code class="language-julia">using Revise
 using NNFEM 
 using PyPlot
-using ADCME
 using LinearAlgebra
+using ADCME
 
 NT = 100
-Δt = 1.0e-2
+Δt = 0.01
 T = NT * Δt
 
 m, n =  20, 10
@@ -43,7 +43,7 @@ for i = 1:m
   elem = elements[i]
   for k = 1:4
     if elem.coords[k,2]&lt;0.001 &amp;&amp; elem.coords[k+1&gt;4 ? 1 : k+1,2]&lt;0.001
-      push!(Edge_Traction_Data, [i, k, 0])
+      push!(Edge_Traction_Data, [i, k, 1])
     end
   end
 end
@@ -66,11 +66,11 @@ g = zeros((m+1)*(n+1), 2)
 f = zeros((m+1)*(n+1), 2)
 for j = 1:n
   idx = (j-1)*(m+1) + m+1
-	EBC[idx,:] .= -1 # fixed boundary
+	EBC[idx,:] .= -2 # time-dependent boundary
 end
 for i = 1:m+1
   idx = n*(m+1) + i 
-  EBC[idx,:] .= -2 # fixed boundary 
+  EBC[idx,:] .= -1 # fixed boundary 
 end
 dimension = 2
 domain = Domain(coords, elements, dimension, EBC, g, FBC, f, Edge_Traction_Data)
@@ -79,9 +79,9 @@ x = domain.nodes[domain.dof_to_eq]
 y = domain.nodes[domain.dof_to_eq]
 # Set initial condition 
 Dstate = zeros(domain.neqs) # d at last step 
-state = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2+y^2))]
-velo = -[(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2+y^2))]
-acce = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2+y^2))]
+state = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
+velo = -[(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
+acce = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
 gt = nothing
 ft = nothing
 
@@ -89,11 +89,19 @@ EBC_DOF = findall(EBC[:,1] .== -2)
 x_EBC = domain.nodes[EBC_DOF,1]
 y_EBC = domain.nodes[EBC_DOF,2]
 function EBC_func(t)
-  [(@. (1-y_EBC^2)*(x_EBC^2+y_EBC^2)*exp(-t));
-    (@. (1-y_EBC^2)*(x_EBC^2-y_EBC^2)*exp(-t))]
+  out = [(@. 0.1*(1-y_EBC^2)*(x_EBC^2+y_EBC^2)*exp(-t));
+    (@. 0.1*(1-y_EBC^2)*(x_EBC^2-y_EBC^2)*exp(-t))]
+  
+  out, -out, out
 end
 
 FBC_func = nothing 
 Body_func = nothing # this needs to be set when known 
 Edge_func = nothing
-globdat = GlobalData(state, Dstate, velo, acce, domain.neqs, EBC_func, FBC_func, Body_func, 						Edge_func)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Getting Started</a><a class="docs-footer-nextpage" href="../ex_simulation/">Simulaton Code Structure »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 16 April 2020 06:10">Thursday 16 April 2020</span>. Using Julia version 1.4.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+globaldata = GlobalData(state, Dstate, velo, acce, domain.neqs, EBC_func, FBC_func,Body_func, Edge_func)</code></pre><p>The setting of the domain can be visualized as follows</p><pre><code class="language-julia">visualize_boundary(domain)
+gca().invert_yaxis()</code></pre><p><img src="../assets/geom2.png" alt="Untitled"/></p><p>At this point, we can precompute some quantities</p><pre><code class="language-julia">x = domain.nodes[:,1]
+y = domain.nodes[:,2]
+d0 = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
+v0 = -[(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
+a0 = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
+assembleMassMatrix!(globaldata, domain)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Getting Started</a><a class="docs-footer-nextpage" href="../ex_simulation/">Simulaton Code Structure »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 16 April 2020 06:31">Thursday 16 April 2020</span>. Using Julia version 1.4.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
