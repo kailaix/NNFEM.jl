@@ -7,6 +7,7 @@ using NNFEM
 makedocs(sitename="NNFEM", modules=[NNFEM],
 pages = Any[
     "index.md",
+    "Examples"=>["verify.md"],
     "Examples"=>["ex_simulation.md", "ex_ad.md"],
     "Manual"=>["representation.md"],
     "api.md"
