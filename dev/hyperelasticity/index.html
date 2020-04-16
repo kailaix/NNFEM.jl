@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Hyperelasticity · NNFEM</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../"><img src="../assets/logo.png" alt="NNFEM logo"/></a><div class="docs-package-name"><span class="docs-autofit">NNFEM</span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Getting Started</a></li><li><span class="tocitem">Examples: Inverse Problems</span><ul><li><a class="tocitem" href="../verify/">Dynamic Problems</a></li><li><a class="tocitem" href="../verify_linear/">Linear Elasticity</a></li><li class="is-active"><a class="tocitem" href>Hyperelasticity</a></li><li><a class="tocitem" href="../verify_function/">Helper Functions</a></li></ul></li><li><span class="tocitem">Examples: Forward Computation</span><ul><li><a class="tocitem" href="../ex_simulation/">Simulaton Code Structure</a></li><li><a class="tocitem" href="../ex_ad/">Automatic Differentiation</a></li></ul></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../representation/">Representations of Constitutive Relation</a></li></ul></li><li><a class="tocitem" href="../api/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples: Inverse Problems</a></li><li class="is-active"><a href>Hyperelasticity</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Hyperelasticity</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/kailaix/NNFEM.jl/blob/master/docs/src/hyperelasticity.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Hyperelasticity-1"><a class="docs-heading-anchor" href="#Hyperelasticity-1">Hyperelasticity</a><a class="docs-heading-anchor-permalink" href="#Hyperelasticity-1" title="Permalink"></a></h1><p>In this section, we consider the simulation of hyperelasticity material. We use the following settings:</p><ul><li><p>The constitutive relation is given by the plane stress incompressible Rivlin Saunders model. </p></li><li><p>We use finite strain for numerical discretization. </p></li><li><p>We fix the right and bottom side of a plate, and impose verticle pressure from the top. The left side is subject to traction-free boundary condition. </p><p><img src="../assets/hyper.png" alt/></p></li></ul><p>The follows shows the simulation code</p><pre><code class="language-julia">using Revise
+using NNFEM 
+using PyPlot
+using LinearAlgebra
+using ADCME
+using ADCMEKit
+
+NT = 100
+Δt = 1/NT 
+
+n = 10
+m = 2n 
+h = 1/n
+
+# Create a very simple mesh
+elements = FiniteStrainContinuum[]
+prop = Dict(&quot;name&quot;=&gt; &quot;PlaneStressIncompressibleRivlinSaunders&quot;, &quot;rho&quot;=&gt; 1.0,  &quot;C1&quot;=&gt;1e-3, &quot;C2&quot;=&gt;1e-1)
+coords = zeros((m+1)*(n+1), 2)
+for j = 1:n
+    for i = 1:m
+        idx = (m+1)*(j-1)+i 
+        elnodes = [idx; idx+1; idx+1+m+1; idx+m+1]
+        ngp = 3
+        nodes = [
+            (i-1)*h (j-1)*h
+            i*h (j-1)*h
+            i*h j*h
+            (i-1)*h j*h
+        ]
+        coords[elnodes, :] = nodes
+        push!(elements, FiniteStrainContinuum(nodes, elnodes, prop, ngp))
+    end
+end
+
+# impose force on the top
+Edge_Traction_Data = Array{Int64}[]
+for i = 1:m 
+  elem = elements[i]
+  for k = 1:4
+    if elem.coords[k,2]&lt;0.001 &amp;&amp; elem.coords[k+1&gt;4 ? 1 : k+1,2]&lt;0.001
+      push!(Edge_Traction_Data, [i, k, 1])
+    end
+  end
+end
+Edge_Traction_Data = hcat(Edge_Traction_Data...)&#39;|&gt;Array
+
+# fixed Dirichlet boundaries on the bottom and right 
+EBC = zeros(Int64, (m+1)*(n+1), 2)
+FBC = zeros(Int64, (m+1)*(n+1), 2)
+g = zeros((m+1)*(n+1), 2)
+f = zeros((m+1)*(n+1), 2)
+for j = 1:n+1
+    idx = (j-1)*(m+1) + m+1
+    EBC[idx,:] .= -1 # fixed boundary, right
+end
+for i = 1:m+1
+    idx = n*(m+1) + i 
+    EBC[idx,:] .= -1 # fixed boundary, bottom
+end
+
+dimension = 2
+domain = Domain(coords, elements, dimension, EBC, g, FBC, f, Edge_Traction_Data)
+
+# Set initial condition: at rest
+Dstate = zeros(domain.neqs) 
+state = zeros(domain.neqs)
+velo = zeros(domain.neqs)
+acce = zeros(domain.neqs)
+EBC_func = nothing 
+FBC_func = nothing 
+Body_func = nothing 
+# Construct Edge_func
+function Edge_func_hyperelasticity(x, y, t, idx)
+  return [zeros(length(x)) ones(length(x))] * sin(π/2 * t)
+end
+globaldata = GlobalData(state, Dstate, velo, acce, domain.neqs, EBC_func, FBC_func,Body_func, Edge_func_hyperelasticity)
+
+assembleMassMatrix!(globaldata, domain)
+# initial acceleration is not known, and therefore must be computed using the balance equation
+SolverInitial!(Δt, globaldata, domain)
+
+updateStates!(domain, globaldata)
+for i = 1:NT
+    @info i 
+    # global globaldata, domain = GeneralizedAlphaSolverStep(globaldata, domain, Δt)
+    global globaldata, domain = ExplicitSolverStep(globaldata, domain, Δt)
+end
+d_ = hcat(domain.history[&quot;state&quot;]...)&#39;|&gt;Array
+
+# p = visualize_displacement(d_, domain)
+# saveanim(p, &quot;hyperelasticity_exp.gif&quot;)</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>For explicit solvers, it is very important that the time step size is sufficiently small. NNFEM provides a function for estimation of the step size:</p><pre><code class="language-julia">ω = EigenMode(Δt, globaldata, domain)
+@show &quot;stable time step is &quot;, 0.8 * 2/ω, &quot; current time step is &quot;, Δt</code></pre></div></div><p>The following figures show the result using both implicit and explicit schemes</p><table><tr><th style="text-align: right">Explicit Solver</th><th style="text-align: right">Implicit Solver</th></tr><tr><td style="text-align: right"><img src="../assets/hyperelasticity_exp.gif" alt/></td><td style="text-align: right"><img src="../assets/hyperelasticity_im.gif" alt/></td></tr></table></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../verify_linear/">« Linear Elasticity</a><a class="docs-footer-nextpage" href="../verify_function/">Helper Functions »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 16 April 2020 20:44">Thursday 16 April 2020</span>. Using Julia version 1.4.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
