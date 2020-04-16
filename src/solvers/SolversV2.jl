@@ -23,6 +23,7 @@ function ExplicitSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64)
     ∂∂u = globdat.acce[:]
 
     globdat.time  += Δt
+    updateDomainStateBoundary!(domain, globdat)
     fext = getExternalForce!(domain, globdat)
 
     u += Δt*∂u + 0.5*Δt*Δt*∂∂u

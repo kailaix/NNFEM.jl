@@ -480,23 +480,24 @@ end
 
 
 @doc """
-    updateDomainStateBoundary!(self::Domain, globaldat::GlobalData)
-    update time-dependent Dirichlet boundary condition to globaldat.time
-
+    updateDomainStateBoundary!(domain::Domain, globaldat::GlobalData)
+    
 If there exists time-dependent Dirichlet boundary conditions, `updateDomainStateBoundary!` must be called to update 
 the boundaries in `domain`. This function is called by [`updateStates!`](@ref)
+
+This function updates `state` data in `domain`.
 """
-function updateDomainStateBoundary!(self::Domain, globaldat::GlobalData)
+function updateDomainStateBoundary!(domain::Domain, globaldat::GlobalData)
     if globaldat.EBC_func != nothing
         disp, _, _ = globaldat.EBC_func(globaldat.time) # user defined time-dependent boundary
         dof_id = 0
 
         #update state of all nodes
-        for idof = 1:self.ndims
-            for inode = 1:self.nnodes
-                if (self.EBC[inode, idof] == -2)
+        for idof = 1:domain.ndims
+            for inode = 1:domain.nnodes
+                if (domain.EBC[inode, idof] == -2)
                     dof_id += 1
-                    self.state[inode + (idof-1)*self.nnodes] = disp[dof_id]
+                    domain.state[inode + (idof-1)*domain.nnodes] = disp[dof_id]
                 end
             end
         end

@@ -7,6 +7,9 @@ Computes the internal force vector $F_\mathrm{int}$ of length `neqs`
 - `globdat`: GlobalData
 - `domain`: Domain, finite element domain, for data structure
 - `Δt`:  Float64, current time step size
+
+Only the information in `domain` is used for computing internal force. 
+Therefore, the boundary conditions in `domain` must be set appropriately.
 """
 function assembleInternalForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
     Fint = zeros(Float64, domain.neqs)
