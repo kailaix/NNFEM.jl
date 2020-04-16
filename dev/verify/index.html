@@ -5,22 +5,16 @@ In NNFEM, the boundary information are marked in `EBC` and `FBC` arrays in the g
 
 If we express Equation 2 in terms of matrices, we have
 
-$$M \ddot{\mathbf{u}} + K (\mathbf{u}) = \mathbf{f} + \mathbf{t}\]</div><p>Here <span>$K(\mathbf{u})$</span> can be nonlinear. </p><p>There are two solver implemented in NNFEM: the explicit solver and the generalized alpha solver. Both solvers support automatic differentiation for a linear <span>$K$</span>. The explicit solver also supports automatic differentiation for nonlinear <span>$K$</span>. </p><p>To get started, you can study the following examples. Most likely you only need to modify the script to meet your own needs. </p><h2 id="Settings-1"><a class="docs-heading-anchor" href="#Settings-1">Settings</a><a class="docs-heading-anchor-permalink" href="#Settings-1" title="Permalink"></a></h2><p>In the following examples, we consider the following domain. </p><p><img src="../assets/geom.png" alt="Untitled"/></p><p>The manufactured is given by </p><div>\[u(x, y, t) = 0.1(1-y^2)(x^2+y^2) e^{-t}, v(x, y, t)=0.1(1-y^2)(x^2-y^2)e^{-t}\]</div><p>The domain for small strain can be constructed as follows</p><pre><code class="language-julia">using Revise
-using NNFEM 
-using PyPlot
-using LinearAlgebra
-using ADCME
+$$M \ddot{\mathbf{u}} + K (\mathbf{u}) = \mathbf{f} + \mathbf{t}\]</div><p>Here <span>$K(\mathbf{u})$</span> can be nonlinear. </p><p>There are two solver implemented in NNFEM: the explicit solver and the generalized alpha solver. Both solvers support automatic differentiation for a linear <span>$K$</span>. The explicit solver also supports automatic differentiation for nonlinear <span>$K$</span>. </p><p>To get started, you can study the following examples. Most likely you only need to modify the script to meet your own needs. </p><h2 id="Settings-1"><a class="docs-heading-anchor" href="#Settings-1">Settings</a><a class="docs-heading-anchor-permalink" href="#Settings-1" title="Permalink"></a></h2><p>In the following examples, we consider the following domain. </p><p><img src="../assets/geom.png" alt="Untitled"/></p><p>The manufactured is given by </p><div>\[u(x, y, t) = 0.1(1-y^2)(x^2+y^2) e^{-t}, v(x, y, t)=0.1(1-y^2)(x^2-y^2)e^{-t}\]</div><p>The domain for small strain can be constructed as follows</p><pre><code class="language-julia">NT = 100
+Δt = 1/NT 
 
-NT = 100
-Δt = 0.01
-T = NT * Δt
-
-m, n =  20, 10
-h = 0.1
+n = 10
+m = 2n 
+h = 1/n
 
 # Create a very simple mesh
 elements = SmallStrainContinuum[]
-prop = Dict(&quot;name&quot;=&gt; &quot;PlaneStrain&quot;, &quot;rho&quot;=&gt; 0.0876584, &quot;E&quot;=&gt;0.07180760098, &quot;nu&quot;=&gt;0.4)
+prop = Dict(&quot;name&quot;=&gt; &quot;PlaneStrain&quot;, &quot;rho&quot;=&gt; 1.0, &quot;E&quot;=&gt;2.0, &quot;nu&quot;=&gt;0.35)
 coords = zeros((m+1)*(n+1), 2)
 for j = 1:n
     for i = 1:m
@@ -64,14 +58,15 @@ EBC = zeros(Int64, (m+1)*(n+1), 2)
 FBC = zeros(Int64, (m+1)*(n+1), 2)
 g = zeros((m+1)*(n+1), 2)
 f = zeros((m+1)*(n+1), 2)
-for j = 1:n
-  idx = (j-1)*(m+1) + m+1
-	EBC[idx,:] .= -2 # time-dependent boundary
+for j = 1:n+1
+    idx = (j-1)*(m+1) + m+1
+    EBC[idx,:] .= -2 # time-dependent boundary, right
 end
 for i = 1:m+1
-  idx = n*(m+1) + i 
-  EBC[idx,:] .= -1 # fixed boundary 
+    idx = n*(m+1) + i 
+    EBC[idx,:] .= -1 # fixed boundary, bottom
 end
+
 dimension = 2
 domain = Domain(coords, elements, dimension, EBC, g, FBC, f, Edge_Traction_Data)
 
@@ -79,9 +74,9 @@ x = domain.nodes[domain.dof_to_eq]
 y = domain.nodes[domain.dof_to_eq]
 # Set initial condition 
 Dstate = zeros(domain.neqs) # d at last step 
-state = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
-velo = -[(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
-acce = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
+state = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1 
+velo = -[(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1 
+acce = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1 
 gt = nothing
 ft = nothing
 
@@ -95,13 +90,18 @@ function EBC_func(t)
   out, -out, out
 end
 
+function Body_func_linear_elasticity(x, y, t)
+    f1 = @. 0.987654320987654*x*y*exp(-t) + 0.592592592592593*y^2*exp(-t) + (0.1 - 0.1*y^2)*(x^2 + y^2)*exp(-t) - (0.148148148148148 - 0.148148148148148*y^2)*exp(-t) - (0.641975308641975 - 0.641975308641975*y^2)*exp(-t) - (-0.148148148148148*x^2 - 0.148148148148148*y^2)*exp(-t)
+    f2 = @. 0.987654320987654*x*y*exp(-t) - 2.5679012345679*y^2*exp(-t) + (0.1 - 0.1*y^2)*(x^2 - y^2)*exp(-t) - (0.148148148148148 - 0.148148148148148*y^2)*exp(-t) - (-0.641975308641975*x^2 + 0.641975308641975*y^2)*exp(-t) - (0.641975308641975*y^2 - 0.641975308641975)*exp(-t)
+    [f1 f2] 
+end
+
 FBC_func = nothing 
-Body_func = nothing # this needs to be set when known 
 Edge_func = nothing
-globaldata = GlobalData(state, Dstate, velo, acce, domain.neqs, EBC_func, FBC_func,Body_func, Edge_func)</code></pre><p>The setting of the domain can be visualized as follows</p><pre><code class="language-julia">visualize_boundary(domain)
+globaldata = GlobalData(state, Dstate, velo, acce, domain.neqs, EBC_func, FBC_func,Body_func_linear_elasticity, Edge_func)</code></pre><p>The setting of the domain can be visualized as follows</p><pre><code class="language-julia">visualize_boundary(domain)
 gca().invert_yaxis()</code></pre><p><img src="../assets/geom2.png" alt="Untitled"/></p><p>At this point, we can precompute some quantities</p><pre><code class="language-julia">x = domain.nodes[:,1]
 y = domain.nodes[:,2]
-d0 = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
-v0 = -[(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
-a0 = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
-assembleMassMatrix!(globaldata, domain)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Getting Started</a><a class="docs-footer-nextpage" href="../ex_simulation/">Simulaton Code Structure »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 16 April 2020 06:31">Thursday 16 April 2020</span>. Using Julia version 1.4.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+d0 = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1 
+v0 = -[(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1 
+a0 = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1 
+assembleMassMatrix!(globaldata, domain)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Getting Started</a><a class="docs-footer-nextpage" href="../ex_simulation/">Simulaton Code Structure »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 16 April 2020 07:39">Thursday 16 April 2020</span>. Using Julia version 1.4.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

@@ -3,22 +3,22 @@
 H = elements[1].mat[1].H
 x, y, t = @vars x y t
 u = 0.1*(1-y^2)*(x^2+y^2)*exp(-t)
-v = 0.1* (1-y^2)*(x^2+y^2)*exp(-t)
+v = 0.1* (1-y^2)*(x^2-y^2)*exp(-t)
 ux = diff(u,x)
 uy = diff(u,y)
 vx = diff(v,x)
 vy = diff(v,y)
 ϵ = [ux;vy;uy+vx]
 σ = H * ϵ
-f1 = u - (div(σ[1], x) + div(σ[3], y))
-f2 = v - (div(σ[3], x) + div(σ[2], y))
+f1 = u - (diff(σ[1], x) + diff(σ[3], y))
+f2 = v - (diff(σ[3], x) + diff(σ[2], y))
 println(replace(replace(sympy.julia_code(f1), &quot;.*&quot;=&gt;&quot;*&quot;), &quot;.^&quot;=&gt;&quot;^&quot;))
 println(replace(replace(sympy.julia_code(f2), &quot;.*&quot;=&gt;&quot;*&quot;), &quot;.^&quot;=&gt;&quot;^&quot;))
 
 S = [σ[1] σ[3]
 	σ[3] σ[2]]
 # edge function on domain 0
-t1 = S * [1;0.0]
+t1 = S * [-1.0;0.0]
 # edge function on domain 1
 t2 = S * [0;-1.0]
 
@@ -37,28 +37,45 @@ end
 # Construct Edge_func
 function Edge_func_linear_elasticity(x, y, t, idx)
   if idx==0
-      f1 = @. 0.307746861342857*x*(0.1 - 0.1*y^2)*exp(-t) + 0.205164574228572*y*(0.1 - 0.1*y^2)*exp(-t) - 0.0205164574228572*y*(x^2 + y^2)*exp(-t)
-      f2 = @. 0.0512911435571429*x*(0.1 - 0.1*y^2)*exp(-t) + 0.0512911435571429*y*(0.1 - 0.1*y^2)*exp(-t) - 0.00512911435571429*y*(x^2 + y^2)*exp(-t)
+      f1 = @. -6.41975308641975*x*(0.1 - 0.1*y^2)*exp(-t) + 3.45679012345679*y*(0.1 - 0.1*y^2)*exp(-t) + 0.345679012345679*y*(x^2 - y^2)*exp(-t)
+      f2 = @. -1.48148148148148*x*(0.1 - 0.1*y^2)*exp(-t) - 1.48148148148148*y*(0.1 - 0.1*y^2)*exp(-t) + 0.148148148148148*y*(x^2 + y^2)*exp(-t)
     elseif idx==1
-      f1 = @. -0.0512911435571429*x*(0.1 - 0.1*y^2)*exp(-t) - 0.0512911435571429*y*(0.1 - 0.1*y^2)*exp(-t) + 0.00512911435571429*y*(x^2 + y^2)*exp(-t)
-      f2 = @. -0.205164574228572*x*(0.1 - 0.1*y^2)*exp(-t) - 0.307746861342857*y*(0.1 - 0.1*y^2)*exp(-t) + 0.0307746861342857*y*(x^2 + y^2)*exp(-t)
+      f1 = @. -1.48148148148148*x*(0.1 - 0.1*y^2)*exp(-t) - 1.48148148148148*y*(0.1 - 0.1*y^2)*exp(-t) + 0.148148148148148*y*(x^2 + y^2)*exp(-t)
+      f2 = @. -3.45679012345679*x*(0.1 - 0.1*y^2)*exp(-t) + 6.41975308641975*y*(0.1 - 0.1*y^2)*exp(-t) + 0.641975308641975*y*(x^2 - y^2)*exp(-t)
     end
-    return [f1 f2]
+    return [f1 f2] 
 end
-
 globaldata.Edge_func = Edge_func_linear_elasticity
   
-ts = ExplicitSolverTime(Δt, NT)
+
+</code></pre><p>Finally, we can carry out forward computation</p><pre><code class="language-julia">ts = ExplicitSolverTime(Δt, NT)
 ubd, abd = compute_boundary_info(domain, globaldata, ts)
-Fext = compute_external_force(domain, globaldata, ts)</code></pre><p>Finally, we can carry out forward computation</p><pre><code class="language-julia">d, v, a= ExplicitSolver(globaldata, domain, d0, v0, a0, Δt, NT, Hs, Fext, ubd, abd)
+Fext = compute_external_force(domain, globaldata, ts) 
+d, v, a= ExplicitSolver(globaldata, domain, d0, v0, a0, Δt, NT, Hs, Fext, ubd, abd)
+
+# # NOTE: You can also use the implicit alpha solvers
+# ts = GeneralizedAlphaSolverTime(Δt, NT)
+# ubd, abd = compute_boundary_info(domain, globaldata, ts)
+# Fext = compute_external_force(domain, globaldata, ts) 
+# d, v, a= GeneralizedAlphaSolver(globaldata, domain, d0, v0, a0, Δt, NT, Hs, Fext, ubd, abd)
 
 sess = Session(); init(sess)
-d_, v_, a_ = run(sess, [d,v,a])</code></pre><p>The computation can be verified by comparing with exact solutions </p><pre><code class="language-julia">for i = 1:5
+d_, v_, a_ = run(sess, [d,v,a])</code></pre><p>The computation can be verified by comparing with exact solutions </p><pre><code class="language-julia">using Random; Random.seed!(233)
+for k = 1:5
     i = rand(1:m+1)
     j = rand(1:n+1)
-    plot(d_[:,(j-1)*(m+1)+i], color = &quot;C$i&quot;, label=&quot;Computed&quot;)
+    if k==1
+        plot(d_[:,(j-1)*(m+1)+i], color = &quot;C$k&quot;, label=&quot;Computed&quot;)
+    else
+        plot(d_[:,(j-1)*(m+1)+i], color = &quot;C$k&quot;)
+    end
     x0 = (i-1)*h 
     y0 = (j-1)*h
-    plot((@. (1-y0^2)*(x0^2+y0^2)*exp(-ts))*0.1,&quot;--&quot;, color=&quot;C$i&quot;, label=&quot;Reference&quot;)
+
+    if k==1
+        plot((@. (1-y0^2)*(x0^2+y0^2)*exp(-ts))*0.1 ,&quot;--&quot;, color=&quot;C$k&quot;, label=&quot;Reference&quot;)
+    else
+        plot((@. (1-y0^2)*(x0^2+y0^2)*exp(-ts))*0.1 ,&quot;--&quot;, color=&quot;C$k&quot;)
+    end
 end
-legend()</code></pre></article></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 16 April 2020 06:31">Thursday 16 April 2020</span>. Using Julia version 1.4.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+legend()</code></pre><table><tr><th style="text-align: right">Generalized <span>$\alpha$</span> Scheme (Implicit)</th><th style="text-align: right">Explicit Solver</th></tr><tr><td style="text-align: right"><img src="../assets/exp2.png" alt/></td><td style="text-align: right"><img src="../assets/exp1.png" alt/></td></tr></table></article></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 16 April 2020 07:39">Thursday 16 April 2020</span>. Using Julia version 1.4.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

@@ -26,4 +26,29 @@ for i = 1:NT
     globaldata.time = t
     Fext[i,:] = getExternalForce!(domain, globaldata)
 end
-@show maximum(abs.(fext-Fext))</code></pre></article></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 16 April 2020 06:31">Thursday 16 April 2020</span>. Using Julia version 1.4.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+@show maximum(abs.(fext-Fext))</code></pre><h2 id="getEdgeForce-1"><a class="docs-heading-anchor" href="#getEdgeForce-1"><code>getEdgeForce</code></a><a class="docs-heading-anchor-permalink" href="#getEdgeForce-1" title="Permalink"></a></h2><pre><code class="language-julia">m = 10
+n = 5
+h = 1.0
+domain = example_domain(m, n, h)
+globaldata = example_global_data(domain)
+edge_traction_data = zeros(Int64, m, 3)
+for i = 1:m 
+  edge_traction_data[i,:] = [i;1;0]
+end
+domain.edge_traction_data = edge_traction_data
+function edge_func(x, y, t, idx)
+  return [(@. x^2+y^2) (@. x^2-y^2)]
+end
+globaldata.Edge_func = edge_func
+F = getEdgeForce(domain, globaldata, 0.0)</code></pre><p>To verify the results, we can use <code>PoreFlow.jl</code></p><pre><code class="language-julia">using PoreFlow
+bdedge = bcedge(&quot;upper&quot;, m, n, h)
+t = zeros(m, 2)
+for i = 1:m
+  x = (i-0.5)*h
+  y = 0
+  t[i,:] = [x^2+y^2;x^2-y^2]
+end
+v = compute_fem_traction_term(t, bdedge, m, n, h)</code></pre><p>We can visualize the both force vectors</p><pre><code class="language-julia">plot(v, &quot;-&quot;, label=&quot;compute_fem_traction_term&quot;)
+plot(F, &quot;--&quot;, label=&quot;getEdgeForce&quot;)
+xlabel(&quot;Index&quot;)
+legend()</code></pre><p><img src="../assets/force.png" alt/></p></article></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 16 April 2020 07:39">Thursday 16 April 2020</span>. Using Julia version 1.4.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
