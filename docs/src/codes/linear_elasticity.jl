@@ -69,8 +69,10 @@ end
 dimension = 2
 domain = Domain(coords, elements, dimension, EBC, g, FBC, f, Edge_Traction_Data)
 
-x = domain.nodes[domain.dof_to_eq]
-y = domain.nodes[domain.dof_to_eq]
+xy = domain.nodes[domain.dof_to_eq]
+n_ = div(length(xy),2)
+x = xy[1:n_,1]
+y = xy[n_+1:end,1]
 # Set initial condition 
 Dstate = zeros(domain.neqs) # d at last step 
 state = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1 

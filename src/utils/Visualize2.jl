@@ -164,5 +164,6 @@ function visualize_boundary(domain::Domain, direction::String="x")
 
     end
     legend()
+    gca().invert_yaxis()
     
 end
