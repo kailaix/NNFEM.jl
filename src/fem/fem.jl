@@ -127,14 +127,17 @@ Date structure for the computatational domain.
            -1 means fixed(time-independent) Dirichlet boundary nodes
            -2 means time-dependent Dirichlet boundary nodes
 - `g`:  Float64[nnodes, ndims], values for fixed(time-independent) Dirichlet boundary conditions of node n's dth freedom,
-- `FBC`: Int64[nnodes, ndims], FBC[n,d] is the force load boundary condition of node n's dth freedom,
+- `FBC`: Int64[nnodes, ndims], `FBC[n,d]`` is the force load boundary condition of node n's dth freedom,
            -1 means constant(time-independent) force load boundary nodes
            -2 means time-dependent force load boundary nodes
 - `fext`:  Float64[neqs], constant (time-independent) nodal forces on these freedoms
 - `Edge_Traction_Data`: `n × 3` integer matrix for natural boundary conditions.
-      Edge_Traction_Data[i,1] is the element id,
-      Edge_Traction_Data[i,2] is the local edge id in the element, where the force is exterted (should be on the boundary, but not required)
-      Edge_Traction_Data[i,3] is the force id, which should be consistent with the last component of the Edge_func in the Globdat
+
+      1. `Edge_Traction_Data[i,1]` is the element id,
+
+      2. `Edge_Traction_Data[i,2]` is the local edge id in the element, where the force is exterted (should be on the boundary, but not required)
+
+      3. `Edge_Traction_Data[i,3]` is the force id, which should be consistent with the last component of the `Edge_func` in the `Globdat`
 
 - `time`: Float64, current time
 - `npoints`: Int64, number of points (each quadratical quad element has 4 points, npoints==nnodes, when porder==1)
@@ -205,8 +208,13 @@ mutable struct Domain
 
 end
 
-Base.show(io::IO, z::Domain) = 
-print(io, "Domain with $(length(z.elements)) elements, $(z.nnodes) nodes and $(z.neqs) active equations")
+function Base.show(io::IO, z::Domain) 
+    yes = "✔️"
+    no = "✘"
+    print(io, """Domain with $(length(z.elements)) elements, $(z.nnodes) nodes and $(z.neqs) active equations
+    edge_traction_data ... $(size(edge_traction_data, 1)==0 ? no : yes)
+    """)
+end
 
 
 function Base.:copy(g::Union{GlobalData, Domain}) 
@@ -247,7 +255,9 @@ Creating a finite element domain.
 
     For time-dependent boundary conditions (`EBC` or `FBC` entries are -2), the corresponding `f` or `g` entries are not used.
 """
-function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array{Int64}, g::Array{Float64}, FBC::Array{Int64}, f::Array{Float64}, edge_traction_data::Array{Int64,2}=zeros(Int64,0,3))
+function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64,
+    EBC::Array{Int64}, g::Array{Float64}, FBC::Array{Int64}, 
+    f::Array{Float64}, edge_traction_data::Array{Int64,2}=zeros(Int64,0,3))
     nnodes = size(nodes,1)
     neles = size(elements,1)
     state = zeros(nnodes * ndims)
