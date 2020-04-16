@@ -43,8 +43,8 @@ This set of functions include boundary condition updates, data transfer, and oth
 
 ```@docs
 commitHistory
-setDirichletBoundary!
-setNeumannBoundary!
+setConstantDirichletBoundary!
+setConstantNodalForces!
 updateStates!
 updateDomainStateBoundary!
 ```

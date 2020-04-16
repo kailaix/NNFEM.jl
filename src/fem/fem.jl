@@ -1,5 +1,5 @@
 export Domain,GlobalData,updateStates!,updateDomainStateBoundary!,
-    setNeumannBoundary!, setGeometryPoints!, setDirichletBoundary!, getExternalForce!,
+    setConstantNodalForces!, setGeometryPoints!, setConstantDirichletBoundary!, getExternalForce!,
     commitHistory, getBodyForce, getEdgeForce, getNGauss
 
 
@@ -85,9 +85,6 @@ function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Flo
     M = Float64[]
     Mlumped = Float64[]
     MID = Float64[]
-    if !isnothing(EBC_func) && !isnothing(Edge_func)
-        error("EBC_func and Edge_func cannot be provided at the same time")
-    end
     GlobalData(state, Dstate, velo, acce, time, M, Mlumped, MID, EBC_func, FBC_func, Body_func, Edge_func)
 end
 
@@ -133,7 +130,7 @@ Date structure for the computatational domain.
 - `FBC`: Int64[nnodes, ndims], FBC[n,d] is the force load boundary condition of node n's dth freedom,
            -1 means constant(time-independent) force load boundary nodes
            -2 means time-dependent force load boundary nodes
-- `fext`:  Float64[neqs], constant (time-independent) force load boundary conditions for these freedoms
+- `fext`:  Float64[neqs], constant (time-independent) nodal forces on these freedoms
 - `Edge_Traction_Data`: `n × 3` integer matrix for natural boundary conditions.
       Edge_Traction_Data[i,1] is the element id,
       Edge_Traction_Data[i,2] is the local edge id in the element, where the force is exterted (should be on the boundary, but not required)
@@ -277,9 +274,9 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array
     Int64[], Int64[], Int64[], Float64[], history)
 
     #set fixed(time-independent) Dirichlet boundary conditions
-    setDirichletBoundary!(domain, EBC, g)
+    setConstantDirichletBoundary!(domain, EBC, g)
     #set constant(time-independent) force load boundary conditions
-    setNeumannBoundary!(domain, FBC, f)
+    setConstantNodalForces!(domain, FBC, f)
 
     assembleSparseMatrixPattern!(domain)
 
@@ -348,9 +345,9 @@ end
 
 
 @doc """
-    setDirichletBoundary!(self::Domain, EBC::Array{Int64}, g::Array{Float64})
+    setConstantDirichletBoundary!(self::Domain, EBC::Array{Int64}, g::Array{Float64})
 
-Bookkeepings for Dirichlet boundary conditions. Only called once in the constructor of `domain`. 
+Bookkeepings for time-independent Dirichlet boundary conditions. Only called once in the constructor of `domain`. 
 It updates the fixed (time-independent Dirichlet boundary) state entries and builds both LM and DOF arrays.
 
 - `self`: Domain
@@ -362,7 +359,7 @@ It updates the fixed (time-independent Dirichlet boundary) state entries and bui
 
 - `g`:  Float64[nnodes, ndims], values for fixed (time-independent) Dirichlet boundary conditions of node n's dth freedom,
 """ -> 
-function setDirichletBoundary!(self::Domain, EBC::Array{Int64}, g::Array{Float64})
+function setConstantDirichletBoundary!(self::Domain, EBC::Array{Int64}, g::Array{Float64})
 
     # ID(n,d) is the global equation number of node n's dth freedom, 
     # -1 means fixed (time-independent) Dirichlet
@@ -416,19 +413,21 @@ end
 
 @doc """
 
-Bookkeepings for Dirichlet boundary conditions. Only called once in the constructor of `domain`. 
-It updates the fixed (time-independent Neumann boundary) state entries and builds both LM and DOF arrays.
+Bookkeepings for time-independent Nodal force boundary conditions. Only called once in the constructor of `domain`. 
+It updates the fixed (time-independent Nodal forces) state entries and builds both LM and DOF arrays.
 
 - `self`: Domain
 - `FBC`:  Int64[nnodes, ndims], FBC[n,d] is the displacement boundary condition of node n's dth freedom,
         
-    ∘ -1 means fixed (time-independent) Neumann boundary nodes
+    ∘ -1 means fixed (time-independent) Nodal force freedoms
 
-    ∘ -2 means time-dependent Dirichlet boundary nodes
+    ∘ -2 means time-dependent Nodal force freedoms
 
 - `f`:  Float64[nnodes, ndims], values for fixed (time-independent) Neumann boundary conditions of node n's dth freedom,
+
+#The name is misleading
 """ 
-function setNeumannBoundary!(self::Domain, FBC::Array{Int64}, f::Array{Float64})
+function setConstantNodalForces!(self::Domain, FBC::Array{Int64}, f::Array{Float64})
 
     fext = zeros(Float64, self.neqs)
     # ID(n,d) is the global equation number of node n's dth freedom, -1 means no freedom
@@ -450,6 +449,7 @@ end
 
 @doc """
     updateStates!(domain::Domain, globaldat::GlobalData)
+    update time-dependent Dirichlet boundary condition to globaldat.time
 
 At each time step, `updateStates!` needs to be called to update the full `state` and `Dstate` in `domain`
 from active ones in `globaldat`.
@@ -464,14 +464,15 @@ function updateStates!(domain::Domain, globaldat::GlobalData)
 
     updateDomainStateBoundary!(domain, globaldat)
     
-    domain.Dstate = domain.state[:]
+    domain.Dstate[:] = domain.state
 end
 
 
 @doc """
     updateDomainStateBoundary!(self::Domain, globaldat::GlobalData)
+    update time-dependent Dirichlet boundary condition to globaldat.time
 
-If there exists time-dependent boundary conditions, `updateDomainStateBoundary!` must be called to update 
+If there exists time-dependent Dirichlet boundary conditions, `updateDomainStateBoundary!` must be called to update 
 the boundaries in `domain`. This function is called by [`updateStates!`](@ref)
 """
 function updateDomainStateBoundary!(self::Domain, globaldat::GlobalData)
@@ -490,46 +491,55 @@ function updateDomainStateBoundary!(self::Domain, globaldat::GlobalData)
         end
     end
 
-    if globaldat.FBC_func != nothing
-        ID = self.ID
-        nodal_force = globaldat.FBC_func(globaldat.time) # user defined time-dependent boundary
-        # @info nodal_force
-        dof_id = 0
-        #update fext for active nodes (length of neqs)
-        for idof = 1:self.ndims
-            for inode = 1:self.nnodes
-                if (self.FBC[inode, idof] == -2)
-                    dof_id += 1
-                    @assert ID[inode, idof] > 0
-                    self.fext[ID[inode, idof]] = nodal_force[dof_id]
-                end
-            end
-        end
-    end
 end
 
 
 @doc """
     getExternalForce!(self::Domain, globaldat::GlobalData, fext::Union{Missing,Array{Float64}}=missing)
 
-Computes external force vector, including both external force load and time-dependent Dirichlet boundary conditions.
+Computes external force vector at globaldat.time, 
+including both external force load and time-dependent Dirichlet boundary conditions.
     
-!!! info 
-    The function needs to be called after [`updateDomainStateBoundary!`](@ref), which computes the external force vector from external force load
 """
 function getExternalForce!(domain::Domain, globaldat::GlobalData, fext::Union{Missing,Array{Float64}}=missing)
     if ismissing(fext)
         fext = zeros(domain.neqs)
     end
+
+    #Update time-independent nodal force
     fext[:] = domain.fext
+
+    #Update time-dependent nodal force
+    if globaldat.FBC_func != nothing
+        ID = domain.ID
+        nodal_force = globaldat.FBC_func(globaldat.time) # user defined time-dependent boundary
+        # @info nodal_force
+        dof_id = 0
+        #update fext for active nodes (length of neqs)
+        for idof = 1:domain.ndims
+            for inode = 1:domain.nnodes
+                if (domain.FBC[inode, idof] == -2)
+                    dof_id += 1
+                    @assert ID[inode, idof] > 0
+                    fext[ID[inode, idof]] += nodal_force[dof_id]
+                end
+            end
+        end
+    end
+
+    #Update the acceleration effect from the time-dependent Dirichlet boundary condition
     if globaldat.EBC_func != nothing        
         MID = globaldat.MID
         _, _, acce = globaldat.EBC_func(globaldat.time)
         fext -= MID * acce
     end
+
+    #Update time-dependent body force
     fbody = getBodyForce(domain, globaldat, globaldat.time)
+
+    #Update time-dependent edge traction force
     fedge = getEdgeForce(domain, globaldat, globaldat.time)
-    @info sum(abs.(fedge))
+    
     fext + fbody + fedge
 end
 

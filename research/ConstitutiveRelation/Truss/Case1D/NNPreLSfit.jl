@@ -38,11 +38,12 @@ function approximate_stress(tid::Int64, method::String)
 
     #update state history and fext_history on the homogenized domain
     fext_history = []
-    setNeumannBoundary!(domain, FBC, fext)
+    setConstantNodalForces!(domain, FBC, fext)
     for i = 1:NT
         globdat.time = Δt*i
         updateDomainStateBoundary!(domain, globdat)
-        push!(fext_history, domain.fext[:])
+        fext = getExternalForce!(domain, globaldat)
+        push!(fext_history, fext)
     end
 
     E_all, S_all = LSfittingStress(domain, globdat, hcat(state_history...), hcat(fext_history...), Δt, method)
