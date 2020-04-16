@@ -106,6 +106,7 @@ function ExplicitSolver(Δt::Float64, globdat::GlobalData, domain::Domain)
 
     globdat.time  += Δt
     #get fext at t + Δt
+    updateDomainStateBoundary!(domain, globdat)
     fext = getExternalForce!(domain, globdat)
 
     u += Δt*∂u + 0.5*Δt*Δt*∂∂u
