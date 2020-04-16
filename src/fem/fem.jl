@@ -78,7 +78,8 @@ end
         EBC_func::Union{Function, Nothing}=nothing, FBC_func::Union{Function, Nothing}=nothing,
         Body_func::Union{Function,Nothing}=nothing, Edge_func::Union{Function,Nothing}=nothing)
 """
-function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Float64},acce::Array{Float64}, neqs::Int64,
+function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Float64},acce::Array{Float64}, 
+        neqs::Int64,
         EBC_func::Union{Function, Nothing}=nothing, FBC_func::Union{Function, Nothing}=nothing,
         Body_func::Union{Function,Nothing}=nothing, Edge_func::Union{Function,Nothing}=nothing)
     time = 0.0
@@ -212,7 +213,7 @@ function Base.show(io::IO, z::Domain)
     yes = "✔️"
     no = "✘"
     print(io, """Domain with $(length(z.elements)) elements, $(z.nnodes) nodes and $(z.neqs) active equations
-    edge_traction_data ... $(size(edge_traction_data, 1)==0 ? no : yes)
+    edge_traction_data ... $(size(z.edge_traction_data, 1)==0 ? no : yes)
     """)
 end
 
