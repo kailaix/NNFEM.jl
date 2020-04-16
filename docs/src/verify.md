@@ -31,3 +31,112 @@ There are two solver implemented in NNFEM: the explicit solver and the generaliz
 
 To get started, you can study the following examples. Most likely you only need to modify the script to meet your own needs. 
 
+## Settings
+
+In the following examples, we consider the following domain. 
+
+![Untitled](./assets/geom.png)
+
+The manufactured is given by 
+
+$$u(x, y, t) = (1-y^2)(x^2+y^2) e^{-t}, v(x, y, t)=(1-y^2)(x^2-y^2)e^{-t}$$
+
+The domain for small strain can be constructed as follows
+
+```julia
+using Revise
+using NNFEM 
+using PyPlot
+using ADCME
+using LinearAlgebra
+
+NT = 100
+Δt = 1.0e-2
+T = NT * Δt
+
+m, n =  20, 10
+h = 0.1
+
+# Create a very simple mesh
+elements = SmallStrainContinuum[]
+prop = Dict("name"=> "PlaneStrain", "rho"=> 0.0876584, "E"=>0.07180760098, "nu"=>0.4)
+coords = zeros((m+1)*(n+1), 2)
+for j = 1:n
+    for i = 1:m
+        idx = (m+1)*(j-1)+i 
+        elnodes = [idx; idx+1; idx+1+m+1; idx+m+1]
+        ngp = 3
+        nodes = [
+            (i-1)*h (j-1)*h
+            i*h (j-1)*h
+            i*h j*h
+            (i-1)*h j*h
+        ]
+        coords[elnodes, :] = nodes
+        push!(elements, SmallStrainContinuum(nodes, elnodes, prop, ngp))
+    end
+end
+
+Edge_Traction_Data = Array{Int64}[]
+for i = 1:m 
+  elem = elements[i]
+  for k = 1:4
+    if elem.coords[k,2]<0.001 && elem.coords[k+1>4 ? 1 : k+1,2]<0.001
+      push!(Edge_Traction_Data, [i, k, 0])
+    end
+  end
+end
+
+for i = 1:n
+  elem = elements[(i-1)*m+1]
+  for k = 1:4
+    if elem.coords[k,1]<0.001 && elem.coords[k+1>4 ? 1 : k+1,1]<0.001
+      push!(Edge_Traction_Data, [(i-1)*m+1, k, 0])
+    end
+  end
+end
+
+Edge_Traction_Data = hcat(Edge_Traction_Data...)'|>Array
+
+# fixed on the bottom, push on the right
+EBC = zeros(Int64, (m+1)*(n+1), 2)
+FBC = zeros(Int64, (m+1)*(n+1), 2)
+g = zeros((m+1)*(n+1), 2)
+f = zeros((m+1)*(n+1), 2)
+for j = 1:n
+  idx = (j-1)*(m+1) + m+1
+	EBC[idx,:] .= -1 # fixed boundary
+end
+for i = 1:m+1
+  idx = n*(m+1) + i 
+  EBC[idx,:] .= -2 # fixed boundary 
+end
+dimension = 2
+domain = Domain(coords, elements, dimension, EBC, g, FBC, f, Edge_Traction_Data)
+
+x = domain.nodes[domain.dof_to_eq]
+y = domain.nodes[domain.dof_to_eq]
+# Set initial condition 
+Dstate = zeros(domain.neqs) # d at last step 
+state = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2+y^2))]
+velo = -[(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2+y^2))]
+acce = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2+y^2))]
+gt = nothing
+ft = nothing
+
+EBC_DOF = findall(EBC[:,1] .== -2)
+x_EBC = domain.nodes[EBC_DOF,1]
+y_EBC = domain.nodes[EBC_DOF,2]
+function EBC_func(t)
+  [(@. (1-y_EBC^2)*(x_EBC^2+y_EBC^2)*exp(-t));
+    (@. (1-y_EBC^2)*(x_EBC^2-y_EBC^2)*exp(-t))]
+end
+
+FBC_func = nothing 
+Body_func = nothing # this needs to be set when known 
+Edge_func = nothing
+globdat = GlobalData(state, Dstate, velo, acce, domain.neqs, EBC_func, FBC_func, Body_func, 						Edge_func)
+```
+
+
+
