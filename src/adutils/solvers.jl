@@ -222,6 +222,7 @@ function GeneralizedAlphaSolver(globdat::GlobalData, domain::Domain,
     ubd::Union{Array{Float64, 2}, PyObject, Missing}=missing,
     abd::Union{Array{Float64, 2}, PyObject, Missing}=missing; ρ::Float64 = 0.0)
     @assert 0<=ρ<=1
+    init_nnfem(domain)
     αm = (2ρ-1)/(1+ρ)
     αf = ρ/(1+ρ)    
     β2 = 0.5*(1 - αm + αf)^2

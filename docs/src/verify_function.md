@@ -49,7 +49,50 @@ end
 @show maximum(abs.(fext-Fext))
 ```
 
+## `getEdgeForce`
 
+```julia
+m = 10
+n = 5
+h = 1.0
+domain = example_domain(m, n, h)
+globaldata = example_global_data(domain)
+edge_traction_data = zeros(Int64, m, 3)
+for i = 1:m 
+  edge_traction_data[i,:] = [i;1;0]
+end
+domain.edge_traction_data = edge_traction_data
+function edge_func(x, y, t, idx)
+  return [(@. x^2+y^2) (@. x^2-y^2)]
+end
+globaldata.Edge_func = edge_func
+F = getEdgeForce(domain, globaldata, 0.0)
+```
+
+To verify the results, we can use `PoreFlow.jl`
+
+```julia
+using PoreFlow
+bdedge = bcedge("upper", m, n, h)
+t = zeros(m, 2)
+for i = 1:m
+  x = (i-0.5)*h
+  y = 0
+  t[i,:] = [x^2+y^2;x^2-y^2]
+end
+v = compute_fem_traction_term(t, bdedge, m, n, h)
+```
+
+We can visualize the both force vectors
+
+```julia
+plot(v, "-", label="compute_fem_traction_term")
+plot(F, "--", label="getEdgeForce")
+xlabel("Index")
+legend()
+```
+
+![](./assets/force.png)
 
 
 

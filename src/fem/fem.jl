@@ -567,6 +567,7 @@ function getBodyForce(domain::Domain, globdat::GlobalData, time::Float64)
     
     Fbody = zeros(Float64, domain.neqs)
     neles = domain.neles
+    
 
     if isnothing(globdat.Body_func)
         return Fbody
@@ -603,8 +604,9 @@ function getEdgeForce(domain::Domain, globdat::GlobalData, time::Float64)
     Fedge = zeros(Float64, domain.neqs)
     neles = domain.neles
 
-    if isnothing(globdat.Edge_func) && size(domain.edge_traction_data, 1)!=0
-        error("`GlobalData` does not have `Edge_func` but `Domain` has `edge_traction_data`")
+    if (isnothing(globdat.Edge_func) && size(domain.edge_traction_data, 1)!=0) ||
+        (!isnothing(globdat.Edge_func) && size(domain.edge_traction_data, 1)==0)
+        @warn("`GlobalData` does not have (has) `Edge_func` but `Domain` has (does not have) `edge_traction_data`")
     end
 
     if isnothing(globdat.Edge_func)

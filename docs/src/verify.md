@@ -44,22 +44,16 @@ $$u(x, y, t) = 0.1(1-y^2)(x^2+y^2) e^{-t}, v(x, y, t)=0.1(1-y^2)(x^2-y^2)e^{-t}$
 The domain for small strain can be constructed as follows
 
 ```julia
-using Revise
-using NNFEM 
-using PyPlot
-using LinearAlgebra
-using ADCME
-
 NT = 100
-Δt = 0.01
-T = NT * Δt
+Δt = 1/NT 
 
-m, n =  20, 10
-h = 0.1
+n = 10
+m = 2n 
+h = 1/n
 
 # Create a very simple mesh
 elements = SmallStrainContinuum[]
-prop = Dict("name"=> "PlaneStrain", "rho"=> 0.0876584, "E"=>0.07180760098, "nu"=>0.4)
+prop = Dict("name"=> "PlaneStrain", "rho"=> 1.0, "E"=>2.0, "nu"=>0.35)
 coords = zeros((m+1)*(n+1), 2)
 for j = 1:n
     for i = 1:m
@@ -103,14 +97,15 @@ EBC = zeros(Int64, (m+1)*(n+1), 2)
 FBC = zeros(Int64, (m+1)*(n+1), 2)
 g = zeros((m+1)*(n+1), 2)
 f = zeros((m+1)*(n+1), 2)
-for j = 1:n
-  idx = (j-1)*(m+1) + m+1
-	EBC[idx,:] .= -2 # time-dependent boundary
+for j = 1:n+1
+    idx = (j-1)*(m+1) + m+1
+    EBC[idx,:] .= -2 # time-dependent boundary, right
 end
 for i = 1:m+1
-  idx = n*(m+1) + i 
-  EBC[idx,:] .= -1 # fixed boundary 
+    idx = n*(m+1) + i 
+    EBC[idx,:] .= -1 # fixed boundary, bottom
 end
+
 dimension = 2
 domain = Domain(coords, elements, dimension, EBC, g, FBC, f, Edge_Traction_Data)
 
@@ -118,9 +113,9 @@ x = domain.nodes[domain.dof_to_eq]
 y = domain.nodes[domain.dof_to_eq]
 # Set initial condition 
 Dstate = zeros(domain.neqs) # d at last step 
-state = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
-velo = -[(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
-acce = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
+state = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1 
+velo = -[(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1 
+acce = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1 
 gt = nothing
 ft = nothing
 
@@ -134,10 +129,15 @@ function EBC_func(t)
   out, -out, out
 end
 
+function Body_func_linear_elasticity(x, y, t)
+    f1 = @. 0.987654320987654*x*y*exp(-t) + 0.592592592592593*y^2*exp(-t) + (0.1 - 0.1*y^2)*(x^2 + y^2)*exp(-t) - (0.148148148148148 - 0.148148148148148*y^2)*exp(-t) - (0.641975308641975 - 0.641975308641975*y^2)*exp(-t) - (-0.148148148148148*x^2 - 0.148148148148148*y^2)*exp(-t)
+    f2 = @. 0.987654320987654*x*y*exp(-t) - 2.5679012345679*y^2*exp(-t) + (0.1 - 0.1*y^2)*(x^2 - y^2)*exp(-t) - (0.148148148148148 - 0.148148148148148*y^2)*exp(-t) - (-0.641975308641975*x^2 + 0.641975308641975*y^2)*exp(-t) - (0.641975308641975*y^2 - 0.641975308641975)*exp(-t)
+    [f1 f2] 
+end
+
 FBC_func = nothing 
-Body_func = nothing # this needs to be set when known 
 Edge_func = nothing
-globaldata = GlobalData(state, Dstate, velo, acce, domain.neqs, EBC_func, FBC_func,Body_func, Edge_func)
+globaldata = GlobalData(state, Dstate, velo, acce, domain.neqs, EBC_func, FBC_func,Body_func_linear_elasticity, Edge_func)
 ```
 
 The setting of the domain can be visualized as follows
@@ -154,9 +154,9 @@ At this point, we can precompute some quantities
 ```julia
 x = domain.nodes[:,1]
 y = domain.nodes[:,2]
-d0 = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
-v0 = -[(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
-a0 = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
+d0 = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1 
+v0 = -[(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1 
+a0 = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1 
 assembleMassMatrix!(globaldata, domain)
 ```
 
