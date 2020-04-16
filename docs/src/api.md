@@ -14,6 +14,15 @@ getNGauss
 
 ## Elements
 
+```@docs
+getEdgeForce
+getBodyForce
+getMassMatrix
+getNodes
+getGaussPoints
+commitHistory
+```
+
 ```@autodocs
 Modules = [NNFEM]
 Pages   = ["FiniteStrainContinuum.jl", "SmallStrainContinuum.jl", "FiniteStrainTruss.jl"]

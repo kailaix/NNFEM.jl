@@ -39,7 +39,7 @@ In the following examples, we consider the following domain.
 
 The manufactured is given by 
 
-$$u(x, y, t) = (1-y^2)(x^2+y^2) e^{-t}, v(x, y, t)=(1-y^2)(x^2-y^2)e^{-t}$$
+$$u(x, y, t) = 0.1(1-y^2)(x^2+y^2) e^{-t}, v(x, y, t)=0.1(1-y^2)(x^2-y^2)e^{-t}$$
 
 The domain for small strain can be constructed as follows
 
@@ -47,11 +47,11 @@ The domain for small strain can be constructed as follows
 using Revise
 using NNFEM 
 using PyPlot
-using ADCME
 using LinearAlgebra
+using ADCME
 
 NT = 100
-Δt = 1.0e-2
+Δt = 0.01
 T = NT * Δt
 
 m, n =  20, 10
@@ -82,7 +82,7 @@ for i = 1:m
   elem = elements[i]
   for k = 1:4
     if elem.coords[k,2]<0.001 && elem.coords[k+1>4 ? 1 : k+1,2]<0.001
-      push!(Edge_Traction_Data, [i, k, 0])
+      push!(Edge_Traction_Data, [i, k, 1])
     end
   end
 end
@@ -105,11 +105,11 @@ g = zeros((m+1)*(n+1), 2)
 f = zeros((m+1)*(n+1), 2)
 for j = 1:n
   idx = (j-1)*(m+1) + m+1
-	EBC[idx,:] .= -1 # fixed boundary
+	EBC[idx,:] .= -2 # time-dependent boundary
 end
 for i = 1:m+1
   idx = n*(m+1) + i 
-  EBC[idx,:] .= -2 # fixed boundary 
+  EBC[idx,:] .= -1 # fixed boundary 
 end
 dimension = 2
 domain = Domain(coords, elements, dimension, EBC, g, FBC, f, Edge_Traction_Data)
@@ -118,9 +118,9 @@ x = domain.nodes[domain.dof_to_eq]
 y = domain.nodes[domain.dof_to_eq]
 # Set initial condition 
 Dstate = zeros(domain.neqs) # d at last step 
-state = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2+y^2))]
-velo = -[(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2+y^2))]
-acce = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2+y^2))]
+state = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
+velo = -[(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
+acce = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
 gt = nothing
 ft = nothing
 
@@ -128,15 +128,35 @@ EBC_DOF = findall(EBC[:,1] .== -2)
 x_EBC = domain.nodes[EBC_DOF,1]
 y_EBC = domain.nodes[EBC_DOF,2]
 function EBC_func(t)
-  [(@. (1-y_EBC^2)*(x_EBC^2+y_EBC^2)*exp(-t));
-    (@. (1-y_EBC^2)*(x_EBC^2-y_EBC^2)*exp(-t))]
+  out = [(@. 0.1*(1-y_EBC^2)*(x_EBC^2+y_EBC^2)*exp(-t));
+    (@. 0.1*(1-y_EBC^2)*(x_EBC^2-y_EBC^2)*exp(-t))]
+  
+  out, -out, out
 end
 
 FBC_func = nothing 
 Body_func = nothing # this needs to be set when known 
 Edge_func = nothing
-globdat = GlobalData(state, Dstate, velo, acce, domain.neqs, EBC_func, FBC_func, Body_func, 						Edge_func)
+globaldata = GlobalData(state, Dstate, velo, acce, domain.neqs, EBC_func, FBC_func,Body_func, Edge_func)
 ```
 
+The setting of the domain can be visualized as follows
 
+```julia
+visualize_boundary(domain)
+gca().invert_yaxis()
+```
+
+![Untitled](./assets/geom2.png)
+
+At this point, we can precompute some quantities
+
+```julia
+x = domain.nodes[:,1]
+y = domain.nodes[:,2]
+d0 = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
+v0 = -[(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
+a0 = [(@. (1-y^2)*(x^2+y^2)); (@. (1-y^2)*(x^2-y^2))] * 0.1
+assembleMassMatrix!(globaldata, domain)
+```
 
