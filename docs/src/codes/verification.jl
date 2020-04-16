@@ -97,7 +97,7 @@ updateDomainStateBoundary!(domain,globdat)
 updateStates!(domain, globdat)
 
 
-
+#solve for a0
 SolverInitial!(Δt, globdat, domain)
 
 ω = EigenMode(Δt, globdat, domain)
