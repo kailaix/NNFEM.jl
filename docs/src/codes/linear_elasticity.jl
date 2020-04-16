@@ -60,10 +60,17 @@ f = zeros((m+1)*(n+1), 2)
 for j = 1:n+1
     idx = (j-1)*(m+1) + m+1
     EBC[idx,:] .= -2 # time-dependent boundary, right
+
+
+    # idx = (j-1)*(m+1) + 1
+    # EBC[idx,:] .= -2 # time-dependent boundary, right
 end
 for i = 1:m+1
     idx = n*(m+1) + i 
     EBC[idx,:] .= -1 # fixed boundary, bottom
+
+    # idx = i 
+    # EBC[idx,:] .= -2 # fixed boundary, bottom
 end
 
 dimension = 2

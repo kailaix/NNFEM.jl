@@ -10,7 +10,7 @@ Returns the times for explicit solver. Boundary conditions and external forces s
 function ExplicitSolverTime(Δt::Float64, NT::Int64)
     U = zeros(NT)
     for i = 1:NT 
-        U[i] = (i-0.5)*Δt
+        U[i] = i*Δt
     end
     U 
 end
@@ -105,10 +105,13 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
         if !ismissing(abd)
             ∂∂up = scatter_update(∂∂up, bddof, abd[i])
         end
+        if length(sum(fixed_bddof))>0
+            ∂∂up = scatter_update(∂∂up, fixed_bddof, a0[fixed_bddof])
+        end
 
         ∂u += 0.5 * Δt * ∂∂up
 
-        i+1, write(d_arr, i+1, u), write(v_arr, i+1, ∂u), write(a_arr, i+1, ∂∂u)
+        i+1, write(d_arr, i+1, u), write(v_arr, i+1, ∂u), write(a_arr, i+1, ∂∂up)
     end
 
     arr_d = TensorArray(NT+1); arr_d = write(arr_d, 1, d0)
@@ -375,10 +378,14 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
         if !ismissing(abd)
             ∂∂up = scatter_update(∂∂up, bddof, abd[i])
         end
+        if length(sum(fixed_bddof))>0
+            ∂∂up = scatter_update(∂∂up, fixed_bddof, a0[fixed_bddof])
+        end
+
 
         ∂u += 0.5 * Δt * ∂∂up
 
-        i+1, write(d_arr, i+1, u), write(v_arr, i+1, ∂u), write(a_arr, i+1, ∂∂u)
+        i+1, write(d_arr, i+1, u), write(v_arr, i+1, ∂u), write(a_arr, i+1, ∂∂up)
     end
 
     arr_d = TensorArray(NT+1); arr_d = write(arr_d, 1, d0)
@@ -476,10 +483,13 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
         if !ismissing(abd)
             ∂∂up = scatter_update(∂∂up, bddof, abd[i])
         end
+        if length(sum(fixed_bddof))>0
+            ∂∂up = scatter_update(∂∂up, fixed_bddof, a0[fixed_bddof])
+        end
 
         ∂u += 0.5 * Δt * ∂∂up
 
-        i+1, write(d_arr, i+1, u), write(v_arr, i+1, ∂u), write(a_arr, i+1, ∂∂u), write(σ_arr, i+1, σ), write(ε_arr, i+1, ε)
+        i+1, write(d_arr, i+1, u), write(v_arr, i+1, ∂u), write(a_arr, i+1, ∂∂up), write(σ_arr, i+1, σ), write(ε_arr, i+1, ε)
     end
 
     arr_d = TensorArray(NT+1); arr_d = write(arr_d, 1, d0)
