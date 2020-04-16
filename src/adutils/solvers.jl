@@ -105,9 +105,6 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
         if !ismissing(abd)
             ∂∂up = scatter_update(∂∂up, bddof, abd[i])
         end
-        if length(sum(fixed_bddof))>0
-            ∂∂up = scatter_update(∂∂up, fixed_bddof, a0[fixed_bddof])
-        end
 
         ∂u += 0.5 * Δt * ∂∂up
 
@@ -256,7 +253,6 @@ function GeneralizedAlphaSolver(globdat::GlobalData, domain::Domain,
         if !ismissing(abd)
             up = scatter_update(up, bddof, ubd[i])
         end
-
         if length(sum(fixed_bddof))>0
             up = scatter_update(up, fixed_bddof, d0[fixed_bddof])
         end
