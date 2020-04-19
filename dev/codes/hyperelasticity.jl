@@ -14,7 +14,7 @@ h = 1/n
 
 # Create a very simple mesh
 elements = FiniteStrainContinuum[]
-prop = Dict("name"=> "PlaneStressIncompressibleRivlinSaunders", "rho"=> 1.0,  "C1"=>1e-1, "C2"=>1e-1)
+prop = Dict("name"=> "PlaneStressIncompressibleRivlinSaunders", "rho"=> 1.522,  "C1"=>0.162, "C2"=>5.9e-3)
 coords = zeros((m+1)*(n+1), 2)
 for j = 1:n
     for i = 1:m
@@ -71,7 +71,7 @@ FBC_func = nothing
 Body_func = nothing 
 # Construct Edge_func
 function Edge_func_hyperelasticity(x, y, t, idx)
-  return [zeros(length(x)) ones(length(x))] * sin(π/2 * t)
+  return [zeros(length(x)) 0.1*ones(length(x))] * sin(π/2 * t)
 end
 globaldata = GlobalData(state, Dstate, velo, acce, domain.neqs, EBC_func, FBC_func,Body_func, Edge_func_hyperelasticity)
 
