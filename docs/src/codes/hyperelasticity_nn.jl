@@ -72,6 +72,7 @@ for i = 1:100
   d0 = run(sess, d)
 
   # visualize
+  close("all")
   p = visualize_displacement(d0, domain)
   saveanim(p, "$mode/$i.gif")
   close("all")
@@ -85,4 +86,7 @@ for i = 1:100
     writedlm(io, loss_)
   end  
   ADCME.save(sess, "$mode/$i.mat")
+  if length(loss_)<1000
+    break
+  end
 end

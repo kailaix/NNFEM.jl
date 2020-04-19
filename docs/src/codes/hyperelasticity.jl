@@ -72,8 +72,9 @@ FBC_func = nothing
 Body_func = nothing 
 # Construct Edge_func
 function Edge_func_hyperelasticity(x, y, t, idx)
-  return [zeros(length(x)) 0.1*ones(length(x))] * sin(π/2 * t)
+  return [zeros(length(x)) 0.1*ones(length(x)) * sin(2π*t)] 
 end
+
 globaldata = GlobalData(state, Dstate, velo, acce, domain.neqs, EBC_func, FBC_func,Body_func, Edge_func_hyperelasticity)
 
 assembleMassMatrix!(globaldata, domain)
@@ -92,3 +93,7 @@ d_ = hcat(domain.history["state"]...)'|>Array
 
 # p = visualize_displacement(d_, domain)
 # saveanim(p, "hyperelasticity_exp.gif")
+
+close("all")
+  plot(d_[:,1], "-", color="C1")
+  plot(d_[:,1+domain.nnodes], color="C2")
