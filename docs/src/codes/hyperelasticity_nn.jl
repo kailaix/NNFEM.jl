@@ -79,7 +79,7 @@ for i = 1:100
   plot(d0[:,1], "--", color="C1")
   plot(d_[:,1+domain.nnodes], color="C2")
   plot(d0[:,1+domain.nnodes], "--", color="C2")
-  savefig(p, "$mode/$i.png")
+  savefig("$mode/$i.png")
 
   open("$mode/loss.txt", "a") do io 
     writedlm(io, loss_)
