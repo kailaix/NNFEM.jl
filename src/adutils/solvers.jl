@@ -1,4 +1,5 @@
-export ExplicitSolver, ExplicitSolverTime, GeneralizedAlphaSolver, GeneralizedAlphaSolverTime, 
+export ExplicitSolver, ExplicitSolverTime, GeneralizedAlphaSolver, 
+GeneralizedAlphaSolverTime, ExplicitStaticSolver, ImplicitStaticSolver,
 compute_boundary_info, compute_external_force
 
 
@@ -52,7 +53,7 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
     ubd::Union{Array{Float64, 2}, PyObject, Missing}=missing,
     abd::Union{Array{Float64, 2}, PyObject, Missing}=missing; 
     strain_type::String = "small")
-
+    assembleMassMatrix!(globdat, domain)
     if !(strain_type in ["small", "finite"])
         error("Only small strain or finite strain are supported. Unknown strain type $strain_type")
     end
@@ -221,6 +222,7 @@ function GeneralizedAlphaSolver(globdat::GlobalData, domain::Domain,
     Fext::Union{Array{Float64, 2}, PyObject, Missing}=missing,
     ubd::Union{Array{Float64, 2}, PyObject, Missing}=missing,
     abd::Union{Array{Float64, 2}, PyObject, Missing}=missing; ρ::Float64 = 0.0)
+    assembleMassMatrix!(globdat, domain)
     @assert 0<=ρ<=1
     init_nnfem(domain)
     αm = (2ρ-1)/(1+ρ)
@@ -321,7 +323,7 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
     Fext::Union{Array{Float64, 2}, PyObject, Missing}=missing,
     ubd::Union{Array{Float64, 2}, PyObject, Missing}=missing,
     abd::Union{Array{Float64, 2}, PyObject, Missing}=missing; strain_type::String = "small")
-
+    assembleMassMatrix!(globdat, domain)
     if !(strain_type in ["small", "finite"])
         error("Only small strain or finite strain are supported. Unknown strain type $strain_type")
     end
@@ -426,7 +428,7 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
     Fext::Union{Array{Float64, 2}, PyObject, Missing}=missing,
     ubd::Union{Array{Float64, 2}, PyObject, Missing}=missing,
     abd::Union{Array{Float64, 2}, PyObject, Missing}=missing; strain_type::String = "small")
-
+    assembleMassMatrix!(globdat, domain)
     if !(strain_type in ["small", "finite"])
         error("Only small strain or finite strain are supported. Unknown strain type $strain_type")
     end
@@ -499,4 +501,47 @@ function ExplicitSolver(globdat::GlobalData, domain::Domain,
     d, v, a, σ, ε = stack(d), stack(v), stack(a), stack(σ), stack(ε)
     sp = (NT+1, 2domain.nnodes)
     set_shape(d, sp), set_shape(v, sp), set_shape(a, sp), set_shape(σ, (NT+1, getNGauss(domain),3)), set_shape(ε, (NT+1, getNGauss(domain),3))
+end
+
+
+function ExplicitStaticSolver(globdat::GlobalData, domain::Domain,
+    d0::Union{Array{Float64, 1}, PyObject}, 
+    v0::Union{Array{Float64, 1}, PyObject}, 
+    Δt::Float64, NT::Int64, 
+    nn::Function,
+    Fext::Union{Array{Float64, 1}, PyObject, Missing}=missing; strain_type::String = "small")
+    assembleMassMatrix!(globdat, domain)
+    @assert length(findall(domain.EBC[:] .== -2))==0
+    @assert length(findall(domain.FBC[:] .== -2))==0
+    a0 = tf.zeros_like(d0)
+    Fext = repeat(constant(reshape(Fext, 1, :)), NT, 1)
+    load_vec = reshape(Array((1:NT)/NT), NT, 1)
+    Fext = Fext .* load_vec
+    d, _, _ = ExplicitSolver(globdat, domain, d0, v0, a0, Δt, NT, nn, Fext, missing, missing; strain_type = strain_type)
+    return d
+end
+
+function ImplicitStaticSolver(globdat::GlobalData, domain::Domain,
+    d0::Union{Array{Float64, 1}, PyObject}, 
+    v0::Union{Array{Float64, 1}, PyObject}, 
+    Δt::Float64, NT::Int64, 
+    Hs::Union{Array{Float64, 3}, Array{Float64, 2}, PyObject},
+    Fext::Union{Array{Float64, 1}, PyObject, Missing}=missing; strain_type::String = "small")
+    if !(strain_type in ["small", "finite"])
+        error("Only small strain or finite strain are supported. Unknown strain type $strain_type")
+    end
+    assembleMassMatrix!(globdat, domain)
+    @assert length(findall(domain.EBC[:] .== -2))==0
+    @assert length(findall(domain.FBC[:] .== -2))==0
+    a0 = tf.zeros_like(d0)
+    Fext = repeat(constant(reshape(Fext, 1, :)), NT, 1)
+    Hs = constant(Hs)
+    if length(size(Hs))==2
+        Hs = repeat(reshape(Hs, (-1,)), getNGauss(domain))
+        Hs = reshape(Hs, (getNGauss(domain), 3, 3) )
+    end
+    # load_vec = reshape(Array((1:NT)/NT), NT, 1)
+    # Fext = Fext .* load_vec
+    d, _, _ = GeneralizedAlphaSolver(globdat, domain, d0, v0, a0, Δt, NT, Hs, Fext, missing, missing)
+    return d
 end
