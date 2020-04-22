@@ -1,4 +1,4 @@
-export ExplicitSolverStep, GeneralizedAlphaSolverStep
+export ExplicitSolverStep, GeneralizedAlphaSolverStep, ImplicitStaticSolver
 @doc raw"""
     ExplicitSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64)
 
@@ -18,6 +18,8 @@ M a_{n+1} =& f^{ext}_{n+1} - f^{int}(u_{n+1}) \\
     Otherwise we assume the initial acceleration `globdat.acce[:] = 0`.
 """
 function ExplicitSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64)
+    assembleMassMatrix!(globdat, domain)
+
     u = globdat.state[:]
     ∂u  = globdat.velo[:]
     ∂∂u = globdat.acce[:]
@@ -44,6 +46,68 @@ function ExplicitSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64)
     updateStates!(domain, globdat)
 
     return globdat, domain
+end
+
+
+@doc raw"""
+    ImplicitStaticSolver(globdat::GlobalData, domain::Domain; 
+        N::Int64 = 10, ε::Float64 = 1.e-6, maxiterstep::Int64=100)
+
+Solves 
+$$K(u) = F$$
+using the incremental load method. Specifically, at step $i$, we solve 
+```math
+f^{int}(u_i) = \frac{i}{N} f^{ext}
+```
+
+- `globdat`, GlobalData
+
+- `domain`, Domain
+
+- `N`, an integer, load stepping steps
+
+- `ε`, Float64, absolute error for Newton convergence
+
+-  `maxiterstep`, Int64, maximum iteration number for Newton convergence
+"""
+function ImplicitStaticSolver(globdat::GlobalData, domain::Domain; 
+        N::Int64 = 10, ε::Float64 = 1.e-6, maxiterstep::Int64=100)
+    assembleMassMatrix!(globdat, domain)
+    updateStates!(domain, globdat)
+
+    fext = getExternalForce!(domain, globdat)
+    
+
+    globdat.Dstate = copy(globdat.state)
+    for iterstep = 1:N
+
+        # Newton's method
+        Newtoniterstep, Newtonconverge = 0, false
+        
+        while  !Newtonconverge
+
+            Newtoniterstep += 1
+            
+            fint, stiff = assembleStiffAndForce( globdat, domain )
+       
+            res = fint - iterstep/N * fext
+
+            Δstate = stiff\res
+
+            globdat.state -= Δstate
+            # @show Newtoniterstep, norm(res)
+            if (norm(res) < ε  || Newtoniterstep > maxiterstep)
+                if Newtoniterstep > maxiterstep
+                    @error "$Newtoniterstep Newton iteration does not converge"
+                end
+                Newtonconverge = true
+            end
+            updateStates!(domain, globdat)
+        end
+        commitHistory(domain)
+        globdat.Dstate = copy(globdat.state)
+    end
+    globdat, domain
 end
 
 
@@ -110,7 +174,7 @@ We also assume the external force is conservative (it does not depend on the cur
 function GeneralizedAlphaSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64; 
         ρ::Float64 = 0.0, ε::Float64 = 1e-8, ε0::Float64 = 1e-8, maxiterstep::Int64=100, 
         η::Float64 = 1.0, failsafe::Bool = false, verbose::Bool = false)
-
+    assembleMassMatrix!(globdat, domain)
     @assert 0<=ρ<=1
     αm = (2ρ-1)/(1+ρ)
     αf = ρ/(1+ρ)

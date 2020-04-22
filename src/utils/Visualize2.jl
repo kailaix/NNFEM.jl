@@ -37,6 +37,7 @@ function visualize_von_mises_stress(domain::Domain)
     tricontour(x, y, S[1,:], 15, linewidths=0.5, colors="k")
     tricontourf(x, y, S[1,:], 15)
     axis("scaled")
+    cb = colorbar()
     gca().invert_yaxis()
     function update(i)
         gca().clear()
@@ -49,6 +50,47 @@ function visualize_von_mises_stress(domain::Domain)
     animate(update, Int64.(round.(LinRange(2, size(S,1),20))))
 end
 
+
+
+"""
+    visualize_von_mises_stress(domain::Domain, t_step::Int64)
+
+Plot of von Mises stress tensors at time step `t_step`.
+"""
+function visualize_von_mises_stress(domain::Domain, t_step::Int64)
+    stress = domain.history["stress"]
+    S = zeros(length(stress), length(domain.elements))
+    x = zeros(length(domain.elements))
+    y = zeros(length(domain.elements))
+    for t = 1:length(stress)
+        cnt = 1
+        for (k,e) in enumerate(domain.elements)
+            ct = mean(domain.elements[k].coords, dims=1)
+            x[k], y[k] = ct[1,1], ct[1,2]
+            
+                ss = Float64[]
+                nstress = length(e.mat)
+                for p = 1:nstress
+                    push!(ss, postprocess_stress(stress[t][cnt, :] ,"vonMises"))
+                    cnt += 1
+                end
+                S[t, k] = mean(ss)
+            
+        end
+    end   
+    
+    # function update(i)
+    # c = contour(φ[1,:,:], 10, cmap="jet", vmin=vmin,vmax=vmax)
+    close("all")
+    
+    xlabel("x")
+    ylabel("y")
+    tricontour(x, y, S[t_step,:], 15, linewidths=0.5, colors="k")
+    tricontourf(x, y, S[t_step,:], 15)
+    axis("scaled")
+    colorbar()
+    gca().invert_yaxis()
+end
 
 """
     visualize_displacement(domain::Domain)

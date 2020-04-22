@@ -63,6 +63,7 @@ updateDomainStateBoundary!
 ```@docs
 ExplicitSolverStep
 GeneralizedAlphaSolverStep
+ImplicitStaticSolver
 SolverInitial!
 SolverInitial
 ```

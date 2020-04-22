@@ -39,6 +39,7 @@ find largest eigenvalue λ for
  ω^2 = λ
 """->
 function EigenMode(Δt, globdat, domain, eps0 = 1.0e-6, maxite = 100)
+    assembleMassMatrix!(globdat, domain)
     u = globdat.state[:]  #uⁿ
 
     M = globdat.M

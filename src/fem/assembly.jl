@@ -190,6 +190,9 @@ Here M is a `neqns×neqns` matrix, and $M_{ID}$ is a `neqns×nd` matrix. $M_{\ma
 ![](./assets/massmatrix.png)
 """
 function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
+    if size(globaldat.M,1)>0 
+        return 
+    end
     Mlumped = zeros(Float64, domain.neqs)
     # M = zeros(Float64, domain.neqs, domain.neqs)
     iiM = Int64[]; jjM = Int64[]; vvM = Float64[]
