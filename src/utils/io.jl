@@ -1,5 +1,5 @@
 export readMesh, save, load, read_data, write_data, convert_mat, read_strain_stress, 
-        meshread
+        meshread, load_mesh
 
 
 """
@@ -198,4 +198,15 @@ function convert_mat(type::String, nnlayers::Array{Int64}, file1::String)
 
        return theta
    end
+end
+
+"""
+    load_mesh(s::String = "holes")
+
+Load built-in meshes from `$(abspath(joinpath(@__DIR__, "../../deps/Data/")))`.
+"""
+function load_mesh(s::String = "holes")
+    meshdata = joinpath(@__DIR__, "../../deps/Data/$s.mat")
+    data = matread(meshdata)
+    data["node"], data["elem"]
 end
