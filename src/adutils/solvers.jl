@@ -523,25 +523,82 @@ end
 
 function ImplicitStaticSolver(globdat::GlobalData, domain::Domain,
     d0::Union{Array{Float64, 1}, PyObject}, 
-    v0::Union{Array{Float64, 1}, PyObject}, 
     Δt::Float64, NT::Int64, 
     Hs::Union{Array{Float64, 3}, Array{Float64, 2}, PyObject},
-    Fext::Union{Array{Float64, 1}, PyObject, Missing}=missing; strain_type::String = "small")
+    Fext::Union{Array{Float64, 1}, PyObject, Missing}=missing; 
+    strain_type::String = "small", method::String = "newton")
     if !(strain_type in ["small", "finite"])
         error("Only small strain or finite strain are supported. Unknown strain type $strain_type")
     end
     assembleMassMatrix!(globdat, domain)
     @assert length(findall(domain.EBC[:] .== -2))==0
     @assert length(findall(domain.FBC[:] .== -2))==0
-    a0 = tf.zeros_like(d0)
-    Fext = repeat(constant(reshape(Fext, 1, :)), NT, 1)
+    
     Hs = constant(Hs)
     if length(size(Hs))==2
         Hs = repeat(reshape(Hs, (-1,)), getNGauss(domain))
         Hs = reshape(Hs, (getNGauss(domain), 3, 3) )
     end
-    # load_vec = reshape(Array((1:NT)/NT), NT, 1)
-    # Fext = Fext .* load_vec
-    d, _, _ = GeneralizedAlphaSolver(globdat, domain, d0, v0, a0, Δt, NT, Hs, Fext, missing, missing)
+    if method=="incremental"
+        a0 = tf.zeros_like(d0)
+        v0 = tf.zeros_like(d0)
+        Fext = repeat(constant(reshape(Fext, 1, :)), NT, 1)
+        d, _, _ = GeneralizedAlphaSolver(globdat, domain, d0, v0, a0, Δt, NT, Hs, Fext, missing, missing)
+    elseif method=="newton"
+        if !(strain_type in ["small"])
+            error("Only small strain or finite strain are supported. Unknown strain type $strain_type")
+        end
+        d0, Fext = convert_to_tensor([d0, Fext], [Float64, Float64])
+        stiff = s_compute_stiffness_matrix(Hs, domain)
+        u0 = stiff\Fext
+        nbdnode = findall(domain.EBC[:].!=-1)
+        d = scatter_add(d0, nbdnode, u0)
+    end
     return d
+end
+
+
+@doc raw"""
+    ImplicitStaticSolver(globdat::GlobalData, domain::Domain,
+        d0::Union{Array{Float64, 1}, PyObject}, 
+        nn::Function, θ::Union{Array{Float64, 1}, PyObject},
+        Fext::Union{Array{Float64, 1}, PyObject, Missing}=missing)
+
+
+Solves the static problem 
+
+$$K(u) = F$$
+
+using Newton's method. Users provide `nn`, which is a function that outputs stress and stress sensitivity given the strain tensor. 
+
+$$\sigma, \frac{\partial \sigma}{\partial \epsilon} = \mathrm{nn}(\epsilon, \theta)$$
+
+- `d0`: a vector of length `2domain.nnodes`, the fixed Dirichlet DOF should be populated with boundary values. 
+
+- `Fext`: external force, a vector of length `domain.neqs`
+"""
+function ImplicitStaticSolver(globdat::GlobalData, domain::Domain,
+    d0::Union{Array{Float64, 1}, PyObject}, 
+    nn::Function, θ::Union{Array{Float64, 1}, PyObject},
+    Fext::Union{Array{Float64, 1}, PyObject, Missing}=missing)
+    init_nnfem(domain)
+    assembleMassMatrix!(globdat, domain)
+    @assert length(findall(domain.EBC[:] .== -2))==0
+    @assert length(findall(domain.FBC[:] .== -2))==0
+    nbdnode = findall(domain.EBC[:].!=-1)
+    K0 = spdiag(domain.nnodes*2)
+    function residual_and_jac(θ, u)
+        ε = s_eval_strain_on_gauss_points(u, domain)
+        σ, Hs = nn(ε, θ)
+        stiff = s_compute_stiffness_matrix(Hs, domain)
+        fint = s_compute_internal_force_term(σ, domain)
+        # @info fint, σ, Hs, stiff
+        δ = scatter_update(d0, nbdnode, fint - Fext)
+        K = scatter_update(K0, nbdnode, nbdnode, stiff)
+        # @info δ, K  
+        δ, K  
+    end
+    d0, Fext, θ = convert_to_tensor([d0, Fext, θ], [Float64, Float64, Float64])
+    u0 = newton_raphson_with_grad(residual_and_jac, d0, θ)
+    return u0
 end
