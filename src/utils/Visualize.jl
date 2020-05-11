@@ -206,7 +206,7 @@ function postprocess_stress(stress::Array{Float64}, name::String)
 end
 
 function postprocess_strain(strain::Array{Float64}, name::String)
-    εx = stress[1]; εy = stress[2]; γxy = stress[3]
+    εx = strain[1]; εy = strain[2]; γxy = strain[3]
     if name == "vonMises"
         sqrt(
             3/2*(εx^2+εy^2) + 3/4*γxy^2
