@@ -36,6 +36,10 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
 include_directories(${TF_INC} ${HEADERS} ${EIGEN_INC} ${CMAKE_SOURCE_DIR}/DataStructure)
 link_directories(${TF_LIB} ${CMAKE_SOURCE_DIR}/DataStructure/build)
+include_directories(${LIBDIR}/Adept-2/include)
+include_directories(${LIBDIR}/Adept-2/include)
+find_library(ADEPT_LIB_FILE adept HINTS ${LIBDIR})
+message("ADEPT_LIB_FILE=${ADEPT_LIB_FILE}")
 
 set(LIBDIR_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp DataStructure 
   SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint FinitContinuumStrain FiniteContinuumFint
@@ -44,8 +48,6 @@ set(LIB_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp data
   SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint FinitContinuumStrain FiniteContinuumFint
   Plasticity Isotropic TensorRep IsotropicTwo RivlinSaunders)
 
-include_directories(${LIBDIR}/Adept-2/include)
-link_directories(${LIBDIR}/Adept-2/adept/.libs)
 
 # Copy and paste the following lines (no modification is required)
 list(LENGTH "LIBDIR_NAME" LIBLENGTH)
@@ -66,10 +68,10 @@ target_link_libraries(SmallContinuumStrain data)
 target_link_libraries(SmallContinuumStiffness data)
 target_link_libraries(SmallContinuumFint data)
 target_link_libraries(FinitContinuumStrain data)
-target_link_libraries(FiniteContinuumFint data adept)
-target_link_libraries(Plasticity adept)
-target_link_libraries(IsotropicTwo adept)
-target_link_libraries(RivlinSaunders adept)
+target_link_libraries(FiniteContinuumFint data ${ADEPT_LIB_FILE})
+target_link_libraries(Plasticity ${ADEPT_LIB_FILE})
+target_link_libraries(IsotropicTwo ${ADEPT_LIB_FILE})
+target_link_libraries(RivlinSaunders ${ADEPT_LIB_FILE})
 
 
 
