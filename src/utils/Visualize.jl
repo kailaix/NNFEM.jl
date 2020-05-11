@@ -205,6 +205,25 @@ function postprocess_stress(stress::Array{Float64}, name::String)
     end
 end
 
+function postprocess_strain(strain::Array{Float64}, name::String)
+    εx = stress[1]; εy = stress[2]; γxy = stress[3]
+    if name == "vonMises"
+        sqrt(
+            3/2*(εx^2+εy^2) + 3/4*γxy^2
+        )
+    elseif name == "principal"
+        s1 = (εx + εy)/2 + sqrt(
+            ((εx-εy)/2)^2 + (γxy/2)^2
+        )
+        s2 = (εx + εy)/2 - sqrt(
+            ((εx-εy)/2)^2 + (γxy/2)^2
+        )
+        [s1;s2]
+    else
+        @error("postprocess_strain does not recognize ", name) 
+    end
+end
+
 function VisualizeStress2D(domain::Domain)
     strain = domain.history["strain"]
     stress = domain.history["stress"]
