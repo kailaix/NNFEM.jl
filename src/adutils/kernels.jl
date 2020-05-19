@@ -1,7 +1,8 @@
 
 export s_eval_strain_on_gauss_points, s_compute_stiffness_matrix,
 s_compute_internal_force_term,
-f_eval_strain_on_gauss_points, f_compute_internal_force_term
+f_eval_strain_on_gauss_points, f_compute_internal_force_term,
+s_compute_stiffness_matrix1
 
 
 
@@ -79,4 +80,21 @@ function f_compute_internal_force_term(stress::Union{Array{Float64,2}, PyObject}
     stress,state = convert_to_tensor([stress,state], [Float64,Float64])
     out = finite_continuum_fint_(stress,state)
     set_shape(out, (domain.neqs,))
+end
+
+
+
+@doc raw"""
+    s_compute_stiffness_matrix1(k::Union{PyObject, Array{Float64,3}}, domain::Domain)
+
+Computes the stiffness matrix 
+```
+\int_\Omega (K\nabla u) \cdot \nabla \delta u dx 
+```
+"""
+function s_compute_stiffness_matrix1(k::Union{PyObject, Array{Float64,3}}, domain::Domain)
+    small_continuum_stiffness1_ = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/SmallContinuumStiffness1/build/libSmallContinuumStiffness1","small_continuum_stiffness1", multiple=true)
+    k = convert_to_tensor(Any[k], [Float64]); k = k[1]
+    ii, jj, vv = small_continuum_stiffness1_(k)
+    A = SparseTensor(ii+1, jj+1, vv, domain.neqs, domain.neqs)
 end

@@ -1,4 +1,4 @@
-export example_domain, init_nnfem, example_global_data, example_static_domain1
+export example_domain, init_nnfem, example_global_data, example_static_domain1, find_boundary
 
 @doc raw"""
 init_nnfem(domain::Domain)
@@ -129,4 +129,22 @@ function example_global_data(domain::Domain)
     gt = nothing
     ft = nothing
     globdat = GlobalData(state, Dstate, velo, acce, domain.neqs, gt, ft)
+end
+
+function find_boundary(nodes::Array{Float64, 2}, elements::Array{Int64, 2})
+    ef = (i, j)->(min(i, j), max(i, j))
+    push_pop! = x -> (x in eset ? pop!(eset, x) : push!(eset, x))
+    eset = Set([])
+    for k = 1:size(elements, 1)
+        push_pop!(ef(elements[k,1], elements[k,2]))
+        push_pop!(ef(elements[k,2], elements[k,3]))
+        push_pop!(ef(elements[k,3], elements[k,4]))
+        push_pop!(ef(elements[k,4], elements[k,1]))
+    end
+    nset = Set(Int64[])
+    for e in collect(eset)
+        push!(nset, e[1])
+        push!(nset, e[2])
+    end
+    return collect(nset)
 end

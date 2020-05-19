@@ -21,3 +21,21 @@ end
     pf_K = compute_fem_stiffness_matrix1(diagm(0=>ones(2)), m, n, h)
     @test pf_K≈K
 end
+
+@testset "compute_stiffness_matrix_and_internal_force1" begin 
+    m = 10
+    n = 10
+    h = 1.0
+    domain = example_static_domain1(m, n, h)
+    N = getNGauss(domain)
+    k = zeros(N, 2, 2)
+    for i = 1:N 
+        k[i,:,:] = diagm(0=>ones(2))
+    end
+    init_nnfem(domain)
+    K = s_compute_stiffness_matrix1(k, domain)
+    Kref, _ = compute_stiffness_matrix_and_internal_force1(domain)
+    K = run(sess, K)
+    @test Kref≈K
+end
+
