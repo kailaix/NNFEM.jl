@@ -69,6 +69,8 @@ function SmallStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, pro
     name = props["name"]
     if name=="PlaneStrain"
         mat = [PlaneStrain(props) for i = 1:nGauss]
+    elseif name=="Scalar1D"
+        mat = [Scalar1D(props) for i = 1:nGauss]
     elseif name=="PlaneStress"
         mat = [PlaneStress(props) for i = 1:nGauss]
     elseif name=="PlaneStressPlasticityLawBased"
@@ -134,6 +136,54 @@ function getStiffAndForce(elem::SmallStrainContinuum, state::Array{Float64}, Dst
     
     return fint, stiff
 end
+
+
+"""
+    getStiffAndForce(elem::SmallStrainContinuum, state::Array{Float64}, Dstate::Array{Float64}, Δt::Float64)
+
+Returns the internal force term and the stiffness matrix. `state` and `Dstate` are restriction of full state variables to this element. 
+"""
+function getStiffAndForce1(elem::SmallStrainContinuum, state::Array{Float64}, Dstate::Array{Float64}, Δt::Float64)
+    ndofs = length(elem.elnodes); 
+    nnodes = length(elem.elnodes)
+    fint = zeros(Float64, ndofs)
+    stiff = zeros(Float64, ndofs,ndofs)
+    out = Array{Float64}[]
+    u = state[1:nnodes]
+    Du = Dstate[1:nnodes]
+    # #@show "u ", u, " Du ", Du
+    # #@show "v " v, " Dv " Dv
+
+    for k = 1:length(elem.weights)
+        # #@show "Gaussian point ", k
+        g1 = elem.dhdx[k][:,1]; g2 = elem.dhdx[k][:,2]
+        
+        ux = u'*g1; uy = u'*g2
+        Dux = Du'*g1; Duy = Du'*g2
+        #@show "gauss", k , u, Du, ux, Dux
+        
+        # compute  ∂E∂u.T, 4 x 2
+        ∂E∂u = [g1   g2] 
+        
+        E = [ux; uy]
+        DE = [Dux; Duy]        
+
+        # #@show E, DE
+        S, dS_dE = getStress(elem.mat[k], E, DE, Δt) # S: 2 , dS_dE: 2 x 2
+
+        # @info "gauss ", k, " E ", E, " S ", S
+
+        elem.stress[k] = S
+        # @show size(S), size(∂E∂u)
+        fint += ∂E∂u * S * elem.weights[k] # 4
+        
+        stiff += (∂E∂u * dS_dE * ∂E∂u')*elem.weights[k] # 4 x 4
+
+    end
+    
+    return fint, stiff
+end
+
 
 """
     getInternalForce(elem::SmallStrainContinuum, state::Array{Float64}, Dstate::Array{Float64}, Δt::Float64)

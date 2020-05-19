@@ -66,6 +66,8 @@ function FiniteStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, pr
     name = props["name"]
     if name=="PlaneStrain"
         mat = [PlaneStrain(props) for i = 1:nGauss]
+    elseif name=="Scalar1D"
+        mat = [Scalar1D(props) for i = 1:nGauss]
     elseif name=="PlaneStress"
         mat = [PlaneStress(props) for i = 1:nGauss]
     elseif name=="PlaneStressPlasticity"

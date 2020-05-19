@@ -9,7 +9,7 @@ v0 = zeros(2domain.nnodes)
 a0 = zeros(2domain.nnodes)
 
 
-mode = "linear"
+mode = "consistent_tangent"
 if length(ARGS)>=1
   global mode = ARGS[1]
 end

@@ -32,6 +32,25 @@ function getBodyForce(elem::Continuum, fvalue::Array{Float64,2})
 end
 
 @doc raw"""
+    getBodyForce(elem::Continuum, fvalue::Array{Float64, 1})
+
+Returns 
+```math 
+\int_A f \delta v dx 
+```
+on a specific element $A$
+`fvalue` has the same length as number of Gauss points. 
+"""
+function getBodyForce(elem::Continuum, fvalue::Array{Float64, 1})
+    nnodes = length(elem.elnodes)
+    fbody = zeros(nnodes)
+    for k = 1:length(elem.weights)
+        fbody += elem.hs[k] * fvalue[k] * elem.weights[k]
+    end
+    return fbody
+end
+
+@doc raw"""
     getEdgeForce(elem::Continuum, iedge::Float64, fvalue::Array{Float64,2})
     
 Returns the force imposed by boundary tractions.

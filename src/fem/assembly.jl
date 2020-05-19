@@ -113,17 +113,16 @@ end
 
 
 @doc raw"""
-    assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
+    assembleStiffAndForce(domain::Domain, Δt::Float64 = 0.0)
 
 Computes the internal force and stiffness matrix. 
 
-- `globdat`: GlobalData
 - `domain`: Domain, finite element domain, for data structure
 - `Δt`:  Float64, current time step size
 
 Returns a length `neqs` vector $F_{\mathrm{int}}$ and `neqs×neqs` sparse stiffness matrix. 
 """
-function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
+function assembleStiffAndForce(domain::Domain, Δt::Float64 = 0.0)
     Fint = zeros(Float64, domain.neqs)
   # K = zeros(Float64, domain.neqs, domain.neqs)
     ii = Int64[]; jj = Int64[]; vv = Float64[]
@@ -167,6 +166,8 @@ function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64
 
     return Fint, Ksparse
 end
+
+assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0) = assembleStiffAndForce(domain, Δt)
 
 
 @doc raw"""

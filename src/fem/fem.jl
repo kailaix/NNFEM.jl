@@ -370,14 +370,14 @@ It updates the fixed (time-independent Dirichlet boundary) state entries and bui
 
 - `g`:  Float64[nnodes, ndims], values for fixed (time-independent) Dirichlet boundary conditions of node n's dth freedom,
 """ -> 
-function setConstantDirichletBoundary!(self::Domain, EBC::Array{Int64}, g::Array{Float64})
+function setConstantDirichletBoundary!(domain::Domain, EBC::Array{Int64}, g::Array{Float64})
 
     # ID(n,d) is the global equation number of node n's dth freedom, 
     # -1 means fixed (time-independent) Dirichlet
     # -2 means time-dependent Dirichlet
 
-    nnodes, ndims = self.nnodes, self.ndims
-    neles, elements = self.neles, self.elements
+    nnodes, ndims = domain.nnodes, domain.ndims
+    neles, elements = domain.neles, domain.elements
     #ID = zeros(Int64, nnodes, ndims) .- 1
 
     ID = copy(EBC)
@@ -393,12 +393,12 @@ function setConstantDirichletBoundary!(self::Domain, EBC::Array{Int64}, g::Array
               dof_to_eq[(idof - 1)*nnodes + inode] = true
           elseif (EBC[inode, idof] == -1)
               #update state fixed (time-independent) Dirichlet boundary conditions
-              self.state[inode + (idof-1)*nnodes] = g[inode, idof]
+              domain.state[inode + (idof-1)*nnodes] = g[inode, idof]
           end
       end
     end
 
-    self.ID, self.neqs, self.eq_to_dof, self.dof_to_eq = ID, neqs, eq_to_dof, dof_to_eq
+    domain.ID, domain.neqs, domain.eq_to_dof, domain.dof_to_eq = ID, neqs, eq_to_dof, dof_to_eq
 
 
     # LM(e,d) is the global equation number of element e's d th freedom
@@ -408,16 +408,23 @@ function setConstantDirichletBoundary!(self::Domain, EBC::Array{Int64}, g::Array
       ieqns = ID[el_nodes, :][:]
       LM[iele] = ieqns
     end
-    self.LM = LM
+    domain.LM = LM
 
     # DOF(e,d) is the global dof number of element e's d th freedom
 
     DOF = Array{Array{Int64}}(undef, neles)
     for iele = 1:neles
       el_nodes = getNodes(elements[iele])
-      DOF[iele] = [el_nodes;[idof + nnodes for idof in el_nodes]]
+      if domain.ndims==1
+        DOF[iele] = el_nodes
+      elseif domain.ndims==2
+        DOF[iele] = [el_nodes;[idof + nnodes for idof in el_nodes]]
+      else
+        error("NOT IMPLEMENTED YET")
+      end
+      
     end
-    self.DOF = DOF
+    domain.DOF = DOF
     
 end
 
