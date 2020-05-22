@@ -8,8 +8,8 @@ using ClusterManagers
 ndata = 20
 
 if length(ARGS)==2
-    σv = parse(Float64, σv)
-    ndata = parse(Int64, ndata)
+    σv = parse(Float64, ARGS[1])
+    ndata = parse(Int64, ARGS[2])
 end
 
 for i = 1:5
