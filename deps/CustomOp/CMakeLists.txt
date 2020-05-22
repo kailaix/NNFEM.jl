@@ -66,6 +66,7 @@ endforeach(IDX)
 
 target_link_libraries(SmallContinuumStrain data)
 target_link_libraries(SmallContinuumStiffness data)
+target_link_libraries(SmallContinuumStiffness1 data)
 target_link_libraries(SmallContinuumFint data)
 target_link_libraries(FinitContinuumStrain data)
 target_link_libraries(FiniteContinuumFint data ${ADEPT_LIB_FILE})
