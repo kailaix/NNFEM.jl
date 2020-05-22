@@ -43,10 +43,10 @@ message("ADEPT_LIB_FILE=${ADEPT_LIB_FILE}")
 
 set(LIBDIR_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp DataStructure 
   SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint FinitContinuumStrain FiniteContinuumFint
-  Plasticity Isotropic TensorRep IsotropicTwo RivlinSaunders)
+  Plasticity Isotropic TensorRep IsotropicTwo RivlinSaunders SmallContinuumStiffness1)
 set(LIB_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp data 
   SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint FinitContinuumStrain FiniteContinuumFint
-  Plasticity Isotropic TensorRep IsotropicTwo RivlinSaunders)
+  Plasticity Isotropic TensorRep IsotropicTwo RivlinSaunders SmallContinuumStiffness1)
 
 
 # Copy and paste the following lines (no modification is required)
