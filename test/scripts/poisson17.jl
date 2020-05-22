@@ -7,7 +7,7 @@ for i = 1:5
     addprocs(SlurmManager(2))
 end
 
-@spawnat :any σv;
+[@spawnat i σv for i in workers()]
 
 @info "Generating data..."
 include("poisson1.jl")
