@@ -7,6 +7,11 @@ using ClusterManagers
 σv = 0.001
 ndata = 20
 
+if length(ARGS)==2
+    σv = parse(Float64, σv)
+    ndata = parse(Int64, ndata)
+end
+
 for i = 1:5
     addprocs(SlurmManager(2))
 end
