@@ -1,9 +1,13 @@
 using Distributed 
 using ClusterManagers
 
+σv = 0.001
+
 for i = 1:5
     addprocs(SlurmManager(2))
 end
+
+@spawnat :any σv;
 
 @info "Generating data..."
 include("poisson1.jl")

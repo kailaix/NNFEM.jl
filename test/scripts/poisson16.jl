@@ -76,13 +76,12 @@ dat = matread("data/1c_dat.mat")["sol"]
 idx = sample_interior(domain.nnodes, ndata, bd)
 
 sess = Session(); init(sess)
-tv = matread("data/13.mat")["theta"]
+tv = matread("data/13_$(σv).mat")["theta"]
 @info run(sess, loss, θ=>tv)
 
 
-σv = 0.001
 σs = 0.05
-Σ = matread("data/15.mat")["Sigma"]
+Σ = matread("data/15_$(σv).mat")["Sigma"]
 
 d2 = MvNormal(s, Σ)
 est = zeros(length(sol), 500)
@@ -134,7 +133,7 @@ for k = 1:3
     ylabel("Density")
     
     
-    savefig("figures/16_$k.png")
+    savefig("figures/16_$(σv)_$k.png")
 end
 
 # matpcolor(domain, M)

@@ -81,7 +81,6 @@ dat = matread("data/1_dat.mat")["sol"]
 
 idx = sample_interior(domain.nnodes, ndata, bd)
 
-σv = 0.001
 σs = 0.05
 loss = sum((sol[idx] - dat[idx])^2)/σv^2 + sum(θ^2)/σs^2 
 loss = σv^2 / length(idx) * loss
@@ -90,7 +89,7 @@ sess = Session(); init(sess)
 function train_neural_network(i)
     loss_ = BFGS!(sess, loss, 1000)
 
-    matwrite("data/13_$i.mat", Dict(
+    matwrite("data/13_$(σv)_$i.mat", Dict(
         "theta"=>run(sess, θ),
         "loss"=>loss_
         )
@@ -99,15 +98,17 @@ end
 nothing
 end 
 
+@info "Start training neural networks"
 Distributed.pmap(train_neural_network, 1:10)
+@info "Neural Network has been trained"
 close("all")
 l = Array{Array{Float64}}(undef, 10)
 for i = 1:10
-    l[i] = matread("data/13_$i.mat")["loss"]
+    l[i] = matread("data/13_$(σv)_$i.mat")["loss"]
     semilogy(l[i], "--", color="C$i")
 end 
 xlabel("Iteration")
 ylabel("Loss")
 savefig("figures/13_loss.png")
 
-mv("data/13_1.mat", "data/13.mat", force=true)
+mv("data/13_$(σv)_1.mat", "data/13$(σv).mat", force=true)

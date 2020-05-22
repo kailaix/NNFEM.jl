@@ -78,11 +78,11 @@ idx = sample_interior(domain.nnodes, ndata, bd)
 
 loss = mean((sol[idx] - dat[idx])^2)
 sess = Session(); init(sess)
-tv = matread("data/13.mat")["theta"]
+tv = matread("data/13_$(σv).mat")["theta"]
 @info run(sess, loss, θ=>tv)
 y = dat[idx]
 hs = run(sess, sol[idx])
-Hs = matread("data/14.mat")["G"]
+Hs = matread("data/14_$(σv).mat")["G"]
 
 H = zeros(ndata, length(θ))
 for i = 1:ndata
@@ -96,7 +96,6 @@ for i = 1:ndata
 end
 
 
-σv = 0.001
 σs = 0.05
 R = σv^2*diagm(0=>ones(ndata))
 s = tv 
@@ -106,7 +105,7 @@ invR, invQ = inv(R), inv(Q)
 Σ = inv(H'*invR*H + invQ)
 Σ = (Σ+Σ')/2
 
-matwrite("data/15.mat", Dict(
+matwrite("data/15_$(σv).mat", Dict(
     "Sigma"=>Σ
 ))
 Idx = sortperm(s)
@@ -165,7 +164,7 @@ xlabel("\$\\kappa(x)\$")
 ylabel("Density")
 
 
-savefig("figures/15_$k.png")
+savefig("figures/15_$(σv)_$k.png")
 
 end
 
