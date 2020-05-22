@@ -108,6 +108,6 @@ for i = 1:10
 end 
 xlabel("Iteration")
 ylabel("Loss")
-savefig("figures/13_loss.png")
+savefig("figures/13_$(σv)_$(ndata).png")
 
-mv("data/13_$(σv)_$(ndata)_1.mat", "data/13$(σv).mat", force=true)
+cp("data/13_$(σv)_$(ndata)_1.mat", "data/13_$(σv)_$(ndata).mat", force=true)
