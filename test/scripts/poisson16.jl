@@ -1,12 +1,16 @@
 #=
-link to 1c
+Aggregate for testing 
 
-predition!
+poisson1.jl -- generate data 
+poisson9.jl -- train the neural network 
+poisson10.jl -- compute the Hessian matrix 
+∘ poisson11.jl -- compute posterior of κ
+poisson12.jl -- prediction
 
 σv = 0.001 (small noise in dataset)
 σs = 0.1
 
-require 1c_dat.mat
+save best neural network to data13
 =#
 using Revise
 using NNFEM
@@ -72,13 +76,13 @@ dat = matread("data/1c_dat.mat")["sol"]
 idx = sample_interior(domain.nnodes, ndata, bd)
 
 sess = Session(); init(sess)
-tv = matread("data/9.mat")["theta"]
+tv = matread("data/13.mat")["theta"]
 @info run(sess, loss, θ=>tv)
 
 
 σv = 0.001
 σs = 0.05
-Σ = matread("data/11.mat")["Sigma"]
+Σ = matread("data/15.mat")["Sigma"]
 
 d2 = MvNormal(s, Σ)
 est = zeros(length(sol), 500)
@@ -105,21 +109,24 @@ for k = 1:3
     close("all")
     # x0 = collect(LinRange(1.7,2.3,10000))
     
-    # nm = Normal(M3[i], V3[i])
-    # v = pdf.(nm, x0)
-    # plot(x0, v, "--")
-    hist(est3[i,:], bins=20, alpha=0.8, density=true, label="Prior")
     
-    
-    # nm = Normal(M[i], V[i])
-    # v = pdf.(nm, x0)
-    hist(est[i,:], bins=20, density=true, alpha=0.8, label="Posterior")
-    # vv = maximum(v)
-    # plot(x0, v, "--")
+    s1, a, _ = hist(est3[i,:], bins=20, alpha=0.8, density=true, label="Prior")    
+    s2, b, _ = hist(est[i,:], bins=20, density=true, alpha=0.8, label="Posterior")
+
+    a = [a;b]
+    x0 = collect(LinRange(minimum(a), maximum(a), 10000))
+    nm = Normal(M3[i], V3[i])
+    v = pdf.(nm, x0)
+    plot(x0, v, "--")
+
+    nm = Normal(M[i], V[i])
+    v = pdf.(nm, x0)
+    plot(x0, v, "--")
     
     # xy = getGaussPoints(domain)
     # kk = 2.2 - 0.1*(xy[i,1]^2+xy[i,2]^2)
-    plot(dat[i]  * ones(100), LinRange(0, 20, 100), "k-", linewidth=2, label="Reference")
+    vv = maximum([s1;s2])
+    plot(dat[i]  * ones(100), vv*LinRange(0, 1.0, 100), "k-", linewidth=2, label="Reference")
     
     legend()
     
@@ -127,8 +134,9 @@ for k = 1:3
     ylabel("Density")
     
     
-    savefig("figures/12_$k.png")
+    savefig("figures/16_$k.png")
 end
+
 # matpcolor(domain, M)
 # matpcolor(domain, V)
 
