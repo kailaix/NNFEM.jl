@@ -26,7 +26,6 @@ using MAT
 using Statistics
 include("common1.jl")
 
-ndata = 20
 nodes, elems = meshread("$(splitdir(pathof(NNFEM))[1])/../deps/Data/lshape.msh")
 elements = []
 prop = Dict("name"=> "Scalar1D", "kappa"=>2.0)
@@ -76,12 +75,12 @@ dat = matread("data/1c_dat.mat")["sol"]
 idx = sample_interior(domain.nnodes, ndata, bd)
 
 sess = Session(); init(sess)
-tv = matread("data/13_$(σv).mat")["theta"]
+tv = matread("data/13_$(σv)_$(ndata).mat")["theta"]
 @info run(sess, loss, θ=>tv)
 
 
 σs = 0.05
-Σ = matread("data/15_$(σv).mat")["Sigma"]
+Σ = matread("data/15_$(σv)_$(ndata).mat")["Sigma"]
 
 d2 = MvNormal(s, Σ)
 est = zeros(length(sol), 500)
@@ -133,7 +132,7 @@ for k = 1:3
     ylabel("Density")
     
     
-    savefig("figures/16_$(σv)_$k.png")
+    savefig("figures/16_$(σv)_$(ndata)_$k.png")
 end
 
 # matpcolor(domain, M)

@@ -1,13 +1,18 @@
+#=
+Study the effect of σv 
+=#
 using Distributed 
 using ClusterManagers
 
 σv = 0.001
+ndata = 20
 
 for i = 1:5
     addprocs(SlurmManager(2))
 end
 
 [@spawnat i σv for i in workers()]
+[@spawnat i ndata for i in workers()]
 
 @info "Generating data..."
 include("poisson1.jl")

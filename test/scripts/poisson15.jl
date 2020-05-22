@@ -27,7 +27,6 @@ using MAT
 using Statistics
 include("common1.jl")
 
-ndata = 20
 nodes, elems = meshread("$(splitdir(pathof(NNFEM))[1])/../deps/Data/lshape.msh")
 elements = []
 prop = Dict("name"=> "Scalar1D", "kappa"=>2.0)
@@ -78,11 +77,11 @@ idx = sample_interior(domain.nnodes, ndata, bd)
 
 loss = mean((sol[idx] - dat[idx])^2)
 sess = Session(); init(sess)
-tv = matread("data/13_$(σv).mat")["theta"]
+tv = matread("data/13_$(σv)_$(ndata).mat")["theta"]
 @info run(sess, loss, θ=>tv)
 y = dat[idx]
 hs = run(sess, sol[idx])
-Hs = matread("data/14_$(σv).mat")["G"]
+Hs = matread("data/14_$(σv)_$(ndata).mat")["G"]
 
 H = zeros(ndata, length(θ))
 for i = 1:ndata
@@ -105,7 +104,7 @@ invR, invQ = inv(R), inv(Q)
 Σ = inv(H'*invR*H + invQ)
 Σ = (Σ+Σ')/2
 
-matwrite("data/15_$(σv).mat", Dict(
+matwrite("data/15_$(σv)_$(ndata).mat", Dict(
     "Sigma"=>Σ
 ))
 Idx = sortperm(s)
@@ -164,7 +163,7 @@ xlabel("\$\\kappa(x)\$")
 ylabel("Density")
 
 
-savefig("figures/15_$(σv)_$k.png")
+savefig("figures/15_$(σv)_$(ndata)_$k.png")
 
 end
 

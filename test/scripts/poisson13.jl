@@ -32,7 +32,6 @@ using Statistics
 using Distributed 
 include("common1.jl")
 
-ndata = 20
 nodes, elems = meshread("$(splitdir(pathof(NNFEM))[1])/../deps/Data/lshape.msh")
 elements = []
 prop = Dict("name"=> "Scalar1D", "kappa"=>2.0)
@@ -89,7 +88,7 @@ sess = Session(); init(sess)
 function train_neural_network(i)
     loss_ = BFGS!(sess, loss, 1000)
 
-    matwrite("data/13_$(σv)_$i.mat", Dict(
+    matwrite("data/13_$(σv)_$(ndata)_$i.mat", Dict(
         "theta"=>run(sess, θ),
         "loss"=>loss_
         )
@@ -104,11 +103,11 @@ Distributed.pmap(train_neural_network, 1:10)
 close("all")
 l = Array{Array{Float64}}(undef, 10)
 for i = 1:10
-    l[i] = matread("data/13_$(σv)_$i.mat")["loss"]
+    l[i] = matread("data/13_$(σv)_$(ndata)_$i.mat")["loss"]
     semilogy(l[i], "--", color="C$i")
 end 
 xlabel("Iteration")
 ylabel("Loss")
 savefig("figures/13_loss.png")
 
-mv("data/13_$(σv)_1.mat", "data/13$(σv).mat", force=true)
+mv("data/13_$(σv)_$(ndata)_1.mat", "data/13$(σv).mat", force=true)

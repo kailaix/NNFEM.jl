@@ -25,7 +25,6 @@ using MATLAB
 using MAT
 include("common1.jl")
 
-ndata = 20
 nodes, elems = meshread("$(splitdir(pathof(NNFEM))[1])/../deps/Data/lshape.msh")
 elements = []
 prop = Dict("name"=> "Scalar1D", "kappa"=>2.0)
@@ -60,7 +59,7 @@ sol = zeros(domain.nnodes)
 xy = getGaussPoints(domain)
 x = xy[:,1]
 y = xy[:,2]
-θ = placeholder(matread("data/13_$(σv) .mat")["theta"])
+θ = placeholder(matread("data/13_$(σv)_$(ndata).mat")["theta"])
 k = squeeze(fc(xy, [20,20,20,1], θ)) + 2.0
 
 k = vector(1:4:4getNGauss(domain), k, 4getNGauss(domain)) + vector(4:4:4getNGauss(domain), k, 4getNGauss(domain))
@@ -90,7 +89,7 @@ sess = Session(); init(sess)
 @info run(sess, loss)
 
 G = run(sess, g)
-matwrite("data/14_$(σv) .mat", Dict(
+matwrite("data/14_$(σv)_$(ndata).mat", Dict(
     "G"=>G
 ))
 
