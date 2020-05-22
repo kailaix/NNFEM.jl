@@ -9,6 +9,7 @@ using LinearAlgebra
 using PyPlot
 using MATLAB
 using MAT
+include("common1.jl")
 
 nodes, elems = meshread("$(splitdir(pathof(NNFEM))[1])/../deps/Data/lshape.msh")
 elements = []
