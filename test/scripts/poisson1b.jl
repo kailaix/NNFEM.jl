@@ -1,5 +1,8 @@
 #=
-Using differentiable kernel to implement the Poisson equation
+link to 1
+Generate data using  
+κ = 2.2 - 0.1(x^2+y^2)
+but with a dense L-shape data
 =#
 using Revise
 using NNFEM
@@ -7,8 +10,9 @@ using PoreFlow
 using LinearAlgebra
 using PyPlot
 using MATLAB
+using MAT
 
-nodes, elems = meshread("$(splitdir(pathof(NNFEM))[1])/../deps/Data/lshape.msh")
+nodes, elems = meshread("$(splitdir(pathof(NNFEM))[1])/../deps/Data/lshape_dense.msh")
 elements = []
 prop = Dict("name"=> "Scalar1D", "kappa"=>2.0)
 
@@ -35,13 +39,15 @@ init_nnfem(domain)
 
 α = 0.4*π/2
 d = [cos(α);sin(α)]
-f = (x,y)->sin(2π*y + π/8)
+f = (x,y)->300*sin(2π*y + π/8)
 fext = compute_body_force_terms1(domain, f)
 
 sol = zeros(domain.nnodes)
-# K, fint = compute_stiffness_matrix_and_internal_force1(domain)
-# k = zeros(getNGauss(domain), 2, 2)
-k = 2ones(getNGauss(domain))
+xy = getGaussPoints(domain)
+x = xy[:,1]
+y = xy[:,2]
+k = @. 2.2 - 0.1(x^2+y^2)
+
 k = vector(1:4:4getNGauss(domain), k, 4getNGauss(domain)) + vector(4:4:4getNGauss(domain), k, 4getNGauss(domain))
 k = reshape(k, (getNGauss(domain),2,2))
 K = s_compute_stiffness_matrix1(k, domain)
@@ -57,5 +63,12 @@ y = nodes(:,2)
 tri = delaunay(x,y);
 plot(x,y,'.')
 h = trisurf(tri, x, y, sol)
+% savefig('figures/1.png')
 """
 
+matpcolor(domain, sol)
+
+
+matwrite("data/1b_dat.mat", Dict(
+    "sol"=>sol 
+))

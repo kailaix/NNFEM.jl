@@ -6,10 +6,11 @@ Domain
 GlobalData
 ```
 
-## Core Data Structure Utilities
-```@docs
+### Domain 
+```@docs 
 getEqns
 getNGauss
+getGaussPoints
 ```
 
 ## Elements
@@ -69,9 +70,9 @@ SolverInitial
 ```
 
 
-## Utilities
+## Mesh Utilities
 
-```@autodocs
+```@docs
 meshread
 visualize_von_mises_stress
 visualize_displacement

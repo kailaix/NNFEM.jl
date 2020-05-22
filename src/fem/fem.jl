@@ -796,3 +796,19 @@ function assembleSparseMatrixPattern!(self::Domain)
     self.vv_dstrain_dstate_ele_indptr = vv_dstrain_dstate_ele_indptr; self.vv_dstrain_dstate = similar(ii_dstrain_dstate)
 
   end
+
+
+  #----------------------------------------- utilities -------------------------------------------
+@doc raw"""
+    getGaussPoints(domain::Domain)
+
+Returns all Gauss points as a $n_g\times 2$ matrix, where $n_g$ is the total number of Gauss points.
+"""
+function getGaussPoints(domain::Domain)
+    v = []
+    for e in domain.elements
+        vg = getGaussPoints(e) 
+        push!(v, vg)
+    end 
+    vcat(v...)
+end

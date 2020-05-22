@@ -1,13 +1,21 @@
 #=
-Using differentiable kernel to implement the Poisson equation
+link to 5
+Having computed 
+y = h(s)
+we want to compute ∇h(s0)
+require 9.mat
 =#
 using Revise
 using NNFEM
 using PoreFlow
+using ADCME 
 using LinearAlgebra
 using PyPlot
 using MATLAB
+using MAT
+include("common1.jl")
 
+ndata = 20
 nodes, elems = meshread("$(splitdir(pathof(NNFEM))[1])/../deps/Data/lshape.msh")
 elements = []
 prop = Dict("name"=> "Scalar1D", "kappa"=>2.0)
@@ -35,27 +43,47 @@ init_nnfem(domain)
 
 α = 0.4*π/2
 d = [cos(α);sin(α)]
-f = (x,y)->sin(2π*y + π/8)
+f = (x,y)->300*sin(2π*y + π/8)
 fext = compute_body_force_terms1(domain, f)
 
 sol = zeros(domain.nnodes)
-# K, fint = compute_stiffness_matrix_and_internal_force1(domain)
-# k = zeros(getNGauss(domain), 2, 2)
-k = 2ones(getNGauss(domain))
+xy = getGaussPoints(domain)
+x = xy[:,1]
+y = xy[:,2]
+θ = placeholder(matread("data/9.mat")["theta"])
+k = squeeze(fc(xy, [20,20,20,1], θ)) + 2.0
+
 k = vector(1:4:4getNGauss(domain), k, 4getNGauss(domain)) + vector(4:4:4getNGauss(domain), k, 4getNGauss(domain))
 k = reshape(k, (getNGauss(domain),2,2))
 K = s_compute_stiffness_matrix1(k, domain)
 S = K\fext
 
-sess = Session(); init(sess)
-sol[domain.dof_to_eq] = run(sess, S)
+sol = vector(findall(domain.dof_to_eq), S, domain.nnodes)
+dat = matread("data/1_dat.mat")["sol"]
 
-@mput nodes sol
-mat"""
-x = nodes(:,1)
-y = nodes(:,2)
-tri = delaunay(x,y);
-plot(x,y,'.')
-h = trisurf(tri, x, y, sol)
-"""
+
+idx = sample_interior(domain.nnodes, ndata, bd)
+
+σv = 0.001
+σs = 0.05
+loss = sum((sol[idx] - dat[idx])^2)/σv^2 + sum(θ^2)/σs^2 
+loss = σv^2 / length(idx) * loss
+
+
+g = Array{PyObject}(undef, ndata)
+for i = 1:ndata
+    @info i 
+    g[i] = tf.convert_to_tensor(gradients(sol[idx[i]], θ))
+end
+
+sess = Session(); init(sess)
+
+@info run(sess, loss)
+
+G = run(sess, g)
+matwrite("data/10.mat", Dict(
+    "G"=>G
+))
+
+
 
