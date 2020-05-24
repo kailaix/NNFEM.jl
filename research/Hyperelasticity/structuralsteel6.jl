@@ -76,5 +76,5 @@ end
 
 
 
-pmap(training, 10)
+Distributed.pmap(training, 10)
 
