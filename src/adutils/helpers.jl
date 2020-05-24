@@ -7,6 +7,10 @@ Prepares `domain` for use in custom operators.
 """
 function init_nnfem(domain::Domain)
     LIB = joinpath(@__DIR__, "../../deps/CustomOp/DataStructure/build/libdata")
+
+    if Sys.iswindows()
+        LIB = joinpath(@__DIR__, "../../deps/CustomOp/DataStructure/build/data")
+    end
     
     @eval begin 
         ccall((:init_mesh, $LIB), Cvoid, ())

@@ -30,9 +30,24 @@ if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 5.0 OR CMAKE_CXX_COMPILER_VERSION
 endif()
 
 # set(CMAKE_BUILD_TYPE Debug)
+if(MSVC)
+  if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+    string(REGEX REPLACE "/W[0-4]" "/W0" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W0")
+  endif()
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+  add_definitions(-DNOMINMAX)
+endif()
 
+find_library(LIBOPENBLAS openblas HINTS ${LIBDIR})
 set(CMAKE_BUILD_TYPE Release)
+
+if(MSVC)
+set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG")
+else()
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+endif()
 
 include_directories(${TF_INC} ${HEADERS} ${EIGEN_INC} ${CMAKE_SOURCE_DIR}/DataStructure)
 link_directories(${TF_LIB} ${CMAKE_SOURCE_DIR}/DataStructure/build)
@@ -60,19 +75,22 @@ foreach(IDX RANGE 0 ${LIBLENGTH})
   file(MAKE_DIRECTORY ${_LIB_DIR}/build)
   add_library(${_LIB_NAME} SHARED ${_LIB_DIR}/${_LIB_NAME}.cpp)
   set_property(TARGET ${_LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
-  set_target_properties(${_LIB_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/${_LIB_DIR}/build)
+  set_target_properties(${_LIB_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/${_LIB_DIR}/build
+          RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/${_LIB_DIR}/build  ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/${_LIB_DIR}/build)
   target_link_libraries(${_LIB_NAME} ${TF_LIB_FILE})
 endforeach(IDX)
+
+target_compile_definitions(data PRIVATE WIN_EXPORT)
 
 target_link_libraries(SmallContinuumStrain data)
 target_link_libraries(SmallContinuumStiffness data)
 target_link_libraries(SmallContinuumStiffness1 data)
 target_link_libraries(SmallContinuumFint data)
 target_link_libraries(FinitContinuumStrain data)
-target_link_libraries(FiniteContinuumFint data ${ADEPT_LIB_FILE})
-target_link_libraries(Plasticity ${ADEPT_LIB_FILE})
-target_link_libraries(IsotropicTwo ${ADEPT_LIB_FILE})
-target_link_libraries(RivlinSaunders ${ADEPT_LIB_FILE})
+target_link_libraries(FiniteContinuumFint data ${ADEPT_LIB_FILE} ${LIBOPENBLAS})
+target_link_libraries(Plasticity ${ADEPT_LIB_FILE} ${LIBOPENBLAS})
+target_link_libraries(IsotropicTwo ${ADEPT_LIB_FILE} ${LIBOPENBLAS})
+target_link_libraries(RivlinSaunders ${ADEPT_LIB_FILE} ${LIBOPENBLAS})
 
 
 
