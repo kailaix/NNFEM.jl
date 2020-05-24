@@ -1,4 +1,5 @@
-export visualize_displacement, visualize_von_mises_stress, visualize_mesh, visualize_boundary
+export visualize_displacement, visualize_von_mises_stress, visualize_mesh, visualize_boundary,
+visualize_scalar_on_scoped_body, visualize_total_deformation_on_scoped_body, visualize_von_mises_stress_on_scoped_body
 
 
 """
@@ -159,6 +160,7 @@ function visualize_mesh(domain::Domain)
         elements[k,:] = e.elnodes
     end
     visualize_mesh(domain.nodes, elements)
+    gca().invert_yaxis()
 end
 
 
@@ -207,6 +209,126 @@ function visualize_boundary(domain::Domain, direction::String="x")
 
     end
     legend()
-    gca().invert_yaxis()
+    # gca().invert_yaxis()
     
 end
+
+"""
+    visualize_scalar_on_scoped_body(d::Array{Float64}, domain::Domain)
+
+Plot the scalar on scoped body. 
+"""
+function visualize_scalar_on_scoped_body(s::Array{Float64, 1}, d::Array{Float64,1}, domain::Domain;
+        scale_factor::Float64 = 1.0)
+    n = matplotlib.colors.Normalize(vmin=minimum(s), vmax=maximum(s))
+    cm = matplotlib.cm
+    cmap = cm.jet
+    m = cm.ScalarMappable(norm=n, cmap=cmap)
+    elements = domain.elements
+    patches = []
+    for i = 1:size(elements,1)
+        e = elements[i].elnodes
+        sv = length(s)==domain.nnodes ? mean(s[e]) : s[i]
+        dv = [d[e] d[e .+ domain.nnodes]]
+        p = plt.Polygon(elements[i].coords + scale_factor * dv,edgecolor="k",lw=1,fill=true,
+            fc=m.to_rgba(sv))
+        push!(patches, p)
+    end
+    p = matplotlib.collections.PatchCollection(patches, match_original=true)
+    gca().add_collection(p)
+    colorbar(m)
+    gca().invert_yaxis()
+    axis("scaled")
+    xlabel("x")
+    ylabel("y")
+end 
+
+function visualize_scalar_on_scoped_body(s_all::Array{Float64, 2}, d_all::Array{Float64,2}, domain::Domain;
+    scale_factor::Float64 = 1.0, frames::Int64 = 20)
+    n = matplotlib.colors.Normalize(vmin=minimum(s_all), vmax=maximum(s_all))
+    cm = matplotlib.cm
+    cmap = cm.jet
+    m = cm.ScalarMappable(norm=n, cmap=cmap)
+    elements = domain.elements
+    close("all")
+    # Find the bounding box: the domain takes up 80% 
+    D = zeros(size(d_all,1), domain.nnodes)
+    for i = 1:size(d_all,1)
+        D[i,:] = domain.nodes[:,1] + scale_factor*d_all[i,1:domain.nnodes]
+    end
+    a1, b1 = minimum(D), maximum(D)
+    h1 = (b1-a1)*0.1
+
+    D = zeros(size(d_all,1), domain.nnodes)
+    for i = 1:size(d_all,1)
+        D[i,:] = domain.nodes[:,2] + scale_factor*d_all[i,domain.nnodes+1:end]
+    end
+    a2, b2 = minimum(D), maximum(D)
+    h2 = (b2-a2)*0.1
+    
+    
+    function update(frame)
+        s = s_all[frame,:]
+        d = d_all[frame,:]
+        gca().clear()
+        patches = []
+        for i = 1:size(elements,1)
+            e = elements[i].elnodes
+            sv = length(s)==domain.nnodes ? mean(s[e]) : s[i]
+            dv = [d[e] d[e .+ domain.nnodes]]
+            p = plt.Polygon(elements[i].coords + scale_factor * dv,edgecolor="k",lw=1,fill=true,
+                fc=m.to_rgba(sv))
+            push!(patches, p)
+        end
+        p = matplotlib.collections.PatchCollection(patches, match_original=true)
+        gca().add_collection(p)
+        xlabel("x")
+        ylabel("y")
+        title("Snapshot = $frame")
+        axis("scaled")
+        xlim(a1-h1, b1+h1)
+        ylim(a2-h2, b2+h2)
+        gca().invert_yaxis()
+    end
+    update(1)
+    t = title("Snapshot = 1")
+    cb = colorbar(m)
+    animate(update, Int64.(round.(LinRange(div(size(s_all,1), frames), size(s_all,1),frames))))
+end
+
+function visualize_total_deformation_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
+    scale_factor::Float64 = 1.0, frames::Int64 = 20)
+    s_all = d_all
+    S = zeros(size(s_all,1), domain.nnodes)
+    for i = 1:size(s_all,1)
+        S[i,:] = @. sqrt( s_all[i,1:domain.nnodes]^2 + s_all[i,domain.nnodes+1:end]^2 ) 
+    end
+    visualize_scalar_on_scoped_body(S, d_all, domain, scale_factor = scale_factor, frames=frames)
+end
+
+function visualize_von_mises_stress_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
+    scale_factor::Float64 = 1.0, frames::Int64 = 20)
+    stress = domain.history["stress"]
+    S = zeros(length(stress), length(domain.elements))
+    x = zeros(length(domain.elements))
+    y = zeros(length(domain.elements))
+    for t = 1:length(stress)
+        cnt = 1
+        for (k,e) in enumerate(domain.elements)
+            ct = mean(domain.elements[k].coords, dims=1)
+            x[k], y[k] = ct[1,1], ct[1,2]
+            
+                ss = Float64[]
+                nstress = length(e.mat)
+                for p = 1:nstress
+                    push!(ss, postprocess_stress(stress[t][cnt, :] ,"vonMises"))
+                    cnt += 1
+                end
+                S[t, k] = mean(ss)
+        end
+    end   
+
+    visualize_scalar_on_scoped_body(S, d_all, domain, scale_factor = scale_factor, frames=frames)
+end
+
+

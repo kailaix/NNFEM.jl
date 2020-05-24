@@ -114,6 +114,7 @@ function spd_Cholesky(o::PyObject)
         error("NNFEM: second dimension of `o` must be 6")
     end
   
+    chol_op = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/CholOp/build/libCholOp", "chol_op")
     ret = chol_op(o)
    
     tf.reshape(ret, (-1,3,3))

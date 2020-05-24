@@ -1,3 +1,6 @@
+#=
+Common data
+=#
 using Revise
 using NNFEM 
 using PyPlot
@@ -7,14 +10,16 @@ using ADCMEKit
 using MAT 
 
 
-NT = 50
+NT = 1000
 Δt = 0.1/NT 
 
 node, elem = meshread("twoholes.msh")
+node *= 10
+xmax = maximum(node[:,1])
 
 elements = []
 prop = Dict("name"=> "PlaneStressIncompressibleRivlinSaunders", "rho"=> 7850,  "E"=>2e11, "nu"=>0.3,
-        "C1"=>3.3017e5, "C2"=>30515)
+        "C1"=>3.3017e5, "C2"=>30515.0)
 for i = 1:size(elem,1)
     nodes = node[elem[i,:], :]
     elnodes = elem[i,:]
@@ -26,7 +31,7 @@ Edge_Traction_Data = Array{Int64}[]
 for i = 1:length(elements)
     elem = elements[i]
     for k = 1:4
-        if elem.coords[k,1]>0.049-1e-5 && elem.coords[k+1>4 ? 1 : k+1,1]>0.049-1e-5
+        if elem.coords[k,1]>xmax-1e-5 && elem.coords[k+1>4 ? 1 : k+1,1]>xmax-1e-5
             push!(Edge_Traction_Data, Int64[i, k, 1])
         end
     end
@@ -55,21 +60,38 @@ FBC_func = nothing
 Body_func = nothing 
 # Construct Edge_func
 function Edge_func(x, y, t, idx)
-  return [zeros(length(x)) 1000*t/0.1*ones(length(x))]
+  return [zeros(length(x)) 1000*t*ones(length(x))]
 end
 globaldata = GlobalData(state, Dstate, velo, acce, domain.neqs, EBC_func, FBC_func,Body_func, Edge_func)
 
-assembleMassMatrix!(globaldata, domain)
-SolverInitial!(Δt, globaldata, domain)
+# assembleMassMatrix!(globaldata, domain)
+# SolverInitial!(Δt, globaldata, domain)
 
-updateStates!(domain, globaldata)
-ω = EigenMode(Δt, globaldata, domain)
-@show "stable time step is ", 0.8 * 2/ω, " current time step is ", Δt
-for i = 1:NT
-    @info i 
-    # global globaldata, domain = GeneralizedAlphaSolverStep(globaldata, domain, Δt)
-    global globaldata, domain = ExplicitSolverStep(globaldata, domain, Δt)
+# updateStates!(domain, globaldata)
+# ω = EigenMode(Δt, globaldata, domain)
+# @show "stable time step is ", 0.8 * 2/ω, " current time step is ", Δt
+# for i = 1:NT
+#     @info i 
+#     global globaldata, domain = GeneralizedAlphaSolverStep(globaldata, domain, Δt)
+#     # global globaldata, domain = ExplicitSolverStep(globaldata, domain, Δt)
+# end
+# d_ = hcat(domain.history["state"]...)'|>Array
+
+# visualize_total_deformation_on_scoped_body(d_, domain;scale_factor=4.562)
+
+
+function sample_interior(N, n)
+    Random.seed!(233+n)
+    s = Set([])
+    while length(s)<n 
+        i = rand(1:N)
+        if i in s
+            continue 
+        else
+            push!(s, i)
+        end
+    end
+    Int64.(collect(s))
 end
-d_ = hcat(domain.history["state"]...)'|>Array
 
-visualize_total_deformation_on_scoped_body(d_, domain;scale_factor=4.562)
+
