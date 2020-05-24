@@ -2,7 +2,7 @@
 Driver for structuresteel5
 =#
 using Distributed 
-
+using ClusterManagers
 @everywhere include("structuralsteel1.jl")
 
 @everywhere begin 
