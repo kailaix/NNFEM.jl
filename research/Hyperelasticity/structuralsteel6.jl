@@ -72,8 +72,8 @@ end
 end 
 
 for i = 1:10
-    addprocs(SlurmCluster(1))
+    addprocs(SlurmManager(1))
 end
 
-pmap(training, )
+pmap(training, 10)
 
