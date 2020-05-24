@@ -3,6 +3,9 @@ Driver for structuresteel5
 =#
 using Distributed 
 using ClusterManagers
+for i = 1:10
+    addprocs(SlurmManager(1))
+end
 @everywhere include("structuralsteel1.jl")
 
 @everywhere begin 
@@ -71,9 +74,7 @@ end
 
 end 
 
-for i = 1:10
-    addprocs(SlurmManager(1))
-end
+
 
 pmap(training, 10)
 
