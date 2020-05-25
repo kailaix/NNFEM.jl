@@ -5,6 +5,16 @@ using Eigen::VectorXd;
 using Eigen::VectorXi;
 using Eigen::Map;
 
+#ifdef _MSC_VER
+# ifdef WIN_EXPORT
+#   define EXPORTED  __declspec( dllexport )
+# else
+#   define EXPORTED  __declspec( dllimport )
+# endif
+#else
+# define EXPORTED
+#endif
+
 
 using std::vector;
 class Continuum{
@@ -33,13 +43,13 @@ public:
     int ngauss;
 };
 
-extern std::vector<Continuum*> mesh;
-extern Domain domain; 
+extern "C" EXPORTED std::vector<Continuum*> mesh;
+extern "C" EXPORTED Domain domain; 
 
-extern "C" void create_mesh(int *elnodes, double *coords, 
+extern "C" EXPORTED void create_mesh(int *elnodes, double *coords, 
         double *dhdx, double *weights, double *hs, int n_nodes, int n_gauss,
         const int *el_eqns_active_, int n_active, const int *el_eqns);
-extern "C" void create_domain(const double *nodes_, int nnodes, int neqs, int neles);
-extern "C" void init_mesh();
-extern "C" void print_mesh();
+extern "C" EXPORTED void create_domain(const double *nodes_, int nnodes, int neqs, int neles);
+extern "C" EXPORTED void init_mesh();
+extern "C" EXPORTED void print_mesh();
 
