@@ -21,6 +21,8 @@ jobs:
           key: conda
           restore-keys: |
             conda
+      - name: install tikzplotlib 
+        run: pip install tikzplotlib
       - name: Install dependencies
         run: julia --project=docs/ --color=yes -e 'using Pkg;Pkg.add("Documenter");  Pkg.add("ADCME"); Pkg.build("ADCME"); Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate(); Pkg.build("NNFEM")'
       - name: Build and deploy
