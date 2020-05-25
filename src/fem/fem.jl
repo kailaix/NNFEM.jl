@@ -33,7 +33,7 @@ Here $f$ is a vector. Its length is the same as number of "-2" in `FBC` array. T
 
 $$f = \text{Body\_func}(x_{\text{array}}, y_{\text{array}}, \text{time})$$
 
-Here $f$ is a vector. Its length is the same as the length of $x_{\text{array}}$ or $y_{\text{array}}$.
+Here $f$ is a vector or a matrix (second dimension is 2) depending on the dimension of state variables. Its length is the same as the length of $x_{\text{array}}$ or $y_{\text{array}}$.
 
 - `Edge_func`: time-dependent/independent traction load. 
 
