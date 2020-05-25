@@ -349,8 +349,10 @@ function commitHistory(domain::Domain)
         end
     end
 
-    push!(domain.history["strain"], strain)
-    push!(domain.history["stress"], stress)
+    if options.save_history>=1
+        push!(domain.history["strain"], strain)
+        push!(domain.history["stress"], stress)
+    end
 end
 
 
@@ -477,8 +479,10 @@ function updateStates!(domain::Domain, globaldat::GlobalData)
     domain.state[domain.eq_to_dof] = globaldat.state[:]
     
     domain.time = globaldat.time
-    push!(domain.history["state"], copy(domain.state))
-    push!(domain.history["acc"], copy(globaldat.acce))
+    if options.save_history>=1
+        push!(domain.history["state"], copy(domain.state))
+        push!(domain.history["acc"], copy(globaldat.acce))
+    end
 
     updateDomainStateBoundary!(domain, globaldat)
     

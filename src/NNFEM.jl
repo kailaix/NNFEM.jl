@@ -24,11 +24,9 @@ function __init__()
     copy!(cmx, pyimport("matplotlib.cm"))
     jet = plt.get_cmap("jet")
     copy!(clb, pyimport("matplotlib.colorbar"))
-    # sym_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/SymOp/build/libSymOp", "sym_op")
-    # orthotropic_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/OrthotropicOp/build/libOrthotropicOp", "orthotropic_op")
-    #chol_op = load_op_and_grad("$(@__DIR__)/../deps/CustomOp/CholOp/build/libCholOp", "chol_op")
 end
 
+include("utils/options.jl")
 include("utils/shapeFunctions.jl")
 include("utils/matrix.jl")
 include("materials/PlaneStress.jl")
