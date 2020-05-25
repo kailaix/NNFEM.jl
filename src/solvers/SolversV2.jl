@@ -268,8 +268,8 @@ function GeneralizedAlphaSolverStep(globdat::GlobalData, domain::Domain, Δt::Fl
     #commit history in domain
     commitHistory(domain)
     updateStates!(domain, globdat)
-    fint, stiff = assembleStiffAndForce( globdat, domain, αf*Δt)
     if options.save_history>=2
+        fint, stiff = assembleStiffAndForce( globdat, domain, αf*Δt)
         push!(domain.history["fint"], fint)
         push!(domain.history["fext"], fext)
     end

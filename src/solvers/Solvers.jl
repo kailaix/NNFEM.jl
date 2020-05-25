@@ -128,8 +128,8 @@ function ExplicitSolver(Δt::Float64, globdat::GlobalData, domain::Domain)
     updateStates!(domain, globdat)
 
     # (optional) for visualization, update fint and fext history
-    fint = assembleInternalForce( globdat, domain, Δt)
     if options.save_history>=2
+        fint = assembleInternalForce( globdat, domain, Δt)
         push!(domain.history["fint"], fint)
         push!(domain.history["fext"], fext)
     end
@@ -285,15 +285,15 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, �
     #commit history in domain
     commitHistory(domain)
     updateStates!(domain, globdat)
-    fint, stiff = assembleStiffAndForce( globdat, domain, αf*Δt)
     if options.save_history>=2
+        fint, stiff = assembleStiffAndForce( globdat, domain, αf*Δt)
         push!(domain.history["fint"], fint)
         push!(domain.history["fext"], fext)
     end
     if options.save_history>=1
         push!(domain.history["time"], [globdat.time])
     end
-    
+
     return true
     
 end 
