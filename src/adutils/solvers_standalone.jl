@@ -87,18 +87,7 @@ function ViscoelasticitySolver(globdat::GlobalData, domain::Domain,
 
         fint  = s_compute_internal_force_term(σ, domain)
 
-        vn = ∂u + Δt * (1- γ)*∂∂u
-        vf = (1-αf)*vn + αf*∂u
-        dotε = s_eval_strain_on_gauss_points(vf, domain)
-        if length(size(Cs))==2
-            visc = tf.matmul(dotε, Cs)
-        else
-            visc = batch_matmul(Cs, dotε)
-        end
-        fv = s_compute_internal_force_term(visc, domain)
-
-        
-        res = M * (∂∂up[nbddof] *(1 - αm) + αm*∂∂u[nbddof])  + fv + fint - fext
+        res = M * (∂∂up[nbddof] *(1 - αm) + αm*∂∂u[nbddof])  + fint - fext
         Δ = -(A\res)
         ∂∂up= scatter_add(∂∂up, nbddof, Δ)
         if !ismissing(abd)
