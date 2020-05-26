@@ -98,6 +98,9 @@ function ViscoelasticitySolver(globdat::GlobalData, domain::Domain,
         u += Δt * ∂u + Δt^2/2 * ((1 - β2) * ∂∂u + β2 * ∂∂up)
         ∂u += Δt * ((1 - γ) * ∂∂u + γ * ∂∂up)
 
+        ε = s_eval_strain_on_gauss_points(u, domain)
+        σ = batch_matmul(H, ε-εc) + batch_matmul(S, σc) 
+
         if length(sum(fixed_bddof))>0
             u = scatter_update(u, fixed_bddof, d0[fixed_bddof])
         end
