@@ -119,8 +119,8 @@ function ViscoelasticitySolver(globdat::GlobalData, domain::Domain,
     arr_d = TensorArray(NT+1); arr_d = write(arr_d, 1, d0)
     arr_v = TensorArray(NT+1); arr_v = write(arr_v, 1, v0)
     arr_a = TensorArray(NT+1); arr_a = write(arr_a, 1, a0)
-    arr_σ = TensorArray(NT+1); arr_σ = write(arr_v, 1, σ0)
-    arr_ε = TensorArray(NT+1); arr_ε = write(arr_a, 1, ε0)
+    arr_σ = TensorArray(NT+1); arr_σ = write(arr_σ, 1, σ0)
+    arr_ε = TensorArray(NT+1); arr_ε = write(arr_ε, 1, ε0)
     i = constant(1, dtype=Int32)
     tas = [arr_d, arr_v, arr_a, arr_σ, arr_ε]
     _, d, v, a, σ, ε = while_loop(condition, body, [i, tas...])
