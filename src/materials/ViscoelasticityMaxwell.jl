@@ -49,7 +49,7 @@ end
 
 function getStress(domain::ViscoelasticityMaxwell,  strain::Array{Float64},  Dstrain::Array{Float64}, Δt::Float64)
     # strain, Dstrain are defined at (1-αf)*Δt in the generalized α solver 
-    ϵ = strain; ϵ0 = Dstrain
+    ϵ = strain; ϵ0 = domain.ε0
     σ0 = domain.σ0 
     λ, μ, η = domain.λ, domain.μ, domain.η
     S = inv([
