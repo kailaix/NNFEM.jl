@@ -62,6 +62,10 @@ function getStress(domain::ViscoelasticityMaxwell,  strain::Array{Float64},  Dst
             0.0 0.0 μ]
     σ = H * ϵ + S * σ0 - H * ϵ0
     dΔσdΔε = H 
+    # the Newton solver will iterate until convergence is reached. 
+    # Therefore, σ and ϵ are true values at (1-αf)*Δt
+    # Strictly speaking, to plot σ and ϵ, you should use values at (1-αf)*Δt
+    # Note AD solver is different from this solver. 
     domain.σ0_ = σ
     domain.ε0_ = ϵ
     return σ, dΔσdΔε

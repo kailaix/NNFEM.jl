@@ -82,6 +82,7 @@ function ViscoelasticitySolver(globdat::GlobalData, domain::Domain,
             up = scatter_update(up, fixed_bddof, d0[fixed_bddof])
         end
 
+        # Here ϵc should be interpreted as the true values at (1-αf)*Δt
         ε = s_eval_strain_on_gauss_points(up, domain)
         σ = batch_matmul(H, ε-εc) + batch_matmul(S, σc) 
 
@@ -98,6 +99,7 @@ function ViscoelasticitySolver(globdat::GlobalData, domain::Domain,
         u += Δt * ∂u + Δt^2/2 * ((1 - β2) * ∂∂u + β2 * ∂∂up)
         ∂u += Δt * ((1 - γ) * ∂∂u + γ * ∂∂up)
 
+        # We use ϵ to approximate values at (1-αf)*Δt at this time step.
         ε = s_eval_strain_on_gauss_points(u, domain)
         σ = batch_matmul(H, ε-εc) + batch_matmul(S, σc) 
 
