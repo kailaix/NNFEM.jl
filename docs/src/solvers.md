@@ -53,6 +53,18 @@ AD-capable solver are located in `src/adutils/solvers.jl`. These solvers are imp
 
 A list of available:
 
+* [`LinearStaticSolver`](@ref)
+
+
+We consider the same linear elasticity problem problem used in AD-free solvers.
+```@eval 
+using Markdown
+Markdown.parse("```julia\\n"*String(read("../../test/solvers/linearstatic_ad.jl"))*"```")
+```
+
+
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/ADCME/AD_static_linear.png?raw=true)
+
 
 * [`ExplicitSolver`](@ref)
 

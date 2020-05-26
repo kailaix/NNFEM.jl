@@ -148,11 +148,16 @@ function compute_boundary_info(domain::Domain, globdat::GlobalData, ts::Array{Fl
 end
 
 """
-    compute_external_force(domain::Domain, globdat::GlobalData, ts::Array{Float64})
+    compute_external_force(domain::Domain, globdat::GlobalData, ts::Union{Array{Float64}, Missing} = missing)
 
 Computes the external force (body force, edge force and force due to boundary acceleration).
 """
-function compute_external_force(domain::Domain, globdat::GlobalData, ts::Array{Float64})
+function compute_external_force(domain::Domain, globdat::GlobalData, ts::Union{Array{Float64}, Missing} = missing)
+    if ismissing(ts)
+        globdat.time = 0.0 
+        return getExternalForce(domain, globdat)
+    end
+
     NT = length(ts)
     fext = zeros(NT, domain.neqs)
     for i = 1:length(ts)
@@ -163,6 +168,7 @@ function compute_external_force(domain::Domain, globdat::GlobalData, ts::Array{F
     globdat.time = 0.0
     fext
 end
+compute_external_force(globdat::GlobalData, domain::Domain, ts::Union{Array{Float64}, Missing} = missing) = compute_external_force(domain, globdat, ts)
 
 @doc raw"""
     GeneralizedAlphaSolverTime(Δt::Float64, NT::Int64;ρ::Float64 = 0.0)
@@ -639,6 +645,42 @@ function ExplicitStaticSolver(globdat::GlobalData, domain::Domain,
     load_vec = reshape(Array((1:NT)/NT), NT, 1)
     Fext = Fext .* load_vec
     d, _, _ = ExplicitSolver(globdat, domain, d0, v0, a0, Δt, NT, nn, Fext, missing, missing; strain_type = strain_type)
+    return d
+end
+
+@doc raw"""
+    LinearStaticSolver(globdat::GlobalData, domain::Domain,
+        d0::Union{Array{Float64, 1}, PyObject}, 
+        Hs::Union{Array{Float64, 3}, Array{Float64, 2}, PyObject},
+        Fext::Union{Array{Float64, 1}, PyObject, Missing}=missing)
+
+An AD-capable static linear elasticity solver. 
+
+- `d0` has length `2domain.nnodes` (full DOFs)
+
+- `Hs` is either a $3\times 3$ matrix or $N\times 3\times 3$ tensor, representing elasticity matrix. 
+"""
+function LinearStaticSolver(globdat::GlobalData, domain::Domain,
+    d0::Union{Array{Float64, 1}, PyObject}, 
+    Hs::Union{Array{Float64, 3}, Array{Float64, 2}, PyObject},
+    Fext::Union{Array{Float64, 1}, PyObject, Missing}=missing)
+    @assert length(findall(domain.EBC[:] .== -2))==0
+    @assert length(findall(domain.FBC[:] .== -2))==0
+    init_nnfem(domain)
+    Hs = constant(Hs)
+    if length(size(Hs))==2
+        Hs = repeat(reshape(Hs, (-1,)), getNGauss(domain))
+        Hs = reshape(Hs, (getNGauss(domain), 3, 3) )
+    end
+    Fext = coalesce(Fext, zeros(domain.neqs))
+    d0, Fext = convert_to_tensor([d0, Fext], [Float64, Float64])
+    ε = s_eval_strain_on_gauss_points(d0, domain)
+    σ = batch_matmul(Hs, ε)
+    fint = s_compute_internal_force_term(σ, domain)
+    stiff = s_compute_stiffness_matrix(Hs, domain)
+    u0 = stiff\(Fext - fint)
+    nbdnode = findall(domain.EBC[:].!=-1)
+    d = scatter_update(d0, nbdnode, u0)
     return d
 end
 
