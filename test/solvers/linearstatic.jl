@@ -98,7 +98,7 @@ visualize_scalar_on_scoped_body(out[domain.nnodes+1:end], zeros(size(domain.stat
 @info "Solving using NNFEM..."
 globaldata, domain = LinearStaticSolver(globaldata, domain)
 figure(figsize=(10,10))
-title("PoreFlow")
+title("NNFEM")
 subplot(221)
 visualize_scalar_on_scoped_body(domain.state[1:domain.nnodes], zeros(size(domain.state)...), domain)
 subplot(222)

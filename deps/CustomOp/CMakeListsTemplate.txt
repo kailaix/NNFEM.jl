@@ -56,7 +56,7 @@ find_library(ADEPT_LIB_FILE adept HINTS ${LIBDIR})
 find_library(LIBOPENBLAS openblas HINTS ${LIBDIR})
 message("ADEPT_LIB_FILE=${ADEPT_LIB_FILE}")
 
-add_library(DataLib SHARED ${CMAKE_SOURCE_DIR}/CholOp/CholOp.cpp ${CMAKE_SOURCE_DIR}/CholOrthOp/CholOrthOp.cpp ${CMAKE_SOURCE_DIR}/DataStructure/data.cpp ${CMAKE_SOURCE_DIR}/FinitContinuumStrain/FinitContinuumStrain.cpp ${CMAKE_SOURCE_DIR}/FiniteContinuumFint/FiniteContinuumFint.cpp ${CMAKE_SOURCE_DIR}/FintComp/FintComp.cpp ${CMAKE_SOURCE_DIR}/Isotropic/Isotropic.cpp ${CMAKE_SOURCE_DIR}/IsotropicTwo/IsotropicTwo.cpp ${CMAKE_SOURCE_DIR}/OrthotropicOp/OrthotropicOp.cpp ${CMAKE_SOURCE_DIR}/Plasticity/Plasticity.cpp ${CMAKE_SOURCE_DIR}/RivlinSaunders/RivlinSaunders.cpp ${CMAKE_SOURCE_DIR}/SPDOp/SPDOp.cpp ${CMAKE_SOURCE_DIR}/SmallContinuumFint/SmallContinuumFint.cpp ${CMAKE_SOURCE_DIR}/SmallContinuumStiffness/SmallContinuumStiffness.cpp ${CMAKE_SOURCE_DIR}/SmallContinuumStiffness1/SmallContinuumStiffness1.cpp ${CMAKE_SOURCE_DIR}/SmallContinuumStrain/SmallContinuumStrain.cpp ${CMAKE_SOURCE_DIR}/SymOp/SymOp.cpp ${CMAKE_SOURCE_DIR}/TensorRep/TensorRep.cpp ${CMAKE_SOURCE_DIR}/ViscoelasticityMatrices/ViscoelasticityMatrices.cpp )
+[REPLACE]
 
 set_target_properties(DataLib PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build  RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/build)
 target_link_libraries(DataLib ${TF_LIB_FILE} ${ADEPT_LIB_FILE} ${LIBOPENBLAS})
