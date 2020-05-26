@@ -25,11 +25,11 @@ Markdown.parse("```julia\\n"*String(read("../../test/solvers/linearstatic.jl"))*
 
 Here shows the result for PoreFlow (left: PoreFlow, right: Exact)
 
-![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/ADCME/PoreFlow_static_linear.png?raw=true)
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/PoreFlow_static_linear.png?raw=true)
 
 Here shows the result for NNFEM (left: NNFEM, right: Exact)
 
-![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/ADCME/NNFEM_static_linear.png?raw=true)
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/NNFEM_static_linear.png?raw=true)
 
 * [`ExplicitSolverStep`](@ref)
 
@@ -57,13 +57,14 @@ A list of available:
 
 
 We consider the same linear elasticity problem problem used in AD-free solvers.
+
 ```@eval 
 using Markdown
 Markdown.parse("```julia\\n"*String(read("../../test/solvers/linearstatic_ad.jl"))*"```")
 ```
 
 
-![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/ADCME/AD_static_linear.png?raw=true)
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/AD_static_linear.png?raw=true)
 
 
 * [`ExplicitSolver`](@ref)
