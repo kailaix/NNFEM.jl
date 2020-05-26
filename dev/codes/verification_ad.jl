@@ -104,7 +104,7 @@ acce =  @. [x^2+y^2;x^2-y^2]* 0.1
 globdat = GlobalData(state, Dstate, velo, acce, domain.neqs, gt, nothing, bt)
 
 assembleMassMatrix!(globdat, domain)
-# updateDomainStateBoundary!(domain,globdat)
+# updateTimeDependentEssentialBoundaryCondition!(domain,globdat)
 # updateStates!(domain, globdat)
 
 # for i = 1:NT
