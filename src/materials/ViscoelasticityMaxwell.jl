@@ -26,29 +26,30 @@ mutable struct ViscoelasticityMaxwell
     η::Float64 # Viscosity parameter
     λ::Float64
     μ::Float64 # Lame constants
-    σ0::Float64 # stress at last time step
-    σ0_::Float64 # σ0 to be updated in `commitHistory
+    σ0::Array{Float64} # stress at last time step
+    σ0_::Array{Float64} # σ0 to be updated in `commitHistory`
+    ε0::Array{Float64} # strain at last time step
+    ε0_::Array{Float64} # ε0 to be updated in `commitHistory`
 end
 
 
 function ViscoelasticityMaxwell(prop::Dict{String, Any})
-    ρ = prop["rho"]
-    E = prop["E"]
-    ν = prop["nu"]
-    η = prop["eta"]
+    ρ = Float64(prop["rho"])
+    E = Float64(prop["E"])
+    ν = Float64(prop["nu"])
+    η = Float64(prop["eta"])
     λ = E*ν/(1+ν)/(1-2ν)
     μ = E/(2(1+ν))
     σ0 = zeros(3); σ0_ = zeros(3)
-    ϵ0 = zeros(3); ϵ0_ = zeros(3)
-    ViscoelasticityMaxwell(ρ, E, ν, η, λ, μ, σ0, σ0_, ϵ0, ϵ0_)
+    ε0 = zeros(3); ε0_ = zeros(3)
+    ViscoelasticityMaxwell(ρ, E, ν, η, λ, μ, σ0, σ0_, ε0, ε0_)
 end
 
 
 
-function getStress(domain::ViscoelasticityMaxwell,  strain::Float64,  Dstrain::Float64, Δt::Float64)
-    
-    local dΔσdΔε
-    ϵ = strain; ϵ0 = Dstrain 
+function getStress(domain::ViscoelasticityMaxwell,  strain::Array{Float64},  Dstrain::Array{Float64}, Δt::Float64)
+    # strain, Dstrain are defined at (1-αf)*Δt in the generalized α solver 
+    ϵ = strain; ϵ0 = Dstrain
     σ0 = domain.σ0 
     λ, μ, η = domain.λ, domain.μ, domain.η
     S = inv([
@@ -62,6 +63,7 @@ function getStress(domain::ViscoelasticityMaxwell,  strain::Float64,  Dstrain::F
     σ = H * ϵ + S * σ0 - H * ϵ0
     dΔσdΔε = H 
     domain.σ0_ = σ
+    domain.ε0_ = ϵ
     return σ, dΔσdΔε
 end
 
@@ -71,4 +73,5 @@ end
 
 function commitHistory(domain::ViscoelasticityMaxwell)
     domain.σ0 = domain.σ0_
+    domain.ε0 = domain.ε0_
 end

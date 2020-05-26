@@ -213,7 +213,7 @@ function GeneralizedAlphaSolverStep(globdat::GlobalData, domain::Domain, Δt::Fl
         Newtoniterstep += 1
         
         domain.state[domain.eq_to_dof] = (1 - αf)*(u + Δt*∂u + 0.5 * Δt * Δt * ((1 - β2)*∂∂u + β2*∂∂up)) + αf*u
-        fint, stiff = assembleStiffAndForce( globdat, domain, (1 - αf)*Δt)
+        fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
         res = M * (∂∂up *(1 - αm) + αm*∂∂u)  + fint - fext
         if Newtoniterstep==1
             res0 = res 
@@ -269,7 +269,7 @@ function GeneralizedAlphaSolverStep(globdat::GlobalData, domain::Domain, Δt::Fl
     commitHistory(domain)
     updateStates!(domain, globdat)
     if options.save_history>=2
-        fint, stiff = assembleStiffAndForce( globdat, domain, αf*Δt)
+        fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
         push!(domain.history["fint"], fint)
         push!(domain.history["fext"], fext)
     end

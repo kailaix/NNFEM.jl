@@ -1,23 +1,23 @@
 export sym_H, orthotropic_H, spd_H, spd_Cholesky, spd_Chol_Orth, spd_zero_to_H
 
 
-@doc raw"""
-    sym_H(y::PyObject)
-    sym_H(o::Array)
+# @doc raw"""
+#     sym_H(y::PyObject)
+#     sym_H(o::Array)
 
-Creates a symmetric matrix from 6 parameters
-```math
-H = \begin{bmatrix}
-y_1 & y_2 & y_3\\ 
-y_2 & y_4 & y_5 \\ 
-y_3 & y_5 & y_6
-\end{bmatrix}
-```
-"""
-function sym_H(y::PyObject)
-    y = sym_op(y)
-    z = tf.reshape(y, (-1,3,3)) 
-end
+# Creates a symmetric matrix from 6 parameters
+# ```math
+# H = \begin{bmatrix}
+# y_1 & y_2 & y_3\\ 
+# y_2 & y_4 & y_5 \\ 
+# y_3 & y_5 & y_6
+# \end{bmatrix}
+# ```
+# """
+# function sym_H(y::PyObject)
+#     y = sym_op(y)
+#     z = tf.reshape(y, (-1,3,3)) 
+# end
 
 function sym_H(o::Array)
     [o[1] o[2] o[3];

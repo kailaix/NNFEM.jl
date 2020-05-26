@@ -125,6 +125,11 @@ function example_static_domain1(m::Int64 = 10, n::Int64 = 10, h::Float64 = 1.0)
     domain = StaticDomain1(coords, elements, EBC, g, FBC, f)
 end
 
+"""
+    example_global_data(domain::Domain)
+
+Returns an examplary global data structure. Initial displacement, velocity, and acceleration are zero. Time-dependent displacement and force function are set to `missing`.
+"""
 function example_global_data(domain::Domain)
     Dstate = zeros(domain.neqs)
     state = zeros(domain.neqs)
@@ -135,6 +140,11 @@ function example_global_data(domain::Domain)
     globdat = GlobalData(state, Dstate, velo, acce, domain.neqs, gt, ft)
 end
 
+"""
+    find_boundary(nodes::Array{Float64, 2}, elements::Array{Int64, 2})
+
+Given nodes and elements arrays, this function returns the boundary indices.
+"""
 function find_boundary(nodes::Array{Float64, 2}, elements::Array{Int64, 2})
     ef = (i, j)->(min(i, j), max(i, j))
     push_pop! = x -> (x in eset ? pop!(eset, x) : push!(eset, x))
@@ -152,3 +162,4 @@ function find_boundary(nodes::Array{Float64, 2}, elements::Array{Int64, 2})
     end
     return collect(nset)
 end
+ 
