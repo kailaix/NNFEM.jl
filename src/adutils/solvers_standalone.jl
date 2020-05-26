@@ -56,7 +56,7 @@ function ViscoelasticitySolver(globdat::GlobalData, domain::Domain,
     M = constant(globdat.M)
     
     stiff = s_compute_stiffness_matrix(H, domain)
-    A = M*(1 - αm) + (1-αf)*Δt*γ*damp +  (1 - αf) * 0.5 * β2 * Δt^2 * stiff
+    A = M*(1 - αm) +  (1 - αf) * 0.5 * β2 * Δt^2 * stiff
     A = factorize(A)
     bddof = findall(domain.EBC[:] .== -2)
     fixed_bddof = findall(domain.EBC[:] .== -1)
