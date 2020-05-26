@@ -1,4 +1,4 @@
-export ExplicitSolverStep, GeneralizedAlphaSolverStep, ImplicitStaticSolver
+export ExplicitSolverStep, GeneralizedAlphaSolverStep, ImplicitStaticSolver, LinearStaticSolver
 @doc raw"""
     ExplicitSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64)
 
@@ -25,8 +25,8 @@ function ExplicitSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64)
     ∂∂u = globdat.acce[:]
 
     globdat.time  += Δt
-    updateDomainStateBoundary!(domain, globdat)
-    fext = getExternalForce!(domain, globdat)
+    updateTimeDependentEssentialBoundaryCondition!(domain, globdat)
+    fext = getExternalForce(domain, globdat)
 
     u += Δt*∂u + 0.5*Δt*Δt*∂∂u
     ∂u += 0.5*Δt * ∂∂u
@@ -73,12 +73,8 @@ f^{int}(u_i) = \frac{i}{N} f^{ext}
 function ImplicitStaticSolver(globdat::GlobalData, domain::Domain; 
         N::Int64 = 10, ε::Float64 = 1.e-6, maxiterstep::Int64=100)
     assembleMassMatrix!(globdat, domain)
-    updateStates!(domain, globdat)
-
-    fext = getExternalForce!(domain, globdat)
+    fext = getExternalForce(domain, globdat)
     
-
-    globdat.Dstate = copy(globdat.state)
     for iterstep = 1:N
 
         # Newton's method
@@ -110,6 +106,22 @@ function ImplicitStaticSolver(globdat::GlobalData, domain::Domain;
     globdat, domain
 end
 
+@doc raw"""
+    LinearStaticSolver(globdat::GlobalData, domain::Domain)
+
+Solves the linear static problem 
+$$\begin{aligned}\div \sigma &= f\\ \sigma = H \epsilon \end{aligned}$$
+
+"""
+function LinearStaticSolver(globaldata::GlobalData, domain::Domain)
+    @assert globaldata.time ≈ 0.0
+    fext = getExternalForce(domain, globaldata)
+    fint, stiff = assembleStiffAndForce( globaldata, domain, 0.0)
+    res = fext - fint  
+    globaldata.state = stiff\res
+    updateStates!(domain, globaldata)
+    return globaldata, domain 
+end
 
 
 
@@ -193,14 +205,14 @@ function GeneralizedAlphaSolverStep(globdat::GlobalData, domain::Domain, Δt::Fl
     domain.Dstate = domain.state[:]
 
 
-    updateDomainStateBoundary!(domain, globdat)
+    updateTimeDependentEssentialBoundaryCondition!(domain, globdat)
     M = globdat.M
     
     ∂∂u = globdat.acce[:] #∂∂uⁿ
     u = globdat.state[:]  #uⁿ
     ∂u  = globdat.velo[:] #∂uⁿ
 
-    fext = getExternalForce!(domain, globdat)
+    fext = getExternalForce(domain, globdat)
     # fext = zeros(domain.neqs)
     ∂∂up = ∂∂u[:]
 

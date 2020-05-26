@@ -158,7 +158,7 @@ function compute_external_force(domain::Domain, globdat::GlobalData, ts::Array{F
     for i = 1:length(ts)
         time = ts[i]
         globdat.time = time 
-        fext[i, :] = getExternalForce!(domain, globdat)
+        fext[i, :] = getExternalForce(domain, globdat)
     end
     globdat.time = 0.0
     fext

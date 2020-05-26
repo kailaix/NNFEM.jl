@@ -1,5 +1,5 @@
-export Domain,GlobalData,updateStates!,updateDomainStateBoundary!,
-    setConstantNodalForces!, setGeometryPoints!, setConstantDirichletBoundary!, getExternalForce!,
+export Domain,GlobalData,updateStates!,updateTimeDependentEssentialBoundaryCondition!,
+    setConstantNodalForces!, setGeometryPoints!, setConstantDirichletBoundary!, getExternalForce,
     commitHistory, getBodyForce, getEdgeForce, getNGauss
 
 
@@ -33,7 +33,8 @@ Here $f$ is a vector. Its length is the same as number of "-2" in `FBC` array. T
 
 $$f = \text{Body\_func}(x_{\text{array}}, y_{\text{array}}, \text{time})$$
 
-Here $f$ is a vector or a matrix (second dimension is 2) depending on the dimension of state variables. Its length is the same as the length of $x_{\text{array}}$ or $y_{\text{array}}$.
+Here $f$ is a vector or a matrix (second dimension is 2) depending on the dimension of state variables. 
+The output is a $N\times n_{\text{dim}}$ matrix, where $N$ is the length of $x_{\text{array}}$ or $y_{\text{array}}$, and $n_{\text{dim}}$ is the dimension of the problem (1 or 2).
 
 - `Edge_func`: time-dependent/independent traction load. 
 
@@ -74,11 +75,17 @@ end
 
 
 @doc raw"""
-    GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Float64},acce::Array{Float64}, neqs::Int64,
-        EBC_func::Union{Function, Nothing}=nothing, FBC_func::Union{Function, Nothing}=nothing,
-        Body_func::Union{Function,Nothing}=nothing, Edge_func::Union{Function,Nothing}=nothing)
+    GlobalData(state::Union{Array{Float64,1},Missing},Dstate::Union{Array{Float64,1},Missing},
+            velo::Union{Array{Float64,1},Missing},acce::Union{Array{Float64,1},Missing}, 
+            neqs::Int64,
+            EBC_func::Union{Function, Nothing}=nothing, FBC_func::Union{Function, Nothing}=nothing,
+            Body_func::Union{Function,Nothing}=nothing, Edge_func::Union{Function,Nothing}=nothing)
+
+The size of `state`, `Dstate`, `velo`, `acce` must be `neqs`, i.e., the active DOFs.
+If they are missing, they are treated as zeros. 
 """
-function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Float64},acce::Array{Float64}, 
+function GlobalData(state::Union{Array{Float64,1},Missing},Dstate::Union{Array{Float64,1},Missing},
+        velo::Union{Array{Float64,1},Missing},acce::Union{Array{Float64,1},Missing}, 
         neqs::Int64,
         EBC_func::Union{Function, Nothing}=nothing, FBC_func::Union{Function, Nothing}=nothing,
         Body_func::Union{Function,Nothing}=nothing, Edge_func::Union{Function,Nothing}=nothing)
@@ -86,6 +93,10 @@ function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Flo
     M = Float64[]
     Mlumped = Float64[]
     MID = Float64[]
+    state = coalesce(state, zeros(neqs))
+    Dstate = coalesce(state, zeros(neqs))
+    velo = coalesce(state, zeros(neqs))
+    acce = coalesce(state, zeros(neqs))
     GlobalData(state, Dstate, velo, acce, time, M, Mlumped, MID, EBC_func, FBC_func, Body_func, Edge_func)
 end
 
@@ -288,7 +299,6 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64,
     setConstantDirichletBoundary!(domain, EBC, g)
     #set constant(time-independent) force load boundary conditions
     setConstantNodalForces!(domain, FBC, f)
-
     assembleSparseMatrixPattern!(domain)
 
     domain
@@ -470,8 +480,13 @@ end
     updateStates!(domain::Domain, globaldat::GlobalData)
     update time-dependent Dirichlet boundary condition to globaldat.time
 
-At each time step, `updateStates!` needs to be called to update the full `state` and `Dstate` in `domain`
-from active ones in `globaldat`.
+Update `state` and `Dstate` in `domain`. This includes 
+
+- Copy state variable values for active DOFs from `globaldat`
+
+- Set time-dependent essential boundary conditions using `globaldat.EBC`
+
+The time-independent boundary conditions are inherented from last time step.
 """ 
 function updateStates!(domain::Domain, globaldat::GlobalData)
     
@@ -483,22 +498,22 @@ function updateStates!(domain::Domain, globaldat::GlobalData)
         push!(domain.history["acc"], copy(globaldat.acce))
     end
 
-    updateDomainStateBoundary!(domain, globaldat)
+    updateTimeDependentEssentialBoundaryCondition!(domain, globaldat)
     
     domain.Dstate[:] = domain.state
 end
 
 
 @doc """
-    updateDomainStateBoundary!(domain::Domain, globaldat::GlobalData)
+    updateTimeDependentEssentialBoundaryCondition!(domain::Domain, globaldat::GlobalData)
     
-If there exists time-dependent Dirichlet boundary conditions, `updateDomainStateBoundary!` must be called to update 
+If there exists time-dependent Dirichlet boundary conditions, `updateTimeDependentEssentialBoundaryCondition!` must be called to update 
 the boundaries in `domain`. This function is called by [`updateStates!`](@ref)
 
 This function updates `state` data in `domain`.
 """
-function updateDomainStateBoundary!(domain::Domain, globaldat::GlobalData)
-    if globaldat.EBC_func != nothing
+function updateTimeDependentEssentialBoundaryCondition!(domain::Domain, globaldat::GlobalData)
+    if globaldat.EBC_func ≠ nothing
         disp, _, _ = globaldat.EBC_func(globaldat.time) # user defined time-dependent boundary
         dof_id = 0
 
@@ -517,22 +532,17 @@ end
 
 
 @doc """
-    getExternalForce!(self::Domain, globaldat::GlobalData, fext::Union{Missing,Array{Float64}}=missing)
+    getExternalForce(self::Domain, globaldat::GlobalData, fext::Union{Missing,Array{Float64}}=missing)
 
-Computes external force vector at globaldat.time, 
-including both external force load and time-dependent Dirichlet boundary conditions.
-    
+Computes external force vector at `globaldat.time`, 
+This includes all the body force, external load, and internal force caused by acceleration.
 """
-function getExternalForce!(domain::Domain, globaldat::GlobalData, fext::Union{Missing,Array{Float64}}=missing)
-    if ismissing(fext)
-        fext = zeros(domain.neqs)
-    end
-
+function getExternalForce(domain::Domain, globaldat::GlobalData)
     #Update time-independent nodal force
-    fext[:] = domain.fext
+    fext = copy(domain.fext)
 
     #Update time-dependent nodal force
-    if globaldat.FBC_func != nothing
+    if !isnothing(globaldat.FBC_func)
         ID = domain.ID
         nodal_force = globaldat.FBC_func(globaldat.time) # user defined time-dependent boundary
         # @info nodal_force
@@ -551,16 +561,16 @@ function getExternalForce!(domain::Domain, globaldat::GlobalData, fext::Union{Mi
 
 
     #Update the acceleration effect from the time-dependent Dirichlet boundary condition
-    if globaldat.EBC_func != nothing        
+    if !isnothing(globaldat.EBC_func)        
         MID = globaldat.MID
         _, _, acce = globaldat.EBC_func(globaldat.time)
         fext -= MID * acce
     end
 
-    #Update time-dependent body force
+    #Update time-dependent and time-independent body force
     fbody = getBodyForce(domain, globaldat, globaldat.time)
 
-    #Update time-dependent edge traction force
+    #Update time-dependent and time-independent edge traction force
     fedge = getEdgeForce(domain, globaldat, globaldat.time)
     
     fext + fbody + fedge
@@ -604,12 +614,12 @@ end
 
 
 @doc raw"""
-    getEdgeForce(domain::Domain, globdat::GlobalData)
+    getEdgeForce(domain::Domain, globdat::GlobalData, time::Float64)
 
-Computes the body force vector $F_\mathrm{body}$ of length `neqs`
+Computes the edge force vector $F_\mathrm{edge}$ defined in `domain.edge_traction_data`
 - `globdat`: GlobalData
 - `domain`: Domain, finite element domain, for data structure
-- `Δt`:  Float64, current time step size
+- `time`:  Float64, current time step size
 """
 function getEdgeForce(domain::Domain, globdat::GlobalData, time::Float64)
     Fedge = zeros(Float64, domain.neqs)

@@ -60,7 +60,7 @@ end
 globaldata = GlobalData(state, Dstate, velo, acce, domain.neqs, EBC_func, FBC_func,Body_func, Edge_func)
 
 d0 = zeros(2domain.nnodes)
-Fext = getExternalForce!(domain, globaldata)
+Fext = getExternalForce(domain, globaldata)
 
 H = constant(domain.elements[1].mat[1].H)
 

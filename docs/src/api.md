@@ -44,7 +44,7 @@ assembleInternalForce
 assembleStiffAndForce
 assembleMassMatrix!
 getBodyForce
-getExternalForce!
+getExternalForce
 ```
 
 ## State Updates
@@ -56,7 +56,7 @@ commitHistory
 setConstantDirichletBoundary!
 setConstantNodalForces!
 updateStates!
-updateDomainStateBoundary!
+updateTimeDependentEssentialBoundaryCondition!
 ```
 
 ## Solvers

@@ -523,7 +523,7 @@ Implicit solver for Ma + C v + R(u) = P
       Δ∂∂u = Array{Float64}(undef, neqs)
       res = Array{Float64}(undef, neqs)
       fint = Array{Float64}(undef, neqs)
-      fext = Array{Float64}(undef, neqs)
+      fext = zeros(neqs)
       output = Array{Float64}(undef, neles*ngps_per_elem, 3*nstrain,  nstrain) 
       
       Ni, i = 0.0, 1
@@ -538,9 +538,9 @@ Implicit solver for Ma + C v + R(u) = P
         failSafeTime =  globdat.time 
         globdat.time  += (1 - αf)*Δt
         
-        updateDomainStateBoundary!(domain, globdat)
+        updateTimeDependentEssentialBoundaryCondition!(domain, globdat)
         
-        getExternalForce!(domain, globdat, fext)
+        fext = getExternalForce(domain, globdat)
         
         ∂∂up[:] = globdat.acce
         #∂∂up[:] .= 0.0
@@ -748,7 +748,7 @@ Implicit solver for Ma + C v + R(u) = P
       Δ∂∂u = Array{Float64}(undef, neqs)
       res = Array{Float64}(undef, neqs)
       fint = Array{Float64}(undef, neqs)
-      fext = Array{Float64}(undef, neqs)
+      fext = zeros(neqs)
       output = Array{Float64}(undef, neles*ngps_per_elem, 3*nstrain,  nstrain) 
       
 
@@ -775,9 +775,9 @@ Implicit solver for Ma + C v + R(u) = P
         failSafeTime =  globdat.time 
         globdat.time  += (1 - αf)*Δt
         
-        updateDomainStateBoundary!(domain, globdat)
+        updateTimeDependentEssentialBoundaryCondition!(domain, globdat)
         
-        getExternalForce!(domain, globdat, fext)
+        fext = getExternalForce(domain, globdat)
         
         ∂∂up[:] = globdat.acce
         #∂∂up[:] .= 0.0

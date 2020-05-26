@@ -1,6 +1,35 @@
 # Solvers
 
-NNFEM has two classes of solvers depending on whether differentiability is required. The first type of solvers does not support automatic differentiation, and is implemented using pure Julia. Therefore, the capability of these solvers is not restricted to the availability of differentiable kernels. Currently, the following solvers are implemented:
+There are two types of solvers: **AD-free** solvers, which does not support automatic differentiation but in general more efficient due to less bookkeeping; and **AD-capable** solvers, which has automatic differentiation so you can use them to solve inverse problems.
+
+## AD-free Solvers
+
+AD-free solvers are located in `src/fem/solvers/Solver.jl` and `src/fem/solver/SolverV2.jl`. These solvers are implemented in pure Julia. 
+
+* [`LinearStaticSolver`](@ref)
+
+Consider a static linear elasticity problem 
+
+$$\begin{aligned}
+\text{div}\sigma &= f & (x,y) \in \Omega\\ 
+\sigma &= H\epsilon \\ 
+u(x,y) &= u_0(x,y) & (x,y) \in \partial \Omega
+\end{aligned}$$
+
+on a unit square domain $\Omega$. We can compare the result with PoreFlow.jl. 
+
+```@eval 
+using Markdown
+Markdown.parse("```julia\\n"*String(read("../../test/solvers/linearstatic.jl"))*"```")
+```
+
+Here shows the result for PoreFlow (left: PoreFlow, right: Exact)
+
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/ADCME/PoreFlow_static_linear.png?raw=true)
+
+Here shows the result for NNFEM (left: NNFEM, right: Exact)
+
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/ADCME/NNFEM_static_linear.png?raw=true)
 
 * [`ExplicitSolverStep`](@ref)
 
@@ -8,14 +37,22 @@ NNFEM has two classes of solvers depending on whether differentiability is requi
 
 * [`GeneralizedAlphaSolverStep`](@ref)
 
-The time dependent solvers only carries out one time step advance. Therefore, in practice, users need to advance the states in time. For example,
-```julia
-for i = 1:NT
-    global globaldata, domain = ExplicitSolverStep(globaldata, domain, Δt)
-end
-```
+## AD-capable Solvers
 
-The second type of solvers supports automatic differentiation. It is implemented using `while_loop` in ADCME. Users do not need to advance in time themselves. These solvers in include:
+AD-capable solver are located in `src/adutils/solvers.jl`. These solvers are implemented with highly optimized C++ kernels. The usage of these solvers are different from AD-free solvers, where all data structures are wrapped in `domain` and `globaldata`. Here users need to provide variables such as displacement, velocity, acceleration, stress, strain, etc., explicitly to the solvers. To this end, the following utiltity functions are provided: 
+
+
+
+* [`compute_boundary_info`](@ref)
+
+* [`compute_external_force`](@ref)
+
+* [`ExplicitSolverTime`](@ref)
+
+* [`GeneralizedAlphaSolverTime`](@ref)
+
+A list of available:
+
 
 * [`ExplicitSolver`](@ref)
 
@@ -25,13 +62,7 @@ The second type of solvers supports automatic differentiation. It is implemented
 
 * [`ImplicitStaticSolver`](@ref)
 
-These solvers require users to prepare the external load vectors, boundary conditions, etc. To this end, NNFEM provides a set of utility functions that help compute these required quantities.
 
-* [`ExplicitSolverTime`](@ref)
 
-* [`compute_boundary_info`](@ref)
 
-* [`compute_external_force`](@ref)
-
-* [`GeneralizedAlphaSolverTime`](@ref)
 

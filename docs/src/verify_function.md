@@ -44,7 +44,7 @@ fext = compute_external_force(domain, globaldata, ts)
 for i = 1:NT
     t = ts[i]
     globaldata.time = t
-    Fext[i,:] = getExternalForce!(domain, globaldata)
+    Fext[i,:] = getExternalForce(domain, globaldata)
 end
 @show maximum(abs.(fext-Fext))
 ```

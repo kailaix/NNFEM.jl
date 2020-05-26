@@ -94,7 +94,7 @@ acce =  zeros(domain.neqs)
 globdat = GlobalData(state, Dstate, velo, acce, domain.neqs, gt, ft, bt)
 
 assembleMassMatrix!(globdat, domain)
-updateDomainStateBoundary!(domain,globdat)
+updateTimeDependentEssentialBoundaryCondition!(domain,globdat)
 updateStates!(domain, globdat)
 
 

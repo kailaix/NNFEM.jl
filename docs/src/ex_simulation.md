@@ -93,7 +93,7 @@ function ExplicitSolverStep(globdat::GlobalData, domain::Domain, Δt::Float64)
     ∂∂u = globdat.acce[:]
 
     globdat.time  += Δt
-    fext = getExternalForce!(domain, globdat)
+    fext = getExternalForce(domain, globdat)
 
     u += Δt*∂u + 0.5*Δt*Δt*∂∂u
     ∂u += 0.5*Δt * ∂∂u
@@ -138,7 +138,7 @@ $$M_{II} {\ddot \mathbf{u}}_I + M_{ID} \ddot \mathbf{u}_D + K_{I:} \mathbf{u} = 
 
 Here $I$ stands for the active DOF, and $D$ stands for **time-dependent** Dirichlet boundary condition DOF. Note $\ddot\mathbf{u} = \mathbf{0}$ for time-independent Dirichlet nodes. 
 
-[`assembleMassMatrix!`](@ref) computes and stores `M_{II}` and `M_{ID}` in [`GlobalData`](@ref). In the time stepping, when [`getExternalForce!`](@ref) is called, $M_{ID} \ddot \mathbf{u}_D$ is computed and substracted from right hand side. 
+[`assembleMassMatrix!`](@ref) computes and stores `M_{II}` and `M_{ID}` in [`GlobalData`](@ref). In the time stepping, when [`getExternalForce`](@ref) is called, $M_{ID} \ddot \mathbf{u}_D$ is computed and substracted from right hand side. 
 
 For the stiffness matrix $K_{I:} \mathbf{u}$, in every iteration, given a candidate $\mathbf{u}$, [`assembleStiffAndForce`](@ref) computes 
 
