@@ -2,11 +2,11 @@
 #include "adept_arrays.h"
 #include <mutex>
 #include <eigen3/Eigen/Core>
-std::mutex mu;  
+std::mutex mu0;  
 using namespace adept;
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
-void forward(double *stress, const double *strain, const double *strain_rate, const double *coef, int n){
+void forward_IsotropicTwo(double *stress, const double *strain, const double *strain_rate, const double *coef, int n){
   MatrixXd A(2,2), B(2,2), I(2,2);
   I << 1.0, 0.0, 0.0, 1.0;
   for(int i=0;i<n;i++){
@@ -33,11 +33,11 @@ void forward(double *stress, const double *strain, const double *strain_rate, co
 }
 
 
-void backward(
+void forward_IsotropicTwo(
   double *grad_strain, double *grad_strain_rate, double *grad_coef, 
   const double *grad_stress, 
   const double *stress, const double *strain, const double *strain_rate, const double *coef_ipt, int n){
-  const std::lock_guard<std::mutex> lock(mu);
+  const std::lock_guard<std::mutex> lock(mu0);
   Stack stack;
   aVector coef(9);
   for(int i=0;i<9;i++) grad_coef[i] = 0.0;

@@ -77,7 +77,7 @@ public:
 
     // TODO:
 
-    forward(fint_tensor, stress_tensor);
+    forward_SmallContinuumFint(fint_tensor, stress_tensor);
   }
 };
 REGISTER_KERNEL_BUILDER(Name("SmallContinuumFint").Device(DEVICE_CPU), SmallContinuumFintOp);
@@ -132,7 +132,7 @@ public:
 
     // TODO:
 
-    backward(
+    forward_SmallContinuumFint(
       grad_stress_tensor, grad_fint_tensor,
       fint_tensor, stress_tensor);
     

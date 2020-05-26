@@ -11,6 +11,7 @@ using SparseArrays
 using ForwardDiff
 using Random
 using ADCMEKit
+using Libdl
 
 animation = PyNULL()
 colors = PyNULL()

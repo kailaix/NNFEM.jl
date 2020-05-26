@@ -85,7 +85,7 @@ public:
     // implement your forward function here 
 
     // TODO:
-    forward(ii_tensor, jj_tensor, vv_tensor, k_tensor);
+    forward_SmallContinuumStiffness1(ii_tensor, jj_tensor, vv_tensor, k_tensor);
 
   }
 };
@@ -148,7 +148,7 @@ public:
     // implement your backward function here 
 
     // TODO:
-     backward(
+     forward_SmallContinuumStiffness1(
       grad_k_tensor, grad_vv_tensor, vv_tensor, k_tensor);
     
   }

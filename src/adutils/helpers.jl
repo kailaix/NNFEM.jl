@@ -6,11 +6,14 @@ init_nnfem(domain::Domain)
 Prepares `domain` for use in custom operators.
 """
 function init_nnfem(domain::Domain)
-    LIB = joinpath(@__DIR__, "../../deps/CustomOp/DataStructure/build/libdata")
+    LIB = joinpath(@__DIR__, "../../deps/CustomOp/build/libDataLib")
 
     if Sys.iswindows()
-        LIB = joinpath(@__DIR__, "../../deps/CustomOp/DataStructure/build/data_win")
+        LIB = joinpath(@__DIR__, "../../deps/CustomOp/build/DataLib")
     end
+
+    LIB = abspath(LIB)
+    tf.load_op_library(LIB*"."*dlext) # ensure that the tensorflow library is first loaded
     
     @eval begin 
         ccall((:init_mesh, $LIB), Cvoid, ())

@@ -1,4 +1,4 @@
-void forward(double *stress,const double *coef, const double*strain, int N){
+void forward_Isotropic(double *stress,const double *coef, const double*strain, int N){
   for(int i=0;i<N;i++){
     double s0 = coef[3*i], s1 = coef[3*i+1], s2 = coef[3*i+2];
     double a1 = strain[3*i], a2 = strain[3*i+1], a3 = strain[3*i+2]/2;
@@ -8,7 +8,7 @@ void forward(double *stress,const double *coef, const double*strain, int N){
   }
 }
 
-void backward(
+void forward_Isotropic(
   double *grad_coef, double *grad_strain, 
   const double * grad_stress,
   const double *stress,const double *coef, const double*strain, int N

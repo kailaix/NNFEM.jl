@@ -20,7 +20,7 @@ $$\left[\frac{\partial g}{\partial \sigma}, \frac{\partial f}{\partial \sigma}, 
 function consistent_tangent_matrix(inputs::Union{Array{Float64, 2}, PyObject},H::Union{Array{Float64,2}, PyObject})
     @assert size(inputs,2)==7
     @assert size(H,1)==size(H,2)==3
-    plasticity_ = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/Plasticity/build/libPlasticity","plasticity")
+    plasticity_ = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/build/libDataLib","plasticity")
     inputs,H = convert_to_tensor([inputs,H], [Float64,Float64])
     out = plasticity_(inputs,H)
     set_shape(out, (size(inputs, 1), 3, 3))
@@ -48,7 +48,7 @@ where $S_{ij}$ is the $i$-th row and $j$-th column of `strain`
 function isotropic_function(coef::Union{Array{Float64,2}, PyObject},strain::Union{Array{Float64,2}, PyObject})
     @assert size(strain,2)==size(coef,2)==3
     @assert size(coef,1)==size(strain,1)
-    isotropic_ = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/Isotropic/build/libIsotropic","isotropic")
+    isotropic_ = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/build/libDataLib","isotropic")
     coef,strain = convert_to_tensor([coef,strain], [Float64,Float64])
     out = isotropic_(coef,strain)
     set_shape(out, (size(coef,1), 3))
@@ -73,7 +73,7 @@ The input is $N\times 3$ and the output is $N\times 2 \times 2$
 """
 function strain_voigt_to_tensor(inp::Union{Array{Float64,2}, PyObject})
     @assert size(inp,2)==3
-    tensor_rep_ = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/TensorRep/build/libTensorRep","tensor_rep")
+    tensor_rep_ = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/build/libDataLib","tensor_rep")
     inp = convert_to_tensor([inp], [Float64]); inp = inp[1]
     set_shape(tensor_rep_(inp), (size(inp,1), 2,2))
 end
@@ -106,7 +106,7 @@ Here
 function bi_isotropic_function(coef::Union{Array{Float64,2}, PyObject},strain::Union{Array{Float64,2}, PyObject},
     strainrate::Union{Array{Float64,2}, PyObject})
     @assert size(coef, 2)==9
-    isotropic_two_ = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/IsotropicTwo/build/libIsotropicTwo","isotropic_two")
+    isotropic_two_ = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/build/libDataLib","isotropic_two")
     coef,strain,strainrate = convert_to_tensor([coef,strain,strainrate], [Float64,Float64,Float64])
     T = isotropic_two_(coef,strain,strainrate)
     set_shape(T, (size(strain, 1), 3))

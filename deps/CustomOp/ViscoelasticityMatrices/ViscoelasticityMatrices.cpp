@@ -104,7 +104,7 @@ public:
 
     // implement your forward function here 
 
-    forward(s_tensor, h_tensor, mu_tensor, eta_tensor, lambda_tensor, *dt_tensor);
+    forward_ViscoelasticityMatrices(s_tensor, h_tensor, mu_tensor, eta_tensor, lambda_tensor, *dt_tensor);
 
   }
 };
@@ -194,7 +194,7 @@ public:
     grad_mu->flat<double>().setZero();
     grad_eta->flat<double>().setZero();
     grad_lambda->flat<double>().setZero();
-        backward(
+        forward_ViscoelasticityMatrices(
           grad_mu_tensor, grad_eta_tensor, grad_lambda_tensor,
           grad_s_tensor, grad_h_tensor,
           s_tensor, h_tensor, mu_tensor, eta_tensor, lambda_tensor, *dt_tensor);

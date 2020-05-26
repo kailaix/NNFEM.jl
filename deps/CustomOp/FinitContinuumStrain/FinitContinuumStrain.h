@@ -1,6 +1,6 @@
 #include "data.h"
 
-void forward(double *strain, const double *state){
+void forward_FinitContinuumStrain(double *strain, const double *state){
   int idx = 0;
   int DOF = domain.nnodes;
   for(int i=0;i<mesh.size();i++){
@@ -28,7 +28,7 @@ void forward(double *strain, const double *state){
   }
 }
 
-void backward(
+void forward_FinitContinuumStrain(
    double *grad_state,
   const double *grad_strain,
   const double *strain, const double *state){

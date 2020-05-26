@@ -87,7 +87,7 @@ public:
     // implement your forward function here 
 
     // TODO:
-    forward(stress_tensor, coef_tensor, strain_tensor, N);
+    forward_Isotropic(stress_tensor, coef_tensor, strain_tensor, N);
 
   }
 };
@@ -151,7 +151,7 @@ public:
 
     // TODO:
     int N = coef_shape.dim_size(0);
-    backward(grad_coef_tensor, grad_strain_tensor, grad_stress_tensor, stress_tensor, coef_tensor, strain_tensor, N);
+    forward_Isotropic(grad_coef_tensor, grad_strain_tensor, grad_stress_tensor, stress_tensor, coef_tensor, strain_tensor, N);
     
   }
 };

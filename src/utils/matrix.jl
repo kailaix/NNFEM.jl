@@ -68,7 +68,7 @@ function spd_H(o::PyObject, H0::Array{Float64,2})
     if size(o,2)!=3
         error("NNFEM: second dimension of `o` must be 3")
     end
-    spd_op = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/SPDOp/build/libSPDOp", "spd_op")
+    spd_op = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/build/libDataLib", "spd_op")
     ret = spd_op(constant(H0), o)
   
     # ret.set_shape((-1,3,3))
@@ -114,7 +114,7 @@ function spd_Cholesky(o::PyObject)
         error("NNFEM: second dimension of `o` must be 6")
     end
   
-    chol_op = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/CholOp/build/libCholOp", "chol_op")
+    chol_op = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/build/libDataLib", "chol_op")
     ret = chol_op(o)
    
     tf.reshape(ret, (-1,3,3))
@@ -151,7 +151,7 @@ function spd_Chol_Orth(o::PyObject)
         error("NNFEM: second dimension of `o` must be 4")
     end
     
-    chol_orth_op = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/CholOrthOp/build/libCholOrthOp", "chol_orth_op")
+    chol_orth_op = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/build/libDataLib", "chol_orth_op")
     ret = chol_orth_op(o)
  
     tf.reshape(ret, (-1,3,3))
@@ -181,7 +181,7 @@ function spd_zero_to_H(o::PyObject, H0inv::Array{Float64,2})
         error("NNFEM: second dimension of `o` must be 4")
     end
 
-    chol_orth_op = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/CholOrthOp/build/libCholOrthOp", "chol_orth_op")
+    chol_orth_op = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/build/libDataLib", "chol_orth_op")
     ret = chol_orth_op(o)
 
     out = tf.reshape(ret, (-1,3,3))

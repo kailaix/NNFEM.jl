@@ -77,7 +77,7 @@ public:
     // implement your forward function here 
 
     // TODO:
-    forward(strain_tensor, state_tensor);
+    forward_FinitContinuumStrain(strain_tensor, state_tensor);
 
   }
 };
@@ -132,7 +132,7 @@ public:
     // implement your backward function here 
 
     // TODO:
-    backward(grad_state_tensor, grad_strain_tensor, strain_tensor, state_tensor);
+    forward_FinitContinuumStrain(grad_state_tensor, grad_strain_tensor, strain_tensor, state_tensor);
     
   }
 };

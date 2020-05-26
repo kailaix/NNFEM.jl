@@ -95,7 +95,7 @@ public:
     // implement your forward function here 
 
     // TODO:
-    forward(stress_tensor, strain_tensor, *c1_tensor, *c2_tensor, n);
+    forward_RivlinSaunders(stress_tensor, strain_tensor, *c1_tensor, *c2_tensor, n);
 
   }
 };
@@ -167,7 +167,7 @@ public:
 
     int n = strain_shape.dim_size(0);
     // TODO:
-    backward(
+    forward_RivlinSaunders(
       grad_strain_tensor, grad_c1_tensor, grad_c2_tensor,
       grad_stress_tensor,
       stress_tensor, strain_tensor, *c1_tensor, *c2_tensor, n);

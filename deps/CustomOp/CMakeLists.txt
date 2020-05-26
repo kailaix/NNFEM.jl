@@ -52,45 +52,14 @@ endif()
 include_directories(${TF_INC} ${HEADERS} ${EIGEN_INC} ${CMAKE_SOURCE_DIR}/DataStructure)
 link_directories(${TF_LIB} ${CMAKE_SOURCE_DIR}/DataStructure/build)
 include_directories(${LIBDIR}/Adept-2/include)
-include_directories(${LIBDIR}/Adept-2/include)
 find_library(ADEPT_LIB_FILE adept HINTS ${LIBDIR})
+find_library(LIBOPENBLAS openblas HINTS ${LIBDIR})
 message("ADEPT_LIB_FILE=${ADEPT_LIB_FILE}")
 
-set(LIBDIR_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp ViscoelasticityMatrices DataStructure
-  SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint FinitContinuumStrain FiniteContinuumFint
-  Plasticity Isotropic TensorRep IsotropicTwo RivlinSaunders SmallContinuumStiffness1)
-set(LIB_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp ViscoelasticityMatrices data
-  SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint FinitContinuumStrain FiniteContinuumFint
-  Plasticity Isotropic TensorRep IsotropicTwo RivlinSaunders SmallContinuumStiffness1)
+add_library(DataLib SHARED ${CMAKE_SOURCE_DIR}/CholOp/CholOp.cpp ${CMAKE_SOURCE_DIR}/CholOrthOp/CholOrthOp.cpp ${CMAKE_SOURCE_DIR}/DataStructure/data.cpp ${CMAKE_SOURCE_DIR}/FinitContinuumStrain/FinitContinuumStrain.cpp ${CMAKE_SOURCE_DIR}/FiniteContinuumFint/FiniteContinuumFint.cpp ${CMAKE_SOURCE_DIR}/FintComp/FintComp.cpp ${CMAKE_SOURCE_DIR}/Isotropic/Isotropic.cpp ${CMAKE_SOURCE_DIR}/IsotropicTwo/IsotropicTwo.cpp ${CMAKE_SOURCE_DIR}/OrthotropicOp/OrthotropicOp.cpp ${CMAKE_SOURCE_DIR}/Plasticity/Plasticity.cpp ${CMAKE_SOURCE_DIR}/RivlinSaunders/RivlinSaunders.cpp ${CMAKE_SOURCE_DIR}/SPDOp/SPDOp.cpp ${CMAKE_SOURCE_DIR}/SmallContinuumFint/SmallContinuumFint.cpp ${CMAKE_SOURCE_DIR}/SmallContinuumStiffness/SmallContinuumStiffness.cpp ${CMAKE_SOURCE_DIR}/SmallContinuumStiffness1/SmallContinuumStiffness1.cpp ${CMAKE_SOURCE_DIR}/SmallContinuumStrain/SmallContinuumStrain.cpp ${CMAKE_SOURCE_DIR}/SymOp/SymOp.cpp ${CMAKE_SOURCE_DIR}/TensorRep/TensorRep.cpp ${CMAKE_SOURCE_DIR}/ViscoelasticityMatrices/ViscoelasticityMatrices.cpp )
 
-# Copy and paste the following lines (no modification is required)
-list(LENGTH "LIBDIR_NAME" LIBLENGTH)
-message("Total number of libraries to make: ${LIBLENGTH}")
-MATH(EXPR LIBLENGTH "${LIBLENGTH}-1")
-foreach(IDX RANGE 0 ${LIBLENGTH})
-  list(GET LIBDIR_NAME ${IDX} _LIB_DIR)
-  list(GET LIB_NAME ${IDX} _LIB_NAME)
-  message("Compiling ${IDX}th library: ${_LIB_DIR}==>${_LIB_NAME}")
-  file(MAKE_DIRECTORY ${_LIB_DIR}/build)
-  add_library(${_LIB_NAME} SHARED ${_LIB_DIR}/${_LIB_NAME}.cpp)
-  set_property(TARGET ${_LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
-  set_target_properties(${_LIB_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/${_LIB_DIR}/build
-          RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/${_LIB_DIR}/build  ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/${_LIB_DIR}/build)
-  target_link_libraries(${_LIB_NAME} ${TF_LIB_FILE})
-endforeach(IDX)
-
-target_link_libraries(SmallContinuumStrain data)
-target_link_libraries(SmallContinuumStiffness data)
-target_link_libraries(SmallContinuumStiffness1 data)
-target_link_libraries(SmallContinuumFint data)
-target_link_libraries(FinitContinuumStrain data)
-target_link_libraries(ViscoelasticityMatrices data)
-target_link_libraries(FiniteContinuumFint data ${ADEPT_LIB_FILE} ${LIBOPENBLAS})
-target_link_libraries(Plasticity ${ADEPT_LIB_FILE} ${LIBOPENBLAS})
-target_link_libraries(IsotropicTwo ${ADEPT_LIB_FILE} ${LIBOPENBLAS})
-target_link_libraries(RivlinSaunders ${ADEPT_LIB_FILE} ${LIBOPENBLAS})
-
-
+set_target_properties(DataLib PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build  RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/build)
+target_link_libraries(DataLib ${TF_LIB_FILE} ${ADEPT_LIB_FILE} ${LIBOPENBLAS})
 
 
 

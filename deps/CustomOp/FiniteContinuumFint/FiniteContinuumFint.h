@@ -2,11 +2,11 @@
 #include "adept.h"
 #include "adept_arrays.h"
 #include <mutex>
-std::mutex mu;  
+std::mutex mu1;  
 using namespace adept;
 
 
-void forward(double *fint, const double *stress, const double*state){
+void forward_FiniteContinuumFint(double *fint, const double *stress, const double*state){
   int idx = 0;
   for(int i=0;i<domain.neqs;i++) fint[i] = 0.0;
   int DOF = domain.nnodes;
@@ -49,12 +49,12 @@ void forward(double *fint, const double *stress, const double*state){
 }
 
 
-void backward(
+void forward_FiniteContinuumFint(
    double *grad_stress,
    double *grad_state,
   const double *grad_fint,
   const double *fint, const double *stress, const double *state){
-  const std::lock_guard<std::mutex> lock(mu);
+  const std::lock_guard<std::mutex> lock(mu1);
   Stack stack;
   int idx = 0;
   int DOF = domain.nnodes;

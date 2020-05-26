@@ -1,5 +1,5 @@
 #include "../DataStructure/data.h"
-void forward(double *s, double *h, const double*mu_all, const double*eta_all, const double*lambda_all, double dt){
+void forward_ViscoelasticityMatrices(double *s, double *h, const double*mu_all, const double*eta_all, const double*lambda_all, double dt){
   int N = domain.ngauss;
   for(int i=0;i<N;i++){
     double mu = mu_all[i], eta = eta_all[i], lambda = lambda_all[i];
@@ -26,7 +26,7 @@ void forward(double *s, double *h, const double*mu_all, const double*eta_all, co
   }
 }
 
-void backward(
+void forward_ViscoelasticityMatrices(
   double *grad_mu_all, double *grad_eta_all, double *grad_lambda_all,
   const double *grad_s, const double *grad_h,
   const double *s, const double *h, const double*mu_all, const double*eta_all, const double*lambda_all, double dt){

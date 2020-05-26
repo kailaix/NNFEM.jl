@@ -59,7 +59,7 @@ public:
     // implement your forward function here 
 
     // TODO:
-    forward(y_tensor, x_tensor, n);
+    forward_CholOrthOp(y_tensor, x_tensor, n);
 
   }
 };
@@ -119,7 +119,7 @@ public:
     // implement your backward function here 
 
     // TODO:
-    backward(grad_x_tensor, grad_y_tensor, x_tensor, n);
+    forward_CholOrthOp(grad_x_tensor, grad_y_tensor, x_tensor, n);
     
   }
 };

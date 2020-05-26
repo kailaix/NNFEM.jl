@@ -1,4 +1,4 @@
-void forward(double *Fint, const double *fints, const int32*el_eqns, int32 ngs, int32 neqns_per_elem, int32 neqs){
+void forward_FintComp(double *Fint, const double *fints, const int32*el_eqns, int32 ngs, int32 neqns_per_elem, int32 neqs){
     for(int32 i=0;i<neqs;i++){
       Fint[i] = 0.0;
     }
@@ -12,7 +12,7 @@ void forward(double *Fint, const double *fints, const int32*el_eqns, int32 ngs, 
    }
 }
 
-void backward(double *fint_grad, const double *Fint_grad, const double *Fint, const double *fints, const int32*el_eqns, int32 ngs, int32 neqns_per_elem, int32 neqs){
+void forward_FintComp(double *fint_grad, const double *Fint_grad, const double *Fint, const double *fints, const int32*el_eqns, int32 ngs, int32 neqns_per_elem, int32 neqs){
   for(int32 i=0;i<ngs*neqns_per_elem;i++){
     fint_grad[i] = 0.0;
     // printf("fint initial, %d, %f\n", i, fint_grad[i]);

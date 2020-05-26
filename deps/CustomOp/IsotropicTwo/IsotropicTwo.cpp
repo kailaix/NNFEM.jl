@@ -95,7 +95,7 @@ public:
     // implement your forward function here 
 
     // TODO:
-    forward(stress_tensor, strain_tensor, strainrate_tensor, coef_tensor, n);
+    forward_IsotropicTwo(stress_tensor, strain_tensor, strainrate_tensor, coef_tensor, n);
 
   }
 };
@@ -167,7 +167,7 @@ public:
 
     // TODO:
     int n = strain_shape.dim_size(0);
-    backward(
+    forward_IsotropicTwo(
       grad_strain_tensor, grad_strainrate_tensor, grad_coef_tensor, grad_stress_tensor,
       stress_tensor, strain_tensor, strainrate_tensor, coef_tensor, n);
     

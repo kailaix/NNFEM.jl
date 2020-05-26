@@ -1,3 +1,4 @@
+using Revise
 using ADCME
 using PyCall
 using LinearAlgebra
@@ -6,11 +7,11 @@ using Random
 using NNFEM
 Random.seed!(233)
 
-function viscoelasticity_matrices(mu,eta,lambda,dt)
-    viscoelasticity_matrices_ = load_op_and_grad("./build/libViscoelasticityMatrices","viscoelasticity_matrices", multiple=true)
-    mu,eta,lambda,dt = convert_to_tensor(Any[mu,eta,lambda,dt], [Float64,Float64,Float64,Float64])
-    viscoelasticity_matrices_(mu,eta,lambda,dt)
-end
+# function viscoelasticity_matrices(mu,eta,lambda,dt)
+#     viscoelasticity_matrices_ = load_op_and_grad("./build/libViscoelasticityMatrices","viscoelasticity_matrices", multiple=true)
+#     mu,eta,lambda,dt = convert_to_tensor(Any[mu,eta,lambda,dt], [Float64,Float64,Float64,Float64])
+#     viscoelasticity_matrices_(mu,eta,lambda,dt)
+# end
 
 # TODO: specify your input parameters
 domain = example_domain(10,10,0.1)
@@ -37,7 +38,9 @@ for i = 1:N
         0.0 0.0 mu[i]
     ]
 end
-s, h = viscoelasticity_matrices(mu,eta,lambda,dt)
+# s, h = viscoelasticity_matrices(mu,eta,lambda,dt)
+s, h = compute_maxwell_viscoelasticity_matrices(mu,lambda,eta,dt)
+
 sess = Session(); init(sess)
 @show S0, H0 = run(sess, [s,h])
 @show maximum(abs.(S0-S))
@@ -52,7 +55,7 @@ sess = Session(); init(sess)
 # gradient check -- v
 function scalar_function(m)
     # return sum(viscoelasticity_matrices(mu,eta,lambda,dt)[2]^2)
-    return sum(viscoelasticity_matrices(mu,eta,m,dt)[2]^2)
+    return sum(compute_maxwell_viscoelasticity_matrices(mu,eta,m,dt)[2]^2)
 end
 
 # TODO: change `m_` and `v_` to appropriate values

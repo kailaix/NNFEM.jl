@@ -10,7 +10,7 @@ int forward_count(){
   return cnt;
 }
 
-void forward(int64 *ii, int64* jj, double *vv, const double *H){
+void forward_SmallContinuumStiffness1(int64 *ii, int64* jj, double *vv, const double *H){
   int idx = 0;
   int Hidx = 0;
   for(int e=0;e<mesh.size();e++){
@@ -44,7 +44,7 @@ void forward(int64 *ii, int64* jj, double *vv, const double *H){
 
 
 
-void backward(
+void forward_SmallContinuumStiffness1(
   double *grad_H,
   const double *grad_vv, 
   const double *vv, const double *H){

@@ -1,7 +1,7 @@
 #include "data.h"
 
 
-void forward(double *fint, const double *stress){
+void forward_SmallContinuumFint(double *fint, const double *stress){
   int idx = 0.0;
   for(int i=0;i<domain.neqs;i++) fint[i] = 0.0;
   for(int e=0;e<mesh.size();e++){
@@ -28,7 +28,7 @@ void forward(double *fint, const double *stress){
 }
 
 
-void backward(
+void forward_SmallContinuumFint(
    double *grad_stress,
   const double *grad_fint,
   const double *fint, const double *stress){
