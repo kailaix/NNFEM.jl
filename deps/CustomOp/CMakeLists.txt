@@ -4,7 +4,7 @@ set (CMAKE_CXX_STANDARD 11)
 
 
 
-execute_process(COMMAND julia -e "import ADCME; print(ADCME.__STR__)" OUTPUT_VARIABLE JL_OUT)
+execute_process(COMMAND ${JULIA} -e "import ADCME; print(ADCME.__STR__)" OUTPUT_VARIABLE JL_OUT)
 list(GET JL_OUT 0 BINDIR)
 list(GET JL_OUT 1 LIBDIR)
 list(GET JL_OUT 2 TF_INC)
@@ -56,13 +56,12 @@ include_directories(${LIBDIR}/Adept-2/include)
 find_library(ADEPT_LIB_FILE adept HINTS ${LIBDIR})
 message("ADEPT_LIB_FILE=${ADEPT_LIB_FILE}")
 
-set(LIBDIR_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp DataStructure 
+set(LIBDIR_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp ViscoelasticityMatrices DataStructure
   SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint FinitContinuumStrain FiniteContinuumFint
   Plasticity Isotropic TensorRep IsotropicTwo RivlinSaunders SmallContinuumStiffness1)
-set(LIB_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp data 
+set(LIB_NAME CholOp CholOrthOp FintComp OrthotropicOp SPDOp SymOp ViscoelasticityMatrices data
   SmallContinuumStrain SmallContinuumStiffness SmallContinuumFint FinitContinuumStrain FiniteContinuumFint
   Plasticity Isotropic TensorRep IsotropicTwo RivlinSaunders SmallContinuumStiffness1)
-
 
 # Copy and paste the following lines (no modification is required)
 list(LENGTH "LIBDIR_NAME" LIBLENGTH)
@@ -80,13 +79,12 @@ foreach(IDX RANGE 0 ${LIBLENGTH})
   target_link_libraries(${_LIB_NAME} ${TF_LIB_FILE})
 endforeach(IDX)
 
-target_compile_definitions(data PRIVATE WIN_EXPORT)
-
 target_link_libraries(SmallContinuumStrain data)
 target_link_libraries(SmallContinuumStiffness data)
 target_link_libraries(SmallContinuumStiffness1 data)
 target_link_libraries(SmallContinuumFint data)
 target_link_libraries(FinitContinuumStrain data)
+target_link_libraries(ViscoelasticityMatrices data)
 target_link_libraries(FiniteContinuumFint data ${ADEPT_LIB_FILE} ${LIBOPENBLAS})
 target_link_libraries(Plasticity ${ADEPT_LIB_FILE} ${LIBOPENBLAS})
 target_link_libraries(IsotropicTwo ${ADEPT_LIB_FILE} ${LIBOPENBLAS})

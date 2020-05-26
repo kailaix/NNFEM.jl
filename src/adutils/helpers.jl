@@ -9,7 +9,7 @@ function init_nnfem(domain::Domain)
     LIB = joinpath(@__DIR__, "../../deps/CustomOp/DataStructure/build/libdata")
 
     if Sys.iswindows()
-        LIB = joinpath(@__DIR__, "../../deps/CustomOp/DataStructure/build/data")
+        LIB = joinpath(@__DIR__, "../../deps/CustomOp/DataStructure/build/data_win")
     end
     
     @eval begin 
