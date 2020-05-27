@@ -57,6 +57,8 @@ subplot(224)
 visualize_scalar_on_scoped_body(out[domain.nnodes+1:end], zeros(size(domain.state)...), domain)
 
 @info "Solving using AD-capable solver..."
+domain = Domain(nodes, elements, 2, EBC, g, FBC, f)
+globaldata = GlobalData(missing, missing, missing, missing, domain.neqs, EBC_func, FBC_func, body_func)
 Fext = compute_external_force(globaldata, domain)
 d = LinearStaticSolver(globaldata, domain, domain.state, H, Fext)
 sess = Session(); init(sess)
