@@ -9,6 +9,7 @@ Reads a gmsh file `gmshfile` and return (nodes, elements) tuple.
 """
 function meshread(gmshfile::String)
     cnt = read(gmshfile, String)
+    cnt = replace(cnt, "\r"=>"")
     r = r"\$MeshFormat\n(\S*).*\n\$EndMeshFormat"s
     version = match(r, cnt)[1]
     println("Gmsh file version ... $version")
