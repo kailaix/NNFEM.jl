@@ -221,32 +221,32 @@ end
 
 Creating a finite element domain.
 
-    - `nodes`: coordinate array of all nodes, a `nnodes × 2` matrix
-    - `elements`: element array. Each element is a material struct, e.g., [`PlaneStrain`](@ref). 
-    - `ndims`: dimension of the problem space. For 2D problems, ndims = 2. 
-    - `EBC`:  `nnodes × ndims` integer matrix for essential boundary conditions
-      `EBC[n,d]`` is the displacement boundary condition of node `n`'s $d$-th freedom,
-      
-      ∘ -1: fixed (time-independent) Dirichlet boundary nodes
+- `nodes`: coordinate array of all nodes, a `nnodes × 2` matrix
+- `elements`: element array. Each element is a material struct, e.g., [`PlaneStrain`](@ref). 
+- `ndims`: dimension of the problem space. For 2D problems, ndims = 2. 
+- `EBC`:  `nnodes × ndims` integer matrix for essential boundary conditions
+    `EBC[n,d]`` is the displacement boundary condition of node `n`'s $d$-th freedom,
+    
+    ∘ -1: fixed (time-independent) Dirichlet boundary nodes
 
-      ∘ -2: time-dependent Dirichlet boundary nodes
+    ∘ -2: time-dependent Dirichlet boundary nodes
 
-    - `g`:  `nnodes × ndims` double matrix, values for fixed (time-independent) Dirichlet boundary conditions of node `n`'s $d$-th freedom,
-    - `FBC`: `nnodes × ndims` integer matrix for nodal force boundary conditions.
-      FBC[n,d] is the force load boundary condition of node n's dth freedom,
+- `g`:  `nnodes × ndims` double matrix, values for fixed (time-independent) Dirichlet boundary conditions of node `n`'s $d$-th freedom,
+- `FBC`: `nnodes × ndims` integer matrix for nodal force boundary conditions.
+    FBC[n,d] is the force load boundary condition of node n's dth freedom,
 
-      ∘ -1 means constant(time-independent) force load boundary nodes
+    ∘ -1 means constant(time-independent) force load boundary nodes
 
-      ∘ -2 means time-dependent force load boundary nodes
+    ∘ -2 means time-dependent force load boundary nodes
 
-    - `f`:  `nnodes × ndims` double matrix, values for constant (time-independent) force load boundary conditions of node n's $d$-th freedom,
+- `f`:  `nnodes × ndims` double matrix, values for constant (time-independent) force load boundary conditions of node n's $d$-th freedom,
 
-    - `Edge_Traction_Data`: `n × 3` integer matrix for natural boundary conditions.
-      Edge_Traction_Data[i,1] is the element id,
-      Edge_Traction_Data[i,2] is the local edge id in the element, where the force is exterted (should be on the boundary, but not required)
-      Edge_Traction_Data[i,3] is the force id, which should be consistent with the last component of the Edge_func in the Globdat
+- `Edge_Traction_Data`: `n × 3` integer matrix for natural boundary conditions.
+    Edge_Traction_Data[i,1] is the element id,
+    Edge_Traction_Data[i,2] is the local edge id in the element, where the force is exterted (should be on the boundary, but not required)
+    Edge_Traction_Data[i,3] is the force id, which should be consistent with the last component of the Edge_func in the Globdat
 
-    For time-dependent boundary conditions (`EBC` or `FBC` entries are -2), the corresponding `f` or `g` entries are not used.
+For time-dependent boundary conditions (`EBC` or `FBC` entries are -2), the corresponding `f` or `g` entries are not used.
 """
 function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64,
     EBC::Array{Int64}, g::Array{Float64}, FBC::Array{Int64}, 
@@ -285,19 +285,6 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64,
     domain
 end
 
-@doc """
-    In the constructor 
-    Update the node_to_point map 
-
-    - `self`: Domain, finit element domain
-    - 'npoints': Int64, number of points (each quadratical quad element has 4 points, npoints==nnodes, when porder==1)
-    - 'node_to_point': Int64[nnodes]:map from node number to point point, -1 means the node is not a geometry point
-
-""" 
-function setGeometryPoints!(self::Domain, npoints::Int64, node_to_point::Array{Int64})
-    self.npoints = npoints
-    self.node_to_point = node_to_point
-end
 
 
 
@@ -647,7 +634,7 @@ end
     - `el_nodes`: Int64[n], node array
 
     Return: Float64[n, ndims], the coordinates of these nodes
-""" ->
+"""
 function getCoords(domain::Domain, el_nodes::Array{Int64})
     return domain.nodes[el_nodes, :]
 end
@@ -655,13 +642,12 @@ end
 @doc """
     getDofs(domain::Domain, iele::Int64)   
 
-    Get the global freedom numbers of the element
-    - `domain`: Domain
-    - `iele`: Int64, element number
+Get the global freedom numbers of the element
+- `domain`: Domain
+- `iele`: Int64, element number
 
-    Return: Int64[], the global freedom numbers of the element (ordering in local element ordering)
-
-""" ->
+Return: Int64[], the global freedom numbers of the element (ordering in local element ordering)
+""" 
 function getDofs(domain::Domain, iele::Int64)    
     return domain.DOF[iele]
 end
@@ -682,9 +668,9 @@ end
 @doc """
     getEqns(domain::Domain, iele::Int64)
 
-Gets the equation numbers(active freedom numbers) of the element. 
+Gets the equation numbers (active freedom numbers) of the element. 
 This excludes both the time-dependent and time-independent Dirichlet boundary conditions. 
-""" ->
+""" 
 function getEqns(domain::Domain, iele::Int64)
     return domain.LM[iele]
 end
@@ -698,7 +684,7 @@ Get the displacements of several nodes (possibly in one element)
 - `el_nodes`: Int64[n], node array
 
 Return: Float64[n, ndims], the displacements of these nodes
-""" ->
+""" 
 function getState(domain::Domain, el_dofs::Array{Int64})
     return domain.state[el_dofs]
 end
@@ -906,3 +892,17 @@ function assembleSparseMatrixPattern!(self::Domain)
   end
 
 
+
+@doc """
+    In the constructor 
+    Update the node_to_point map 
+
+    - `self`: Domain, finit element domain
+    - 'npoints': Int64, number of points (each quadratical quad element has 4 points, npoints==nnodes, when porder==1)
+    - 'node_to_point': Int64[nnodes]:map from node number to point point, -1 means the node is not a geometry point
+
+""" 
+function setGeometryPoints!(self::Domain, npoints::Int64, node_to_point::Array{Int64})
+    self.npoints = npoints
+    self.node_to_point = node_to_point
+end
