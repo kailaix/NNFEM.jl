@@ -1,6 +1,6 @@
 export Domain,GlobalData,updateStates!,updateTimeDependentEssentialBoundaryCondition!,
     setConstantNodalForces!, setGeometryPoints!, setConstantDirichletBoundary!, getExternalForce,
-    commitHistory, getBodyForce, getEdgeForce, getNGauss
+    commitHistory, getBodyForce, getEdgeForce, getNGauss, getDofs
 
 
 @doc raw"""
@@ -123,7 +123,7 @@ Date structure for the computatational domain.
 
          ∘ >0 means the global equation number
 
-- `DOF`: a matrix of size `neles×ndims`, DOF(e,d) is the global freedom number of element e's d th freedom
+- `DOF`: a matrix of size `neles×ndims`, DOF(e,d) is the global freedom (including both active and inactive DOFs) number of element e's d th freedom.
 - `ID`:  a matrix of size `nnodes×ndims`. `ID(n,d)` is the equation number (active freedom number) of node n's $d$-th freedom, 
          
          ∘ -1 means fixed (time-independent) Dirichlet
@@ -154,25 +154,6 @@ Date structure for the computatational domain.
 - `time`: Float64, current time
 - `npoints`: Int64, number of points (each quadratical quad element has 4 points, npoints==nnodes, when porder==1)
 - `node_to_point`: Int64[nnodes]:map from node number to point point, -1 means the node is not a geometry point
-
-
-# Auxilliry Data Structures
-- `ii_stiff`: Int64[], first index of the sparse matrix representation of the stiffness matrix
-- `jj_stiff`: Int64[], second index of the sparse matrix representation of the stiffness matrix
-- `vv_stiff_ele_indptr`: Int64[], Int64[e] is the first index entry for the e's element of the sparse matrix representation of the stiffness matrix
-- `vv_stiff`: Float64[], values of the sparse matrix representation of the stiffness matrix
-
-- `ii_dfint_dstress`: Int64[], first index of the sparse matrix representation of the dfint_dstress matrix 
-- `jj_dfint_dstress`: Int64[], second index of the sparse matrix representation of the dfint_dstress matrix
-- `vv_dfint_dstress_ele_indptr`: Int64[], Int64[e] is the first index entry for the e's element of the sparse matrix representation of the dfint_dstress matrix
-- `vv_dfint_dstress`: Float64[], values of the sparse matrix representation of the dfint_dstress matrix 
-
-- `ii_dstrain_dstate`: Int64[], first index of the sparse matrix representation of the dstrain_dstate matrix
-- `jj_dstrain_dstate`: Int64[], second index of the sparse matrix representation of the dstrain_dstate matrix
-- `vv_dstrain_dstate_ele_indptr`: Int64[], Int64[e] is the first index entry for the e's element of the sparse matrix representation of the stiffness matrix
-- `vv_dstrain_dstate`: Float64[], values of the sparse matrix representation of the dstrain_dstate matrix
-
-- `history`: Dict{String, Array{Array{Float64}}}, dictionary between string and its time-histories quantity Float64[ntime][]
 """
 mutable struct Domain
     nnodes::Int64
@@ -659,26 +640,30 @@ end
 
 
 @doc """
+    getCoords(domain::Domain, el_nodes::Array{Int64})
+
     Get the coordinates of several nodes (possibly in one element)
-    - 'self': Domain
-    - 'el_nodes': Int64[n], node array
+    - `domain`: Domain
+    - `el_nodes`: Int64[n], node array
 
     Return: Float64[n, ndims], the coordinates of these nodes
 """ ->
-function getCoords(self::Domain, el_nodes::Array{Int64})
-    return self.nodes[el_nodes, :]
+function getCoords(domain::Domain, el_nodes::Array{Int64})
+    return domain.nodes[el_nodes, :]
 end
 
 @doc """
+    getDofs(domain::Domain, iele::Int64)   
+
     Get the global freedom numbers of the element
-    - 'self': Domain
-    - 'iele': Int64, element number
+    - `domain`: Domain
+    - `iele`: Int64, element number
 
     Return: Int64[], the global freedom numbers of the element (ordering in local element ordering)
 
 """ ->
-function getDofs(self::Domain, iele::Int64)    
-    return self.DOF[iele]
+function getDofs(domain::Domain, iele::Int64)    
+    return domain.DOF[iele]
 end
 
 @doc """
@@ -706,27 +691,67 @@ end
 
 
 @doc """
-    Get the displacements of several nodes (possibly in one element)
-    - 'self': Domain
-    - 'el_nodes': Int64[n], node array
+    getState(domain::Domain, el_dofs::Array{Int64})
 
-    Return: Float64[n, ndims], the displacements of these nodes
+Get the displacements of several nodes (possibly in one element)
+- `domain`: Domain
+- `el_nodes`: Int64[n], node array
+
+Return: Float64[n, ndims], the displacements of these nodes
 """ ->
-function getState(self::Domain, el_dofs::Array{Int64})
-    return self.state[el_dofs]
+function getState(domain::Domain, el_dofs::Array{Int64})
+    return domain.state[el_dofs]
 end
 
 @doc """
-    Get the displacements of several nodes (possibly in one element) at the previous time step
-    - 'self': Domain
-    - 'el_nodes': Int64[n], node array
+    getDstate(domain::Domain, el_dofs::Array{Int64})
+    
+Get the displacements of several nodes (possibly in one element) at the previous time step
+- `domain`: Domain
+- `el_nodes`: Int64[n], node array
 
-    Return: Float64[n, ndims], the displacements of these nodes at the previous time step
+Return: Float64[n, ndims], the displacements of these nodes at the previous time step
 """ ->
 
-function getDstate(self::Domain, el_dofs::Array{Int64})
-    return self.Dstate[el_dofs]
+function getDstate(domain::Domain, el_dofs::Array{Int64})
+    return domain.Dstate[el_dofs]
 end
+
+
+@doc raw"""
+    getGaussPoints(domain::Domain)
+
+Returns all Gauss points as a $n_g\times 2$ matrix, where $n_g$ is the total number of Gauss points.
+"""
+function getGaussPoints(domain::Domain)
+    v = []
+    for e in domain.elements
+        vg = getGaussPoints(e) 
+        push!(v, vg)
+    end 
+    vcat(v...)
+end
+
+@doc raw"""
+    getStrain(domain::Domain)
+
+Computes the strain from the `domain` data. The output is $n_g\times 3$ matrix, where $n_g$ is the total number of Gauss points. 
+Each row is the strain tensor $\begin{bmatrix} \epsilon_{xx} & \epsilon_{yy} & \gamma_{xy} \end{bmatrix}$
+"""
+function getStrain(domain::Domain)
+    E = Array{Array{Float64}}(undef, domain.neles)
+    for (k,e) in enumerate(domain.elements)
+        el_dof = getDofs(domain, k)
+        state = getState(domain, el_dof)
+        E[k], _ = getStrain(e, state)
+    end
+    vcat(E...)
+end
+
+
+#------------------------------------------------------------------------------------
+# Maybe useful in the future
+
 
 @doc """
     Compute constant stiff, dfint_dstress, dstrain_dstate matrix patterns
@@ -811,17 +836,3 @@ function assembleSparseMatrixPattern!(self::Domain)
   end
 
 
-  #----------------------------------------- utilities -------------------------------------------
-@doc raw"""
-    getGaussPoints(domain::Domain)
-
-Returns all Gauss points as a $n_g\times 2$ matrix, where $n_g$ is the total number of Gauss points.
-"""
-function getGaussPoints(domain::Domain)
-    v = []
-    for e in domain.elements
-        vg = getGaussPoints(e) 
-        push!(v, vg)
-    end 
-    vcat(v...)
-end

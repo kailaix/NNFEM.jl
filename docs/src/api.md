@@ -9,8 +9,11 @@ GlobalData
 ### Domain 
 ```@docs 
 getEqns
+getDofs
+getCoords
 getNGauss
 getGaussPoints
+getState
 ```
 
 ## Elements
