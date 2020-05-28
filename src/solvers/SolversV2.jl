@@ -5,12 +5,12 @@ export ExplicitSolverStep, GeneralizedAlphaSolverStep, ImplicitStaticSolver, Lin
 Central Difference explicit solver for `M a + fint(u) = fext(u)`. `a`, `v`, `u` are acceleration, velocity and displacement.
 
 ```math
-\begin{align}
+\begin{aligned}
 u_{n+1} =& u_n + dtv_n + dt^2/2 a_n \\
 v_{n+1} =& v_n + dt/2(a_n + a_{n+1}) \\
 M a_{n+1} + f^{int}(u_{n+1}) =& f^{ext}_{n+1} \\
 M a_{n+1} =& f^{ext}_{n+1} - f^{int}(u_{n+1}) \\
-\end{align}
+\end{aligned}
 ```
 
 !!! info 

@@ -182,11 +182,12 @@ As for '\alpha_m' and '\alpha_f'
 use the current states `a`, `v`, `u`, `time` in globdat, and update these stetes to next time step
 update domain history, when failsafe is true, and Newton's solver fails, nothing will be changed.
 
-You need to call SolverInitial! before the first time step, if f^{ext}_0 != 0.
-SolverInitial! updates a_0 in the globdat.acce
-a_0 = M^{-1}(- f^{int}(u_0) + f^{ext}_0)
+You need to call SolverInitial! before the first time step, if $f^{ext}_0 \neq 0$.
+`SolverInitial!` updates `a_0` in the `globdat.acce`
 
-We assume globdat.acce[:] = a_0 and so far initialized to 0
+$$a_0 = M^{-1}(- f^{int}(u_0) + f^{ext}_0)$$
+
+We assume `globdat.acce[:] = a_0` and so far initialized to 0
 We also assume the external force is conservative (it does not depend on the current deformation)
 """->
 function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, ε0 = 1e-8, maxiterstep=100, η = 1.0, failsafe = false)
