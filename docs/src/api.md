@@ -13,8 +13,10 @@ getDofs
 getCoords
 getNGauss
 getGaussPoints
-getState
-getStress
+getState(domain::Domain, el_dofs::Array{Int64})
+getStrain(domain::Domain)
+getDStrain(domain::Domain)
+getStress(domain::Domain, Δt::Float64 = 0.0; save_trace::Bool = false)
 ```
 
 ## Elements
