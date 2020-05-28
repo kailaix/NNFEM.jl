@@ -630,11 +630,11 @@ end
 @doc """
     getCoords(domain::Domain, el_nodes::Array{Int64})
 
-    Get the coordinates of several nodes (possibly in one element)
-    - `domain`: Domain
-    - `el_nodes`: Int64[n], node array
+Get the coordinates of several nodes (possibly in one element)
+- `domain`: Domain
+- `el_nodes`: Int64[n], node array
 
-    Return: Float64[n, ndims], the coordinates of these nodes
+Return: Float64[n, ndims], the coordinates of these nodes
 """
 function getCoords(domain::Domain, el_nodes::Array{Int64})
     return domain.nodes[el_nodes, :]
