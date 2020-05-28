@@ -1,6 +1,7 @@
 export Domain,GlobalData,updateStates!,updateTimeDependentEssentialBoundaryCondition!,
     setConstantNodalForces!, setGeometryPoints!, setConstantDirichletBoundary!, getExternalForce,
-    commitHistory, getBodyForce, getEdgeForce, getNGauss, getDofs, getDStrain
+    commitHistory, getBodyForce, getEdgeForce, getNGauss, getDofs, getDStrain, getCoords, getState,
+    getGaussPoints
 
 
 @doc raw"""

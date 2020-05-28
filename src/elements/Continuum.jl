@@ -17,7 +17,8 @@ $$\int_{e} \mathbf{f}(\mathbf{x})\cdot \delta \mathbf{u}(\mathbf{x}) d \mathbf{x
   = \int_{e} \mathbf{f}(\mathbf{\xi})\cdot \delta \mathbf{u}(\mathbf{\xi}) 
   |\frac{\partial \mathbf{x}}{\partial \mathbf{\xi}}| d \mathbf{\xi}$$
 
-todo force in the deformed domain
+!!! todo 
+    Add force in the deformed domain.
 """
 function getBodyForce(elem::Continuum, fvalue::Array{Float64,2})
     n = dofCount(elem)
@@ -70,7 +71,8 @@ $$\int_{s} \mathbf{f}(\mathbf{x})\cdot \delta \mathbf{u}(\mathbf{x}) d s
   = \int_{e} \mathbf{f}(\xi)\cdot \delta \mathbf{u}(\xi) 
   |\frac{\partial \mathbf{x}}{\partial \xi}| d \xi$$
 
-todo force in the deformed domain
+!!! todo 
+    This function imposes force in the undeformed domain. Add force in the deformed domain in the future.
 """
 function getEdgeForce(elem::Continuum, iedge::Int64, fvalue::Array{Float64,2})
     n = length(elem.elnodes)
