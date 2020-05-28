@@ -14,6 +14,7 @@ getCoords
 getNGauss
 getGaussPoints
 getState
+getStress
 ```
 
 ## Elements

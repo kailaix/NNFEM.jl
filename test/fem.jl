@@ -10,3 +10,11 @@ end
     E2 = eval_strain_on_gauss_pts(domain.state, 10,10,0.1)
     @test E≈E2
 end 
+
+@testset "getStress" begin
+    domain = example_domain(10,10,0.1)
+    domain.state = rand(domain.neqs)
+    E = getStrain(domain)
+    S = E*domain.elements[1].mat[1].H
+    @test getStress(domain)≈S
+end 

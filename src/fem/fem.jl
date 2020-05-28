@@ -1,6 +1,6 @@
 export Domain,GlobalData,updateStates!,updateTimeDependentEssentialBoundaryCondition!,
     setConstantNodalForces!, setGeometryPoints!, setConstantDirichletBoundary!, getExternalForce,
-    commitHistory, getBodyForce, getEdgeForce, getNGauss, getDofs
+    commitHistory, getBodyForce, getEdgeForce, getNGauss, getDofs, getDStrain
 
 
 @doc raw"""
@@ -746,6 +746,76 @@ function getStrain(domain::Domain)
         E[k], _ = getStrain(e, state)
     end
     vcat(E...)
+end
+
+@doc raw"""
+    getDStrain(domain::Domain)
+
+Computes the strain **at last time step** from the `domain` data. The output is $n_g\times 3$ matrix, where $n_g$ is the total number of Gauss points. 
+Each row is the strain tensor $\begin{bmatrix} \epsilon_{xx} & \epsilon_{yy} & \gamma_{xy} \end{bmatrix}$
+"""
+function getDStrain(domain::Domain)
+    E = Array{Array{Float64}}(undef, domain.neles)
+    for (k,e) in enumerate(domain.elements)
+        el_dof = getDofs(domain, k)
+        Dstate = getDstate(domain, el_dof)
+        E[k], _ = getDStrain(e, Dstate)
+    end
+    vcat(E...)
+end
+
+@doc raw"""
+    getStress(domain::Domain, Δt::Float64 = 0.0; save_trace::Bool = false)
+
+Returns the stress based on `domain.state` and `domain.Dstate`. If `save_trace` is true, 
+the stress is also saved to `domain.stress`, which is useful for visualization. 
+
+The output is $n_g\times 3$ matrix, where $n_g$ is the total number of Gauss points. 
+Each row is the strain tensor $\begin{bmatrix} \sigma_{xx} & \sigma_{yy} & \sigma_{xy} \end{bmatrix}$
+"""
+function getStress(domain::Domain, Δt::Float64 = 0.0; save_trace::Bool = false)
+    Ret = zeros(getNGauss(domain), 3)
+    local ∂E∂u, E, DE
+    l = 1
+    for (k,elem) in enumerate(domain.elements)
+        nnodes = length(elem.elnodes)
+        el_dof = getDofs(domain,k)
+        state = getState(domain, el_dof)
+        Dstate = getDstate(domain, el_dof)
+        u = state[1:nnodes]; v = state[nnodes+1:2*nnodes]
+        Du = Dstate[1:nnodes]; Dv = Dstate[nnodes+1:2*nnodes]
+
+        for k = 1:length(elem.weights)
+            # #@show "Gaussian point ", k
+            g1 = elem.dhdx[k][:,1]; g2 = elem.dhdx[k][:,2]
+            
+            ux = u'*g1; uy = u'*g2; vx = v'*g1; vy = v'*g2
+            Dux = Du'*g1; Duy = Du'*g2; Dvx = Dv'*g1; Dvy = Dv'*g2
+            
+            if isa(elem, SmallStrainContinuum)
+                ∂E∂u = [g1   zeros(nnodes)    g2;
+                        zeros(nnodes)    g2   g1;] 
+                E = [ux; vy; uy+vx]
+                DE = [Dux; Dvy; Duy+Dvx]
+            elseif isa(elem, FiniteStrainContinuum)
+                ∂E∂u = [g1+ux*g1 uy*g2    g2 + g2*ux+g1*uy;
+                vx*g1    g2+vy*g2 g1 + g1*vy+g2*vx;] 
+                E = [ux+0.5*(ux*ux+vx*vx); vy+0.5*(uy*uy+vy*vy); uy+vx+ux*uy+vx*vy]
+                DE = [Dux+0.5*(Dux*Dux+Dvx*Dvx); Dvy+0.5*(Duy*Duy+Dvy*Dvy); Duy+Dvx+Dux*Duy+Dvx*Dvy]
+            else 
+                error("NOT IMPLEMENTED")
+            end
+
+            S, dS_dE = getStress(elem.mat[k], E, DE, Δt)
+            Ret[l,:] = S 
+            l += 1
+
+            if save_trace
+                elem.stress[k] = S
+            end
+        end
+    end
+    Ret
 end
 
 
