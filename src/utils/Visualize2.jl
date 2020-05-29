@@ -7,9 +7,7 @@ visualize_scalar_on_scoped_body, visualize_total_deformation_on_scoped_body, vis
 
 Animation of von Mises stress tensors. 
 
-```@raw html 
-<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_von_mises_stress.gif?raw=true" width="50%"></center>
-```
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_von_mises_stress.gif?raw=true)
 """
 function visualize_von_mises_stress(domain::Domain; frames::Int64 = 20, kwargs...)
     NT = length(domain.history["stress"])
@@ -24,9 +22,7 @@ end
 
 Plot of von Mises stress tensors at time step `t_step`.
 
-```@raw html 
-<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_von_mises_stress_50.png?raw=true" width="50%"></center>
-```
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_von_mises_stress_50.png?raw=true)
 """
 function visualize_von_mises_stress(domain::Domain, t_step::Int64; kwargs...)
     domain2 = copy(domain)
@@ -40,9 +36,7 @@ end
 
 Animation of displacements using points. 
 
-```@raw html 
-<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_displacement.gif?raw=true" width="50%"></center>
-```
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_displacement.gif?raw=true)
 """
 function visualize_displacement(domain::Domain; scale_factor::Float64 = 1.0)
     u = hcat(domain.history["state"]...) * scale_factor
@@ -92,9 +86,7 @@ end
     visualize_displacement(nodes::Array{Float64,2}, elems::Array{Int64, 2})
 
 Visualizes the mesh.
-```@raw html 
-<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_mesh.png?raw=true" width="50%"></center>
-```
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_mesh.png?raw=true)
 """
 function visualize_mesh(nodes::Array{Float64,2}, elems::Array{Int64, 2})
     patches = PyObject[]
@@ -125,9 +117,7 @@ end
 
 Visualizes the boundary conditions. The boundary configuration is shown in the direction `direction`.
 
-```@raw html 
-<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_boundary.png?raw=true" width="50%"></center>
-```
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_boundary.png?raw=true)
 """
 function visualize_boundary(domain::Domain, direction::String="x")
     visualize_mesh(domain)
@@ -276,9 +266,7 @@ Visualizes the total deformation
 $$\sqrt{u_x^2 + u_y^2}$$
 
 
-```@raw html 
-<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_total_deformation_on_scoped_body.gif?raw=true" width="50%"></center>
-```
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_total_deformation_on_scoped_body.gif?raw=true)
 """
 function visualize_total_deformation_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
     scale_factor::Real = 1.0, frames::Int64 = 20)
@@ -296,9 +284,7 @@ end
 
 Similar to [`visualize_von_mises_stress`](@ref), but the domain can be a deformed body. 
 
-```@raw html 
-<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_von_mises_stress_on_scoped_body.gif?raw=true" width="50%"></center>
-```
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_von_mises_stress_on_scoped_body.gif?raw=true)
 """
 function visualize_von_mises_stress_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
     scale_factor::Real = 1.0, frames::Int64 = 20)

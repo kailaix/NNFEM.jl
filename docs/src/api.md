@@ -85,7 +85,7 @@ load_mesh
 ```
 
 ## Visualization
- ```@autodocs
+```@autodocs
 Modules = [NNFEM]
 Pages   = ["utils/Visualize2.jl"]
 ```
