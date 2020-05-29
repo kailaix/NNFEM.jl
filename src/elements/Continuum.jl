@@ -58,6 +58,8 @@ Returns the force imposed by boundary tractions.
 
 `fvalue` is a $n_{edge_gauss}\times 2$ matrix, which is ordered the same as the
     Gaussian points in undeformed parent edge element.
+
+```
     The element nodes are ordered as 
     #   4 ---- 3             #   4 --7-- 3
     #                        #   8   9   6 
@@ -65,6 +67,7 @@ Returns the force imposed by boundary tractions.
     for porder=1     or          porder=2
     iedge 1, 2, 3, 4 are (1,2), (2,3), (3,4), (4,1)
                     are (1,2,5), (2,3,6), (3,4,7), (4,1,8)
+```
 
 Returns the nodal force due to the traction on the iedge-th edge of the element
 $$\int_{s} \mathbf{f}(\mathbf{x})\cdot \delta \mathbf{u}(\mathbf{x}) d s 
@@ -139,6 +142,8 @@ end
 
 """
     getEdgeGaussPoints(elem::Continuum, iedge::Int64)
+
+```
     The element nodes are ordered as 
     #   4 ---- 3             #   4 --7-- 3
     #                        #   8   9   6 
@@ -146,6 +151,7 @@ end
     for porder=1     or          porder=2
     edge 1, 2, 3, 4 are (1,2), (2,3), (3,4), (4,1)
                     are (1,2,5), (2,3,6), (3,4,7), (4,1,8)
+```
 
 Returns the Gauss quadrature nodes of the element on its iedge-th edge in the undeformed domain
 """

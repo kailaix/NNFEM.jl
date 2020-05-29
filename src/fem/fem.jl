@@ -1,7 +1,7 @@
 export Domain,GlobalData,updateStates!,updateTimeDependentEssentialBoundaryCondition!,
     setConstantNodalForces!, setGeometryPoints!, setConstantDirichletBoundary!, getExternalForce,
     commitHistory, getBodyForce, getEdgeForce, getNGauss, getDofs, getDStrain, getCoords, getState,
-    getGaussPoints
+    getGaussPoints, getElems
 
 
 @doc raw"""
@@ -211,10 +211,16 @@ function Base.show(io::IO, z::Domain)
 end
 
 
-function Base.:copy(g::Union{GlobalData, Domain}) 
-    names = fieldnames(g)
+function Base.:copy(g::GlobalData) 
+    names = propertynames(g)
     args = [copy(getproperty(g, n)) for n in names]
     GlobalData(args...)
+end
+
+function Base.:copy(g::Domain) 
+    names = propertynames(g)
+    args = [copy(getproperty(g, n)) for n in names]
+    Domain(args...)
 end
 
 @doc raw"""
@@ -803,6 +809,19 @@ function getStress(domain::Domain, Δt::Float64 = 0.0; save_trace::Bool = false)
         end
     end
     Ret
+end
+
+@doc raw"""
+    getElems(domain::Domain)
+
+Returns the element connectivity matrix $n_e \times 4$. This function implicitly assumes that all elements are quadrilateral.
+"""
+function getElems(domain::Domain)
+    elem = zeros(Int64, domain.neles, 4)
+    for (k,e) in enumerate(domain.elements)
+        elem[k,:] = e.elnodes
+    end
+    return elem
 end
 
 

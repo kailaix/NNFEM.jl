@@ -86,6 +86,16 @@ function visualize_displacement(u::Array{Float64, 2}, domain::Domain)
     out
 end
 
+
+"""
+    visualize_displacement(domain::Domain)
+    visualize_displacement(nodes::Array{Float64,2}, elems::Array{Int64, 2})
+
+Visualizes the mesh.
+```@raw html 
+<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_mesh.png?raw=true" width="50%"></center>
+```
+"""
 function visualize_mesh(nodes::Array{Float64,2}, elems::Array{Int64, 2})
     patches = PyObject[]
     for i = 1:size(elems,1)
@@ -98,6 +108,7 @@ function visualize_mesh(nodes::Array{Float64,2}, elems::Array{Int64, 2})
     axis("scaled")
     xlabel("x")
     ylabel("y")
+    gca().invert_yaxis()
 end
 
 function visualize_mesh(domain::Domain) 
@@ -106,11 +117,18 @@ function visualize_mesh(domain::Domain)
         elements[k,:] = e.elnodes
     end
     visualize_mesh(domain.nodes, elements)
-    gca().invert_yaxis()
 end
 
 
+"""
+    visualize_boundary(domain::Domain, direction::String="x")
 
+Visualizes the boundary conditions. The boundary configuration is shown in the direction `direction`.
+
+```@raw html 
+<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_boundary.png?raw=true" width="50%"></center>
+```
+"""
 function visualize_boundary(domain::Domain, direction::String="x")
     visualize_mesh(domain)
     direction = direction == "x" ? 1 : 2;
