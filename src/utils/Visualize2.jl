@@ -6,9 +6,17 @@ visualize_scalar_on_scoped_body, visualize_total_deformation_on_scoped_body, vis
     visualize_von_mises_stress(domain::Domain)
 
 Animation of von Mises stress tensors. 
+
+```@raw html 
+<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_von_mises_stress.png?raw=true" width="50%"></center>
+```
 """
-function visualize_von_mises_stress(domain::Domain; frames::Int64 = 20)
-    visualize_von_mises_stress_on_scoped_body(zeros(domain.nnodes*2), domain; frames = frames)
+function visualize_von_mises_stress(domain::Domain; frames::Int64 = 20, kwargs...)
+    NT = length(domain.history["stress"])
+    if NT == 0 
+        error(ArgumentError("history[\"stress\"] is empty.")) 
+    end
+    visualize_von_mises_stress_on_scoped_body(zeros(NT+1, domain.nnodes*2), domain; frames = frames, kwargs...)
 end
 
 """
@@ -34,7 +42,6 @@ function visualize_von_mises_stress(domain::Domain, t_step::Int64)
                     cnt += 1
                 end
                 S[t, k] = mean(ss)
-            
         end
     end   
     
