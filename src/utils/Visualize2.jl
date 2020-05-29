@@ -3,12 +3,12 @@ visualize_scalar_on_scoped_body, visualize_total_deformation_on_scoped_body, vis
 
 
 """
-    visualize_von_mises_stress(domain::Domain)
+    visualize_von_mises_stress(domain::Domain; frames::Int64 = 20, kwargs...)
 
 Animation of von Mises stress tensors. 
 
 ```@raw html 
-<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_von_mises_stress.png?raw=true" width="50%"></center>
+<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_von_mises_stress.gif?raw=true" width="50%"></center>
 ```
 """
 function visualize_von_mises_stress(domain::Domain; frames::Int64 = 20, kwargs...)
@@ -20,51 +20,32 @@ function visualize_von_mises_stress(domain::Domain; frames::Int64 = 20, kwargs..
 end
 
 """
-    visualize_von_mises_stress(domain::Domain, t_step::Int64)
+    visualize_von_mises_stress(domain::Domain, t_step::Int64; kwargs...)
 
 Plot of von Mises stress tensors at time step `t_step`.
+
+```@raw html 
+<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_von_mises_stress_50.png?raw=true" width="50%"></center>
+```
 """
-function visualize_von_mises_stress(domain::Domain, t_step::Int64)
-    stress = domain.history["stress"]
-    S = zeros(length(stress), length(domain.elements))
-    x = zeros(length(domain.elements))
-    y = zeros(length(domain.elements))
-    for t = 1:length(stress)
-        cnt = 1
-        for (k,e) in enumerate(domain.elements)
-            ct = mean(domain.elements[k].coords, dims=1)
-            x[k], y[k] = ct[1,1], ct[1,2]
-            
-                ss = Float64[]
-                nstress = length(e.mat)
-                for p = 1:nstress
-                    push!(ss, postprocess_stress(stress[t][cnt, :] ,"vonMises"))
-                    cnt += 1
-                end
-                S[t, k] = mean(ss)
-        end
-    end   
-    
-    # function update(i)
-    # c = contour(φ[1,:,:], 10, cmap="jet", vmin=vmin,vmax=vmax)
-    close("all")
-    
-    xlabel("x")
-    ylabel("y")
-    tricontour(x, y, S[t_step,:], 15, linewidths=0.5, colors="k")
-    tricontourf(x, y, S[t_step,:], 15)
-    axis("scaled")
-    colorbar()
-    gca().invert_yaxis()
+function visualize_von_mises_stress(domain::Domain, t_step::Int64; kwargs...)
+    domain2 = copy(domain)
+    domain2.history["stress"] = [domain.history["stress"][t_step]]
+    visualize_von_mises_stress_on_scoped_body(zeros(1, domain2.nnodes*2), domain2; frames=1, kwargs...)
 end
 
 """
     visualize_displacement(domain::Domain)
+    visualize_displacement(u::Array{Float64, 2}, domain::Domain)
 
-Animation of displacements. 
+Animation of displacements using points. 
+
+```@raw html 
+<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_displacement.gif?raw=true" width="50%"></center>
+```
 """
-function visualize_displacement(domain::Domain)
-    u = hcat(domain.history["state"]...)
+function visualize_displacement(domain::Domain; scale_factor::Float64 = 1.0)
+    u = hcat(domain.history["state"]...) * scale_factor
     visualize_displacement(u, domain)
 end
 
@@ -210,6 +191,10 @@ end
 
 function visualize_scalar_on_scoped_body(s_all::Array{Float64, 2}, d_all::Array{Float64,2}, domain::Domain;
     scale_factor::Float64 = 1.0, frames::Int64 = 20)
+    if frames==1
+         visualize_scalar_on_scoped_body(s_all[1,:], d_all[1,:], domain; scale_factor = scale_factor)
+         return nothing
+    end
     n = matplotlib.colors.Normalize(vmin=minimum(s_all), vmax=maximum(s_all))
     cm = matplotlib.cm
     cmap = cm.jet
