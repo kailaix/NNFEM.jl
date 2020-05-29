@@ -179,11 +179,13 @@ end
 
 """
     visualize_scalar_on_scoped_body(d::Array{Float64}, domain::Domain)
+    visualize_scalar_on_scoped_body(s::Array{Float64, 1}, d::Array{Float64,1}, domain::Domain;
+        scale_factor::Float64 = 1.0)
 
-Plot the scalar on scoped body. 
+Plot the scalar on scoped body. For example, `s` can be the von Mises stress tensor. 
 """
 function visualize_scalar_on_scoped_body(s::Array{Float64, 1}, d::Array{Float64,1}, domain::Domain;
-        scale_factor::Float64 = 1.0)
+        scale_factor::Real = 1.0)
     n = matplotlib.colors.Normalize(vmin=minimum(s), vmax=maximum(s))
     cm = matplotlib.cm
     cmap = cm.jet
@@ -208,7 +210,7 @@ function visualize_scalar_on_scoped_body(s::Array{Float64, 1}, d::Array{Float64,
 end 
 
 function visualize_scalar_on_scoped_body(s_all::Array{Float64, 2}, d_all::Array{Float64,2}, domain::Domain;
-    scale_factor::Float64 = 1.0, frames::Int64 = 20)
+    scale_factor::Real = 1.0, frames::Int64 = 20)
     if frames==1
          visualize_scalar_on_scoped_body(s_all[1,:], d_all[1,:], domain; scale_factor = scale_factor)
          return nothing
@@ -264,8 +266,22 @@ function visualize_scalar_on_scoped_body(s_all::Array{Float64, 2}, d_all::Array{
     animate(update, Int64.(round.(LinRange(div(size(s_all,1), frames), size(s_all,1),frames))))
 end
 
-function visualize_total_deformation_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
+
+@doc raw"""
+    visualize_total_deformation_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
     scale_factor::Float64 = 1.0, frames::Int64 = 20)
+
+Visualizes the total deformation
+
+$$\sqrt{u_x^2 + u_y^2}$$
+
+
+```@raw html 
+<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_total_deformation_on_scoped_body.gif?raw=true" width="50%"></center>
+```
+"""
+function visualize_total_deformation_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
+    scale_factor::Real = 1.0, frames::Int64 = 20)
     s_all = d_all
     S = zeros(size(s_all,1), domain.nnodes)
     for i = 1:size(s_all,1)
@@ -274,8 +290,18 @@ function visualize_total_deformation_on_scoped_body(d_all::Array{Float64,2}, dom
     visualize_scalar_on_scoped_body(S, d_all, domain, scale_factor = scale_factor, frames=frames)
 end
 
+"""
+    visualize_von_mises_stress_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
+    scale_factor::Real = 1.0, frames::Int64 = 20)
+
+Similar to [`visualize_von_mises_stress`](@ref), but the domain can be a deformed body. 
+
+```@raw html 
+<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_von_mises_stress_on_scoped_body.gif?raw=true" width="50%"></center>
+```
+"""
 function visualize_von_mises_stress_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
-    scale_factor::Float64 = 1.0, frames::Int64 = 20)
+    scale_factor::Real = 1.0, frames::Int64 = 20)
     stress = domain.history["stress"]
     S = zeros(length(stress), length(domain.elements))
     x = zeros(length(domain.elements))

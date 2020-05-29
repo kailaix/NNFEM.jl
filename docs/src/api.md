@@ -81,9 +81,13 @@ SolverInitial
 
 ```@docs
 meshread
-visualize_von_mises_stress
-visualize_displacement
 load_mesh
+```
+
+## Visualization
+ ```@autodocs
+Modules = [NNFEM]
+Pages   = ["utils/Visualize2.jl"]
 ```
 
 ## Automatic Differentiation

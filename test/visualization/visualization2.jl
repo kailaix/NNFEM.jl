@@ -97,3 +97,11 @@ savefig(raw"C:\Users\kaila\Desktop\ADCMEImages\NNFEM\visualize_mesh.png")
 
 visualize_boundary(domain)
 savefig(raw"C:\Users\kaila\Desktop\ADCMEImages\NNFEM\visualize_boundary.png")
+
+d_ = hcat(domain.history["state"]...)'|>Array
+visualize_total_deformation_on_scoped_body(d_, domain; scale_factor=20)
+saveanim(p, raw"C:\Users\kaila\Desktop\ADCMEImages\NNFEM\visualize_total_deformation_on_scoped_body.gif")
+
+
+visualize_von_mises_stress_on_scoped_body(d_, domain; scale_factor=20)
+saveanim(p, raw"C:\Users\kaila\Desktop\ADCMEImages\NNFEM\visualize_von_mises_stress_on_scoped_body.gif")
