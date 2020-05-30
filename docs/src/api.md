@@ -3,7 +3,15 @@
 ## Core Data Structure
 ```@docs
 Domain
+Domain(nodes::Array{Float64}, elements::Array, ndims::Int64,
+    EBC::Array{Int64}, g::Array{Float64}, FBC::Array{Int64}, 
+    f::Array{Float64}, edge_traction_data::Array{Int64,2}=zeros(Int64,0,3))
 GlobalData
+GlobalData(state::Union{Array{Float64,1},Missing},Dstate::Union{Array{Float64,1},Missing},
+        velo::Union{Array{Float64,1},Missing},acce::Union{Array{Float64,1},Missing}, 
+        neqs::Int64,
+        EBC_func::Union{Function, Nothing}=nothing, FBC_func::Union{Function, Nothing}=nothing,
+        Body_func::Union{Function,Nothing}=nothing, Edge_func::Union{Function,Nothing}=nothing)
 ```
 
 ### Domain 
@@ -18,6 +26,9 @@ getStrain(domain::Domain)
 getDStrain(domain::Domain)
 getStress(domain::Domain, Δt::Float64 = 0.0; save_trace::Bool = false)
 getElems
+getStressHistory
+getStrainHistory
+getStateHistory
 ```
 
 ## Elements
