@@ -95,9 +95,9 @@ function GlobalData(state::Union{Array{Float64,1},Missing},Dstate::Union{Array{F
     Mlumped = Float64[]
     MID = Float64[]
     state = coalesce(state, zeros(neqs))
-    Dstate = coalesce(state, zeros(neqs))
-    velo = coalesce(state, zeros(neqs))
-    acce = coalesce(state, zeros(neqs))
+    Dstate = coalesce(Dstate, zeros(neqs))
+    velo = coalesce(velo, zeros(neqs))
+    acce = coalesce(acce, zeros(neqs))
     GlobalData(state, Dstate, velo, acce, time, M, Mlumped, MID, EBC_func, FBC_func, Body_func, Edge_func)
 end
 
