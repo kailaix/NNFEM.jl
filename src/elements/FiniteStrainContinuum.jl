@@ -72,6 +72,10 @@ function FiniteStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, pr
         mat = [PlaneStress(props) for i = 1:nGauss]
     elseif name=="PlaneStressPlasticity"
         mat = [PlaneStressPlasticity(props) for i = 1:nGauss]
+    elseif name=="PlaneStrainViscoelasticityProny"
+        mat = [PlaneStrainViscoelasticityProny(props) for i = 1:nGauss]
+    elseif name=="PlaneStressViscoelasticityProny"
+        mat = [PlaneStressViscoelasticityProny(props) for i = 1:nGauss]
     elseif name=="PlaneStressIncompressibleRivlinSaunders"
         mat = [PlaneStressIncompressibleRivlinSaunders(props) for i = 1:nGauss]
     elseif name=="NeuralNetwork2D"

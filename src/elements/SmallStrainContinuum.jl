@@ -73,6 +73,10 @@ function SmallStrainContinuum(coords::Array{Float64}, elnodes::Array{Int64}, pro
         mat = [Scalar1D(props) for i = 1:nGauss]
     elseif name=="ViscoelasticityMaxwell"
         mat = [ViscoelasticityMaxwell(props) for i = 1:nGauss]
+    elseif name=="PlaneStrainViscoelasticityProny"
+        mat = [PlaneStrainViscoelasticityProny(props) for i = 1:nGauss]
+    elseif name=="PlaneStressViscoelasticityProny"
+        mat = [PlaneStressViscoelasticityProny(props) for i = 1:nGauss]
     elseif name=="PlaneStress"
         mat = [PlaneStress(props) for i = 1:nGauss]
     elseif name=="PlaneStressPlasticityLawBased"

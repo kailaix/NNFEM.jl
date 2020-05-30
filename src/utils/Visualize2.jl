@@ -1,5 +1,6 @@
 export visualize_displacement, visualize_von_mises_stress, visualize_mesh, visualize_boundary,
-visualize_scalar_on_scoped_body, visualize_total_deformation_on_scoped_body, visualize_von_mises_stress_on_scoped_body
+visualize_scalar_on_scoped_body, visualize_total_deformation_on_scoped_body, visualize_von_mises_stress_on_scoped_body,
+visualize_x_deformation_on_scoped_body, visualize_y_deformation_on_scoped_body
 
 
 """
@@ -168,15 +169,24 @@ function visualize_boundary(domain::Domain, direction::String="x")
 end
 
 """
-    visualize_scalar_on_scoped_body(d::Array{Float64}, domain::Domain)
+    visualize_scalar_on_scoped_body(d::Array{Float64}, domain::Domain, kwargs...)
     visualize_scalar_on_scoped_body(s::Array{Float64, 1}, d::Array{Float64,1}, domain::Domain;
-        scale_factor::Float64 = 1.0)
+        scale_factor::Float64 = -1.0, kwargs...)
 
 Plot the scalar on scoped body. For example, `s` can be the von Mises stress tensor. 
 """
 function visualize_scalar_on_scoped_body(s::Array{Float64, 1}, d::Array{Float64,1}, domain::Domain;
-        scale_factor::Real = 1.0)
-    n = matplotlib.colors.Normalize(vmin=minimum(s), vmax=maximum(s))
+        scale_factor::Real = -1.0, kwargs...)
+    if scale_factor<0.0
+        scale_factor = min(
+            0.1 * (maximum(domain.nodes[:,1]) - minimum(domain.nodes[:,1]))/maximum(d[1:domain.nnodes]),
+            0.1 * (maximum(domain.nodes[:,2]) - minimum(domain.nodes[:,2]))/maximum(d[domain.nnodes+1:end])
+        )
+        @info "scale_factor automatically set to $scale_factor"
+    end
+    vmin = haskey(kwargs, :vmin) ? kwargs[:vmin] : minimum(s)
+    vmax = haskey(kwargs, :vmax) ? kwargs[:vmax] : maximum(s)
+    n = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
     cm = matplotlib.cm
     cmap = cm.jet
     m = cm.ScalarMappable(norm=n, cmap=cmap)
@@ -200,12 +210,23 @@ function visualize_scalar_on_scoped_body(s::Array{Float64, 1}, d::Array{Float64,
 end 
 
 function visualize_scalar_on_scoped_body(s_all::Array{Float64, 2}, d_all::Array{Float64,2}, domain::Domain;
-    scale_factor::Real = 1.0, frames::Int64 = 20)
+    scale_factor::Real = -1.0, frames::Int64 = 20, kwargs...)
+    if scale_factor<0.0
+        scale_factor = min(
+            0.1 * (maximum(domain.nodes[:,1]) - minimum(domain.nodes[:,1]))/maximum(d_all[:, 1:domain.nnodes]),
+            0.1 * (maximum(domain.nodes[:,2]) - minimum(domain.nodes[:,2]))/maximum(d_all[:, domain.nnodes+1:end])
+        )
+        @info "scale_factor automatically set to $scale_factor"
+    end
+
     if frames==1
-         visualize_scalar_on_scoped_body(s_all[1,:], d_all[1,:], domain; scale_factor = scale_factor)
+         visualize_scalar_on_scoped_body(s_all[1,:], d_all[1,:], domain; scale_factor = scale_factor, kwargs...)
          return nothing
     end
-    n = matplotlib.colors.Normalize(vmin=minimum(s_all), vmax=maximum(s_all))
+    vmin = haskey(kwargs, :vmin) ? kwargs[:vmin] : minimum(s_all)
+    vmax = haskey(kwargs, :vmax) ? kwargs[:vmax] : maximum(s_all)
+    n = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
+    n = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
     cm = matplotlib.cm
     cmap = cm.jet
     m = cm.ScalarMappable(norm=n, cmap=cmap)
@@ -269,25 +290,48 @@ $$\sqrt{u_x^2 + u_y^2}$$
 ![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_total_deformation_on_scoped_body.gif?raw=true)
 """
 function visualize_total_deformation_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
-    scale_factor::Real = 1.0, frames::Int64 = 20)
+    scale_factor::Real = 1.0, frames::Int64 = 20, kwargs...)
     s_all = d_all
     S = zeros(size(s_all,1), domain.nnodes)
     for i = 1:size(s_all,1)
         S[i,:] = @. sqrt( s_all[i,1:domain.nnodes]^2 + s_all[i,domain.nnodes+1:end]^2 ) 
     end
-    visualize_scalar_on_scoped_body(S, d_all, domain, scale_factor = scale_factor, frames=frames)
+    visualize_scalar_on_scoped_body(S, d_all, domain; scale_factor = scale_factor, frames=frames, kwargs...)
+end
+
+
+@doc raw"""
+    visualize_x_deformation_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
+    scale_factor::Real = 1.0, frames::Int64 = 20, kwargs...)
+
+Visualizes the $x$ directional displacement. 
+"""
+function visualize_x_deformation_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
+    scale_factor::Real = 1.0, frames::Int64 = 20, kwargs...)
+    visualize_scalar_on_scoped_body(d_all[:, 1:domain.nnodes], d_all, domain; scale_factor = scale_factor, frames=frames, kwargs...)
+end
+
+@doc raw"""
+    visualize_y_deformation_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
+    scale_factor::Real = 1.0, frames::Int64 = 20, kwargs...)
+
+Visualizes the $y$ directional displacement. 
+"""
+function visualize_y_deformation_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
+    scale_factor::Real = 1.0, frames::Int64 = 20, kwargs...)
+    visualize_scalar_on_scoped_body(d_all[:, domain.nnodes+1:end], d_all, domain; scale_factor = scale_factor, frames=frames, kwargs...)
 end
 
 """
     visualize_von_mises_stress_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
-    scale_factor::Real = 1.0, frames::Int64 = 20)
+    scale_factor::Real = -1.0, frames::Int64 = 20)
 
 Similar to [`visualize_von_mises_stress`](@ref), but the domain can be a deformed body. 
 
 ![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_von_mises_stress_on_scoped_body.gif?raw=true)
 """
 function visualize_von_mises_stress_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
-    scale_factor::Real = 1.0, frames::Int64 = 20)
+    scale_factor::Real = -1.0, frames::Int64 = 20, kwargs...)
     stress = domain.history["stress"]
     S = zeros(length(stress), length(domain.elements))
     x = zeros(length(domain.elements))
@@ -308,7 +352,7 @@ function visualize_von_mises_stress_on_scoped_body(d_all::Array{Float64,2}, doma
         end
     end   
 
-    visualize_scalar_on_scoped_body(S, d_all, domain, scale_factor = scale_factor, frames=frames)
+    visualize_scalar_on_scoped_body(S, d_all, domain; scale_factor = scale_factor, frames=frames, kwargs...)
 end
 
 

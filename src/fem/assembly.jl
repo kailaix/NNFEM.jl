@@ -1,7 +1,7 @@
 export assembleStiffAndForce,assembleMassMatrix!,assembleInternalForce, getEqns
 
 @doc raw"""
-    assembleInternalForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
+    assembleInternalForce(domain::Domain, Δt::Float64 = 0.0)
 
 Computes the internal force vector $F_\mathrm{int}$ of length `neqs`
 - `globdat`: GlobalData
@@ -11,7 +11,7 @@ Computes the internal force vector $F_\mathrm{int}$ of length `neqs`
 Only the information in `domain` is used for computing internal force. 
 Therefore, the boundary conditions in `domain` must be set appropriately.
 """
-function assembleInternalForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
+function assembleInternalForce(domain::Domain, Δt::Float64 = 0.0)
     Fint = zeros(Float64, domain.neqs)
     neles = domain.neles
   
@@ -41,7 +41,7 @@ function assembleInternalForce(globdat::GlobalData, domain::Domain, Δt::Float64
   
     return Fint
 end
-
+assembleInternalForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0) = assembleInternalForce(domain, Δt)
 
 @doc raw"""
     assembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, DE_all::PyObject, w∂E∂u_all::PyObject, σ0_all::PyObject)

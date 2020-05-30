@@ -1,7 +1,7 @@
 export Domain,GlobalData,updateStates!,updateTimeDependentEssentialBoundaryCondition!,
     setConstantNodalForces!, setGeometryPoints!, setConstantDirichletBoundary!, getExternalForce,
     commitHistory, getBodyForce, getEdgeForce, getNGauss, getDofs, getDStrain, getCoords, getState,
-    getGaussPoints, getElems
+    getGaussPoints, getElems, getStressHistory, getStrainHistory, getStateHistory
 
 
 @doc raw"""
@@ -76,14 +76,18 @@ end
 
 
 @doc raw"""
-    GlobalData(state::Union{Array{Float64,1},Missing},Dstate::Union{Array{Float64,1},Missing},
-            velo::Union{Array{Float64,1},Missing},acce::Union{Array{Float64,1},Missing}, 
+    GlobalData(state::Union{Array{Float64,1},Missing},
+            Dstate::Union{Array{Float64,1},Missing},
+            velo::Union{Array{Float64,1},Missing},
+            acce::Union{Array{Float64,1},Missing}, 
             neqs::Int64,
             EBC_func::Union{Function, Nothing}=nothing, FBC_func::Union{Function, Nothing}=nothing,
             Body_func::Union{Function,Nothing}=nothing, Edge_func::Union{Function,Nothing}=nothing)
 
 The size of `state`, `Dstate`, `velo`, `acce` must be `neqs`, i.e., the active DOFs.
 If they are missing, they are treated as zeros. 
+
+`state`, `Dstate`, `velo`, `acce` can be missing, in which case they are interpreted as zeros. 
 """
 function GlobalData(state::Union{Array{Float64,1},Missing},Dstate::Union{Array{Float64,1},Missing},
         velo::Union{Array{Float64,1},Missing},acce::Union{Array{Float64,1},Missing}, 
@@ -146,11 +150,11 @@ Date structure for the computatational domain.
 - `fext`:  Float64[neqs], constant (time-independent) nodal forces on these freedoms
 - `Edge_Traction_Data`: `n × 3` integer matrix for natural boundary conditions.
 
-      1. `Edge_Traction_Data[i,1]` is the element id,
+1. `Edge_Traction_Data[i,1]` is the element id,
 
-      2. `Edge_Traction_Data[i,2]` is the local edge id in the element, where the force is exterted (should be on the boundary, but not required)
+2. `Edge_Traction_Data[i,2]` is the local edge id in the element, where the force is exterted (should be on the boundary, but not required)
 
-      3. `Edge_Traction_Data[i,3]` is the force id, which should be consistent with the last component of the `Edge_func` in the `Globdat`
+3. `Edge_Traction_Data[i,3]` is the force id, which should be consistent with the last component of the `Edge_func` in the `Globdat`
 
 - `time`: Float64, current time
 - `npoints`: Int64, number of points (each quadratical quad element has 4 points, npoints==nnodes, when porder==1)
@@ -224,7 +228,9 @@ function Base.:copy(g::Domain)
 end
 
 @doc raw"""
-    Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array{Int64}, g::Array{Float64}, FBC::Array{Int64}, f::Array{Float64})
+    Domain(nodes::Array{Float64}, elements::Array, ndims::Int64,
+     EBC::Array{Int64}, g::Array{Float64}, 
+     FBC::Array{Int64}, f::Array{Float64})
 
 Creating a finite element domain.
 
@@ -240,18 +246,18 @@ Creating a finite element domain.
 
 - `g`:  `nnodes × ndims` double matrix, values for fixed (time-independent) Dirichlet boundary conditions of node `n`'s $d$-th freedom,
 - `FBC`: `nnodes × ndims` integer matrix for nodal force boundary conditions.
-    FBC[n,d] is the force load boundary condition of node n's dth freedom,
+FBC[n,d] is the force load boundary condition of node n's dth freedom,
 
-    ∘ -1 means constant(time-independent) force load boundary nodes
+∘ -1 means constant(time-independent) force load boundary nodes
 
-    ∘ -2 means time-dependent force load boundary nodes
+∘ -2 means time-dependent force load boundary nodes
 
 - `f`:  `nnodes × ndims` double matrix, values for constant (time-independent) force load boundary conditions of node n's $d$-th freedom,
 
 - `Edge_Traction_Data`: `n × 3` integer matrix for natural boundary conditions.
-    Edge_Traction_Data[i,1] is the element id,
-    Edge_Traction_Data[i,2] is the local edge id in the element, where the force is exterted (should be on the boundary, but not required)
-    Edge_Traction_Data[i,3] is the force id, which should be consistent with the last component of the Edge_func in the Globdat
+`Edge_Traction_Data[i,1]` is the element id,
+`Edge_Traction_Data[i,2]` is the local edge id in the element, where the force is exterted (should be on the boundary, but not required)
+`Edge_Traction_Data[i,3]` is the force id, which should be consistent with the last component of the Edge_func in the Globdat
 
 For time-dependent boundary conditions (`EBC` or `FBC` entries are -2), the corresponding `f` or `g` entries are not used.
 """
@@ -822,6 +828,33 @@ function getElems(domain::Domain)
         elem[k,:] = e.elnodes
     end
     return elem
+end
+
+"""
+    getStressHistory(domain::Domain)
+
+Returns the stress history.
+"""
+function getStressHistory(domain::Domain)
+    vcat([reshape(x, 1, size(x,1),size(x,2)) for x in domain.history["stress"]]...)
+end
+
+"""
+    getStrainHistory(domain::Domain)
+
+Returns the strain history.
+"""
+function getStrainHistory(domain::Domain)
+    vcat([reshape(x, 1, size(x,1),size(x,2)) for x in domain.history["strain"]]...)
+end
+
+"""
+    getStateHistory(domain::Domain)
+
+Returns the state history.
+"""
+function getStateHistory(domain::Domain)
+    vcat([reshape(x, 1, size(x,1)) for x in domain.history["state"]]...)
 end
 
 
