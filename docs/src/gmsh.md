@@ -41,7 +41,7 @@ finalize_gmsh(true)
 ```
 
 
-## Making a Rectangle Mesh
+## Making a Rectangle Mesh with a Hole
 
 ```julia
 using NNFEM
@@ -76,7 +76,9 @@ finalize_gmsh(true)
 <center><img src="[image.jpg](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh2.png?raw=true)" style="width: 50%/>​</center>
 ```
 
-## Making a Rectangle Mesh with a Hole
+## Embed an Entity in the Surface
+
+NNFEM also allows you to embed a point in a line or a surface, or embed a line in a surface.
 
 ```julia
 using NNFEM
@@ -100,7 +102,12 @@ rectangle = addPlaneSurface(
 )
 line = addLine(5,6)
 embedLine([line], rectangle)
-finalize_gmsh(rectangle, true)
+finalize_gmsh(true)
+```
+
+
+```@raw html
+<center><img src="[image.jpg](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh4.png?raw=true)" style="width: 50%/>​</center>
 ```
 
 ## Control Mesh Size

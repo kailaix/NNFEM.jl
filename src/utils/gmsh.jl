@@ -115,9 +115,11 @@ function finalize_gmsh(visualize=false)
         gmsh.model.mesh.setRecombine(2, s)
     end
     gmsh.model.mesh.generate(2)
-    gmsh.write("test.msh")
+    name = tempname()*".msh"
+    gmsh.write(name)
     if visualize
         gmsh.fltk.run()
     end
     gmsh.finalize()
+    return name
 end
