@@ -13,21 +13,12 @@ using Random
 using ADCMEKit
 using Libdl
 
-animation = PyNULL()
-colors = PyNULL()
-cmx = PyNULL()
-clb = PyNULL()
+
+
 STORAGE = Dict{String, Any}()
 
-function __init__()
-    global jet
-    copy!(animation, pyimport("matplotlib.animation"))
-    copy!(colors, pyimport("matplotlib.colors"))
-    copy!(cmx, pyimport("matplotlib.cm"))
-    jet = plt.get_cmap("jet")
-    copy!(clb, pyimport("matplotlib.colorbar"))
-end
 
+include("utils/gmsh.jl")
 include("utils/options.jl")
 include("utils/shapeFunctions.jl")
 include("utils/matrix.jl")

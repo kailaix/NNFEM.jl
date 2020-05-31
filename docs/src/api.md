@@ -3,9 +3,9 @@
 ## Core Data Structure
 ```@docs
 Domain
-Domain(nodes::Array{Float64}, elements::Array, ndims::Int64,
-    EBC::Array{Int64}, g::Array{Float64}, FBC::Array{Int64}, 
-    f::Array{Float64}, edge_traction_data::Array{Int64,2}=zeros(Int64,0,3))
+Domain(nodes::Array{Float64}, elements::Array, ndims::Int64 = 2,
+    EBC::Union{missing, Array{Int64}} = missing, g::Union{missing, Array{Float64}} = missing, FBC::Union{missing, Array{Int64}} = missing, 
+    f::Union{missing, Array{Float64}} = missing, edge_traction_data::Array{Int64,2}=zeros(Int64,0,3))
 GlobalData
 GlobalData(state::Union{Array{Float64,1},Missing},Dstate::Union{Array{Float64,1},Missing},
         velo::Union{Array{Float64,1},Missing},acce::Union{Array{Float64,1},Missing}, 

@@ -41,6 +41,7 @@ finalize_gmsh(true)
 ```
 
 
+## Making a Rectangle Mesh
 
 ```julia
 using NNFEM
@@ -68,9 +69,14 @@ hole = addCurveLoop(
     ]
 )
 s = addPlaneSurface([rectangle, hole])
-finalize_gmsh(s, true)
+finalize_gmsh(true)
 ```
 
+```@raw html
+<center><img src="[image.jpg](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh2.png?raw=true)" style="width: 50%/>​</center>
+```
+
+## Making a Rectangle Mesh with a Hole
 
 ```julia
 using NNFEM
@@ -97,6 +103,9 @@ embedLine([line], rectangle)
 finalize_gmsh(rectangle, true)
 ```
 
+## Control Mesh Size
+
+Note the third argument of [`addPoint`](@ref) can be used to specify the mesh size at the specific point. Another method is to use [`meshsize`](@ref).
 
 ```julia
 using NNFEM
@@ -116,6 +125,11 @@ rectangle_loop = addCurveLoop([
     ])
 disk_loop = addCircle(1.0,0.5,0.3)
 rectangle_with_hole = addPlaneSurface([rectangle_loop, -disk_loop])
+# meshsize takes a string as argument, which is a C++ syntax function
 meshsize("0.1 *((x-1.0)*(x-1.0) + (y-0.5)*(y-0.5))")
-finalize_gmsh(rectangle_with_hole, true)
+finalize_gmsh(true)
+```
+
+```@raw html
+<center><img src="[image.jpg](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh3.png?raw=true)" style="width: 50%/>​</center>
 ```

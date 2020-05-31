@@ -228,9 +228,9 @@ function Base.:copy(g::Domain)
 end
 
 @doc raw"""
-    Domain(nodes::Array{Float64}, elements::Array, ndims::Int64,
-     EBC::Array{Int64}, g::Array{Float64}, 
-     FBC::Array{Int64}, f::Array{Float64})
+    Domain(nodes::Array{Float64}, elements::Array, ndims::Int64 = 2,
+    EBC::Union{missing, Array{Int64}} = missing, g::Union{missing, Array{Float64}} = missing, FBC::Union{missing, Array{Int64}} = missing, 
+    f::Union{missing, Array{Float64}} = missing, edge_traction_data::Array{Int64,2}=zeros(Int64,0,3))
 
 Creating a finite element domain.
 
@@ -261,9 +261,10 @@ FBC[n,d] is the force load boundary condition of node n's dth freedom,
 
 For time-dependent boundary conditions (`EBC` or `FBC` entries are -2), the corresponding `f` or `g` entries are not used.
 """
-function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64,
-    EBC::Array{Int64}, g::Array{Float64}, FBC::Array{Int64}, 
-    f::Array{Float64}, edge_traction_data::Array{Int64,2}=zeros(Int64,0,3))
+function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64 = 2,
+    EBC::Union{Missing, Array{Int64}} = missing, g::Union{Missing, Array{Float64}} = missing, FBC::Union{Missing, Array{Int64}} = missing, 
+    f::Union{Missing, Array{Float64}} = missing, edge_traction_data::Array{Int64,2}=zeros(Int64,0,3))
+    
     nnodes = size(nodes,1)
     neles = size(elements,1)
     state = zeros(nnodes * ndims)
@@ -281,6 +282,11 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64,
     
     history = Dict("state"=>Array{Float64}[], "acc"=>Array{Float64}[], "fint"=>Array{Float64}[],
                 "fext"=>Array{Float64}[], "strain"=>[], "stress"=>[], "time"=>Array{Float64}[])
+
+    EBC = coalesce(EBC, zeros(Int64, nnodes, ndims))
+    FBC = coalesce(EBC, zeros(Int64, nnodes, ndims))
+    g = coalesce(EBC, zeros(Float64, nnodes, ndims))
+    f = coalesce(EBC, zeros(Float64, nnodes, ndims))
     
     domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, 
     LM, DOF, ID, neqs, eq_to_dof, dof_to_eq, 

@@ -19,10 +19,10 @@ function visstatic(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
     vmin = vmin==nothing ? minimum(σ) : vmin 
     vmax = vmax==nothing ? maximum(σ) : vmax
     #@show vmin, vmax
-    cNorm  = colors.Normalize(
+    cNorm  = matplotlib.colors.Normalize(
             vmin=vmin,
             vmax=vmax)
-    scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
+    scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=plt.get_cmap("jet"))
     for (k,e) in enumerate(domain.elements)
         n_ = nodes[getNodes(e),:] + scaling*[u[getNodes(e),:] v[getNodes(e),:]]
         p = plt.Polygon(n_, facecolor = scalarMap.to_rgba(σ[k]), fill=true, alpha=0.5)
@@ -30,38 +30,6 @@ function visstatic(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
     end
     xlim(x1 .-0.1,x2 .+0.1)
     ylim(y1 .-0.1,y2 .+0.1)
-end
-
-function visdynamic(domain::Domain, name::String)
-    
-    # Set up formatting for the movie files
-    Writer = animation.writers.avail["html"]
-    writer = Writer(fps=15, bitrate=1800)
-
-    close("all")
-    fig = figure()
-    # visualization
-    scat0 = scatter(domain.nodes[:,1], domain.nodes[:,2], color="grey")
-    grid(true)
-    ims = Any[(scat0,)]
-
-    N = size(domain.nodes,1)
-    for k = 1:length(domain.history["state"])
-        u1 = domain.history["state"][k][1:N] + domain.nodes[:,1]
-        u2 = domain.history["state"][k][N+1:end] + domain.nodes[:,2]
-
-        scat = scatter(u1, u2, color="orange")
-        grid(true)
-        tt = gca().text(.5, 1.05,"$k")
-        # s2 = scatter(nodes[div(n+1,2)*n,1], nodes[div(n+1,2)*n,2], marker="x", color="red")
-        # s3 = scatter(u1[div(n+1,2)*n], u2[div(n+1,2)*n], marker="*", color="red")
-        push!(ims, (scat0,scat,tt))
-    end
-
-    im_ani = animation.ArtistAnimation(fig, ims, interval=50, repeat_delay=3000,
-                                    blit=true)
-    im_ani.save("$name.html", writer=writer)
-
 end
 
 function show_strain_stress(domain::Domain)
@@ -297,10 +265,10 @@ function visσ(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
     vmin = vmin==nothing ? minimum(σ) : vmin 
     vmax = vmax==nothing ? maximum(σ) : vmax
     #@show vmin, vmax
-    cNorm  = colors.Normalize(
+    cNorm  = matplotlib.colors.Normalize(
             vmin=vmin,
             vmax=vmax)
-    scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
+    scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=plt.get_cmap("jet"))
     for (k,e) in enumerate(domain.elements)
         N = getNodes(e)
         if length(N)==9

@@ -1,6 +1,41 @@
 using ADCME
 using Libdl
 
+#--------------------------------------------------------------
+# install gmsh 
+const prefix = Prefix(joinpath(ADCME.LIBDIR,".."))
+
+
+download_info = Dict(
+    "Linux64" => ("https://gmsh.info/bin/Linux/gmsh-4.5.6-Linux64-sdk.tgz", "gmsh.tgz"),
+    "Windows64" => ("https://gmsh.info/bin/Windows/gmsh-4.5.6-Windows64-sdk.zip", "gmsh.zip"),
+    "Windows32" => ("https://gmsh.info/bin/Windows/gmsh-4.5.6-Windows32-sdk.zip", "gmsh.zip"),
+    "MacOSX" => ("https://gmsh.info/bin/MacOSX/gmsh-4.5.6-MacOSX-sdk.tgz", "gmsh.tgz"),
+    "Linux32" => ("https://gmsh.info/bin/Linux/gmsh-4.5.6-Linux32-sdk.tgz", "gmsh.tgz")
+)
+
+key = ""
+if Sys.iswindows()
+    global key = "Windows$(Sys.WORD_SIZE)"
+elseif Sys.isapple()
+    global key = "MacOSX"
+else
+    global key = "Linux$(Sys.WORD_SIZE)"
+end
+
+if !isfile(joinpath(prefix, download_info[key][2]))
+    download(download_info[key][1], joinpath(prefix, download_info[key][2]))
+    if Sys.iswindows()
+        run(`cmd /c unzip $(joinpath(prefix, download_info[key][2])) -d $(joinpath(prefix, "gmsh"))`)
+    else
+        run(`tar zxvf $(joinpath(prefix, download_info[key][2])) -C $(joinpath(prefix, "gmsh"))`)
+    end
+end
+
+cp(joinpath(prefix, "gmsh", "gmsh-4.5.6-$key-sdk", "lib"), joinpath(@__DIR__, "Gmsh"), force=true)
+cp(joinpath(@__DIR__, "gmsh.jl"), joinpath(@__DIR__, "Gmsh", "gmsh.jl"), force=true)
+
+
 install_adept()
 
 files = readdir("CustomOp")
