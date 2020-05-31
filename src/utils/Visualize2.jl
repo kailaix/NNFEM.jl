@@ -178,10 +178,14 @@ Plot the scalar on scoped body. For example, `s` can be the von Mises stress ten
 function visualize_scalar_on_scoped_body(s::Array{Float64, 1}, d::Array{Float64,1}, domain::Domain;
         scale_factor::Real = -1.0, kwargs...)
     if scale_factor<0.0
+        
         scale_factor = min(
-            0.1 * (maximum(domain.nodes[:,1]) - minimum(domain.nodes[:,1]))/maximum(d[1:domain.nnodes]),
-            0.1 * (maximum(domain.nodes[:,2]) - minimum(domain.nodes[:,2]))/maximum(d[domain.nnodes+1:end])
+            0.1 * (maximum(domain.nodes[:,1]) - minimum(domain.nodes[:,1]))/maximum(abs.(d[1:domain.nnodes])),
+            0.1 * (maximum(domain.nodes[:,2]) - minimum(domain.nodes[:,2]))/maximum(abs.(d[domain.nnodes+1:end]))
         )
+        if isinf(scale_factor)
+            scale_factor = 1.0
+        end
         @info "scale_factor automatically set to $scale_factor"
     end
     vmin = haskey(kwargs, :vmin) ? kwargs[:vmin] : minimum(s)
@@ -213,9 +217,12 @@ function visualize_scalar_on_scoped_body(s_all::Array{Float64, 2}, d_all::Array{
     scale_factor::Real = -1.0, frames::Int64 = 20, kwargs...)
     if scale_factor<0.0
         scale_factor = min(
-            0.1 * (maximum(domain.nodes[:,1]) - minimum(domain.nodes[:,1]))/maximum(d_all[:, 1:domain.nnodes]),
-            0.1 * (maximum(domain.nodes[:,2]) - minimum(domain.nodes[:,2]))/maximum(d_all[:, domain.nnodes+1:end])
+            0.1 * (maximum(domain.nodes[:,1]) - minimum(domain.nodes[:,1]))/maximum(abs.(d_all[:, 1:domain.nnodes])),
+            0.1 * (maximum(domain.nodes[:,2]) - minimum(domain.nodes[:,2]))/maximum(abs.(d_all[:, domain.nnodes+1:end]))
         )
+        if isinf(scale_factor)
+            scale_factor = 1.0
+        end
         @info "scale_factor automatically set to $scale_factor"
     end
 

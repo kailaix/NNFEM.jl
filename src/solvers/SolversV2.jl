@@ -241,7 +241,9 @@ function GeneralizedAlphaSolverStep(globdat::GlobalData, domain::Domain, Δt::Fl
         end
         ∂∂up -= η*Δ∂∂u
 
-
+        if maxiterstep==1
+            break
+        end
         verbose && println("$Newtoniterstep/$maxiterstep, abs = $(norm(res)), rel = $(norm(res)/norm(res0))")
         if (norm(res)< ε || norm(res)< ε0*norm(res0) ||Newtoniterstep > maxiterstep)
             if Newtoniterstep > maxiterstep
