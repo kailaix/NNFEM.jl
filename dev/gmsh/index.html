@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Creating Mesh for FEM · NNFEM</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../"><img src="../assets/logo.png" alt="NNFEM logo"/></a><div class="docs-package-name"><span class="docs-autofit">NNFEM</span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Getting Started</a></li><li><span class="tocitem">Examples: Inverse Problems</span><ul><li><a class="tocitem" href="../verify/">Dynamic Problems</a></li><li><a class="tocitem" href="../verify_linear/">Linear Elasticity</a></li><li><a class="tocitem" href="../hyperelasticity/">Hyperelasticity</a></li><li><a class="tocitem" href="../verify_function/">Helper Functions</a></li></ul></li><li><span class="tocitem">Examples: Forward Computation</span><ul><li><a class="tocitem" href="../ex_simulation/">Simulaton Code Structure</a></li><li><a class="tocitem" href="../ex_ad/">Automatic Differentiation</a></li></ul></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../representation/">Representations of Constitutive Relation</a></li><li><a class="tocitem" href="../solvers/">Solvers</a></li></ul></li><li><a class="tocitem" href="../api/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Creating Mesh for FEM</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Creating Mesh for FEM</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/kailaix/NNFEM.jl/blob/master/docs/src/gmsh.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Creating-Mesh-for-FEM-1"><a class="docs-heading-anchor" href="#Creating-Mesh-for-FEM-1">Creating Mesh for FEM</a><a class="docs-heading-anchor-permalink" href="#Creating-Mesh-for-FEM-1" title="Permalink"></a></h1><p>NNFEM has a built-in mesh generation module, and users can  generate unstructured quadrilateral meshes directly from NNFEM. The backend is <a href="https://gmsh.info/">Gmsh</a>. In the following, we will present several examples to illustrate how to generate mesh using the mesh module. </p><p>The NNFEM mesh module provides a set of functions to create the geometry:</p><ul><li>Create 0D Entities: <a href="@ref"><code>addPoint</code></a></li><li>Create 1D Entities: <a href="@ref"><code>addLine</code></a>, <a href="@ref"><code>addCircleArc</code></a></li><li>Create 1D Closed Curve: <a href="@ref"><code>addCurveLoop</code></a>, <a href="@ref"><code>addDisk</code></a></li><li>Create 2D Entities: <a href="@ref"><code>addPlaneSurface</code></a></li></ul><p>A common workflow for using the mesh module is </p><ol><li>Initialize a session by calling <a href="@ref"><code>init_gmsh</code></a>.</li><li>Build planar suface from lower dimensional entities using the functions shown above.</li><li>Generate mesh by running <a href="@ref"><code>finalize_gmsh</code></a>. A <code>.msh</code> file is created and the file path is returned. This file can be read by <a href="../api/#NNFEM.meshread"><code>meshread</code></a></li></ol><p>Here we show some examples:</p><h2 id="Making-a-Rectangle-Mesh-1"><a class="docs-heading-anchor" href="#Making-a-Rectangle-Mesh-1">Making a Rectangle Mesh</a><a class="docs-heading-anchor-permalink" href="#Making-a-Rectangle-Mesh-1" title="Permalink"></a></h2><pre><code class="language-julia">using NNFEM
+init_gmsh()
+p1 = addPoint(0, 0)
+p2 = addPoint(2, 0)
+p3 = addPoint(2, 1)
+p4 = addPoint(0, 1)
+l1 = addLine(p1, p2)
+l2 = addLine(p2, p3)
+l3 = addLine(p3, p4)
+l4 = addLine(p4, p1)
+cl = addCurveLoop([l1,l2,l3,l4])
+s = addPlaneSurface([cl])
+# finalize_gmsh takes 0 or 1 argument. If the argument is `true`, then the mesh is shown. The default is false.
+finalize_gmsh(true)</code></pre><center><img src="[image.jpg](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh1.png?raw=true)" style="width: 50%/>​</center><pre><code class="language-julia">using NNFEM
+
+init_gmsh()
+pts = [
+    addPoint(0,0),
+    addPoint(2,0),
+    addPoint(2,1),
+    addPoint(0,1),
+    addPoint(0.5,0.5),
+    addPoint(1.5,0.5),
+    addPoint(1.0, 0.5)
+]
+rectangle = addCurveLoop([
+    addLine(pts[1], pts[2]),
+    addLine(pts[2], pts[3]),
+    addLine(pts[3], pts[4]),
+    addLine(pts[4], pts[1])
+])
+hole = addCurveLoop(
+    [
+        addLine(pts[5], pts[6]),
+        addCircleArc(pts[6], pts[7],pts[5])
+    ]
+)
+s = addPlaneSurface([rectangle, hole])
+finalize_gmsh(s, true)</code></pre><pre><code class="language-julia">using NNFEM
+
+init_gmsh()
+pts = [
+    addPoint(0,0),
+    addPoint(2,0),
+    addPoint(2,1),
+    addPoint(0,1),
+    addPoint(0.3,1.0),
+    addPoint(0.8,0.5)
+]
+rectangle = addPlaneSurface(
+    [addCurveLoop([
+        addLine(1,2),
+        addLine(2,3),
+        addLine(3,4),
+        addLine(4,1)
+    ])]
+)
+line = addLine(5,6)
+embedLine([line], rectangle)
+finalize_gmsh(rectangle, true)</code></pre><pre><code class="language-julia">using NNFEM
+
+init_gmsh()
+pts = [
+    addPoint(0,0),
+    addPoint(2,0),
+    addPoint(2,1),
+    addPoint(0,1)
+]
+rectangle_loop = addCurveLoop([
+        addLine(1,2),
+        addLine(2,3),
+        addLine(3,4),
+        addLine(4,1)
+    ])
+disk_loop = addCircle(1.0,0.5,0.3)
+rectangle_with_hole = addPlaneSurface([rectangle_loop, -disk_loop])
+meshsize(&quot;0.1 *((x-1.0)*(x-1.0) + (y-0.5)*(y-0.5))&quot;)
+finalize_gmsh(rectangle_with_hole, true)</code></pre></article></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Sunday 31 May 2020 21:08">Sunday 31 May 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
