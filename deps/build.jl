@@ -3,7 +3,7 @@ using Libdl
 
 #--------------------------------------------------------------
 # install gmsh 
-const prefix = Prefix(joinpath(ADCME.LIBDIR,".."))
+const prefix = joinpath(ADCME.LIBDIR,"..")
 
 
 download_info = Dict(
