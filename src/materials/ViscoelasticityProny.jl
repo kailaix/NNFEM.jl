@@ -81,7 +81,7 @@ function getStress(mat::ViscoelasticityProny,  strain::Array{Float64},  Dstrain:
         H[2,2] = H[1,1];
         H[3,3] = H[1,1]*0.5*(1. -2. *ν)/(1. -ν);
     end
-    σ = H * (strain - mat.ε0) + mat.σ0
+    σ = H * strain
     dΔσdΔε = H 
     mat.σ0_ = σ
     mat.ε0_ = strain

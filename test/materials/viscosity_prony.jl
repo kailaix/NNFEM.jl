@@ -2,6 +2,7 @@ using Revise
 using NNFEM 
 using ADCME 
 using ADCMEKit
+using PyPlot 
 using ProgressMeter
 
 m = 40
@@ -85,20 +86,24 @@ end
 figure()
 visualize_von_mises_stress_on_scoped_body(getStateHistory(domain)[end:end,:], domain; 
                 frames=1, scale_factor=8.3e2, vmin=2339, vmax=3.56e6)
+title("von Mises Stress")
 savefig("prony_vm.png")
 figure()
 visualize_total_deformation_on_scoped_body(getStateHistory(domain)[end:end,:], domain; 
                 frames=1)
+title("Total Displacement")
 savefig("prony_td.png")
 
 figure()
 visualize_x_deformation_on_scoped_body(getStateHistory(domain)[end:end,:], domain; 
                 frames=1, scale_factor=8.3e2)
+title("x-directional Displacement")
 savefig("prony_x.png")
 
 figure()
 visualize_y_deformation_on_scoped_body(getStateHistory(domain)[end:end,:], domain; 
                 frames=1, scale_factor=8.3e2)
+title("y-directional Displacement")
 savefig("prony_y.png")
 
             

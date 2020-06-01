@@ -229,8 +229,8 @@ end
 
 @doc raw"""
     Domain(nodes::Array{Float64}, elements::Array, ndims::Int64 = 2,
-    EBC::Union{missing, Array{Int64}} = missing, g::Union{missing, Array{Float64}} = missing, FBC::Union{missing, Array{Int64}} = missing, 
-    f::Union{missing, Array{Float64}} = missing, edge_traction_data::Array{Int64,2}=zeros(Int64,0,3))
+    EBC::Union{Missing, Array{Int64}} = missing, g::Union{Missing, Array{Float64}} = missing, FBC::Union{Missing, Array{Int64}} = missing, 
+    f::Union{Missing, Array{Float64}} = missing, edge_traction_data::Array{Int64,2}=zeros(Int64,0,3))
 
 Creating a finite element domain.
 
