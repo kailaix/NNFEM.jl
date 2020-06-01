@@ -12,7 +12,7 @@ l4 = addLine(p4, p1)
 cl = addCurveLoop([l1,l2,l3,l4])
 s = addPlaneSurface([cl])
 # finalize_gmsh takes 0 or 1 argument. If the argument is `true`, then the mesh is shown. The default is false.
-finalize_gmsh(true)</code></pre><center><img src="[image.jpg](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh1.png?raw=true)" style="width: 50%/>​</center><h2 id="Making-a-Rectangle-Mesh-with-a-Hole-1"><a class="docs-heading-anchor" href="#Making-a-Rectangle-Mesh-with-a-Hole-1">Making a Rectangle Mesh with a Hole</a><a class="docs-heading-anchor-permalink" href="#Making-a-Rectangle-Mesh-with-a-Hole-1" title="Permalink"></a></h2><pre><code class="language-julia">using NNFEM
+finalize_gmsh(true)</code></pre><center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh1.png?raw=true" style="width: 50%/>​</center><h2 id="Making-a-Rectangle-Mesh-with-a-Hole-1"><a class="docs-heading-anchor" href="#Making-a-Rectangle-Mesh-with-a-Hole-1">Making a Rectangle Mesh with a Hole</a><a class="docs-heading-anchor-permalink" href="#Making-a-Rectangle-Mesh-with-a-Hole-1" title="Permalink"></a></h2><pre><code class="language-julia">using NNFEM
 
 init_gmsh()
 pts = [
@@ -37,7 +37,7 @@ hole = addCurveLoop(
     ]
 )
 s = addPlaneSurface([rectangle, hole])
-finalize_gmsh(true)</code></pre><center><img src="[image.jpg](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh2.png?raw=true)" style="width: 50%/>​</center><h2 id="Embed-an-Entity-in-the-Surface-1"><a class="docs-heading-anchor" href="#Embed-an-Entity-in-the-Surface-1">Embed an Entity in the Surface</a><a class="docs-heading-anchor-permalink" href="#Embed-an-Entity-in-the-Surface-1" title="Permalink"></a></h2><p>NNFEM also allows you to embed a point in a line or a surface, or embed a line in a surface.</p><pre><code class="language-julia">using NNFEM
+finalize_gmsh(true)</code></pre><center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh2.png?raw=true" style="width: 50%/>​</center><h2 id="Embed-an-Entity-in-the-Surface-1"><a class="docs-heading-anchor" href="#Embed-an-Entity-in-the-Surface-1">Embed an Entity in the Surface</a><a class="docs-heading-anchor-permalink" href="#Embed-an-Entity-in-the-Surface-1" title="Permalink"></a></h2><p>NNFEM also allows you to embed a point in a line or a surface, or embed a line in a surface.</p><pre><code class="language-julia">using NNFEM
 
 init_gmsh()
 pts = [
@@ -58,7 +58,7 @@ rectangle = addPlaneSurface(
 )
 line = addLine(5,6)
 embedLine([line], rectangle)
-finalize_gmsh(true)</code></pre><center><img src="[image.jpg](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh4.png?raw=true)" style="width: 50%/>​</center><h2 id="Control-Mesh-Size-1"><a class="docs-heading-anchor" href="#Control-Mesh-Size-1">Control Mesh Size</a><a class="docs-heading-anchor-permalink" href="#Control-Mesh-Size-1" title="Permalink"></a></h2><p>Note the third argument of <a href="@ref"><code>addPoint</code></a> can be used to specify the mesh size at the specific point. Another method is to use <a href="@ref"><code>meshsize</code></a>.</p><pre><code class="language-julia">using NNFEM
+finalize_gmsh(true)</code></pre><center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh4.png?raw=true" style="width: 50%/>​</center><h2 id="Control-Mesh-Size-1"><a class="docs-heading-anchor" href="#Control-Mesh-Size-1">Control Mesh Size</a><a class="docs-heading-anchor-permalink" href="#Control-Mesh-Size-1" title="Permalink"></a></h2><p>Note the third argument of <a href="@ref"><code>addPoint</code></a> can be used to specify the mesh size at the specific point. Another method is to use <a href="@ref"><code>meshsize</code></a>.</p><pre><code class="language-julia">using NNFEM
 
 init_gmsh()
 pts = [
@@ -77,7 +77,7 @@ disk_loop = addCircle(1.0,0.5,0.3)
 rectangle_with_hole = addPlaneSurface([rectangle_loop, -disk_loop])
 # meshsize takes a string as argument, which is a C++ syntax function
 meshsize(&quot;0.1 *((x-1.0)*(x-1.0) + (y-0.5)*(y-0.5))&quot;)
-finalize_gmsh(true)</code></pre><center><img src="[image.jpg](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh3.png?raw=true)" style="width: 50%/>​</center><h2 id="Add-Physical-Group-Names-1"><a class="docs-heading-anchor" href="#Add-Physical-Group-Names-1">Add Physical Group Names</a><a class="docs-heading-anchor-permalink" href="#Add-Physical-Group-Names-1" title="Permalink"></a></h2><p>We can use <a href="../api/#NNFEM.addPhysicalGroup"><code>addPhysicalGroup</code></a> to add physical groups. </p><pre><code class="language-julia">using NNFEM
+finalize_gmsh(true)</code></pre><center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh3.png?raw=true" style="width: 50%/>​</center><h2 id="Add-Physical-Group-Names-1"><a class="docs-heading-anchor" href="#Add-Physical-Group-Names-1">Add Physical Group Names</a><a class="docs-heading-anchor-permalink" href="#Add-Physical-Group-Names-1" title="Permalink"></a></h2><p>We can use <a href="../api/#NNFEM.addPhysicalGroup"><code>addPhysicalGroup</code></a> to add physical groups. </p><pre><code class="language-julia">using NNFEM
 
 init_gmsh()
 pts = [
@@ -103,4 +103,4 @@ addPhysicalGroup(0, [6,pts[1]], &quot;Dirichlet&quot;)
 embedLine([line], rectangle)
 p = finalize_gmsh(false)</code></pre><p>Once we created the mesh file, we can read the physical group using </p><pre><code class="language-julia">psread(p)</code></pre><p>Expected output:</p><pre><code class="language-none">Dict{String,Array{Float64,2}} with 2 entries:
   &quot;Dirichlet&quot; =&gt; [0.0 0.0]
-  &quot;Neunmann&quot;  =&gt; [0.8 0.5; 0.3625 0.9375; … ; 0.55 0.75; 0.675 0.625]</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../solvers/">« Solvers</a><a class="docs-footer-nextpage" href="../api/">API Reference »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 1 June 2020 06:16">Monday 1 June 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  &quot;Neunmann&quot;  =&gt; [0.8 0.5; 0.3625 0.9375; … ; 0.55 0.75; 0.675 0.625]</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../solvers/">« Solvers</a><a class="docs-footer-nextpage" href="../api/">API Reference »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 1 June 2020 07:03">Monday 1 June 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
