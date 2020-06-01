@@ -27,7 +27,7 @@ if !isfile(joinpath(prefix, download_info[key][2]))
     download(download_info[key][1], joinpath(prefix, download_info[key][2]))
     if !isdir(joinpath(prefix, "gmsh"))
         mkdir(joinpath(prefix, "gmsh"))
-    end
+    end 
     if Sys.iswindows()
         run(`cmd /c unzip $(joinpath(prefix, download_info[key][2])) -d $(joinpath(prefix, "gmsh"))`)
     else
