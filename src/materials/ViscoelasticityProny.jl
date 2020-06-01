@@ -8,12 +8,13 @@ export  PlaneStrainViscoelasticityProny, PlaneStressViscoelasticityProny, Viscoe
         τ::Float64 # relaxation time 
         c::Float64 # coefficient
         planestress::Bool 
+        g0::Float64
+        g1::Float64
+        J::Float64
         σ0::Array{Float64} # stress at last time step
         σ0_::Array{Float64} # σ0 to be updated in `commitHistory`
         ε0::Array{Float64} # strain at last time step
         ε0_::Array{Float64} # ε0 to be updated in `commitHistory`
-        t0::Float64 # relaxation timer
-        t0_::Float64 # t0 to be updated 
     end
 
 Prony series viscoelasticity model.
@@ -33,13 +34,15 @@ mutable struct ViscoelasticityProny
     τ::Float64 # relaxation time 
     c::Float64 # coefficient
     planestress::Bool 
-    G0::Float64 # Shear Modulus
+    g0::Float64
+    g1::Float64
+    J::Array{Float64,1}
+    J_::Array{Float64,1}
+    H::Array{Float64, 2}
     σ0::Array{Float64} # stress at last time step
     σ0_::Array{Float64} # σ0 to be updated in `commitHistory`
     ε0::Array{Float64} # strain at last time step
     ε0_::Array{Float64} # ε0 to be updated in `commitHistory`
-    t0::Float64 # relaxation timer
-    t0_::Float64 # t0 to be updated 
 end
 
 
@@ -49,31 +52,14 @@ function ViscoelasticityProny(prop::Dict{String, Any})
     ν = Float64(prop["nu"])
     τ = Float64(prop["tau"])
     c = Float64(prop["c"])
-    G0 = E/(2*(1+ν))
     planestress = Bool(prop["planestress"])
-    σ0 = zeros(3); σ0_ = zeros(3)
-    ε0 = zeros(3); ε0_ = zeros(3)
-    t0 = t0_ = 0.0
-    ViscoelasticityProny(ρ, E, ν, τ, c, planestress, G0, σ0, σ0_, ε0, ε0_, t0, t0_)
-end
-
-
-function getStress(mat::ViscoelasticityProny,  strain::Array{Float64},  Dstrain::Array{Float64}, Δt::Float64)
-    E = mat.E 
-    ν = mat.ν
-    t = mat.t0 
-    τ = mat.τ
-    c = mat.c 
-    G0 = mat.G0 
-    G = G0 * (1.0 - c * ( 1- exp(-t/τ)))
-    E = G/G0 * E
     H = zeros(3,3)
-    if mat.planestress
+    if planestress
         H[1,1] = E/(1. -ν*ν)
         H[1,2] = H[1,1]*ν
         H[2,1] = H[1,2]
         H[2,2] = H[1,1]
-        H[3,3] = G
+        H[3,3] = E/(2.0*(1.0+ν))
     else 
         H[1,1] = E*(1. -ν)/((1+ν)*(1. -2. *ν));
         H[1,2] = H[1,1]*ν/(1-ν);
@@ -81,11 +67,27 @@ function getStress(mat::ViscoelasticityProny,  strain::Array{Float64},  Dstrain:
         H[2,2] = H[1,1];
         H[3,3] = H[1,1]*0.5*(1. -2. *ν)/(1. -ν);
     end
-    σ = H * strain
-    dΔσdΔε = H 
-    mat.σ0_ = σ
-    mat.ε0_ = strain
-    mat.t0_ = mat.t0 + Δt
+
+    planestress = Bool(prop["planestress"])
+    σ0 = zeros(3); σ0_ = zeros(3)
+    ε0 = zeros(3); ε0_ = zeros(3)
+    J = zeros(3);  J_ = zeros(3)
+    G0 = E/(2(1+ν))
+    g0 = G0*(1-c)
+    g1 = G0*c
+    ViscoelasticityProny(ρ, E, ν, τ, c, planestress, g0, g1, J, J_, H, σ0, σ0_, ε0, ε0_)
+end
+
+
+function getStress(mat::ViscoelasticityProny,  strain::Array{Float64},  Dstrain::Array{Float64}, Δt::Float64)
+    τ = mat.τ
+    g0, g1, J = mat.g0, mat.g1, mat.J 
+    σ = mat.H * strain - 2*g0*Dstrain + 2*g1*(- Dstrain) + exp(-Δt/τ)*J
+    J = exp(-Δt/τ) * J + 2*g1*(strain - Dstrain)
+    dΔσdΔε = mat.H 
+    mat.σ0_ = σ 
+    mat.ε0_ = strain 
+    mat.J_ = J
     return σ, dΔσdΔε
 end
 
@@ -96,7 +98,7 @@ end
 function commitHistory(mat::ViscoelasticityProny)
     mat.σ0 = mat.σ0_
     mat.ε0 = mat.ε0_
-    mat.t0 = mat.t0_
+    mat.J = mat.J_
 end
 
 """

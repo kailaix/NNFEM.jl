@@ -76,7 +76,7 @@ domain = Domain(coords, elements, ndims, EBC, g, FBC, f, Edge_traction_data)
 globaldata = GlobalData(missing, missing, missing, missing, domain.neqs, nothing, nothing, nothing, Edge_func)
 
 # LinearGeneralizedAlphaSolverInit!(globaldata, domain, Δt)
-for i = 1:NT
+@showprogress for i = 1:NT
     # global globaldata, domain = LinearGeneralizedAlphaSolverStep(globaldata, domain, Δt)
     global globaldata, domain = GeneralizedAlphaSolverStep(globaldata, domain, Δt)
 end
