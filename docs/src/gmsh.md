@@ -36,9 +36,7 @@ s = addPlaneSurface([cl])
 finalize_gmsh(true)
 ```
 
-```@raw html
-<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh1.png?raw=true" style="width: 50%/>​</center>
-```
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh1.png?raw=true)
 
 
 ## Making a Rectangle Mesh with a Hole
@@ -72,9 +70,7 @@ s = addPlaneSurface([rectangle, hole])
 finalize_gmsh(true)
 ```
 
-```@raw html
-<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh2.png?raw=true" style="width: 50%/>​</center>
-```
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh2.png?raw=true)
 
 ## Embed an Entity in the Surface
 
@@ -106,9 +102,7 @@ finalize_gmsh(true)
 ```
 
 
-```@raw html
-<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh4.png?raw=true" style="width: 50%/>​</center>
-```
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh4.png?raw=true)
 
 ## Control Mesh Size
 
@@ -137,9 +131,7 @@ meshsize("0.1 *((x-1.0)*(x-1.0) + (y-0.5)*(y-0.5))")
 finalize_gmsh(true)
 ```
 
-```@raw html
-<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh3.png?raw=true" style="width: 50%/>​</center>
-```
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh3.png?raw=true)
 
 ## Add Physical Group Names
 
