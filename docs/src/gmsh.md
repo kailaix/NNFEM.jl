@@ -37,7 +37,7 @@ finalize_gmsh(true)
 ```
 
 ```@raw html
-<center><img src="[image.jpg](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh1.png?raw=true)" style="width: 50%/>​</center>
+<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh1.png?raw=true" style="width: 50%/>​</center>
 ```
 
 
@@ -73,7 +73,7 @@ finalize_gmsh(true)
 ```
 
 ```@raw html
-<center><img src="[image.jpg](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh2.png?raw=true)" style="width: 50%/>​</center>
+<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh2.png?raw=true" style="width: 50%/>​</center>
 ```
 
 ## Embed an Entity in the Surface
@@ -107,7 +107,7 @@ finalize_gmsh(true)
 
 
 ```@raw html
-<center><img src="[image.jpg](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh4.png?raw=true)" style="width: 50%/>​</center>
+<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh4.png?raw=true" style="width: 50%/>​</center>
 ```
 
 ## Control Mesh Size
@@ -138,7 +138,7 @@ finalize_gmsh(true)
 ```
 
 ```@raw html
-<center><img src="[image.jpg](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh3.png?raw=true)" style="width: 50%/>​</center>
+<center><img src="https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh3.png?raw=true" style="width: 50%/>​</center>
 ```
 
 ## Add Physical Group Names
