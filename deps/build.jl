@@ -28,7 +28,7 @@ if !isfile(joinpath(prefix, download_info[key][2]))
     if Sys.iswindows()
         run(`cmd /c unzip $(joinpath(prefix, download_info[key][2])) -d $(joinpath(prefix, "gmsh"))`)
     else
-        run(`tar zxvf $(joinpath(prefix, download_info[key][2])) -C $(joinpath(prefix, "gmsh"))`)
+        run(`tar zxvf $(joinpath(prefix, download_info[key][2])) -C $prefix`)
     end
 end
 
