@@ -140,3 +140,48 @@ finalize_gmsh(true)
 ```@raw html
 <center><img src="[image.jpg](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/mesh3.png?raw=true)" style="width: 50%/>​</center>
 ```
+
+## Add Physical Group Names
+
+We can use [`addPhysicalGroup`](@ref) to add physical groups. 
+
+```julia
+using NNFEM
+
+init_gmsh()
+pts = [
+    addPoint(0,0),
+    addPoint(2,0),
+    addPoint(2,1),
+    addPoint(0,1),
+    addPoint(0.3,1.0),
+    addPoint(0.8,0.5)
+]
+rectangle = addPlaneSurface(
+    [addCurveLoop([
+        addLine(1,2),
+        addLine(2,3),
+        addLine(3,4),
+        addLine(4,1)
+    ])]
+)
+line = addLine(5,6)
+addPhysicalGroup(1, line, "Neunmann")
+addPhysicalGroup(0, [pts[end]], "Neunmann")
+addPhysicalGroup(0, [6,pts[1]], "Dirichlet")
+embedLine([line], rectangle)
+p = finalize_gmsh(false)
+```
+
+Once we created the mesh file, we can read the physical group using 
+
+```julia
+psread(p)
+```
+
+Expected output:
+```
+Dict{String,Array{Float64,2}} with 2 entries:
+  "Dirichlet" => [0.0 0.0]
+  "Neunmann"  => [0.8 0.5; 0.3625 0.9375; … ; 0.55 0.75; 0.675 0.625]
+```

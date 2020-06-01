@@ -92,7 +92,13 @@ SolverInitial
 
 ```@docs
 meshread
-load_mesh
+psread
+```
+
+
+```@autodocs
+Modules = [NNFEM]
+Pages   = ["utils/gmsh.jl"]
 ```
 
 ## Visualization

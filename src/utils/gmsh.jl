@@ -1,7 +1,7 @@
 export gmsh, init_gmsh, addPoint, addLine, addCurveLoop,
 addPlaneSurface, addPhysicalGroup, setPhysicalName, addCircleArc, addSurfaceFilling,
 embedPointInLine, embedPointInSurface, embedLine, sync, finalize_gmsh, meshsize, addCircle, compound,
-get_entities
+get_entities, addPhysicalGroup
 
 
 include(joinpath(@__DIR__, "..", "..", "deps", "Gmsh", "gmsh.jl"))
@@ -104,10 +104,18 @@ function get_entities(tag = -1)
     gmsh.model.getEntities(tag)
 end
 
-function compound(tags)
-    sync()
-    gmsh.model.mesh.setCompound(2, tags)
+"""
+
+Forms a physical group of dimension `dim` and tag `tag` with name `name`
+"""
+function addPhysicalGroup(dim, tags, name, tag=-1)
+    if !isa(tags, Array)
+        tags = [tags]
+    end
+    ps = gmsh.model.addPhysicalGroup(dim, tags, tag)
+    gmsh.model.setPhysicalName(dim, ps, name)
 end
+
 function finalize_gmsh(visualize=false)
     sync()
     ss = get_entities(2)

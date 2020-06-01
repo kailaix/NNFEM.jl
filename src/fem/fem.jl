@@ -284,9 +284,9 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64 = 2,
                 "fext"=>Array{Float64}[], "strain"=>[], "stress"=>[], "time"=>Array{Float64}[])
 
     EBC = coalesce(EBC, zeros(Int64, nnodes, ndims))
-    FBC = coalesce(EBC, zeros(Int64, nnodes, ndims))
-    g = coalesce(EBC, zeros(Float64, nnodes, ndims))
-    f = coalesce(EBC, zeros(Float64, nnodes, ndims))
+    FBC = coalesce(FBC, zeros(Int64, nnodes, ndims))
+    g = coalesce(g, zeros(Float64, nnodes, ndims))
+    f = coalesce(f, zeros(Float64, nnodes, ndims))
     
     domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, 
     LM, DOF, ID, neqs, eq_to_dof, dof_to_eq, 

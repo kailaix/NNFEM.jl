@@ -1,5 +1,5 @@
 export readMesh, save, load, read_data, write_data, convert_mat, read_strain_stress, 
-        meshread, load_mesh
+        meshread, load_mesh, psread
 
 
 """
@@ -55,6 +55,97 @@ function meshread(gmshfile::String)
 
     return nodes, elems 
 end
+
+
+@doc raw"""
+    psread(gmshfile::String)
+
+Reads the physical group information from `gmshfile`. Returns a dictionary
+
+```
+PhysicalGroupName => Index
+```
+
+`Index` is a $n\times 2$ coordinate matrix.  
+We do not output indices because there may be postprocessing procedures after creating the mesh. 
+"""
+function psread(gmshfile::String)
+    cnt = read(gmshfile, String)
+    cnt = replace(cnt, "\r"=>"")
+    r = r"\$PhysicalNames\n(.*?)\n\$EndPhysicalNames"s
+    physicalnames = match(r, cnt)[1]
+    physicalnames = split(physicalnames,'\n')[2:end]
+
+    r = r"\$Entities\n(.*?)\n\$EndEntities"s
+    r = match(r, cnt)[1]
+    info = split(r, '\n')
+    n = parse(Int64, split(info[1])[1])
+    D = Dict{String, Array{Float64, 2}}()
+
+
+    r = r"\$Nodes\n(.*?)\n\$EndNodes"s
+    r = match(r, cnt)[1]
+    nodeinfo = split(r, '\n')[2:end]
+    
+    ps = physicalnames
+    # convert physical tag to entity tag 
+    for p in ps
+        dim = split(p)[1]
+        tag = split(p)[2]
+        name = strip(split(p)[3], '"')
+        
+        entity_tag = []
+        if dim=="0"
+            for i = 1:n
+                if length(split(info[i+1]))>=6 && split(info[i+1])[6]==tag
+                    push!(entity_tag, "0 $(split(info[i+1])[1]) ")
+                end
+            end
+        elseif dim=="1"
+            for i = 1:n
+                if split(info[n+i+1])[9]==tag
+                    push!(entity_tag, "1 $(split(info[n+i+1])[1]) ")
+                end
+            end
+        end
+
+
+        all_nodes = []
+        for et in entity_tag
+            # extract entity nodes
+            entity_nodes = []
+            k = 0
+            while k<length(nodeinfo)
+                k += 1
+                if startswith(nodeinfo[k], et) && length(split(nodeinfo[k]))==4
+                    N = parse(Int64, split(nodeinfo[k])[end])
+                    for j = 1:N
+                        k+=1
+                    end
+                    for j = 1:N
+                        k += 1
+                        out = map(x->parse(Float64, x), split(nodeinfo[k])[1:2])
+                        push!(entity_nodes, [out[1] out[2]])
+                    end
+                end
+            end
+            entity_nodes = vcat(entity_nodes...)
+            push!(all_nodes, entity_nodes)
+        end
+        if haskey(D, name)
+            D[name] = vcat(D[name], all_nodes...)
+        else
+            D[name] = vcat(all_nodes...)
+        end
+    end 
+    for k in D 
+        D[k] = unique(D[k], dims=1)
+    end
+    return D     
+end
+
+
+#-------------------------------------------------------------
 
 """
     readMesh(gmshFile::String)
