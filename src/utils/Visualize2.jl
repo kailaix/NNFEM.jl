@@ -177,6 +177,7 @@ Plot the scalar on scoped body. For example, `s` can be the von Mises stress ten
 """
 function visualize_scalar_on_scoped_body(s::Array{Float64, 1}, d::Array{Float64,1}, domain::Domain;
         scale_factor::Real = -1.0, kwargs...)
+    local sv
     if scale_factor<0.0
         
         scale_factor = min(
@@ -196,8 +197,20 @@ function visualize_scalar_on_scoped_body(s::Array{Float64, 1}, d::Array{Float64,
     m = cm.ScalarMappable(norm=n, cmap=cmap)
     elements = domain.elements
     patches = []
+    sv_id = 0 
     for i = 1:size(elements,1)
         e = elements[i].elnodes
+        if length(s)==domain.nnodes
+            sv = mean(s[e])
+        elseif length(s)==length(elements)
+            sv = s[i]
+        elseif length(s)==getNGauss(domain)
+            ngpt = length(elements[i].weight)
+            sv = mean(s[sv_id+1:sv_id+ngpt])
+            sv_id = sv_id + ngpt
+        else
+            error(ArgumentError("Dimension of the scalar function must be #nodes, #elements, or #guass_points."))
+        end
         sv = length(s)==domain.nnodes ? mean(s[e]) : s[i]
         dv = [d[e] d[e .+ domain.nnodes]]
         p = plt.Polygon(elements[i].coords + scale_factor * dv,edgecolor="k",lw=1,fill=true,
@@ -215,6 +228,7 @@ end
 
 function visualize_scalar_on_scoped_body(s_all::Array{Float64, 2}, d_all::Array{Float64,2}, domain::Domain;
     scale_factor::Real = -1.0, frames::Int64 = 20, kwargs...)
+    local sv
     if scale_factor<0.0
         scale_factor = min(
             0.1 * (maximum(domain.nodes[:,1]) - minimum(domain.nodes[:,1]))/maximum(abs.(d_all[:, 1:domain.nnodes])),
@@ -260,9 +274,20 @@ function visualize_scalar_on_scoped_body(s_all::Array{Float64, 2}, d_all::Array{
         d = d_all[frame,:]
         gca().clear()
         patches = []
+        sv_id = 0
         for i = 1:size(elements,1)
             e = elements[i].elnodes
-            sv = length(s)==domain.nnodes ? mean(s[e]) : s[i]
+            if length(s)==domain.nnodes
+                sv = mean(s[e])
+            elseif length(s)==length(elements)
+                sv = s[i]
+            elseif length(s)==getNGauss(domain)
+                ngpt = length(elements[i].weight)
+                sv = mean(s[sv_id+1:sv_id+ngpt])
+                sv_id = sv_id + ngpt
+            else
+                error(ArgumentError("Dimension of the scalar function must be #nodes, #elements, or #guass_points."))
+            end
             dv = [d[e] d[e .+ domain.nnodes]]
             p = plt.Polygon(elements[i].coords + scale_factor * dv,edgecolor="k",lw=1,fill=true,
                 fc=m.to_rgba(sv))
