@@ -1,6 +1,6 @@
 export visualize_displacement, visualize_von_mises_stress, visualize_mesh, visualize_boundary,
 visualize_scalar_on_scoped_body, visualize_total_deformation_on_scoped_body, visualize_von_mises_stress_on_scoped_body,
-visualize_x_deformation_on_scoped_body, visualize_y_deformation_on_scoped_body
+visualize_x_deformation_on_scoped_body, visualize_y_deformation_on_scoped_body, visualize_scalar_on_undeformed_body
 
 
 """
@@ -205,13 +205,12 @@ function visualize_scalar_on_scoped_body(s::Array{Float64, 1}, d::Array{Float64,
         elseif length(s)==length(elements)
             sv = s[i]
         elseif length(s)==getNGauss(domain)
-            ngpt = length(elements[i].weight)
+            ngpt = length(elements[i].weights)
             sv = mean(s[sv_id+1:sv_id+ngpt])
             sv_id = sv_id + ngpt
         else
             error(ArgumentError("Dimension of the scalar function must be #nodes, #elements, or #guass_points."))
         end
-        sv = length(s)==domain.nnodes ? mean(s[e]) : s[i]
         dv = [d[e] d[e .+ domain.nnodes]]
         p = plt.Polygon(elements[i].coords + scale_factor * dv,edgecolor="k",lw=1,fill=true,
             fc=m.to_rgba(sv))
@@ -309,6 +308,21 @@ function visualize_scalar_on_scoped_body(s_all::Array{Float64, 2}, d_all::Array{
     animate(update, Int64.(round.(LinRange(div(size(s_all,1), frames), size(s_all,1),frames))))
 end
 
+"""
+    visualize_scalar_on_undeformed_body(s::Array{Float64, 1}, domain::Domain; kwargs...)
+    visualize_scalar_on_undeformed_body(s::Array{Float64, 2}, domain::Domain; frames::Int64 = 20, kwargs...)
+
+Plots or animates scalar values `s` on the domain `domain`
+
+"""
+function visualize_scalar_on_undeformed_body(s::Array{Float64, 1}, domain::Domain; kwargs...)
+    visualize_scalar_on_scoped_body(s, zeros(2*domain.nnodes), domain)
+end
+
+function visualize_scalar_on_undeformed_body(s::Array{Float64, 2}, domain::Domain; frames::Int64 = 20, kwargs...)
+    visualize_scalar_on_scoped_body(s, zeros(2*domain.nnodes), domain; frames = frames, kwargs...)
+end
+
 
 @doc raw"""
     visualize_total_deformation_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
@@ -341,6 +355,11 @@ Visualizes the $x$ directional displacement.
 function visualize_x_deformation_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
     scale_factor::Real = 1.0, frames::Int64 = 20, kwargs...)
     visualize_scalar_on_scoped_body(d_all[:, 1:domain.nnodes], d_all, domain; scale_factor = scale_factor, frames=frames, kwargs...)
+end
+
+function visualize_x_deformation_on_scoped_body(d_all::Array{Float64,1}, domain::Domain;
+    scale_factor::Real = 1.0, frames::Int64 = 20, kwargs...)
+    visualize_scalar_on_scoped_body(d_all[1:domain.nnodes], d_all, domain; scale_factor = scale_factor, kwargs...)
 end
 
 @doc raw"""

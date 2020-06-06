@@ -64,8 +64,9 @@ open("CustomOp/CMakeLists.txt", "w") do io
     write(io, cnt)
 end
 
-rm("$(@__DIR__)/CustomOp/build", force=true, recursive=true)
-mkdir("$(@__DIR__)/CustomOp/build")
+if !isdir("$(@__DIR__)/CustomOp/build")
+    mkdir("$(@__DIR__)/CustomOp/build")
+end
 cd("$(@__DIR__)/CustomOp/build")
 ADCME.cmake()
 ADCME.make()
