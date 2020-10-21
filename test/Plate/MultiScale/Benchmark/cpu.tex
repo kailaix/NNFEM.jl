@@ -1,0 +1,112 @@
+% This file was created by tikzplotlib v0.9.1.
+\begin{tikzpicture}
+
+\begin{axis}[
+legend cell align={left},
+legend style={fill opacity=0.8, draw opacity=1, text opacity=1, at={(0.91,0.5)}, anchor=east, draw=white!80!black},
+log basis y={10},
+tick align=outside,
+tick pos=left,
+x grid style={white!69.0196078431373!black},
+xlabel={Load (GPa)},
+xmajorgrids,
+xmin=0.34, xmax=1.66,
+xtick style={color=black},
+xtick={0.2,0.4,0.6,0.8,1,1.2,1.4,1.6,1.8},
+xticklabels={0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.6,1.8},
+y grid style={white!69.0196078431373!black},
+ylabel={CPU Time (sec)},
+ymajorgrids,
+ymin=62.3649238054306, ymax=80369.0998834116,
+ymode=log,
+ytick style={color=black},
+ytick={1,10,100,1000,10000,100000,1000000},
+yticklabels={\(\displaystyle {10^{0}}\),\(\displaystyle {10^{1}}\),\(\displaystyle {10^{2}}\),\(\displaystyle {10^{3}}\),\(\displaystyle {10^{4}}\),\(\displaystyle {10^{5}}\),\(\displaystyle {10^{6}}\)}
+]
+\addplot [very thick, red, mark=*, mark size=3, mark options={solid}, forget plot]
+table {%
+1.6 58038.837961276
+1.33333333333333 50593.067638013
+1 46014.154744781
+0.8 44768.697642296
+0.4 40926.322249248
+};
+\addplot [very thick, red, dotted, mark=*, mark size=3, mark options={solid}, forget plot]
+table {%
+1.6 218.205717485
+1.33333333333333 109.871857105
+1 91.967749878
+0.8 86.359633766
+0.4 96.631165397
+};
+\addplot [very thick, green!50!black, mark=*, mark size=3, mark options={solid}, forget plot]
+table {%
+1.6 48749.580876096
+1.33333333333333 46044.787294992
+1 42793.291550977
+0.8 39900.831641923
+0.4 38758.784705406
+};
+\addplot [very thick, green!50!black, dotted, mark=*, mark size=3, mark options={solid}, forget plot]
+table {%
+1.6 172.72724317
+1.33333333333333 97.451604466
+1 90.329985264
+0.8 92.315171475
+0.4 88.666778581
+};
+\addplot [very thick, blue, mark=*, mark size=3, mark options={solid}, forget plot]
+table {%
+1.6 56211.987075903
+1.33333333333333 52497.121672471
+1 49507.305923038
+0.8 46675.113248691
+0.4 39564.816549516
+};
+\addplot [very thick, blue, dotted, mark=*, mark size=3, mark options={solid}, forget plot]
+table {%
+1.6 415.933555361
+1.33333333333333 272.028080746
+1 154.317654317
+0.8 96.965845698
+0.4 95.472751521
+};
+\addplot [very thick, black]
+table {%
+1.6 nan
+1.33333333333333 nan
+1 nan
+0.8 nan
+0.4 nan
+};
+\addlegendentry{Fiber resolved DNS}
+\addplot [very thick, black, dotted]
+table {%
+1.6 nan
+1.33333333333333 nan
+1 nan
+0.8 nan
+0.4 nan
+};
+\addlegendentry{CholNN}
+\draw (axis cs:1.7,218.205717485) node[
+  scale=0.5,
+  anchor=base west,
+  text=black,
+  rotate=0.0
+]{tid = 106};
+\draw (axis cs:1.7,172.72724317) node[
+  scale=0.5,
+  anchor=base west,
+  text=black,
+  rotate=0.0
+]{tid = 206};
+\draw (axis cs:1.7,415.933555361) node[
+  scale=0.5,
+  anchor=base west,
+  text=black,
+  rotate=0.0
+]{tid = 300};
+\end{axis}
+
+\end{tikzpicture}

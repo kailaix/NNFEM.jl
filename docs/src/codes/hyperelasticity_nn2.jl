@@ -16,15 +16,15 @@ end
 # free energy 
 function nn_law(ε)
   φ = squeeze(ae(ε, [20,20,20,1]))
-  tf.gradients(φ, ε)
+  tf.gradients(φ, ε)[1] 
 end
 
-# parameter
-c1 = Variable(0.5) * 1e-1
-c2 = Variable(0.5) * 1e-1
-function nn_law(ε)
-  compute_stress_rivlin_saunders(ε, c1, c2)
-end
+# # parameter
+# c1 = Variable(0.5) * 1e-1
+# c2 = Variable(0.5) * 1e-1
+# function nn_law(ε)
+#   compute_stress_rivlin_saunders(ε, c1, c2)
+# end
 
 
 d, v, a= ExplicitSolver(globaldata, domain, d0, v0, a0, Δt, NT, nn_law, Fext, ubd, abd; strain_type="finite")
@@ -37,20 +37,7 @@ sess = Session(); init(sess)
 @info run(sess, loss)
 # error()
 
-# BFGS!(sess, loss)
-
-
-# for visualizing the parameters 
-sol = []
-cb = (vs, iter, loss)->begin 
-  push!(sol, vs)
-  printstyled("[#iter $iter] a = $vs, loss=$loss\n", color=:green)
+for i = 1:100
+  BFGS!(sess, loss, 1000)
+  ADCME.save(sess, "data2_$i.mat")
 end
-BFGS!(sess, loss, callback = cb, vars = [c1, c2])
-
-plot([x[1] for x in sol], "+--", color="red", label="\$C1\$")
-plot(ones(length(sol))*1e-1, "-", color="k", alpha=0.3, label="Reference Value (C1 and C2)")
-plot([x[2] for x in sol], "x--", color ="green", label="\$C2\$")
-xlabel("Iterations")
-legend()
-
