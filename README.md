@@ -7,6 +7,8 @@ NNFEM is a
 * neural network-enabled finite element library, which supports learning a neural network-based constitutive relations with both direct data (i.e, strain-stress pairs) and indirect data (i.e. full displacement field) via **automatic differentiation**, and solving finite element problems with **network-based constitutive relations**. In principle, it allows you to insert and learn a neural network anywhere in your finite element codes. 
 
 
+⚠️ NNFEM.jl is now superseded by [AdFem.jl](https://github.com/kailaix/AdFem.jl), a computational-graph-based finite element library for inverse modeling. NNFEM.jl will be no longer actively developed. 
+
 
 | Documentation                                                |
 | ------------------------------------------------------------ |
