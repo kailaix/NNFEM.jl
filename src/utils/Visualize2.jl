@@ -1,62 +1,46 @@
-export visualize_displacement, visualize_von_mises_stress, visualize_mesh, visualize_boundary
+export visualize_displacement, visualize_von_mises_stress, visualize_mesh, visualize_boundary,
+visualize_scalar_on_scoped_body, visualize_total_deformation_on_scoped_body, visualize_von_mises_stress_on_scoped_body,
+visualize_x_deformation_on_scoped_body, visualize_y_deformation_on_scoped_body, visualize_scalar_on_undeformed_body
 
 
 """
-    visualize_von_mises_stress(domain::Domain)
+    visualize_von_mises_stress(domain::Domain; frames::Int64 = 20, kwargs...)
 
 Animation of von Mises stress tensors. 
-"""
-function visualize_von_mises_stress(domain::Domain)
-    stress = domain.history["stress"]
-    S = zeros(length(stress), length(domain.elements))
-    x = zeros(length(domain.elements))
-    y = zeros(length(domain.elements))
-    for t = 1:length(stress)
-        cnt = 1
-        for (k,e) in enumerate(domain.elements)
-            ct = mean(domain.elements[k].coords, dims=1)
-            x[k], y[k] = ct[1,1], ct[1,2]
-            
-                ss = Float64[]
-                nstress = length(e.mat)
-                for p = 1:nstress
-                    push!(ss, postprocess_stress(stress[t][cnt, :] ,"vonMises"))
-                    cnt += 1
-                end
-                S[t, k] = mean(ss)
-            
-        end
-    end   
-    
-    # function update(i)
-    # c = contour(φ[1,:,:], 10, cmap="jet", vmin=vmin,vmax=vmax)
-    close("all")
-    
-    xlabel("x")
-    ylabel("y")
-    tricontour(x, y, S[1,:], 15, linewidths=0.5, colors="k")
-    tricontourf(x, y, S[1,:], 15)
-    axis("scaled")
-    gca().invert_yaxis()
-    function update(i)
-        gca().clear()
-        tricontour(x, y, S[i,:], 15, linewidths=0.5, colors="k")
-        tricontourf(x, y, S[i,:], 15)
-        xlabel("x")
-        ylabel("y")
-    end
 
-    animate(update, Int64.(round.(LinRange(2, size(S,1),20))))
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_von_mises_stress.gif?raw=true)
+"""
+function visualize_von_mises_stress(domain::Domain; frames::Int64 = 20, kwargs...)
+    NT = length(domain.history["stress"])
+    if NT == 0 
+        error(ArgumentError("history[\"stress\"] is empty.")) 
+    end
+    visualize_von_mises_stress_on_scoped_body(zeros(NT+1, domain.nnodes*2), domain; frames = frames, kwargs...)
 end
 
+"""
+    visualize_von_mises_stress(domain::Domain, t_step::Int64; kwargs...)
+
+Plot of von Mises stress tensors at time step `t_step`.
+
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_von_mises_stress_50.png?raw=true)
+"""
+function visualize_von_mises_stress(domain::Domain, t_step::Int64; kwargs...)
+    domain2 = copy(domain)
+    domain2.history["stress"] = [domain.history["stress"][t_step]]
+    visualize_von_mises_stress_on_scoped_body(zeros(1, domain2.nnodes*2), domain2; frames=1, kwargs...)
+end
 
 """
     visualize_displacement(domain::Domain)
+    visualize_displacement(u::Array{Float64, 2}, domain::Domain)
 
-Animation of displacements. 
+Animation of displacements using points. 
+
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_displacement.gif?raw=true)
 """
-function visualize_displacement(domain::Domain)
-    u = hcat(domain.history["state"]...)
+function visualize_displacement(domain::Domain; scale_factor::Float64 = 1.0)
+    u = hcat(domain.history["state"]...) * scale_factor
     visualize_displacement(u, domain)
 end
 
@@ -85,6 +69,7 @@ function visualize_displacement(u::Array{Float64, 2}, domain::Domain)
     t = title("Snapshot = 0")
     xlim(xmin, xmax)
     ylim(ymin, ymax)
+    axis("scaled")
     function update(frame)
         p.set_data(U0[:,frame], V0[:,frame])
         t.set_text("Snapshot = $frame")
@@ -96,6 +81,14 @@ function visualize_displacement(u::Array{Float64, 2}, domain::Domain)
     out
 end
 
+
+"""
+    visualize_displacement(domain::Domain)
+    visualize_displacement(nodes::Array{Float64,2}, elems::Array{Int64, 2})
+
+Visualizes the mesh.
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_mesh.png?raw=true)
+"""
 function visualize_mesh(nodes::Array{Float64,2}, elems::Array{Int64, 2})
     patches = PyObject[]
     for i = 1:size(elems,1)
@@ -108,6 +101,7 @@ function visualize_mesh(nodes::Array{Float64,2}, elems::Array{Int64, 2})
     axis("scaled")
     xlabel("x")
     ylabel("y")
+    gca().invert_yaxis()
 end
 
 function visualize_mesh(domain::Domain) 
@@ -119,7 +113,13 @@ function visualize_mesh(domain::Domain)
 end
 
 
+"""
+    visualize_boundary(domain::Domain, direction::String="x")
 
+Visualizes the boundary conditions. The boundary configuration is shown in the direction `direction`.
+
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_boundary.png?raw=true)
+"""
 function visualize_boundary(domain::Domain, direction::String="x")
     visualize_mesh(domain)
     direction = direction == "x" ? 1 : 2;
@@ -164,6 +164,246 @@ function visualize_boundary(domain::Domain, direction::String="x")
 
     end
     legend()
-    gca().invert_yaxis()
+    # gca().invert_yaxis()
     
 end
+
+"""
+    visualize_scalar_on_scoped_body(d::Array{Float64}, domain::Domain, kwargs...)
+    visualize_scalar_on_scoped_body(s::Array{Float64, 1}, d::Array{Float64,1}, domain::Domain;
+        scale_factor::Float64 = -1.0, kwargs...)
+
+Plot the scalar on scoped body. For example, `s` can be the von Mises stress tensor. 
+"""
+function visualize_scalar_on_scoped_body(s::Array{Float64, 1}, d::Array{Float64,1}, domain::Domain;
+        scale_factor::Real = -1.0, kwargs...)
+    local sv
+    if scale_factor<0.0
+        
+        scale_factor = min(
+            0.1 * (maximum(domain.nodes[:,1]) - minimum(domain.nodes[:,1]))/maximum(abs.(d[1:domain.nnodes])),
+            0.1 * (maximum(domain.nodes[:,2]) - minimum(domain.nodes[:,2]))/maximum(abs.(d[domain.nnodes+1:end]))
+        )
+        if isinf(scale_factor)
+            scale_factor = 1.0
+        end
+        @info "scale_factor automatically set to $scale_factor"
+    end
+    vmin = haskey(kwargs, :vmin) ? kwargs[:vmin] : minimum(s)
+    vmax = haskey(kwargs, :vmax) ? kwargs[:vmax] : maximum(s)
+    n = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
+    cm = matplotlib.cm
+    cmap = cm.jet
+    m = cm.ScalarMappable(norm=n, cmap=cmap)
+    elements = domain.elements
+    patches = []
+    sv_id = 0 
+    for i = 1:size(elements,1)
+        e = elements[i].elnodes
+        if length(s)==domain.nnodes
+            sv = mean(s[e])
+        elseif length(s)==length(elements)
+            sv = s[i]
+        elseif length(s)==getNGauss(domain)
+            ngpt = length(elements[i].weights)
+            sv = mean(s[sv_id+1:sv_id+ngpt])
+            sv_id = sv_id + ngpt
+        else
+            error(ArgumentError("Dimension of the scalar function must be #nodes, #elements, or #guass_points."))
+        end
+        dv = [d[e] d[e .+ domain.nnodes]]
+        p = plt.Polygon(elements[i].coords + scale_factor * dv,edgecolor="k",lw=1,fill=true,
+            fc=m.to_rgba(sv))
+        push!(patches, p)
+    end
+    p = matplotlib.collections.PatchCollection(patches, match_original=true)
+    gca().add_collection(p)
+    colorbar(m)
+    gca().invert_yaxis()
+    axis("scaled")
+    xlabel("x")
+    ylabel("y")
+end 
+
+function visualize_scalar_on_scoped_body(s_all::Array{Float64, 2}, d_all::Array{Float64,2}, domain::Domain;
+    scale_factor::Real = -1.0, frames::Int64 = 20, kwargs...)
+    local sv
+    if scale_factor<0.0
+        scale_factor = min(
+            0.1 * (maximum(domain.nodes[:,1]) - minimum(domain.nodes[:,1]))/maximum(abs.(d_all[:, 1:domain.nnodes])),
+            0.1 * (maximum(domain.nodes[:,2]) - minimum(domain.nodes[:,2]))/maximum(abs.(d_all[:, domain.nnodes+1:end]))
+        )
+        if isinf(scale_factor)
+            scale_factor = 1.0
+        end
+        @info "scale_factor automatically set to $scale_factor"
+    end
+
+    if frames==1
+         visualize_scalar_on_scoped_body(s_all[1,:], d_all[1,:], domain; scale_factor = scale_factor, kwargs...)
+         return nothing
+    end
+    vmin = haskey(kwargs, :vmin) ? kwargs[:vmin] : minimum(s_all)
+    vmax = haskey(kwargs, :vmax) ? kwargs[:vmax] : maximum(s_all)
+    n = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
+    n = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
+    cm = matplotlib.cm
+    cmap = cm.jet
+    m = cm.ScalarMappable(norm=n, cmap=cmap)
+    elements = domain.elements
+    close("all")
+    # Find the bounding box: the domain takes up 80% 
+    D = zeros(size(d_all,1), domain.nnodes)
+    for i = 1:size(d_all,1)
+        D[i,:] = domain.nodes[:,1] + scale_factor*d_all[i,1:domain.nnodes]
+    end
+    a1, b1 = minimum(D), maximum(D)
+    h1 = (b1-a1)*0.1
+
+    D = zeros(size(d_all,1), domain.nnodes)
+    for i = 1:size(d_all,1)
+        D[i,:] = domain.nodes[:,2] + scale_factor*d_all[i,domain.nnodes+1:end]
+    end
+    a2, b2 = minimum(D), maximum(D)
+    h2 = (b2-a2)*0.1
+    
+    
+    function update(frame)
+        s = s_all[frame,:]
+        d = d_all[frame,:]
+        gca().clear()
+        patches = []
+        sv_id = 0
+        for i = 1:size(elements,1)
+            e = elements[i].elnodes
+            if length(s)==domain.nnodes
+                sv = mean(s[e])
+            elseif length(s)==length(elements)
+                sv = s[i]
+            elseif length(s)==getNGauss(domain)
+                ngpt = length(elements[i].weight)
+                sv = mean(s[sv_id+1:sv_id+ngpt])
+                sv_id = sv_id + ngpt
+            else
+                error(ArgumentError("Dimension of the scalar function must be #nodes, #elements, or #guass_points."))
+            end
+            dv = [d[e] d[e .+ domain.nnodes]]
+            p = plt.Polygon(elements[i].coords + scale_factor * dv,edgecolor="k",lw=1,fill=true,
+                fc=m.to_rgba(sv))
+            push!(patches, p)
+        end
+        p = matplotlib.collections.PatchCollection(patches, match_original=true)
+        gca().add_collection(p)
+        xlabel("x")
+        ylabel("y")
+        title("Snapshot = $frame")
+        axis("scaled")
+        xlim(a1-h1, b1+h1)
+        ylim(a2-h2, b2+h2)
+        gca().invert_yaxis()
+    end
+    update(1)
+    t = title("Snapshot = 1")
+    cb = colorbar(m)
+    animate(update, Int64.(round.(LinRange(div(size(s_all,1), frames), size(s_all,1),frames))))
+end
+
+"""
+    visualize_scalar_on_undeformed_body(s::Array{Float64, 1}, domain::Domain; kwargs...)
+    visualize_scalar_on_undeformed_body(s::Array{Float64, 2}, domain::Domain; frames::Int64 = 20, kwargs...)
+
+Plots or animates scalar values `s` on the domain `domain`
+
+"""
+function visualize_scalar_on_undeformed_body(s::Array{Float64, 1}, domain::Domain; kwargs...)
+    visualize_scalar_on_scoped_body(s, zeros(2*domain.nnodes), domain)
+end
+
+function visualize_scalar_on_undeformed_body(s::Array{Float64, 2}, domain::Domain; frames::Int64 = 20, kwargs...)
+    visualize_scalar_on_scoped_body(s, zeros(2*domain.nnodes), domain; frames = frames, kwargs...)
+end
+
+
+@doc raw"""
+    visualize_total_deformation_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
+    scale_factor::Float64 = 1.0, frames::Int64 = 20)
+
+Visualizes the total deformation
+
+$$\sqrt{u_x^2 + u_y^2}$$
+
+
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_total_deformation_on_scoped_body.gif?raw=true)
+"""
+function visualize_total_deformation_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
+    scale_factor::Real = 1.0, frames::Int64 = 20, kwargs...)
+    s_all = d_all
+    S = zeros(size(s_all,1), domain.nnodes)
+    for i = 1:size(s_all,1)
+        S[i,:] = @. sqrt( s_all[i,1:domain.nnodes]^2 + s_all[i,domain.nnodes+1:end]^2 ) 
+    end
+    visualize_scalar_on_scoped_body(S, d_all, domain; scale_factor = scale_factor, frames=frames, kwargs...)
+end
+
+
+@doc raw"""
+    visualize_x_deformation_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
+    scale_factor::Real = 1.0, frames::Int64 = 20, kwargs...)
+
+Visualizes the $x$ directional displacement. 
+"""
+function visualize_x_deformation_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
+    scale_factor::Real = 1.0, frames::Int64 = 20, kwargs...)
+    visualize_scalar_on_scoped_body(d_all[:, 1:domain.nnodes], d_all, domain; scale_factor = scale_factor, frames=frames, kwargs...)
+end
+
+function visualize_x_deformation_on_scoped_body(d_all::Array{Float64,1}, domain::Domain;
+    scale_factor::Real = 1.0, frames::Int64 = 20, kwargs...)
+    visualize_scalar_on_scoped_body(d_all[1:domain.nnodes], d_all, domain; scale_factor = scale_factor, kwargs...)
+end
+
+@doc raw"""
+    visualize_y_deformation_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
+    scale_factor::Real = 1.0, frames::Int64 = 20, kwargs...)
+
+Visualizes the $y$ directional displacement. 
+"""
+function visualize_y_deformation_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
+    scale_factor::Real = 1.0, frames::Int64 = 20, kwargs...)
+    visualize_scalar_on_scoped_body(d_all[:, domain.nnodes+1:end], d_all, domain; scale_factor = scale_factor, frames=frames, kwargs...)
+end
+
+"""
+    visualize_von_mises_stress_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
+    scale_factor::Real = -1.0, frames::Int64 = 20)
+
+Similar to [`visualize_von_mises_stress`](@ref), but the domain can be a deformed body. 
+
+![](https://github.com/ADCMEMarket/ADCMEImages/blob/master/NNFEM/visualize_von_mises_stress_on_scoped_body.gif?raw=true)
+"""
+function visualize_von_mises_stress_on_scoped_body(d_all::Array{Float64,2}, domain::Domain;
+    scale_factor::Real = -1.0, frames::Int64 = 20, kwargs...)
+    stress = domain.history["stress"]
+    S = zeros(length(stress), length(domain.elements))
+    x = zeros(length(domain.elements))
+    y = zeros(length(domain.elements))
+    for t = 1:length(stress)
+        cnt = 1
+        for (k,e) in enumerate(domain.elements)
+            ct = mean(domain.elements[k].coords, dims=1)
+            x[k], y[k] = ct[1,1], ct[1,2]
+            
+                ss = Float64[]
+                nstress = length(e.mat)
+                for p = 1:nstress
+                    push!(ss, postprocess_stress(stress[t][cnt, :] ,"vonMises"))
+                    cnt += 1
+                end
+                S[t, k] = mean(ss)
+        end
+    end   
+
+    visualize_scalar_on_scoped_body(S, d_all, domain; scale_factor = scale_factor, frames=frames, kwargs...)
+end
+
+

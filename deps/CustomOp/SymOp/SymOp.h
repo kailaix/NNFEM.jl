@@ -1,4 +1,4 @@
-void forward(double *y, const double *x, int n){
+void forward_SymOp(double *y, const double *x, int n){
   #pragma omp parallel for
   for(int i=0;i<n;i++){
     y[i*9] = x[6*i+0];
@@ -13,7 +13,7 @@ void forward(double *y, const double *x, int n){
   }
 }
 
-void backward(double *grad_x, const double *grad_y, const double *y, const double *x, int n){
+void forward_SymOp(double *grad_x, const double *grad_y, const double *y, const double *x, int n){
   for(int i=0;i<n;i++){
     grad_x[6*i+0] =  grad_y[i*9];
     grad_x[6*i+1] =  grad_y[i*9+1] + grad_y[i*9+3];

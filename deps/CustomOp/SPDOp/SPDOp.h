@@ -1,4 +1,4 @@
-void forward(double *out, const double *y, const double *H0, int n){
+void forward_SPDOp(double *out, const double *y, const double *H0, int n){
   double h = 100.0;
   double V[3];
   for(int i=0;i<n;i++){
@@ -21,7 +21,7 @@ void forward(double *out, const double *y, const double *H0, int n){
 }
 
 
-void backward(double *d_y, const double *d_out, const double *y, const double *H0, int n){
+void forward_SPDOp(double *d_y, const double *d_out, const double *y, const double *H0, int n){
   // Eigen::Vector3d yi, a;
   // Eigen::Matrix3d M, dout_dy, q, dO_dy, P;
   // for(int i=0;i<3;i++){

@@ -3,13 +3,32 @@
 ## Core Data Structure
 ```@docs
 Domain
+Domain(nodes::Array{Float64}, elements::Array, ndims::Int64 = 2,
+    EBC::Union{Missing, Array{Int64}} = missing, g::Union{Missing, Array{Float64}} = missing, FBC::Union{Missing, Array{Int64}} = missing, 
+    f::Union{Missing, Array{Float64}} = missing, edge_traction_data::Array{Int64,2}=zeros(Int64,0,3))
 GlobalData
+GlobalData(state::Union{Array{Float64,1},Missing},Dstate::Union{Array{Float64,1},Missing},
+        velo::Union{Array{Float64,1},Missing},acce::Union{Array{Float64,1},Missing}, 
+        neqs::Int64,
+        EBC_func::Union{Function, Nothing}=nothing, FBC_func::Union{Function, Nothing}=nothing,
+        Body_func::Union{Function,Nothing}=nothing, Edge_func::Union{Function,Nothing}=nothing)
 ```
 
-## Core Data Structure Utilities
-```@docs
+### Domain 
+```@docs 
 getEqns
+getDofs
+getCoords
 getNGauss
+getGaussPoints
+getState(domain::Domain, el_dofs::Array{Int64})
+getStrain(domain::Domain)
+getDStrain(domain::Domain)
+getStress(domain::Domain, Δt::Float64 = 0.0; save_trace::Bool = false)
+getElems
+getStressHistory
+getStrainHistory
+getStateHistory
 ```
 
 ## Elements
@@ -43,7 +62,7 @@ assembleInternalForce
 assembleStiffAndForce
 assembleMassMatrix!
 getBodyForce
-getExternalForce!
+getExternalForce
 ```
 
 ## State Updates
@@ -55,7 +74,7 @@ commitHistory
 setConstantDirichletBoundary!
 setConstantNodalForces!
 updateStates!
-updateDomainStateBoundary!
+updateTimeDependentEssentialBoundaryCondition!
 ```
 
 ## Solvers
@@ -63,17 +82,29 @@ updateDomainStateBoundary!
 ```@docs
 ExplicitSolverStep
 GeneralizedAlphaSolverStep
+ImplicitStaticSolver
 SolverInitial!
 SolverInitial
 ```
 
 
-## Utilities
+## Mesh Utilities
+
+```@docs
+meshread
+psread
+```
+
 
 ```@autodocs
-meshread
-visualize_von_mises_stress
-visualize_displacement
+Modules = [NNFEM]
+Pages   = ["utils/gmsh.jl"]
+```
+
+## Visualization
+```@autodocs
+Modules = [NNFEM]
+Pages   = ["utils/Visualize2.jl"]
 ```
 
 ## Automatic Differentiation
@@ -91,4 +122,5 @@ GeneralizedAlphaSolverTime
 compute_boundary_info
 compute_external_force
 compute_stress_rivlin_saunders
+s_compute_stiffness_matrix1
 ```

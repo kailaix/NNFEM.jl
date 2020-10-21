@@ -1,23 +1,23 @@
 export sym_H, orthotropic_H, spd_H, spd_Cholesky, spd_Chol_Orth, spd_zero_to_H
 
 
-@doc raw"""
-    sym_H(y::PyObject)
-    sym_H(o::Array)
+# @doc raw"""
+#     sym_H(y::PyObject)
+#     sym_H(o::Array)
 
-Creates a symmetric matrix from 6 parameters
-```math
-H = \begin{bmatrix}
-y_1 & y_2 & y_3\\ 
-y_2 & y_4 & y_5 \\ 
-y_3 & y_5 & y_6
-\end{bmatrix}
-```
-"""
-function sym_H(y::PyObject)
-    y = sym_op(y)
-    z = tf.reshape(y, (-1,3,3)) 
-end
+# Creates a symmetric matrix from 6 parameters
+# ```math
+# H = \begin{bmatrix}
+# y_1 & y_2 & y_3\\ 
+# y_2 & y_4 & y_5 \\ 
+# y_3 & y_5 & y_6
+# \end{bmatrix}
+# ```
+# """
+# function sym_H(y::PyObject)
+#     y = sym_op(y)
+#     z = tf.reshape(y, (-1,3,3)) 
+# end
 
 function sym_H(o::Array)
     [o[1] o[2] o[3];
@@ -68,7 +68,7 @@ function spd_H(o::PyObject, H0::Array{Float64,2})
     if size(o,2)!=3
         error("NNFEM: second dimension of `o` must be 3")
     end
-    spd_op = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/SPDOp/build/libSPDOp", "spd_op")
+    spd_op = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/build/libDataLib", "spd_op")
     ret = spd_op(constant(H0), o)
   
     # ret.set_shape((-1,3,3))
@@ -114,6 +114,7 @@ function spd_Cholesky(o::PyObject)
         error("NNFEM: second dimension of `o` must be 6")
     end
   
+    chol_op = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/build/libDataLib", "chol_op")
     ret = chol_op(o)
    
     tf.reshape(ret, (-1,3,3))
@@ -150,7 +151,7 @@ function spd_Chol_Orth(o::PyObject)
         error("NNFEM: second dimension of `o` must be 4")
     end
     
-    chol_orth_op = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/CholOrthOp/build/libCholOrthOp", "chol_orth_op")
+    chol_orth_op = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/build/libDataLib", "chol_orth_op")
     ret = chol_orth_op(o)
  
     tf.reshape(ret, (-1,3,3))
@@ -180,7 +181,7 @@ function spd_zero_to_H(o::PyObject, H0inv::Array{Float64,2})
         error("NNFEM: second dimension of `o` must be 4")
     end
 
-    chol_orth_op = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/CholOrthOp/build/libCholOrthOp", "chol_orth_op")
+    chol_orth_op = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/build/libDataLib", "chol_orth_op")
     ret = chol_orth_op(o)
 
     out = tf.reshape(ret, (-1,3,3))

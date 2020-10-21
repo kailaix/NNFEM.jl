@@ -98,7 +98,7 @@ function compute_loss(tid, force_scale)
     setConstantNodalForces!(domain, FBC, fext)
     for i = 1:NT
         globdat.time = Δt*i
-        updateDomainStateBoundary!(domain, globdat)
+        updateTimeDependentEssentialBoundaryCondition!(domain, globdat)
         push!(fext_history, domain.fext[:])
     end
 

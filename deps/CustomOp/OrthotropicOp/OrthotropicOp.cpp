@@ -62,7 +62,7 @@ public:
     // implement your forward function here 
 
     // TODO:
-    forward(y_tensor, x_tensor, n);
+    forward_OrthotropicOp(y_tensor, x_tensor, n);
   }
 };
 REGISTER_KERNEL_BUILDER(Name("OrthotropicOp").Device(DEVICE_CPU), OrthotropicOpOp);
@@ -122,7 +122,7 @@ public:
     // implement your backward function here 
 
     // TODO:
-    backward(grad_x_tensor, grad_y_tensor, y_tensor, x_tensor, n);
+    forward_OrthotropicOp(grad_x_tensor, grad_y_tensor, y_tensor, x_tensor, n);
   }
 };
 REGISTER_KERNEL_BUILDER(Name("OrthotropicOpGrad").Device(DEVICE_CPU), OrthotropicOpGradOp);

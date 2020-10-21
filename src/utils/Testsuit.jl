@@ -1,4 +1,4 @@
-export gradtest
+export gradtest, gradtest_assembleStiffAndForce
 
 @doc raw"""
     gradtest(f::Function, x0::Array{Float64}; scale::Float64 = 1.0)
@@ -34,4 +34,13 @@ function gradtest(f::Function, x0::Array{Float64}; scale::Float64 = 1.0)
     println("Finite difference: $err1")
     println("Automatic differentiation: $err2")
     return err1, err2
+end
+
+function gradtest_assembleStiffAndForce(domain::Domain; scale::Float64 = 1.0)
+    function f(s)
+        domain.state[domain.dof_to_eq] = s
+        rhs, K = assembleStiffAndForce(domain, 0.0)
+        return rhs, K 
+    end
+    gradtest(f, rand(domain.neqs), scale=scale)
 end

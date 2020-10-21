@@ -1,5 +1,5 @@
 
-export get2DElemShapeData, get1DElemShapeData
+export get2DElemShapeData, get1DElemShapeData, getShapeQuad4, getShapeQuad9
 function getShapeQuad4( ξ::Array{Float64,1} )
     #   gaussian point ordering:
     #   4 ---- 3

@@ -86,7 +86,7 @@ public:
     // implement your forward function here 
 
     // TODO:
-    forward(fint_tensor, stress_tensor, state_tensor);
+    forward_FiniteContinuumFint(fint_tensor, stress_tensor, state_tensor);
 
   }
 };
@@ -149,7 +149,7 @@ public:
     // implement your backward function here 
 
     // TODO:
-    backward(grad_stress_tensor, grad_state_tensor, grad_fint_tensor, fint_tensor, stress_tensor, state_tensor);
+    forward_FiniteContinuumFint(grad_stress_tensor, grad_state_tensor, grad_fint_tensor, fint_tensor, stress_tensor, state_tensor);
 
     
   }

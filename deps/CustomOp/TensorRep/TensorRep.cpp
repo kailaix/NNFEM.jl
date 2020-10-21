@@ -77,7 +77,7 @@ public:
     // implement your forward function here 
 
     // TODO:
-    forward(out_tensor, inp_tensor, N);
+    forward_TensorRep(out_tensor, inp_tensor, N);
 
   }
 };
@@ -133,7 +133,7 @@ public:
 
     // TODO:
     int N = inp_shape.dim_size(0);
-    backward(grad_inp_tensor, grad_out_tensor, out_tensor, inp_tensor, N);
+    forward_TensorRep(grad_inp_tensor, grad_out_tensor, out_tensor, inp_tensor, N);
     
   }
 };

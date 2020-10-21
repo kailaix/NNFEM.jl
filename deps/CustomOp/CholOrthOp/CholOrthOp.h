@@ -1,4 +1,4 @@
-void forward(double *out, const double *y, int n){
+void forward_CholOrthOp(double *out, const double *y, int n){
   /*     y0 y1 0
     L =     y2 0             out = L^T L
               y3
@@ -19,7 +19,7 @@ void forward(double *out, const double *y, int n){
 }
 
 
-void backward(double *d_y, const double *d_out, const double *y,  int n){
+void forward_CholOrthOp(double *d_y, const double *d_out, const double *y,  int n){
   int ny = 4;
   for(int i=0;i<n;i++){
     d_y[ny*i+0] =  2*d_out[i*9]*y[ny*i+0] + (d_out[i*9+1] + d_out[i*9+3])*y[ny*i+1];

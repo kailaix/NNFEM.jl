@@ -1,6 +1,6 @@
 #include "data.h"
 
-int forward_count(){
+int forward_count0(){
   int cnt = 0;
   for(int i=0;i<mesh.size();i++){
     for(int k=0; k<mesh[i]->nGauss;k++){
@@ -10,7 +10,7 @@ int forward_count(){
   return cnt;
 }
 
-void forward(int64 *ii, int64* jj, double *vv, const double *H){
+void forward_SmallContinuumStiffness(int64 *ii, int64* jj, double *vv, const double *H){
   int idx = 0.0;
   int Hidx = 0;
   for(int e=0;e<mesh.size();e++){
@@ -46,7 +46,7 @@ void forward(int64 *ii, int64* jj, double *vv, const double *H){
 
 
 
-void backward(
+void forward_SmallContinuumStiffness(
   double *grad_H,
   const double *grad_vv, 
   const double *vv, const double *H){

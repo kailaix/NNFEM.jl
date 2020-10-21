@@ -1,7 +1,7 @@
 export assembleStiffAndForce,assembleMassMatrix!,assembleInternalForce, getEqns
 
 @doc raw"""
-    assembleInternalForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
+    assembleInternalForce(domain::Domain, Δt::Float64 = 0.0)
 
 Computes the internal force vector $F_\mathrm{int}$ of length `neqs`
 - `globdat`: GlobalData
@@ -11,7 +11,7 @@ Computes the internal force vector $F_\mathrm{int}$ of length `neqs`
 Only the information in `domain` is used for computing internal force. 
 Therefore, the boundary conditions in `domain` must be set appropriately.
 """
-function assembleInternalForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
+function assembleInternalForce(domain::Domain, Δt::Float64 = 0.0)
     Fint = zeros(Float64, domain.neqs)
     neles = domain.neles
   
@@ -41,7 +41,7 @@ function assembleInternalForce(globdat::GlobalData, domain::Domain, Δt::Float64
   
     return Fint
 end
-
+assembleInternalForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0) = assembleInternalForce(domain, Δt)
 
 @doc raw"""
     assembleInternalForce(domain::Domain, nn::Function, E_all::PyObject, DE_all::PyObject, w∂E∂u_all::PyObject, σ0_all::PyObject)
@@ -105,7 +105,7 @@ function assembleInternalForce(domain::Domain, nn::Function,
     fints = squeeze(tf.matmul(w∂E∂u_all, tf.expand_dims(σ_all, 2)))
 
   # call the Cpp assembler to construct Fint
-    cpp_fint = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/FintComp/build/libFintComp", "fint_comp")
+    cpp_fint = load_op_and_grad("$(@__DIR__)/../../deps/CustomOp/build/libDataLib", "fint_comp")
     Fint = cpp_fint(fints, constant(el_eqns_all, dtype = Int32), constant(domain.neqs, dtype = Int32))
 
     return Fint, σ_all
@@ -113,17 +113,16 @@ end
 
 
 @doc raw"""
-    assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
+    assembleStiffAndForce(domain::Domain, Δt::Float64 = 0.0)
 
 Computes the internal force and stiffness matrix. 
 
-- `globdat`: GlobalData
 - `domain`: Domain, finite element domain, for data structure
 - `Δt`:  Float64, current time step size
 
 Returns a length `neqs` vector $F_{\mathrm{int}}$ and `neqs×neqs` sparse stiffness matrix. 
 """
-function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0)
+function assembleStiffAndForce(domain::Domain, Δt::Float64 = 0.0)
     Fint = zeros(Float64, domain.neqs)
   # K = zeros(Float64, domain.neqs, domain.neqs)
     ii = Int64[]; jj = Int64[]; vv = Float64[]
@@ -168,6 +167,8 @@ function assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64
     return Fint, Ksparse
 end
 
+assembleStiffAndForce(globdat::GlobalData, domain::Domain, Δt::Float64 = 0.0) = assembleStiffAndForce(domain, Δt)
+
 
 @doc raw"""
     assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
@@ -190,6 +191,9 @@ Here M is a `neqns×neqns` matrix, and $M_{ID}$ is a `neqns×nd` matrix. $M_{\ma
 ![](./assets/massmatrix.png)
 """
 function assembleMassMatrix!(globaldat::GlobalData, domain::Domain)
+    if size(globaldat.M,1)>0 
+        return 
+    end
     Mlumped = zeros(Float64, domain.neqs)
     # M = zeros(Float64, domain.neqs, domain.neqs)
     iiM = Int64[]; jjM = Int64[]; vvM = Float64[]

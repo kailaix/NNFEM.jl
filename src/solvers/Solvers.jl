@@ -39,6 +39,7 @@ find largest eigenvalue λ for
  ω^2 = λ
 """->
 function EigenMode(Δt, globdat, domain, eps0 = 1.0e-6, maxite = 100)
+    assembleMassMatrix!(globdat, domain)
     u = globdat.state[:]  #uⁿ
 
     M = globdat.M
@@ -65,11 +66,8 @@ a_0 = M^{-1}(- f^{int}(u_0) + f^{ext}_0)
 ```
 """
 function SolverInitial!(Δt::Float64, globdat::GlobalData, domain::Domain)
-    u = globdat.state[:]
-    fext = similar(u)
-    getExternalForce!(domain, globdat, fext)
-    
-    domain.state[domain.eq_to_dof] = u[:]
+    fext = getExternalForce(domain, globdat)
+    domain.state[domain.eq_to_dof] = globdat.state[:]
     fint  = assembleInternalForce( globdat, domain, Δt)
     globdat.acce[:] = globdat.M\(fext - fint)
 end
@@ -106,8 +104,8 @@ function ExplicitSolver(Δt::Float64, globdat::GlobalData, domain::Domain)
 
     globdat.time  += Δt
     #get fext at t + Δt
-    updateDomainStateBoundary!(domain, globdat)
-    fext = getExternalForce!(domain, globdat)
+    updateTimeDependentEssentialBoundaryCondition!(domain, globdat)
+    fext = getExternalForce(domain, globdat)
 
     u += Δt*∂u + 0.5*Δt*Δt*∂∂u
     ∂u += 0.5*Δt * ∂∂u
@@ -127,9 +125,11 @@ function ExplicitSolver(Δt::Float64, globdat::GlobalData, domain::Domain)
     updateStates!(domain, globdat)
 
     # (optional) for visualization, update fint and fext history
-    fint = assembleInternalForce( globdat, domain, Δt)
-    push!(domain.history["fint"], fint)
-    push!(domain.history["fext"], fext)
+    if options.save_history>=2
+        fint = assembleInternalForce( globdat, domain, Δt)
+        push!(domain.history["fint"], fint)
+        push!(domain.history["fext"], fext)
+    end
 end
 
 @doc raw"""
@@ -182,11 +182,12 @@ As for '\alpha_m' and '\alpha_f'
 use the current states `a`, `v`, `u`, `time` in globdat, and update these stetes to next time step
 update domain history, when failsafe is true, and Newton's solver fails, nothing will be changed.
 
-You need to call SolverInitial! before the first time step, if f^{ext}_0 != 0.
-SolverInitial! updates a_0 in the globdat.acce
-a_0 = M^{-1}(- f^{int}(u_0) + f^{ext}_0)
+You need to call SolverInitial! before the first time step, if $f^{ext}_0 \neq 0$.
+`SolverInitial!` updates `a_0` in the `globdat.acce`
 
-We assume globdat.acce[:] = a_0 and so far initialized to 0
+$$a_0 = M^{-1}(- f^{int}(u_0) + f^{ext}_0)$$
+
+We assume `globdat.acce[:] = a_0` and so far initialized to 0
 We also assume the external force is conservative (it does not depend on the current deformation)
 """->
 function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, ε0 = 1e-8, maxiterstep=100, η = 1.0, failsafe = false)
@@ -205,15 +206,14 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, �
     domain.Dstate = domain.state[:]
 
 
-    updateDomainStateBoundary!(domain, globdat)
+    updateTimeDependentEssentialBoundaryCondition!(domain, globdat)
     M = globdat.M
     
     ∂∂u = globdat.acce[:] #∂∂uⁿ
     u = globdat.state[:]  #uⁿ
     ∂u  = globdat.velo[:] #∂uⁿ
 
-    fext = similar(u)
-    getExternalForce!(domain, globdat, fext)
+    fext = getExternalForce(domain, globdat)
 
 
     ∂∂up = ∂∂u[:]
@@ -282,10 +282,14 @@ function NewmarkSolver(Δt, globdat, domain, αm = -1.0, αf = 0.0, ε = 1e-8, �
     #commit history in domain
     commitHistory(domain)
     updateStates!(domain, globdat)
-    fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
-    push!(domain.history["fint"], fint)
-    push!(domain.history["fext"], fext)
-    push!(domain.history["time"], [globdat.time])
+    if options.save_history>=2
+        fint, stiff = assembleStiffAndForce( globdat, domain, Δt)
+        push!(domain.history["fint"], fint)
+        push!(domain.history["fext"], fext)
+    end
+    if options.save_history>=1
+        push!(domain.history["time"], [globdat.time])
+    end
 
     return true
     

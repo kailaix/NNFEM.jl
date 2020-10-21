@@ -1,8 +1,14 @@
+#if(MSVC)
+extern "C" EXPORT {
+#endif
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/tensor_shape.h"
 #include "tensorflow/core/platform/default/logging.h"
 #include "tensorflow/core/framework/shape_inference.h"
 #include<cmath>
+#if(MSVC)
+}
+#endif
 
 
 #ifdef USE_GPU
@@ -77,7 +83,7 @@ public:
     // implement your forward function here 
 
     // TODO:
-    forward(strain_tensor, state_tensor);
+    forward_SmallContinuumStrain(strain_tensor, state_tensor);
 
   }
 };
@@ -132,7 +138,7 @@ public:
     // implement your backward function here 
 
     // TODO:
-    backward(grad_state_tensor, grad_strain_tensor, strain_tensor, state_tensor);
+    forward_SmallContinuumStrain(grad_state_tensor, grad_strain_tensor, strain_tensor, state_tensor);
     
   }
 };

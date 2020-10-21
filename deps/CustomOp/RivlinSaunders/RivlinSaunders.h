@@ -2,7 +2,7 @@
 #include "adept_arrays.h"
 using namespace adept;
 
-void forward(double * stress, const double * strain, double C1, double C2, int n){
+void forward_RivlinSaunders(double * stress, const double * strain, double C1, double C2, int n){
   Matrix33 I;
   I << 1.0,0.0,0.0,
       0.0,1.0,0.0,
@@ -30,7 +30,7 @@ void forward(double * stress, const double * strain, double C1, double C2, int n
   }
 }
 
-void backward(
+void forward_RivlinSaunders(
   double *grad_strain, double *grad_C1, double *grad_C2,
   const double *grad_stress,
   const double * stress, const double * strain, double C1, double C2, int n){

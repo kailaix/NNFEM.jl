@@ -94,7 +94,7 @@ public:
     // implement your forward function here 
 
     // TODO:
-    forward(out_tensor, y_tensor, h0_tensor, n);
+    forward_SPDOp(out_tensor, y_tensor, h0_tensor, n);
   }
 };
 REGISTER_KERNEL_BUILDER(Name("SPDOp").Device(DEVICE_CPU), SPDOpOp);
@@ -155,7 +155,7 @@ public:
     // implement your backward function here 
 
     // TODO:
-    backward(grad_y_tensor, grad_out_tensor, y_tensor, h0_tensor, n);
+    forward_SPDOp(grad_y_tensor, grad_out_tensor, y_tensor, h0_tensor, n);
   }
 };
 REGISTER_KERNEL_BUILDER(Name("SPDOpGrad").Device(DEVICE_CPU), SPDOpGradOp);

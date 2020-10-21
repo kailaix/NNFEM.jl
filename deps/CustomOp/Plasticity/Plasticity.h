@@ -9,7 +9,7 @@ using namespace adept;
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
-void forward(double *de, const double *h, const double *val, int N){
+void forward_Plasticity(double *de, const double *h, const double *val, int N){
   MatrixXd H(3,3);
   for(int i=0;i<3;i++){
     for(int j=0;j<3;j++){
@@ -33,7 +33,7 @@ void forward(double *de, const double *h, const double *val, int N){
   }
 }
 
-void backward(
+void forward_Plasticity(
   double *grad_val, double *grad_h, 
   const double *grad_de,
   const double *de, const double *h, const double *val, int N){

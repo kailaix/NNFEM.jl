@@ -101,7 +101,7 @@ public:
     // implement your forward function here 
 
     // TODO:
-    forward(out_tensor, fints_tensor, el_tensor, ngs, neqns_per_elem, *neqs_tensor);
+    forward_FintComp(out_tensor, fints_tensor, el_tensor, ngs, neqns_per_elem, *neqs_tensor);
 
   }
 };
@@ -174,7 +174,7 @@ public:
     // implement your backward function here 
 
     // TODO:
-    backward(grad_fints_tensor, grad_out_tensor, out_tensor, fints_tensor, el_tensor, ngs, neqns_per_elem, *neqs_tensor);
+    forward_FintComp(grad_fints_tensor, grad_out_tensor, out_tensor, fints_tensor, el_tensor, ngs, neqns_per_elem, *neqs_tensor);
   }
 };
 REGISTER_KERNEL_BUILDER(Name("FintCompGrad").Device(DEVICE_CPU), FintCompGradOp);

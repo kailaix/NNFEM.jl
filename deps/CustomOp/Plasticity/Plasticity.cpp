@@ -86,7 +86,7 @@ public:
     // implement your forward function here 
 
     // TODO:
-    forward(de_tensor, h_tensor, val_tensor, N);
+    forward_Plasticity(de_tensor, h_tensor, val_tensor, N);
 
   }
 };
@@ -150,7 +150,7 @@ public:
 
     // TODO:
     int N = val_shape.dim_size(0);
-    backward(grad_val_tensor, grad_h_tensor, grad_de_tensor, de_tensor, h_tensor, val_tensor, N);
+    forward_Plasticity(grad_val_tensor, grad_h_tensor, grad_de_tensor, de_tensor, h_tensor, val_tensor, N);
     
   }
 };

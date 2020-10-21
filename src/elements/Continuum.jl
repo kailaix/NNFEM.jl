@@ -17,7 +17,8 @@ $$\int_{e} \mathbf{f}(\mathbf{x})\cdot \delta \mathbf{u}(\mathbf{x}) d \mathbf{x
   = \int_{e} \mathbf{f}(\mathbf{\xi})\cdot \delta \mathbf{u}(\mathbf{\xi}) 
   |\frac{\partial \mathbf{x}}{\partial \mathbf{\xi}}| d \mathbf{\xi}$$
 
-todo force in the deformed domain
+!!! todo 
+    Add force in the deformed domain.
 """
 function getBodyForce(elem::Continuum, fvalue::Array{Float64,2})
     n = dofCount(elem)
@@ -32,12 +33,33 @@ function getBodyForce(elem::Continuum, fvalue::Array{Float64,2})
 end
 
 @doc raw"""
+    getBodyForce(elem::Continuum, fvalue::Array{Float64, 1})
+
+Returns 
+```math 
+\int_A f \delta v dx 
+```
+on a specific element $A$
+`fvalue` has the same length as number of Gauss points. 
+"""
+function getBodyForce(elem::Continuum, fvalue::Array{Float64, 1})
+    nnodes = length(elem.elnodes)
+    fbody = zeros(nnodes)
+    for k = 1:length(elem.weights)
+        fbody += elem.hs[k] * fvalue[k] * elem.weights[k]
+    end
+    return fbody
+end
+
+@doc raw"""
     getEdgeForce(elem::Continuum, iedge::Float64, fvalue::Array{Float64,2})
     
 Returns the force imposed by boundary tractions.
 
 `fvalue` is a $n_{edge_gauss}\times 2$ matrix, which is ordered the same as the
     Gaussian points in undeformed parent edge element.
+
+```
     The element nodes are ordered as 
     #   4 ---- 3             #   4 --7-- 3
     #                        #   8   9   6 
@@ -45,13 +67,15 @@ Returns the force imposed by boundary tractions.
     for porder=1     or          porder=2
     iedge 1, 2, 3, 4 are (1,2), (2,3), (3,4), (4,1)
                     are (1,2,5), (2,3,6), (3,4,7), (4,1,8)
+```
 
 Returns the nodal force due to the traction on the iedge-th edge of the element
 $$\int_{s} \mathbf{f}(\mathbf{x})\cdot \delta \mathbf{u}(\mathbf{x}) d s 
   = \int_{e} \mathbf{f}(\xi)\cdot \delta \mathbf{u}(\xi) 
   |\frac{\partial \mathbf{x}}{\partial \xi}| d \xi$$
 
-todo force in the deformed domain
+!!! todo 
+    This function imposes force in the undeformed domain. Add force in the deformed domain in the future.
 """
 function getEdgeForce(elem::Continuum, iedge::Int64, fvalue::Array{Float64,2})
     n = length(elem.elnodes)
@@ -118,6 +142,8 @@ end
 
 """
     getEdgeGaussPoints(elem::Continuum, iedge::Int64)
+
+```
     The element nodes are ordered as 
     #   4 ---- 3             #   4 --7-- 3
     #                        #   8   9   6 
@@ -125,6 +151,7 @@ end
     for porder=1     or          porder=2
     edge 1, 2, 3, 4 are (1,2), (2,3), (3,4), (4,1)
                     are (1,2,5), (2,3,6), (3,4,7), (4,1,8)
+```
 
 Returns the Gauss quadrature nodes of the element on its iedge-th edge in the undeformed domain
 """

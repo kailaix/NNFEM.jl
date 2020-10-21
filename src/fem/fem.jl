@@ -1,6 +1,7 @@
-export Domain,GlobalData,updateStates!,updateDomainStateBoundary!,
-    setConstantNodalForces!, setGeometryPoints!, setConstantDirichletBoundary!, getExternalForce!,
-    commitHistory, getBodyForce, getEdgeForce, getNGauss
+export Domain,GlobalData,updateStates!,updateTimeDependentEssentialBoundaryCondition!,
+    setConstantNodalForces!, setGeometryPoints!, setConstantDirichletBoundary!, getExternalForce,
+    commitHistory, getBodyForce, getEdgeForce, getNGauss, getDofs, getDStrain, getCoords, getState,
+    getGaussPoints, getElems, getStressHistory, getStrainHistory, getStateHistory
 
 
 @doc raw"""
@@ -33,7 +34,8 @@ Here $f$ is a vector. Its length is the same as number of "-2" in `FBC` array. T
 
 $$f = \text{Body\_func}(x_{\text{array}}, y_{\text{array}}, \text{time})$$
 
-Here $f$ is a vector. Its length is the same as the length of $x_{\text{array}}$ or $y_{\text{array}}$.
+Here $f$ is a vector or a matrix (second dimension is 2) depending on the dimension of state variables. 
+The output is a $N\times n_{\text{dim}}$ matrix, where $N$ is the length of $x_{\text{array}}$ or $y_{\text{array}}$, and $n_{\text{dim}}$ is the dimension of the problem (1 or 2).
 
 - `Edge_func`: time-dependent/independent traction load. 
 
@@ -74,11 +76,21 @@ end
 
 
 @doc raw"""
-    GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Float64},acce::Array{Float64}, neqs::Int64,
-        EBC_func::Union{Function, Nothing}=nothing, FBC_func::Union{Function, Nothing}=nothing,
-        Body_func::Union{Function,Nothing}=nothing, Edge_func::Union{Function,Nothing}=nothing)
+    GlobalData(state::Union{Array{Float64,1},Missing},
+            Dstate::Union{Array{Float64,1},Missing},
+            velo::Union{Array{Float64,1},Missing},
+            acce::Union{Array{Float64,1},Missing}, 
+            neqs::Int64,
+            EBC_func::Union{Function, Nothing}=nothing, FBC_func::Union{Function, Nothing}=nothing,
+            Body_func::Union{Function,Nothing}=nothing, Edge_func::Union{Function,Nothing}=nothing)
+
+The size of `state`, `Dstate`, `velo`, `acce` must be `neqs`, i.e., the active DOFs.
+If they are missing, they are treated as zeros. 
+
+`state`, `Dstate`, `velo`, `acce` can be missing, in which case they are interpreted as zeros. 
 """
-function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Float64},acce::Array{Float64}, 
+function GlobalData(state::Union{Array{Float64,1},Missing},Dstate::Union{Array{Float64,1},Missing},
+        velo::Union{Array{Float64,1},Missing},acce::Union{Array{Float64,1},Missing}, 
         neqs::Int64,
         EBC_func::Union{Function, Nothing}=nothing, FBC_func::Union{Function, Nothing}=nothing,
         Body_func::Union{Function,Nothing}=nothing, Edge_func::Union{Function,Nothing}=nothing)
@@ -86,6 +98,10 @@ function GlobalData(state::Array{Float64},Dstate::Array{Float64},velo::Array{Flo
     M = Float64[]
     Mlumped = Float64[]
     MID = Float64[]
+    state = coalesce(state, zeros(neqs))
+    Dstate = coalesce(Dstate, zeros(neqs))
+    velo = coalesce(velo, zeros(neqs))
+    acce = coalesce(acce, zeros(neqs))
     GlobalData(state, Dstate, velo, acce, time, M, Mlumped, MID, EBC_func, FBC_func, Body_func, Edge_func)
 end
 
@@ -112,7 +128,7 @@ Date structure for the computatational domain.
 
          ∘ >0 means the global equation number
 
-- `DOF`: a matrix of size `neles×ndims`, DOF(e,d) is the global freedom number of element e's d th freedom
+- `DOF`: a matrix of size `neles×ndims`, DOF(e,d) is the global freedom (including both active and inactive DOFs) number of element e's d th freedom.
 - `ID`:  a matrix of size `nnodes×ndims`. `ID(n,d)` is the equation number (active freedom number) of node n's $d$-th freedom, 
          
          ∘ -1 means fixed (time-independent) Dirichlet
@@ -134,34 +150,15 @@ Date structure for the computatational domain.
 - `fext`:  Float64[neqs], constant (time-independent) nodal forces on these freedoms
 - `Edge_Traction_Data`: `n × 3` integer matrix for natural boundary conditions.
 
-      1. `Edge_Traction_Data[i,1]` is the element id,
+1. `Edge_Traction_Data[i,1]` is the element id,
 
-      2. `Edge_Traction_Data[i,2]` is the local edge id in the element, where the force is exterted (should be on the boundary, but not required)
+2. `Edge_Traction_Data[i,2]` is the local edge id in the element, where the force is exterted (should be on the boundary, but not required)
 
-      3. `Edge_Traction_Data[i,3]` is the force id, which should be consistent with the last component of the `Edge_func` in the `Globdat`
+3. `Edge_Traction_Data[i,3]` is the force id, which should be consistent with the last component of the `Edge_func` in the `Globdat`
 
 - `time`: Float64, current time
 - `npoints`: Int64, number of points (each quadratical quad element has 4 points, npoints==nnodes, when porder==1)
 - `node_to_point`: Int64[nnodes]:map from node number to point point, -1 means the node is not a geometry point
-
-
-# Auxilliry Data Structures
-- `ii_stiff`: Int64[], first index of the sparse matrix representation of the stiffness matrix
-- `jj_stiff`: Int64[], second index of the sparse matrix representation of the stiffness matrix
-- `vv_stiff_ele_indptr`: Int64[], Int64[e] is the first index entry for the e's element of the sparse matrix representation of the stiffness matrix
-- `vv_stiff`: Float64[], values of the sparse matrix representation of the stiffness matrix
-
-- `ii_dfint_dstress`: Int64[], first index of the sparse matrix representation of the dfint_dstress matrix 
-- `jj_dfint_dstress`: Int64[], second index of the sparse matrix representation of the dfint_dstress matrix
-- `vv_dfint_dstress_ele_indptr`: Int64[], Int64[e] is the first index entry for the e's element of the sparse matrix representation of the dfint_dstress matrix
-- `vv_dfint_dstress`: Float64[], values of the sparse matrix representation of the dfint_dstress matrix 
-
-- `ii_dstrain_dstate`: Int64[], first index of the sparse matrix representation of the dstrain_dstate matrix
-- `jj_dstrain_dstate`: Int64[], second index of the sparse matrix representation of the dstrain_dstate matrix
-- `vv_dstrain_dstate_ele_indptr`: Int64[], Int64[e] is the first index entry for the e's element of the sparse matrix representation of the stiffness matrix
-- `vv_dstrain_dstate`: Float64[], values of the sparse matrix representation of the dstrain_dstate matrix
-
-- `history`: Dict{String, Array{Array{Float64}}}, dictionary between string and its time-histories quantity Float64[ntime][]
 """
 mutable struct Domain
     nnodes::Int64
@@ -218,47 +215,56 @@ function Base.show(io::IO, z::Domain)
 end
 
 
-function Base.:copy(g::Union{GlobalData, Domain}) 
-    names = fieldnames(g)
+function Base.:copy(g::GlobalData) 
+    names = propertynames(g)
     args = [copy(getproperty(g, n)) for n in names]
     GlobalData(args...)
 end
 
+function Base.:copy(g::Domain) 
+    names = propertynames(g)
+    args = [copy(getproperty(g, n)) for n in names]
+    Domain(args...)
+end
+
 @doc raw"""
-    Domain(nodes::Array{Float64}, elements::Array, ndims::Int64, EBC::Array{Int64}, g::Array{Float64}, FBC::Array{Int64}, f::Array{Float64})
+    Domain(nodes::Array{Float64}, elements::Array, ndims::Int64 = 2,
+    EBC::Union{Missing, Array{Int64}} = missing, g::Union{Missing, Array{Float64}} = missing, FBC::Union{Missing, Array{Int64}} = missing, 
+    f::Union{Missing, Array{Float64}} = missing, edge_traction_data::Array{Int64,2}=zeros(Int64,0,3))
 
 Creating a finite element domain.
 
-    - `nodes`: coordinate array of all nodes, a `nnodes × 2` matrix
-    - `elements`: element array. Each element is a material struct, e.g., [`PlaneStrain`](@ref). 
-    - `ndims`: dimension of the problem space. For 2D problems, ndims = 2. 
-    - `EBC`:  `nnodes × ndims` integer matrix for essential boundary conditions
-      `EBC[n,d]`` is the displacement boundary condition of node `n`'s $d$-th freedom,
-      
-      ∘ -1: fixed (time-independent) Dirichlet boundary nodes
+- `nodes`: coordinate array of all nodes, a `nnodes × 2` matrix
+- `elements`: element array. Each element is a material struct, e.g., [`PlaneStrain`](@ref). 
+- `ndims`: dimension of the problem space. For 2D problems, ndims = 2. 
+- `EBC`:  `nnodes × ndims` integer matrix for essential boundary conditions
+    `EBC[n,d]`` is the displacement boundary condition of node `n`'s $d$-th freedom,
+    
+    ∘ -1: fixed (time-independent) Dirichlet boundary nodes
 
-      ∘ -2: time-dependent Dirichlet boundary nodes
+    ∘ -2: time-dependent Dirichlet boundary nodes
 
-    - `g`:  `nnodes × ndims` double matrix, values for fixed (time-independent) Dirichlet boundary conditions of node `n`'s $d$-th freedom,
-    - `FBC`: `nnodes × ndims` integer matrix for nodal force boundary conditions.
-      FBC[n,d] is the force load boundary condition of node n's dth freedom,
+- `g`:  `nnodes × ndims` double matrix, values for fixed (time-independent) Dirichlet boundary conditions of node `n`'s $d$-th freedom,
+- `FBC`: `nnodes × ndims` integer matrix for nodal force boundary conditions.
+FBC[n,d] is the force load boundary condition of node n's dth freedom,
 
-      ∘ -1 means constant(time-independent) force load boundary nodes
+∘ -1 means constant(time-independent) force load boundary nodes
 
-      ∘ -2 means time-dependent force load boundary nodes
+∘ -2 means time-dependent force load boundary nodes
 
-    - `f`:  `nnodes × ndims` double matrix, values for constant (time-independent) force load boundary conditions of node n's $d$-th freedom,
+- `f`:  `nnodes × ndims` double matrix, values for constant (time-independent) force load boundary conditions of node n's $d$-th freedom,
 
-    - `Edge_Traction_Data`: `n × 3` integer matrix for natural boundary conditions.
-      Edge_Traction_Data[i,1] is the element id,
-      Edge_Traction_Data[i,2] is the local edge id in the element, where the force is exterted (should be on the boundary, but not required)
-      Edge_Traction_Data[i,3] is the force id, which should be consistent with the last component of the Edge_func in the Globdat
+- `Edge_Traction_Data`: `n × 3` integer matrix for natural boundary conditions.
+`Edge_Traction_Data[i,1]` is the element id,
+`Edge_Traction_Data[i,2]` is the local edge id in the element, where the force is exterted (should be on the boundary, but not required)
+`Edge_Traction_Data[i,3]` is the force id, which should be consistent with the last component of the Edge_func in the Globdat
 
-    For time-dependent boundary conditions (`EBC` or `FBC` entries are -2), the corresponding `f` or `g` entries are not used.
+For time-dependent boundary conditions (`EBC` or `FBC` entries are -2), the corresponding `f` or `g` entries are not used.
 """
-function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64,
-    EBC::Array{Int64}, g::Array{Float64}, FBC::Array{Int64}, 
-    f::Array{Float64}, edge_traction_data::Array{Int64,2}=zeros(Int64,0,3))
+function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64 = 2,
+    EBC::Union{Missing, Array{Int64}} = missing, g::Union{Missing, Array{Float64}} = missing, FBC::Union{Missing, Array{Int64}} = missing, 
+    f::Union{Missing, Array{Float64}} = missing, edge_traction_data::Array{Int64,2}=zeros(Int64,0,3))
+    
     nnodes = size(nodes,1)
     neles = size(elements,1)
     state = zeros(nnodes * ndims)
@@ -276,6 +282,11 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64,
     
     history = Dict("state"=>Array{Float64}[], "acc"=>Array{Float64}[], "fint"=>Array{Float64}[],
                 "fext"=>Array{Float64}[], "strain"=>[], "stress"=>[], "time"=>Array{Float64}[])
+
+    EBC = coalesce(EBC, zeros(Int64, nnodes, ndims))
+    FBC = coalesce(FBC, zeros(Int64, nnodes, ndims))
+    g = coalesce(g, zeros(Float64, nnodes, ndims))
+    f = coalesce(f, zeros(Float64, nnodes, ndims))
     
     domain = Domain(nnodes, nodes, neles, elements, ndims, state, Dstate, 
     LM, DOF, ID, neqs, eq_to_dof, dof_to_eq, 
@@ -288,25 +299,11 @@ function Domain(nodes::Array{Float64}, elements::Array, ndims::Int64,
     setConstantDirichletBoundary!(domain, EBC, g)
     #set constant(time-independent) force load boundary conditions
     setConstantNodalForces!(domain, FBC, f)
-
     assembleSparseMatrixPattern!(domain)
 
     domain
 end
 
-@doc """
-    In the constructor 
-    Update the node_to_point map 
-
-    - `self`: Domain, finit element domain
-    - 'npoints': Int64, number of points (each quadratical quad element has 4 points, npoints==nnodes, when porder==1)
-    - 'node_to_point': Int64[nnodes]:map from node number to point point, -1 means the node is not a geometry point
-
-""" 
-function setGeometryPoints!(self::Domain, npoints::Int64, node_to_point::Array{Int64})
-    self.npoints = npoints
-    self.node_to_point = node_to_point
-end
 
 
 
@@ -321,36 +318,37 @@ function commitHistory(domain::Domain)
         commitHistory(e)
     end
     
-    # 1D, nstrain=1; 2D, nstrain=3
-    eledim = domain.elements[1].eledim
-    nstrain = div((eledim + 1)*eledim, 2)
-    ngp = domain.neles * length(domain.elements[1].weights)
-    if nstrain==1
-        strain = zeros(ngp)
-        stress = zeros(ngp)
-        k = 1
-        for e in domain.elements
-            for igp in e.mat
-                strain[k] = igp.ε0
-                stress[k] = igp.σ0
-                k += 1
+    if options.save_history>=1
+        # 1D, nstrain=1; 2D, nstrain=3
+        eledim = domain.elements[1].eledim
+        nstrain = div((eledim + 1)*eledim, 2)
+        ngp = domain.neles * length(domain.elements[1].weights)
+        if nstrain==1
+            strain = zeros(ngp)
+            stress = zeros(ngp)
+            k = 1
+            for e in domain.elements
+                for igp in e.mat
+                    strain[k] = igp.ε0
+                    stress[k] = igp.σ0
+                    k += 1
+                end
+            end
+        else
+            strain = zeros(ngp, nstrain)
+            stress = zeros(ngp, nstrain)
+            k = 1
+            for e in domain.elements
+                for igp in e.mat
+                    strain[k,:] = igp.ε0
+                    stress[k,:] = igp.σ0
+                    k += 1
+                end
             end
         end
-    else
-        strain = zeros(ngp, nstrain)
-        stress = zeros(ngp, nstrain)
-        k = 1
-        for e in domain.elements
-            for igp in e.mat
-                strain[k,:] = igp.ε0
-                stress[k,:] = igp.σ0
-                k += 1
-            end
-        end
+        push!(domain.history["strain"], strain)
+        push!(domain.history["stress"], stress)
     end
-
-    push!(domain.history["strain"], strain)
-    push!(domain.history["stress"], stress)
 end
 
 
@@ -370,14 +368,14 @@ It updates the fixed (time-independent Dirichlet boundary) state entries and bui
 
 - `g`:  Float64[nnodes, ndims], values for fixed (time-independent) Dirichlet boundary conditions of node n's dth freedom,
 """ -> 
-function setConstantDirichletBoundary!(self::Domain, EBC::Array{Int64}, g::Array{Float64})
+function setConstantDirichletBoundary!(domain::Domain, EBC::Array{Int64}, g::Array{Float64})
 
     # ID(n,d) is the global equation number of node n's dth freedom, 
     # -1 means fixed (time-independent) Dirichlet
     # -2 means time-dependent Dirichlet
 
-    nnodes, ndims = self.nnodes, self.ndims
-    neles, elements = self.neles, self.elements
+    nnodes, ndims = domain.nnodes, domain.ndims
+    neles, elements = domain.neles, domain.elements
     #ID = zeros(Int64, nnodes, ndims) .- 1
 
     ID = copy(EBC)
@@ -393,12 +391,12 @@ function setConstantDirichletBoundary!(self::Domain, EBC::Array{Int64}, g::Array
               dof_to_eq[(idof - 1)*nnodes + inode] = true
           elseif (EBC[inode, idof] == -1)
               #update state fixed (time-independent) Dirichlet boundary conditions
-              self.state[inode + (idof-1)*nnodes] = g[inode, idof]
+              domain.state[inode + (idof-1)*nnodes] = g[inode, idof]
           end
       end
     end
 
-    self.ID, self.neqs, self.eq_to_dof, self.dof_to_eq = ID, neqs, eq_to_dof, dof_to_eq
+    domain.ID, domain.neqs, domain.eq_to_dof, domain.dof_to_eq = ID, neqs, eq_to_dof, dof_to_eq
 
 
     # LM(e,d) is the global equation number of element e's d th freedom
@@ -408,16 +406,23 @@ function setConstantDirichletBoundary!(self::Domain, EBC::Array{Int64}, g::Array
       ieqns = ID[el_nodes, :][:]
       LM[iele] = ieqns
     end
-    self.LM = LM
+    domain.LM = LM
 
     # DOF(e,d) is the global dof number of element e's d th freedom
 
     DOF = Array{Array{Int64}}(undef, neles)
     for iele = 1:neles
       el_nodes = getNodes(elements[iele])
-      DOF[iele] = [el_nodes;[idof + nnodes for idof in el_nodes]]
+      if domain.ndims==1
+        DOF[iele] = el_nodes
+      elseif domain.ndims==2
+        DOF[iele] = [el_nodes;[idof + nnodes for idof in el_nodes]]
+      else
+        error("NOT IMPLEMENTED YET")
+      end
+      
     end
-    self.DOF = DOF
+    domain.DOF = DOF
     
 end
 
@@ -462,33 +467,40 @@ end
     updateStates!(domain::Domain, globaldat::GlobalData)
     update time-dependent Dirichlet boundary condition to globaldat.time
 
-At each time step, `updateStates!` needs to be called to update the full `state` and `Dstate` in `domain`
-from active ones in `globaldat`.
+Update `state` and `Dstate` in `domain`. This includes 
+
+- Copy state variable values for active DOFs from `globaldat`
+
+- Set time-dependent essential boundary conditions using `globaldat.EBC`
+
+The time-independent boundary conditions are inherented from last time step.
 """ 
 function updateStates!(domain::Domain, globaldat::GlobalData)
     
     domain.state[domain.eq_to_dof] = globaldat.state[:]
     
     domain.time = globaldat.time
-    push!(domain.history["state"], copy(domain.state))
-    push!(domain.history["acc"], copy(globaldat.acce))
+    if options.save_history>=1
+        push!(domain.history["state"], copy(domain.state))
+        push!(domain.history["acc"], copy(globaldat.acce))
+    end
 
-    updateDomainStateBoundary!(domain, globaldat)
+    updateTimeDependentEssentialBoundaryCondition!(domain, globaldat)
     
     domain.Dstate[:] = domain.state
 end
 
 
 @doc """
-    updateDomainStateBoundary!(domain::Domain, globaldat::GlobalData)
+    updateTimeDependentEssentialBoundaryCondition!(domain::Domain, globaldat::GlobalData)
     
-If there exists time-dependent Dirichlet boundary conditions, `updateDomainStateBoundary!` must be called to update 
+If there exists time-dependent Dirichlet boundary conditions, `updateTimeDependentEssentialBoundaryCondition!` must be called to update 
 the boundaries in `domain`. This function is called by [`updateStates!`](@ref)
 
 This function updates `state` data in `domain`.
 """
-function updateDomainStateBoundary!(domain::Domain, globaldat::GlobalData)
-    if globaldat.EBC_func != nothing
+function updateTimeDependentEssentialBoundaryCondition!(domain::Domain, globaldat::GlobalData)
+    if globaldat.EBC_func ≠ nothing
         disp, _, _ = globaldat.EBC_func(globaldat.time) # user defined time-dependent boundary
         dof_id = 0
 
@@ -507,22 +519,17 @@ end
 
 
 @doc """
-    getExternalForce!(self::Domain, globaldat::GlobalData, fext::Union{Missing,Array{Float64}}=missing)
+    getExternalForce(self::Domain, globaldat::GlobalData, fext::Union{Missing,Array{Float64}}=missing)
 
-Computes external force vector at globaldat.time, 
-including both external force load and time-dependent Dirichlet boundary conditions.
-    
+Computes external force vector at `globaldat.time`, 
+This includes all the body force, external load, and internal force caused by acceleration.
 """
-function getExternalForce!(domain::Domain, globaldat::GlobalData, fext::Union{Missing,Array{Float64}}=missing)
-    if ismissing(fext)
-        fext = zeros(domain.neqs)
-    end
-
+function getExternalForce(domain::Domain, globaldat::GlobalData)
     #Update time-independent nodal force
-    fext[:] = domain.fext
+    fext = copy(domain.fext)
 
     #Update time-dependent nodal force
-    if globaldat.FBC_func != nothing
+    if !isnothing(globaldat.FBC_func)
         ID = domain.ID
         nodal_force = globaldat.FBC_func(globaldat.time) # user defined time-dependent boundary
         # @info nodal_force
@@ -541,16 +548,16 @@ function getExternalForce!(domain::Domain, globaldat::GlobalData, fext::Union{Mi
 
 
     #Update the acceleration effect from the time-dependent Dirichlet boundary condition
-    if globaldat.EBC_func != nothing        
+    if !isnothing(globaldat.EBC_func)        
         MID = globaldat.MID
         _, _, acce = globaldat.EBC_func(globaldat.time)
         fext -= MID * acce
     end
 
-    #Update time-dependent body force
+    #Update time-dependent and time-independent body force
     fbody = getBodyForce(domain, globaldat, globaldat.time)
 
-    #Update time-dependent edge traction force
+    #Update time-dependent and time-independent edge traction force
     fedge = getEdgeForce(domain, globaldat, globaldat.time)
     
     fext + fbody + fedge
@@ -594,12 +601,12 @@ end
 
 
 @doc raw"""
-    getEdgeForce(domain::Domain, globdat::GlobalData)
+    getEdgeForce(domain::Domain, globdat::GlobalData, time::Float64)
 
-Computes the body force vector $F_\mathrm{body}$ of length `neqs`
+Computes the edge force vector $F_\mathrm{edge}$ defined in `domain.edge_traction_data`
 - `globdat`: GlobalData
 - `domain`: Domain, finite element domain, for data structure
-- `Δt`:  Float64, current time step size
+- `time`:  Float64, current time step size
 """
 function getEdgeForce(domain::Domain, globdat::GlobalData, time::Float64)
     Fedge = zeros(Float64, domain.neqs)
@@ -639,26 +646,29 @@ end
 
 
 @doc """
-    Get the coordinates of several nodes (possibly in one element)
-    - 'self': Domain
-    - 'el_nodes': Int64[n], node array
+    getCoords(domain::Domain, el_nodes::Array{Int64})
 
-    Return: Float64[n, ndims], the coordinates of these nodes
-""" ->
-function getCoords(self::Domain, el_nodes::Array{Int64})
-    return self.nodes[el_nodes, :]
+Get the coordinates of several nodes (possibly in one element)
+- `domain`: Domain
+- `el_nodes`: Int64[n], node array
+
+Return: Float64[n, ndims], the coordinates of these nodes
+"""
+function getCoords(domain::Domain, el_nodes::Array{Int64})
+    return domain.nodes[el_nodes, :]
 end
 
 @doc """
-    Get the global freedom numbers of the element
-    - 'self': Domain
-    - 'iele': Int64, element number
+    getDofs(domain::Domain, iele::Int64)   
 
-    Return: Int64[], the global freedom numbers of the element (ordering in local element ordering)
+Get the global freedom numbers of the element
+- `domain`: Domain
+- `iele`: Int64, element number
 
-""" ->
-function getDofs(self::Domain, iele::Int64)    
-    return self.DOF[iele]
+Return: Int64[], the global freedom numbers of the element (ordering in local element ordering)
+""" 
+function getDofs(domain::Domain, iele::Int64)    
+    return domain.DOF[iele]
 end
 
 @doc """
@@ -677,36 +687,186 @@ end
 @doc """
     getEqns(domain::Domain, iele::Int64)
 
-Gets the equation numbers(active freedom numbers) of the element. 
+Gets the equation numbers (active freedom numbers) of the element. 
 This excludes both the time-dependent and time-independent Dirichlet boundary conditions. 
-""" ->
+""" 
 function getEqns(domain::Domain, iele::Int64)
     return domain.LM[iele]
 end
 
 
 @doc """
-    Get the displacements of several nodes (possibly in one element)
-    - 'self': Domain
-    - 'el_nodes': Int64[n], node array
+    getState(domain::Domain, el_dofs::Array{Int64})
 
-    Return: Float64[n, ndims], the displacements of these nodes
-""" ->
-function getState(self::Domain, el_dofs::Array{Int64})
-    return self.state[el_dofs]
+Get the displacements of several nodes (possibly in one element)
+- `domain`: Domain
+- `el_nodes`: Int64[n], node array
+
+Return: Float64[n, ndims], the displacements of these nodes
+""" 
+function getState(domain::Domain, el_dofs::Array{Int64})
+    return domain.state[el_dofs]
 end
 
 @doc """
-    Get the displacements of several nodes (possibly in one element) at the previous time step
-    - 'self': Domain
-    - 'el_nodes': Int64[n], node array
+    getDstate(domain::Domain, el_dofs::Array{Int64})
+    
+Get the displacements of several nodes (possibly in one element) at the previous time step
+- `domain`: Domain
+- `el_nodes`: Int64[n], node array
 
-    Return: Float64[n, ndims], the displacements of these nodes at the previous time step
+Return: Float64[n, ndims], the displacements of these nodes at the previous time step
 """ ->
 
-function getDstate(self::Domain, el_dofs::Array{Int64})
-    return self.Dstate[el_dofs]
+function getDstate(domain::Domain, el_dofs::Array{Int64})
+    return domain.Dstate[el_dofs]
 end
+
+
+@doc raw"""
+    getGaussPoints(domain::Domain)
+
+Returns all Gauss points as a $n_g\times 2$ matrix, where $n_g$ is the total number of Gauss points.
+"""
+function getGaussPoints(domain::Domain)
+    v = []
+    for e in domain.elements
+        vg = getGaussPoints(e) 
+        push!(v, vg)
+    end 
+    vcat(v...)
+end
+
+@doc raw"""
+    getStrain(domain::Domain)
+
+Computes the strain from the `domain` data. The output is $n_g\times 3$ matrix, where $n_g$ is the total number of Gauss points. 
+Each row is the strain tensor $\begin{bmatrix} \epsilon_{xx} & \epsilon_{yy} & \gamma_{xy} \end{bmatrix}$
+"""
+function getStrain(domain::Domain)
+    E = Array{Array{Float64}}(undef, domain.neles)
+    for (k,e) in enumerate(domain.elements)
+        el_dof = getDofs(domain, k)
+        state = getState(domain, el_dof)
+        E[k], _ = getStrain(e, state)
+    end
+    vcat(E...)
+end
+
+@doc raw"""
+    getDStrain(domain::Domain)
+
+Computes the strain **at last time step** from the `domain` data. The output is $n_g\times 3$ matrix, where $n_g$ is the total number of Gauss points. 
+Each row is the strain tensor $\begin{bmatrix} \epsilon_{xx} & \epsilon_{yy} & \gamma_{xy} \end{bmatrix}$
+"""
+function getDStrain(domain::Domain)
+    E = Array{Array{Float64}}(undef, domain.neles)
+    for (k,e) in enumerate(domain.elements)
+        el_dof = getDofs(domain, k)
+        Dstate = getDstate(domain, el_dof)
+        E[k], _ = getDStrain(e, Dstate)
+    end
+    vcat(E...)
+end
+
+@doc raw"""
+    getStress(domain::Domain, Δt::Float64 = 0.0; save_trace::Bool = false)
+
+Returns the stress based on `domain.state` and `domain.Dstate`. If `save_trace` is true, 
+the stress is also saved to `domain.stress`, which is useful for visualization. 
+
+The output is $n_g\times 3$ matrix, where $n_g$ is the total number of Gauss points. 
+Each row is the strain tensor $\begin{bmatrix} \sigma_{xx} & \sigma_{yy} & \sigma_{xy} \end{bmatrix}$
+"""
+function getStress(domain::Domain, Δt::Float64 = 0.0; save_trace::Bool = false)
+    Ret = zeros(getNGauss(domain), 3)
+    local ∂E∂u, E, DE
+    l = 1
+    for (k,elem) in enumerate(domain.elements)
+        nnodes = length(elem.elnodes)
+        el_dof = getDofs(domain,k)
+        state = getState(domain, el_dof)
+        Dstate = getDstate(domain, el_dof)
+        u = state[1:nnodes]; v = state[nnodes+1:2*nnodes]
+        Du = Dstate[1:nnodes]; Dv = Dstate[nnodes+1:2*nnodes]
+
+        for k = 1:length(elem.weights)
+            # #@show "Gaussian point ", k
+            g1 = elem.dhdx[k][:,1]; g2 = elem.dhdx[k][:,2]
+            
+            ux = u'*g1; uy = u'*g2; vx = v'*g1; vy = v'*g2
+            Dux = Du'*g1; Duy = Du'*g2; Dvx = Dv'*g1; Dvy = Dv'*g2
+            
+            if isa(elem, SmallStrainContinuum)
+                ∂E∂u = [g1   zeros(nnodes)    g2;
+                        zeros(nnodes)    g2   g1;] 
+                E = [ux; vy; uy+vx]
+                DE = [Dux; Dvy; Duy+Dvx]
+            elseif isa(elem, FiniteStrainContinuum)
+                ∂E∂u = [g1+ux*g1 uy*g2    g2 + g2*ux+g1*uy;
+                vx*g1    g2+vy*g2 g1 + g1*vy+g2*vx;] 
+                E = [ux+0.5*(ux*ux+vx*vx); vy+0.5*(uy*uy+vy*vy); uy+vx+ux*uy+vx*vy]
+                DE = [Dux+0.5*(Dux*Dux+Dvx*Dvx); Dvy+0.5*(Duy*Duy+Dvy*Dvy); Duy+Dvx+Dux*Duy+Dvx*Dvy]
+            else 
+                error("NOT IMPLEMENTED")
+            end
+
+            S, dS_dE = getStress(elem.mat[k], E, DE, Δt)
+            Ret[l,:] = S 
+            l += 1
+
+            if save_trace
+                elem.stress[k] = S
+            end
+        end
+    end
+    Ret
+end
+
+@doc raw"""
+    getElems(domain::Domain)
+
+Returns the element connectivity matrix $n_e \times 4$. This function implicitly assumes that all elements are quadrilateral.
+"""
+function getElems(domain::Domain)
+    elem = zeros(Int64, domain.neles, 4)
+    for (k,e) in enumerate(domain.elements)
+        elem[k,:] = e.elnodes
+    end
+    return elem
+end
+
+"""
+    getStressHistory(domain::Domain)
+
+Returns the stress history.
+"""
+function getStressHistory(domain::Domain)
+    vcat([reshape(x, 1, size(x,1),size(x,2)) for x in domain.history["stress"]]...)
+end
+
+"""
+    getStrainHistory(domain::Domain)
+
+Returns the strain history.
+"""
+function getStrainHistory(domain::Domain)
+    vcat([reshape(x, 1, size(x,1),size(x,2)) for x in domain.history["strain"]]...)
+end
+
+"""
+    getStateHistory(domain::Domain)
+
+Returns the state history.
+"""
+function getStateHistory(domain::Domain)
+    vcat([reshape(x, 1, size(x,1)) for x in domain.history["state"]]...)
+end
+
+
+#------------------------------------------------------------------------------------
+# Maybe useful in the future
+
 
 @doc """
     Compute constant stiff, dfint_dstress, dstrain_dstate matrix patterns
@@ -789,3 +949,19 @@ function assembleSparseMatrixPattern!(self::Domain)
     self.vv_dstrain_dstate_ele_indptr = vv_dstrain_dstate_ele_indptr; self.vv_dstrain_dstate = similar(ii_dstrain_dstate)
 
   end
+
+
+
+@doc """
+    In the constructor 
+    Update the node_to_point map 
+
+    - `self`: Domain, finit element domain
+    - 'npoints': Int64, number of points (each quadratical quad element has 4 points, npoints==nnodes, when porder==1)
+    - 'node_to_point': Int64[nnodes]:map from node number to point point, -1 means the node is not a geometry point
+
+""" 
+function setGeometryPoints!(self::Domain, npoints::Int64, node_to_point::Array{Int64})
+    self.npoints = npoints
+    self.node_to_point = node_to_point
+end

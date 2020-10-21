@@ -62,7 +62,7 @@ public:
     // implement your forward function here 
 
     // TODO:
-    forward(y_tensor, x_tensor, n);
+    forward_SymOp(y_tensor, x_tensor, n);
   }
 };
 REGISTER_KERNEL_BUILDER(Name("SymOp").Device(DEVICE_CPU), SymOpOp);
@@ -122,7 +122,7 @@ public:
     // implement your backward function here 
 
     // TODO:
-    backward(grad_x_tensor, grad_y_tensor, y_tensor, x_tensor, n);
+    forward_SymOp(grad_x_tensor, grad_y_tensor, y_tensor, x_tensor, n);
   }
 };
 REGISTER_KERNEL_BUILDER(Name("SymOpGrad").Device(DEVICE_CPU), SymOpGradOp);

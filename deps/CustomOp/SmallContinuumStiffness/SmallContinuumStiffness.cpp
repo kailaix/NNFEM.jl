@@ -68,7 +68,7 @@ public:
         
     // create output shape
     
-    int N = forward_count();
+    int N = forward_count0();
     TensorShape ii_shape({N});
     TensorShape jj_shape({N});
     TensorShape vv_shape({N});
@@ -92,7 +92,7 @@ public:
     // implement your forward function here 
 
     // TODO:
-    forward(ii_tensor, jj_tensor, vv_tensor, k_tensor);
+    forward_SmallContinuumStiffness(ii_tensor, jj_tensor, vv_tensor, k_tensor);
 
   }
 };
@@ -156,7 +156,7 @@ public:
 
     // TODO:
 
-    backward(
+    forward_SmallContinuumStiffness(
       grad_k_tensor, grad_vv_tensor, vv_tensor, k_tensor);
 
     

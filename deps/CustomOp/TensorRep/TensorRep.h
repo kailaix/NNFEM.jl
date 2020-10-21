@@ -1,4 +1,4 @@
-void forward(double *out, const double*inp, int N){
+void forward_TensorRep(double *out, const double*inp, int N){
   for(int i=0;i<N;i++){
     out[4*i] = inp[3*i];
     out[4*i+1] = inp[3*i+2]/2;
@@ -7,7 +7,7 @@ void forward(double *out, const double*inp, int N){
   }
 }
 
-void backward(
+void forward_TensorRep(
   double *grad_inp,
   const double *grad_out,
   const double *out, const double*inp, int N){

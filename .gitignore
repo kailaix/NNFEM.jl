@@ -72,3 +72,5 @@ deps/build.jl
 *logs/*
 *.err
 *.out
+
+deps/Gmsh/
