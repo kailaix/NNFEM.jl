@@ -64,10 +64,7 @@ open("CustomOp/CMakeLists.txt", "w") do io
     write(io, cnt)
 end
 
-if !isdir("$(@__DIR__)/CustomOp/build")
-    mkdir("$(@__DIR__)/CustomOp/build")
-end
-cd("$(@__DIR__)/CustomOp/build")
+change_directory("$(@__DIR__)/CustomOp/build")
 ADCME.cmake()
 ADCME.make()
 cd("../../")
