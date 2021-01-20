@@ -69,7 +69,7 @@ function SolverInitial!(Δt::Float64, globdat::GlobalData, domain::Domain)
     fext = getExternalForce(domain, globdat)
     domain.state[domain.eq_to_dof] = globdat.state[:]
     fint  = assembleInternalForce( globdat, domain, Δt)
-    globdat.acce[:] = globdat.M\(fext - fint)
+    globdat.acce[:] = Matrix(globdat.M)\(fext - fint)
 end
 
 """

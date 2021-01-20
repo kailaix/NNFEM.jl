@@ -1,12 +1,12 @@
-include("nnutil.jl")
-include("CommonFuncs.jl")
 th = 1e-2 #dm
-force_scale = 5.0/th #50
+force_scale = 4.0/th #50
 tid = 200
 fiber_size = 1
 porder = 2
 stress_scale = 1.0e3
 strain_scale = 1
+include("nnutil.jl")
+include("CommonFuncs.jl")
 
 if length(ARGS) == 4
    global tid = parse(Int64, ARGS[1])
@@ -26,7 +26,7 @@ np = pyimport("numpy")
 
 
 Δt = 2.0e-4
-NT = 100
+NT = 1000
 T = Δt * NT #50.0 #500.0
 
 
@@ -98,7 +98,8 @@ d, v, a, σ, ε =  ExplicitSolver(globdat, domain, d0, v0, a0, σ0, ε0, Δt, NT
 # Step 7: Start optimization 
 sess = Session(); init(sess)
 dobs = matread("Data/order$(porder)/data$(tid).mat")["d"]
-loss = sum((d - dobs)^2*1.0e6)
+loss = sum((d - dobs)^2)
+@show run(sess, loss)
 @show run(sess, loss)
 
 @info "Start"
@@ -109,3 +110,19 @@ d_, v_, a_ = run(sess, [d,v,a])
 matwrite("Data/order$(porder)/data-nn$(tid).mat", Dict("d"=>d_, "v"=>v_, "a"=>a_))
 
 
+#(NT+1, 2domain.nnodes)
+nnodes = (nx*porder + 1) * (ny*porder + 1)
+ts = Array(LinRange(0,T, NT+1))
+dobs = matread("Data/order$(porder)/data$(tid).mat")["d"]
+dpred = matread("Data/order$(porder)/data-nn$(tid).mat")["d"]
+nid = (nx*porder + 1) * (ny*porder) + nx*porder + 1
+ux_obs, ux_pred = dobs[:, nid], dpred[:, nid]
+plot(ts, ux_obs,  label = "obs") 
+plot(ts, ux_pred, "-o", fillstyle="none", label = "pred")
+legend()
+# savefig("Debug/order$porder/ux$(tid)_nn_test.png")
+uy_obs, uy_pred = dobs[:, nid + nnodes], dpred[:, nid + nnodes]
+plot(ts, uy_obs,  label = "obs") 
+plot(ts, uy_pred, "-o", fillstyle="none",  label = "pred")
+legend()
+savefig("Debug/order$porder/uy$(tid)_nn_test.png")

@@ -6,11 +6,9 @@ using MAT
 using PyCall
 using Statistics
 using LinearAlgebra
-using ADCME
 using SparseArrays
 using ForwardDiff
 using Random
-using ADCMEKit
 using Libdl
 
 
@@ -18,7 +16,6 @@ using Libdl
 STORAGE = Dict{String, Any}()
 
 
-include("utils/gmsh.jl")
 include("utils/options.jl")
 include("utils/shapeFunctions.jl")
 include("utils/matrix.jl")

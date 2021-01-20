@@ -1,5 +1,5 @@
 th = 1e-2 #dm
-force_scale = 5.0/th #50
+force_scale = 4.0/th #50
 tid = 200
 fiber_size = 1
 porder = 2
@@ -21,7 +21,7 @@ prop = Dict("name"=> "PlaneStressPlasticity","rho"=> 4.5, "E"=> 1e+4, "nu"=> 0.2
 
 
 Δt = 2.0e-4
-NT = 100
+NT = 1000
 T = Δt * NT #50.0 #500.0
 
 
@@ -67,6 +67,9 @@ assembleMassMatrix!(globdat, domain)
 updateStates!(domain, globdat)
 
 
+ρ_oo = 0.0
+αm = (2*ρ_oo - 1)/(ρ_oo + 1)
+αf = ρ_oo/(ρ_oo + 1)
 
 #explicit solver
 SolverInitial!(Δt, globdat, domain)
@@ -75,7 +78,8 @@ SolverInitial!(Δt, globdat, domain)
 @show "stable time step is ", 0.8 * 2/ω, " current time step is ", Δt
 for i = 1:NT
     @info i, "/" , NT
-    solver = ExplicitSolver(Δt, globdat, domain)
+    #solver = ExplicitSolver(Δt, globdat, domain)
+    solver = NewmarkSolver(Δt, globdat, domain, αm, αf, 1e-4, 1e-6, 10)
     if i%10 == 0
         ω = EigenMode(Δt, globdat, domain)
         @show "stable time step is ", 0.8 * 2/ω, " current time step is ", Δt
