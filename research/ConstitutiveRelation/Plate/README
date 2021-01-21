@@ -1,0 +1,14 @@
+The tests have bugs
+
+    dof_to_active = findall(FBC[:].==-2)
+    if length(dof_to_active) != 0
+        ft = t->fext[:][dof_to_active] #*sin(π*t/(T))
+    end
+
+    dof_to_active = findall(EBC[:].==-2)
+    if length(dof_to_active) != 0
+        gt = t->[g[:][dof_to_active]*t, g[:][dof_to_active], g[:][dof_to_active]*0.0]
+    end
+
+
+Here the function ft will change with the redefine of dof_to_active
