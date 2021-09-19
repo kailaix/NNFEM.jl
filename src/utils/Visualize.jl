@@ -284,6 +284,84 @@ function visσ(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
     ylim(y1 .-0.1,y2 .+0.1)
 end
 
+# visualize each quadrature point
+function visσ(domain::Domain, ngp::Int64, vmin=nothing, vmax=nothing; scaling = 1.0)
+    
+    
+    u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
+    nodes = domain.nodes
+    fig,ax = subplots()
+    temp = nodes + [u v]
+    x1, x2 = minimum(temp[:,1]), maximum(temp[:,1])
+    y1, y2 = minimum(temp[:,2]), maximum(temp[:,2])
+    σ =[]
+    for e in domain.elements
+        σs = e.stress
+        # σs = [ones(3) for i = 1:length(e.stress)] # ! remove me
+        append!(σ, [postprocess_stress(s, "vonMises")[1] for s in σs])
+    end
+    vmin = vmin==nothing ? minimum(σ) : vmin 
+    vmax = vmax==nothing ? maximum(σ) : vmax
+    #@show vmin, vmax
+    cNorm  = matplotlib.colors.Normalize(
+            vmin=vmin,
+            vmax=vmax)
+    scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=plt.get_cmap("jet"))
+    
+    Gp_order_1D = zeros(Int64, ngp)
+    if ngp == 2
+        Gp_order_1D = [1, 2]
+    elseif ngp == 3
+        Gp_order_1D = [2, 1, 3]
+    elseif ngp == 4
+        Gp_order_1D = [4, 2, 1, 3]
+    else
+        error(" ngp == ", ngp, " has not implemented")
+    end
+
+    Gp_order = zeros(Int64, ngp, ngp)
+    for gy = 1:ngp
+        for gx = 1:ngp
+        Gp_order[gx, gy] = (Gp_order_1D[gx] - 1)*ngp  +  Gp_order_1D[gy]
+        end
+    end 
+
+    XYs = zeros(ngp+1, ngp+1, 2)
+    xy = zeros(4, 2)
+    for (k,e) in enumerate(domain.elements)
+        N = getNodes(e)[[1;2;3;4]]
+
+        XY = nodes[N,:] + scaling*[u[N,:] v[N,:]]
+
+        for gy = 0:ngp
+            for gx = 0:ngp
+                w = [(1.0 - gx/ngp) * (1.0 - gy/ngp), gx/ngp * (1.0 - gy/ngp), 
+                      gx/ngp * gy/ngp, (1.0 - gx/ngp) * gy/ngp]
+       
+                XYs[gx+1, gy+1, :] .= w[1]*XY[1,1] +w[2]*XY[2,1] +w[3]*XY[3,1] +w[4]*XY[4,1], w[1]*XY[1,2] +w[2]*XY[2,2] +w[3]*XY[3,2] +w[4]*XY[4,2]  
+            end
+        end
+
+        for gy = 1:ngp
+            for gx = 1:ngp
+
+                xy[1, :] = XYs[gx, gy, :]
+                xy[2, :] = XYs[gx+1, gy, :]
+                xy[3, :] = XYs[gx+1, gy+1, :]
+                xy[4, :] = XYs[gx, gy+1, :]
+                
+                p = plt.Polygon(xy, facecolor = scalarMap.to_rgba(σ[(k - 1)*ngp^2 + Gp_order[gx, gy]]), fill=true)
+                ax.add_patch(p)
+            end
+        end
+    end
+    scalarMap.set_array(σ)
+    colorbar(scalarMap)
+    xlim(x1 .-0.1,x2 .+0.1)
+    ylim(y1 .-0.1,y2 .+0.1)
+end
+
+
 function visstate(domain::Domain, state::Array{Float64}; kwargs...)
     u,v = state[1:domain.nnodes], state[domain.nnodes+1:end]
     nodes = domain.nodes

@@ -48,7 +48,7 @@ SetFactory("Built-in");
 //+
 Curve Loop(2) = {2, 3, 4, 1};
 //+
-Plane Surface(2) = {1, 2};
+Plane Surface(2) = {-1, -2};
 
 
 Recombine Surface {1};
