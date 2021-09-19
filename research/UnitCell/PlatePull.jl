@@ -165,8 +165,8 @@ function ConstructDomain(porder::Int64, θ::Array{Float64, 1}, meshfile::String)
 
     f_px = x->0
     m = 100.0
-    # mean 100, cov scaled by 20^2
-    f_py = x->m + 400.0*fxθ(x, θ)
+    # mean 100, cov scaled by 10^2 ! modify
+    f_py = x->m + 100.0*fxθ(x, θ)
     Ft, Fn =  ComputeLoad(nodes[top_edge, :], porder, ngp, f_px, f_py)
     fext[top_edge, 1] .= Ft
     fext[top_edge, 2] .= Fn
@@ -212,19 +212,26 @@ function extractVMStress(domain)
     return vcat(XY...), vcat(σ...)
 end
 
-function plotVMStress(domain, filename)
+function plotVMStress(domain, filename; σ=nothing)
     close("all")
     ngp = Int64(sqrt(length(domain.elements[1].weights)))
-    visσ(domain, ngp)
+    visσ(domain, ngp, σ=σ)
     axis("equal")
     savefig("Fig/"*filename*".png")
 end
 
-porder = 2
-filename = "square-circle-coarse-o$(porder)"
-N_θ = 100
-θ = rand(Normal(0, 1), N_θ)
-domain, Fn = ConstructDomain(porder, θ, filename)
-globdat, domain  = solve!(domain)
-XY, σ =  extractVMStress(domain)
-plotVMStress(domain, filename)
+
+function GenerateData(θ, porder; plot::Bool=false)
+
+    filename = "square-circle-coarse-o$(porder)"
+
+    domain, Fn = ConstructDomain(porder, θ, filename)
+    globdat, domain  = solve!(domain)
+    XY, σ =  extractVMStress(domain)
+
+    if plot
+        plotVMStress(domain, filename)
+    end
+
+    return XY, σ, Fn
+end

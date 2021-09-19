@@ -285,7 +285,7 @@ function visσ(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
 end
 
 # visualize each quadrature point
-function visσ(domain::Domain, ngp::Int64, vmin=nothing, vmax=nothing; scaling = 1.0)
+function visσ(domain::Domain, ngp::Int64, vmin=nothing, vmax=nothing; σ=nothing, scaling = 1.0)
     
     
     u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
@@ -294,11 +294,14 @@ function visσ(domain::Domain, ngp::Int64, vmin=nothing, vmax=nothing; scaling =
     temp = nodes + [u v]
     x1, x2 = minimum(temp[:,1]), maximum(temp[:,1])
     y1, y2 = minimum(temp[:,2]), maximum(temp[:,2])
-    σ =[]
-    for e in domain.elements
-        σs = e.stress
-        # σs = [ones(3) for i = 1:length(e.stress)] # ! remove me
-        append!(σ, [postprocess_stress(s, "vonMises")[1] for s in σs])
+    
+    if σ===nothing
+        σ =[]
+        for e in domain.elements
+            σs = e.stress
+            # σs = [ones(3) for i = 1:length(e.stress)] # ! remove me
+            append!(σ, [postprocess_stress(s, "vonMises")[1] for s in σs])
+        end
     end
     vmin = vmin==nothing ? minimum(σ) : vmin 
     vmax = vmax==nothing ? maximum(σ) : vmax
