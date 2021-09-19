@@ -147,21 +147,27 @@ end
 
 #-------------------------------------------------------------
 
-"""
+@doc raw"""
     readMesh(gmshFile::String)
 
 Reads a `gmsh` file and extracts element, coordinates and boundaries.
+
+Returns:
+    nodes: N by 2 Float array
+    elements: N list of N by 4 Int array 
+    boundaries: N list of Int vector
 """
 function readMesh(gmshFile::String)
     fp = open(gmshFile);
     boundaries = Dict{String, Array}()
     physicalnames = Dict{Int64, String}()
     nodes = nothing
-    elements = nothing
+    elements = Dict{String, Array}()
     
     line = readline(fp)
     if (line == "\$MeshFormat")
         format = readline(fp)
+        @assert(format[1:3] == "2.2")
         @assert(readline(fp) == "\$EndMeshFormat")
     end
 
@@ -172,7 +178,11 @@ function readMesh(gmshFile::String)
             line = readline(fp)
             physicalid = parse(Int64, split(line)[2])
             physicalnames[physicalid] = split(line)[3]
-            boundaries[split(line)[3]] = []
+            if startswith(physicalnames[physicalid],"\"Dirichlet") || startswith(physicalnames[physicalid],"\"Neumann")
+                boundaries[split(line)[3]] = []
+            else
+                elements[split(line)[3]] = []
+            end
         end
         @assert(readline(fp) == "\$EndPhysicalNames")
     end
@@ -194,22 +204,22 @@ function readMesh(gmshFile::String)
     if (line == "\$Elements")
         nelems = readline(fp)
         nelems = parse(Int64,nelems)
-        elements = []
         for i = 1:nelems
             l = readline(fp)|>split 
             l4 = parse(Int64, l[4])
             physicalname = physicalnames[l4]
-            if startswith(physicalname,"\"Dirichlet")
-                k1,k2 = parse(Int64, l[6]),parse(Int64, l[7])
-                push!(boundaries[physicalname],[k1;k2])
-            elseif startswith(physicalname,"\"Neumann")
-                k1,k2 = parse(Int64, l[6]),parse(Int64, l[7])
-                push!(boundaries[physicalname],[k1;k2])
+            if startswith(physicalname,"\"Dirichlet") || startswith(physicalname,"\"Neumann")
+
+                # 2-node line 
+                @assert(parse(Int64, l[2]) == 1 || parse(Int64, l[2]) == 8)
+                k = (parse(Int64, l[2]) == 1 ? [parse(Int64, l[i]) for i = 6:7] : [parse(Int64, l[i]) for i = 6:8])
+                push!(boundaries[physicalname], k)
             else 
-                # println(physicalnames[l[4]], startswith(physicalnames[l[4]],"Dirichlet"))
-                # println(l)
-                k = [parse(Int64, l[i]) for i = 6:9]
-                push!(elements, k)
+
+                # 4-node quadrangle or 9-node second order quadrangle
+                @assert(parse(Int64, l[2]) == 3 || parse(Int64, l[2]) == 10)
+                k = (parse(Int64, l[2]) == 3 ? [parse(Int64, l[i]) for i = 6:9] : [parse(Int64, l[i]) for i = 6:14])
+                push!(elements[physicalname], k)
             end
         end
         # elem = zeros(length(elements),4)
@@ -219,7 +229,7 @@ function readMesh(gmshFile::String)
         @assert(readline(fp) == "\$EndElements")
     end
     @warn("Jobs are not finished!!! Users need to compute EBC, g, NBC, f.")
-    return elements, nodes, boundaries
+    return nodes, elements, boundaries
 end
 
 function save(file::String, domain::Domain, globaldata::GlobalData)
