@@ -8,7 +8,7 @@
 ##SBATCH --mail-type=BEGIN
 ##SBATCH --mail-type=END
 ##SBATCH --mail-type=FAIL
-#SBATCH -J "Helmholtz"    # job name
+#SBATCH -J "UnitCell"    # job name
 ##SBATCH --reservation=clima
 
 

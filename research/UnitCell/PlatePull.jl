@@ -67,7 +67,7 @@ f(x) = ∑ θ_{(l)} √λ_{l} φ_{l}(x)
 where λ_{l} = (π^2l^2 + τ^2)^{-d}  and φ_{l}(x) = √2 cos(πlx)
 generate_θ_KL function generates the summation of the first N_θ terms 
 =#
-function fxθ(x::FT, θ::Array{FT, 1},  d::FT=2.0, τ::FT=3.0) where {FT<:AbstractFloat}
+function fxθ(x::FT, θ::Array{FT, 1},  d::FT=1.0, τ::FT=3.0) where {FT<:AbstractFloat}
     
     N_θ = length(θ) 
 
@@ -166,7 +166,7 @@ function ConstructDomain(porder::Int64, θ::Array{Float64, 1}, meshfile::String)
     f_px = x->0
     m = 100.0
     # mean 100, cov scaled by 10^2 ! modify
-    f_py = x->m + 100.0*fxθ(x, θ)
+    f_py = x->m + 400.0*fxθ(x, θ)
     Ft, Fn =  ComputeLoad(nodes[top_edge, :], porder, ngp, f_px, f_py)
     fext[top_edge, 1] .= Ft
     fext[top_edge, 2] .= Fn
