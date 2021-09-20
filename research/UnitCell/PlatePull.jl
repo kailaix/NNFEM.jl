@@ -216,12 +216,12 @@ function plotVMStress(domain, filename; σ=nothing)
     close("all")
     ngp = Int64(sqrt(length(domain.elements[1].weights)))
     visσ(domain, ngp, σ=σ)
-    axis("equal")
+    # axis("equal")
     savefig("Fig/"*filename*".png")
 end
 
 
-function GenerateData(θ, porder; plot::Bool=false)
+function GenerateData(θ, porder; plot::Bool=false, plotname="square-circle-coarse-o$(porder)")
 
     filename = "square-circle-coarse-o$(porder)"
 
@@ -230,7 +230,7 @@ function GenerateData(θ, porder; plot::Bool=false)
     XY, σ =  extractVMStress(domain)
 
     if plot
-        plotVMStress(domain, filename)
+        plotVMStress(domain, plotname)
     end
 
     return XY, σ, Fn

@@ -360,8 +360,8 @@ function visσ(domain::Domain, ngp::Int64, vmin=nothing, vmax=nothing; σ=nothin
     end
     scalarMap.set_array(σ)
     colorbar(scalarMap)
-    xlim(x1 .-0.1,x2 .+0.1)
-    ylim(y1 .-0.1,y2 .+0.1)
+    # xlim(x1 .-0.1,x2 .+0.1)
+    # ylim(y1 .-0.1,y2 .+0.1)
 end
 
 
