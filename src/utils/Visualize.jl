@@ -285,12 +285,16 @@ function visσ(domain::Domain, vmin=nothing, vmax=nothing; scaling = 1.0)
 end
 
 # visualize each quadrature point
-function visσ(domain::Domain, ngp::Int64, vmin=nothing, vmax=nothing; σ=nothing, scaling = 1.0)
+function visσ(domain::Domain, ngp::Int64, vmin=nothing, vmax=nothing; σ=nothing, scaling = 1.0, ax = nothing, mycolorbar = true)
     
     
     u,v = domain.state[1:domain.nnodes], domain.state[domain.nnodes+1:end]
     nodes = domain.nodes
-    fig,ax = subplots()
+    
+    if ax === nothing
+       fig,ax = subplots()
+    end
+
     temp = nodes + [u v]
     x1, x2 = minimum(temp[:,1]), maximum(temp[:,1])
     y1, y2 = minimum(temp[:,2]), maximum(temp[:,2])
@@ -359,7 +363,10 @@ function visσ(domain::Domain, ngp::Int64, vmin=nothing, vmax=nothing; σ=nothin
         end
     end
     scalarMap.set_array(σ)
-    colorbar(scalarMap)
+    
+    if mycolorbar
+       colorbar(scalarMap)
+    end
     # xlim(x1 .-0.1,x2 .+0.1)
     # ylim(y1 .-0.1,y2 .+0.1)
 end

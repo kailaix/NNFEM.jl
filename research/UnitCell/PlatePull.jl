@@ -14,6 +14,10 @@ args: an array,
       for "Gaussian" load, it has p, x0, and σ, the force is in the normal direction
                   
 """
+
+mp, covp = 100.0, 400.0
+
+
 function ComputeLoad(coords, porder, ngp, f_px, f_py)
     L = 1.0
 
@@ -164,9 +168,9 @@ function ConstructDomain(porder::Int64, θ::Array{Float64, 1}, meshfile::String)
     # plot!(coords[:,1], coords[:,2], arrow=true)
 
     f_px = x->0
-    m = 100.0
+
     # mean 100, cov scaled by 10^2 ! modify
-    f_py = x->m + 400.0*fxθ(x, θ)
+    f_py = x -> mp + covp*fxθ(x, θ)
     Ft, Fn =  ComputeLoad(nodes[top_edge, :], porder, ngp, f_px, f_py)
     fext[top_edge, 1] .= Ft
     fext[top_edge, 2] .= Fn
@@ -232,6 +236,14 @@ function GenerateData(θ, porder; plot::Bool=false, plotname="square-circle-coar
     if plot
         plotVMStress(domain, plotname)
     end
-
-    return XY, σ, Fn
+    
+    # add force  todo hard-code
+    N_x = 21
+    xx = LinRange(0, 1, N_x) 
+    pn = zeros(N_x)
+    for i = 1:N_x
+        pn[i] = mp + covp*fxθ(xx[i], θ)
+    end
+    
+    return XY, σ, pn
 end

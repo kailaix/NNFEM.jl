@@ -14,7 +14,7 @@ merge!(rcParams, font0)
 
 using Random, Distributions
 include("PlatePull.jl")
-include("Plot.jl")
+# include("Plot.jl")
 
 
 seed = 123

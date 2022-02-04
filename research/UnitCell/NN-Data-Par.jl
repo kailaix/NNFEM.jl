@@ -10,7 +10,7 @@ function Data_Generate()
     seed = 123
     Random.seed!(seed)
 
-    N_data = 10000
+    N_data = 40000
     
     
     porder = 2
